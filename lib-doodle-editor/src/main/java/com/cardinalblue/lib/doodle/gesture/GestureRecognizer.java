@@ -20,7 +20,8 @@
 
 package com.cardinalblue.lib.doodle.gesture;
 
-import com.cardinalblue.lib.doodle.data.PointF;
+import android.graphics.PointF;
+
 import com.cardinalblue.lib.doodle.event.DragEvent;
 import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;

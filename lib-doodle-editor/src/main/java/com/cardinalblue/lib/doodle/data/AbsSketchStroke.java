@@ -22,6 +22,9 @@
 
 package com.cardinalblue.lib.doodle.data;
 
+import android.graphics.PointF;
+import android.graphics.RectF;
+
 import com.cardinalblue.lib.doodle.protocol.IPathTuple;
 import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 
@@ -76,7 +79,7 @@ abstract class AbsSketchStroke implements ISketchStroke {
         if (tuple == null || tuple.getPointSize() == 0) return false;
 
         // Calculate the boundary by the last point of the given tuple.
-        final TuplePoint point = tuple.getPointAt(tuple.getPointSize() - 1);
+        final PointF point = tuple.getPointAt(tuple.getPointSize() - 1);
         calculateBound(point.x, point.y);
 
         return mPathTupleList.add(tuple);
@@ -104,7 +107,7 @@ abstract class AbsSketchStroke implements ISketchStroke {
 
     @Override
     public void add(IPathTuple pathTuple) {
-        final TuplePoint point = pathTuple.getPointAt(0);
+        final PointF point = pathTuple.getPointAt(0);
 
         // Calculate new boundary.
         calculateBound(point.x, point.y);
@@ -116,7 +119,7 @@ abstract class AbsSketchStroke implements ISketchStroke {
     public void addAll(List<IPathTuple> pathTupleList) {
         // Calculate new boundary.
         for (IPathTuple pathTuple : pathTupleList) {
-            final TuplePoint point = pathTuple.getPointAt(0);
+            final PointF point = pathTuple.getPointAt(0);
             calculateBound(point.x, point.y);
         }
 

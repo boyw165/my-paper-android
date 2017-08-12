@@ -32,22 +32,22 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
 import android.graphics.Shader.TileMode;
 import android.graphics.Xfermode;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 
-import com.cardinalblue.lib.doodle.data.RectF;
-import com.cardinalblue.lib.doodle.data.TuplePoint;
 import com.cardinalblue.lib.doodle.protocol.IMatrix;
 import com.cardinalblue.lib.doodle.protocol.IPathTuple;
 import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.cardinalblue.reactive.AnimatorSetObservable;
 import com.jakewharton.rxbinding2.view.RxView;
+import com.my.reactive.AnimatorSetObservable;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -557,7 +557,7 @@ public class SketchView
         mStrokePath.reset();
         if (stroke.size() - from == 1) {
             // Draw a "dot"...
-            final TuplePoint point = stroke.getPathTupleAt(from).getPointAt(0);
+            final PointF point = stroke.getPathTupleAt(from).getPointAt(0);
 
             mStrokePath.moveTo(point.x * getCanvasWidth(),
                                point.y * getCanvasHeight());

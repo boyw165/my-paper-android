@@ -22,9 +22,8 @@
 
 package com.cardinalblue.lib.doodle.protocol;
 
+import android.graphics.PointF;
 import android.os.Parcelable;
-
-import com.cardinalblue.lib.doodle.data.TuplePoint;
 
 import java.util.List;
 
@@ -36,11 +35,11 @@ public interface IPathTuple extends Parcelable {
 
     void addPoint(float x, float y);
 
-    TuplePoint getPointAt(final int position);
+    PointF getPointAt(final int position);
 
-    TuplePoint getLastPoint();
+    PointF getLastPoint();
 
     int getPointSize();
 
-    List<TuplePoint> getAllPoints();
+    List<PointF> getAllPoints();
 }

@@ -24,11 +24,11 @@ package com.cardinalblue.lib.doodle.controller;
 
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
+import com.cardinalblue.lib.doodle.history.UndoRedoList;
 import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchModel;
 import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.cardinalblue.lib.history.UndoRedoList;
 
 import java.util.ArrayList;
 import java.util.Collections;

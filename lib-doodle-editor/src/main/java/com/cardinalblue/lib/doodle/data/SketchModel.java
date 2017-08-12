@@ -22,6 +22,8 @@
 
 package com.cardinalblue.lib.doodle.data;
 
+import android.graphics.PointF;
+import android.graphics.RectF;
 import android.os.Parcel;
 
 import com.cardinalblue.lib.doodle.protocol.IPathTuple;
@@ -35,7 +37,7 @@ import java.util.List;
 /**
  * The sketch model. A sketch contains stroke(s), {@link ISketchStroke}. Each
  * stroke contains tuple(s), {@link IPathTuple}. A tuple represents a node of
- * a path segment and contains at least one point, {@link TuplePoint}. These
+ * a path segment and contains at least one point, {@link PointF}. These
  * points are endpoints or control-points for describing a bezier curve.
  */
 public class SketchModel implements ISketchModel {

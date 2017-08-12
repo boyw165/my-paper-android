@@ -27,7 +27,7 @@ import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
-import com.cardinalblue.reactive.uiEvent.UiEvent;
+import com.my.reactive.uiEvent.UiEvent;
 
 import java.io.InputStream;
 import java.util.List;

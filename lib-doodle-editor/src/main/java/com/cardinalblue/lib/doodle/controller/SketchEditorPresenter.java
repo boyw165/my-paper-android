@@ -34,9 +34,9 @@ import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
 import com.cardinalblue.lib.doodle.protocol.ISketchModel;
 import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.cardinalblue.reactive.uiEvent.UiEvent;
-import com.cardinalblue.reactive.uiModel.UiModel;
-import com.cardinalblue.reactive.util.ObservableUtil;
+import com.my.reactive.uiEvent.UiEvent;
+import com.my.reactive.uiModel.UiModel;
+import com.my.reactive.util.ObservableConst;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -184,7 +184,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         mEditorView.setBrushSize(brushSize);
                     }
 
-                    return ObservableUtil.IGNORED;
+                    return ObservableConst.IGNORED;
                 }
             })
             .subscribeOn(mUiScheduler);
@@ -262,7 +262,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                 .compose(mUndoRedoManipulator.onSpyingStrokesUpdate(mSketchModel))
                                 // Post process afterwards.
                                 .compose(mPostTouchCanvas)
-                                .compose(ObservableUtil.FILTER_IGNORED);
+                                .compose(ObservableConst.FILTER_IGNORED);
                         }
                     });
             }
@@ -285,7 +285,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         // Update seek-bar.
                         mEditorView.showBrushColor(brush.getBrushColor());
 
-                        return ObservableUtil.IGNORED;
+                        return ObservableConst.IGNORED;
                     }
                 });
             }
@@ -340,7 +340,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             mEditorView.hideStrokeColorAndWidthPreview();
                         }
 
-                        return ObservableUtil.IGNORED;
+                        return ObservableConst.IGNORED;
                     }
                 });
             }
@@ -356,7 +356,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     return upstream.compose(mUndoRedoManipulator.undo(mSketchModel))
                                    .compose(mUpdateCanvasStrokes)
                                    .compose(mPostTouchCanvas)
-                                   .compose(ObservableUtil.FILTER_IGNORED);
+                                   .compose(ObservableConst.FILTER_IGNORED);
                 } else {
                     return upstream;
                 }
@@ -373,7 +373,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     return upstream.compose(mUndoRedoManipulator.redo(mSketchModel))
                                    .compose(mUpdateCanvasStrokes)
                                    .compose(mPostTouchCanvas)
-                                   .compose(ObservableUtil.FILTER_IGNORED);
+                                   .compose(ObservableConst.FILTER_IGNORED);
                 } else {
                     return upstream;
                 }
@@ -409,7 +409,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         .compose(mUndoRedoManipulator.clearAll(mSketchModel))
                         .compose(mUpdateCanvasStrokes)
                         .compose(mPostTouchCanvas)
-                        .compose(ObservableUtil.FILTER_IGNORED);
+                        .compose(ObservableConst.FILTER_IGNORED);
                 } else {
                     return upstream;
                 }
@@ -671,7 +671,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             mSketchView.drawAndSharpenStrokes(mSketchModel.getAllStrokes());
                         }
 
-                        return ObservableUtil.IGNORED;
+                        return ObservableConst.IGNORED;
                     }
                 });
             }
@@ -714,7 +714,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                 }
             }
 
-            return ObservableUtil.IGNORED;
+            return ObservableConst.IGNORED;
         }
     };
 

@@ -22,10 +22,10 @@
 
 package com.cardinalblue.lib.doodle.controller;
 
-import com.cardinalblue.lib.doodle.data.PointF;
+import android.graphics.PointF;
+import android.graphics.RectF;
+
 import com.cardinalblue.lib.doodle.data.PointPathTuple;
-import com.cardinalblue.lib.doodle.data.RectF;
-import com.cardinalblue.lib.doodle.data.TuplePoint;
 import com.cardinalblue.lib.doodle.event.DragEvent;
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
@@ -65,7 +65,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     private float mBrushSize;
     private ISketchBrush mBrush;
     private ISketchStroke mStroke;
-    private final List<TuplePoint> mCachedPoints = new ArrayList<>();
+    private final List<PointF> mCachedPoints = new ArrayList<>();
 
     // Drawing state.
     private final float[] mMappedPoint = new float[2];
@@ -182,7 +182,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                         // In the above figure, p1 the the last point
                                         // of the previous tuple; p2 and p3 are the
                                         // control points; p4 is the endpoint.
-                                        mCachedPoints.add(new TuplePoint(nx, ny));
+                                        mCachedPoints.add(new PointF(nx, ny));
 
                                         if (mCachedPoints.size() == 3) {
                                             mLogger.d("xyz", "DrawStrokeEvent.drawing()");
@@ -376,7 +376,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     /**
      * Reference: https://code.tutsplus.com/tutorials/smooth-freehand-drawing-on-ios--mobile-13164
      */
-    private void smoothenCurveJoint(List<TuplePoint> points) {
+    private void smoothenCurveJoint(List<PointF> points) {
         if (points == null || points.size() < 2) return;
 
         // Must have previous tuple.
@@ -388,8 +388,8 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
         final int prevTupleSize = prevTuple.getPointSize();
         if (prevTupleSize < 2) return;
 
-        final TuplePoint prevEndpoint = prevTuple.getPointAt(prevTupleSize - 1);
-        final TuplePoint prevControlPoint = prevTuple.getPointAt(prevTupleSize - 2);
+        final PointF prevEndpoint = prevTuple.getPointAt(prevTupleSize - 1);
+        final PointF prevControlPoint = prevTuple.getPointAt(prevTupleSize - 2);
 //        final double angle1 = Math.atan2(prevControlPoint.y - prevEndpoint.y,
 //                                         prevControlPoint.x - prevEndpoint.x);
 //        final double angle2 = Math.atan2(points.get(0).y - prevEndpoint.y,
@@ -411,7 +411,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 //        // [ cos  -sin ]
 //        // [ sin   cos ]
 
-        final TuplePoint currControlPoint = points.get(0);
+        final PointF currControlPoint = points.get(0);
         mVector[0] = prevEndpoint.x - prevControlPoint.x;
         mVector[1] = prevEndpoint.y - prevControlPoint.y;
 

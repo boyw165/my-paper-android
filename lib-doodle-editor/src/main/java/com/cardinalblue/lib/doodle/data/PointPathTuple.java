@@ -22,6 +22,7 @@
 
 package com.cardinalblue.lib.doodle.data;
 
+import android.graphics.PointF;
 import android.os.Parcel;
 
 import com.cardinalblue.lib.doodle.protocol.IPathTuple;
@@ -35,7 +36,7 @@ import java.util.List;
  */
 public class PointPathTuple implements IPathTuple {
 
-    private List<TuplePoint> mPoints = new ArrayList<>();
+    private List<PointF> mPoints = new ArrayList<>();
 
     public PointPathTuple() {
         // EMPTY.
@@ -46,23 +47,23 @@ public class PointPathTuple implements IPathTuple {
         addPoint(x, y);
     }
 
-    public PointPathTuple(List<TuplePoint> points) {
+    public PointPathTuple(List<PointF> points) {
         mPoints.clear();
         mPoints.addAll(points);
     }
 
     @Override
     public void addPoint(float x, float y) {
-        mPoints.add(new TuplePoint(x, y));
+        mPoints.add(new PointF(x, y));
     }
 
     @Override
-    public TuplePoint getPointAt(int position) {
+    public PointF getPointAt(int position) {
         return mPoints.get(position);
     }
 
     @Override
-    public TuplePoint getLastPoint() {
+    public PointF getLastPoint() {
         return mPoints.get(getPointSize() - 1);
     }
 
@@ -72,7 +73,7 @@ public class PointPathTuple implements IPathTuple {
     }
 
     @Override
-    public List<TuplePoint> getAllPoints() {
+    public List<PointF> getAllPoints() {
         return mPoints;
     }
 
@@ -109,6 +110,6 @@ public class PointPathTuple implements IPathTuple {
     // Protected / Private Methods ////////////////////////////////////////////
 
     private PointPathTuple(Parcel in) {
-        in.readList(mPoints, TuplePoint.class.getClassLoader());
+        in.readList(mPoints, PointF.class.getClassLoader());
     }
 }

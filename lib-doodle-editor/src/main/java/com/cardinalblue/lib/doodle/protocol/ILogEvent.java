@@ -1,6 +1,4 @@
-// Copyright (c) 2017-present Cardinalblue
-//
-// Author: boy@cardinalblue.com
+// Copyright (c) 2017-present boyw165
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,43 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.util;
+package com.cardinalblue.lib.doodle.protocol;
 
-import android.util.Log;
+public interface ILogEvent {
 
-import com.cardinalblue.lib.doodle.protocol.ILogEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-
-import java.util.Arrays;
-
-public class AndroidLogger implements ILogger {
-
-    private final ILogEvent mRemoteLogger;
-
-    public AndroidLogger(ILogEvent remoteLogger) {
-        mRemoteLogger = remoteLogger;
-    }
-
-    @Override
-    public int d(String tag, String msg) {
-        return Log.d(tag, msg);
-    }
-
-    @Override
-    public int e(String tag, String msg) {
-        return Log.e(tag, msg);
-    }
-
-    @Override
-    public void sendEvent(String action, String... parameters) {
-        if (parameters.length == 0) {
-            Log.d("event", action + "");
-        } else {
-            Log.d("event", action + ": " + Arrays.toString(parameters));
-        }
-
-        if (mRemoteLogger != null) {
-            mRemoteLogger.sendEvent(action, parameters);
-        }
-    }
+    void sendEvent(String action, String... parameters);
 }

@@ -4,6 +4,7 @@ include ':app-paper',
         ':lib-common-theme',
         ':lib-widget',
         ':lib-protobuf',
-        ':lib-component'
+        ':lib-component',
+        ':lib-doodle-editor'
 //        ':lib-dlib',
 //        ':lib-tensorflow'

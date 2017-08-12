@@ -56,13 +56,11 @@ import com.cardinalblue.lib.doodle.view.SketchView;
 import com.cardinalblue.lib.doodle.view.BrushSizeSeekBar;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapter;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapterObservable;
-import com.cardinalblue.reactive.AlertDialogObservable;
-import com.cardinalblue.reactive.SeekBarChangeObservable;
-import com.cardinalblue.reactive.activity.RxAppCompatActivity;
-import com.cardinalblue.reactive.uiEvent.UiEvent;
 import com.jakewharton.rxbinding2.view.RxView;
-import com.piccollage.util.AppHelper;
-import com.piccollage.util.protocol.ILogEvent;
+import com.my.reactive.AlertDialogObservable;
+import com.my.reactive.SeekBarChangeObservable;
+import com.my.reactive.activity.RxAppCompatActivity;
+import com.my.reactive.uiEvent.UiEvent;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -419,7 +417,8 @@ public class SketchEditorActivity
         }
 
         // Init logger.
-        mLogger = new AndroidLogger((ILogEvent) AppHelper.get(ILogEvent.class));
+        // FIXME: Use Dagger2.
+        mLogger = new AndroidLogger(null);
 
         // Init gesture recognizer.
         final float dragSlop = getResources().getDimension(R.dimen.drag_slop);

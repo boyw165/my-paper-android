@@ -50,9 +50,7 @@ dependencies {
 
     // My Libraries
     compile project(":lib-reactive")
-    compile project(":lib-history")
-    compile project(":lib-widget")
-    compile project(":lib-util")
+    compile project(":lib-shared-model")
 
     testCompile rootProject.ext.dep.testJunit
 

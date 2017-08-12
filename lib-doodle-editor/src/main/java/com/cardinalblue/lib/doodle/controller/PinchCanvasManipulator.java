@@ -22,7 +22,8 @@
 
 package com.cardinalblue.lib.doodle.controller;
 
-import com.cardinalblue.lib.doodle.data.PointF;
+import android.graphics.PointF;
+
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.IMatrix;
@@ -127,8 +128,7 @@ public class PinchCanvasManipulator implements SketchContract.IPinchCanvasManipu
 
                             // Start vector between two finger pointers.
                             mStartVectorInParent.set(event.pointer2.x - event.pointer1.x,
-                                                     event.pointer2.y - event.pointer1.y,
-                                                     true);
+                                                     event.pointer2.y - event.pointer1.y);
 
 //                    mLogger.d("xyz", "--- PinchStart ---");
 //                    mLogger.d("xyz", String.format(Locale.ENGLISH, mStartMatrixInTarget.toString()));
@@ -220,8 +220,7 @@ public class PinchCanvasManipulator implements SketchContract.IPinchCanvasManipu
         final float stopY2 = event.pointer2.y;
         // Update the end vector between two touch pointers.
         mStopVectorInParent.set(stopX2 - stopX1,
-                                stopY2 - stopY1,
-                                true);
+                                stopY2 - stopY1);
         // Update the end pivot between two touch pointers.
         // Start pivot.
         mStopPivotInParent.set((stopX1 + stopX2) / 2f,
@@ -235,7 +234,10 @@ public class PinchCanvasManipulator implements SketchContract.IPinchCanvasManipu
             Math.atan2(mStopVectorInParent.y, mStopVectorInParent.x) -
             Math.atan2(mStartVectorInParent.y, mStartVectorInParent.x));
         // Calculate the scale change.
-        final float scale = mStopVectorInParent.length / mStartVectorInParent.length;
+        final float scale = (float) (Math.hypot(mStopVectorInParent.x,
+                                                mStopVectorInParent.y) /
+                                     Math.hypot(mStartVectorInParent.x,
+                                                mStartVectorInParent.y));
         transform[SCALE_X] = scale;
         transform[SCALE_Y] = scale;
 //        mLogger.d("xyz", String.format(Locale.ENGLISH,

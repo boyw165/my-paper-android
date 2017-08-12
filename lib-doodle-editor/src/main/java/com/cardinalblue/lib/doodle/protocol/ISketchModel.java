@@ -22,9 +22,8 @@
 
 package com.cardinalblue.lib.doodle.protocol;
 
+import android.graphics.RectF;
 import android.os.Parcelable;
-
-import com.cardinalblue.lib.doodle.data.RectF;
 
 import java.util.List;
 
