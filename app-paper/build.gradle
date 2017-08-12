@@ -90,6 +90,7 @@ dependencies {
     compile project(":lib-core")
     compile project(":lib-common-theme")
     compile project(":lib-reactive")
+    compile project(":lib-shared-model")
 
     // Unit tests.
     testCompile rootProject.ext.dep.testJunit
