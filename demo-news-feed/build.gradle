@@ -1,0 +1,64 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        applicationId "my.demo.news"
+        minSdkVersion 21
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0.0"
+
+        multiDexEnabled true
+
+        dataBinding {
+            enabled = true
+        }
+
+        // My config.
+        buildConfigField "long", "DEFAULT_DOWNLOAD_CACHE_SIZE_MB", "64"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                          'proguard-rules.pro',
+                          'proguard-fresco.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Google Support Library.
+    compile rootProject.ext.dep.supportAppcompatV7
+    compile rootProject.ext.dep.supportVectorDrawable
+    compile rootProject.ext.dep.supportRecyclerViewV7
+    // Multi-dex.
+    compile rootProject.ext.dep.supportMultidex
+
+    // JSON.
+    compile rootProject.ext.dep.gson
+
+    // Image loader.
+    compile rootProject.ext.dep.fresco
+
+    // HTTP.
+    compile rootProject.ext.dep.retrofit2
+    compile rootProject.ext.dep.retrofit2ConverterGson
+    compile rootProject.ext.dep.retrofit2RxJava2Adapter
+    compile rootProject.ext.dep.okhttp
+
+    // View Binding.
+    compile rootProject.ext.dep.butterKnife
+    annotationProcessor rootProject.ext.dep.butterKnifeCompiler
+
+    // My Library.
+    compile project(":lib-reactive")
+
+    testCompile rootProject.ext.dep.testJunit
+    testCompile rootProject.ext.dep.testMockito
+}

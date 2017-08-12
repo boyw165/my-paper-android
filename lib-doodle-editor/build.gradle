@@ -1,0 +1,62 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.jakewharton.butterknife'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Google Support Library.
+    compile rootProject.ext.dep.supportAppcompatV7
+    compile rootProject.ext.dep.supportVectorDrawable
+    compile rootProject.ext.dep.supportRecyclerViewV7
+    compile rootProject.ext.dep.supportConstraintLayout
+    // Multi-dex.
+    compile rootProject.ext.dep.supportMultidex
+
+    // View Binding.
+    compile rootProject.ext.dep.butterKnife
+    annotationProcessor rootProject.ext.dep.butterKnifeCompiler
+
+    // Image loader.
+    compile rootProject.ext.dep.glide
+
+    // Circle image view.
+    compile 'de.hdodenhof:circleimageview:2.1.0'
+    // Overscroll decoration.
+    compile 'me.everything:overscroll-decor-android:1.0.4'
+
+    // My Libraries
+    compile project(":lib-reactive")
+    compile project(":lib-history")
+    compile project(":lib-widget")
+    compile project(":lib-util")
+
+    testCompile rootProject.ext.dep.testJunit
+
+    androidTestCompile(rootProject.ext.dep.testEspressoCore, {
+        exclude group: "com.android.support", module: "support-annotations"
+    })
+}

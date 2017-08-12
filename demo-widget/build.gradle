@@ -1,0 +1,94 @@
+apply plugin: "com.android.application"
+// Fabric crashlytics.
+//apply plugin: "io.fabric"
+
+// Gradle doc:
+// http://google.github.io/android-gradle-dsl/
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        // Overwrite the "package" attribute defined in the
+        // AndroidManifest.xml.
+        applicationId "my.demo.widget"
+        minSdkVersion 16
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
+
+        ndk {
+            // Options: "x86", "x86_64", "armeabi", "armeabi-v7a", "arm64-v8a"
+            abiFilters "x86", "x86_64", "armeabi", "armeabi-v7a"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+
+    lintOptions {
+        disable "MissingTranslation"
+    }
+
+    // Pick first STL shared library if there're duplicate files in the
+    // dependent module.
+    packagingOptions {
+        pickFirst  "**/libc++_shared.so"
+    }
+}
+
+repositories {
+    maven { url "https://maven.fabric.io/public" }
+    // Support AAR file.
+    flatDir { dirs "libs" }
+}
+
+dependencies {
+    compile fileTree(dir: "libs", include: ["*.jar"])
+
+    // Google Support Library.
+    compile rootProject.ext.dep.supportAppcompatV7
+    compile rootProject.ext.dep.supportVectorDrawable
+    compile rootProject.ext.dep.supportRecyclerViewV7
+    compile rootProject.ext.dep.supportGridLayoutV7
+    compile rootProject.ext.dep.supportCardViewV7
+    compile rootProject.ext.dep.supportPercent
+    compile rootProject.ext.dep.supportDesign
+    // Multi-dex.
+    compile rootProject.ext.dep.supportMultidex
+
+    // JSON.
+    compile rootProject.ext.dep.gson
+
+    // HTTP.
+    compile rootProject.ext.dep.retrofit2
+    compile rootProject.ext.dep.retrofit2ConverterGson
+    compile rootProject.ext.dep.retrofit2RxJava2Adapter
+    compile rootProject.ext.dep.okhttp
+
+    // Image loader.
+    compile rootProject.ext.dep.glide
+
+    compile project(':lib-tensorflow')
+    compile project(':lib-core')
+    compile project(':lib-reactive')
+    compile project(':lib-widget')
+    compile project(':lib-component')
+
+    testCompile rootProject.ext.dep.testJunit
+    testCompile rootProject.ext.dep.testMockito
+    testCompile rootProject.ext.dep.leakcanaryNoOp
+
+    androidTestCompile(rootProject.ext.dep.testEspressoCore, {
+        exclude group: "com.android.support", module: "support-annotations"
+    })
+}
