@@ -86,6 +86,11 @@ dependencies {
     compile rootProject.ext.dep.leakcanary
     releaseCompile rootProject.ext.dep.leakcanaryNoOp
 
+    // My Libraries
+    compile project(":lib-core")
+    compile project(":lib-common-theme")
+    compile project(":lib-reactive")
+
     // Unit tests.
     testCompile rootProject.ext.dep.testJunit
     testCompile rootProject.ext.dep.testMockito

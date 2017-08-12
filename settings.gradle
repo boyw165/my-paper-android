@@ -2,10 +2,8 @@ include ':app-paper',
         ':lib-reactive',
         ':lib-core',
         ':lib-common-theme',
-        // FIXME: It's still using experimental gradle.
-//        ':lib-photo-collage',
         ':lib-widget',
         ':lib-protobuf',
-        ':lib-component',
-        ':lib-dlib',
-        ':lib-tensorflow'
+        ':lib-component'
+//        ':lib-dlib',
+//        ':lib-tensorflow'
