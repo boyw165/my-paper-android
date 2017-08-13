@@ -20,10 +20,36 @@
 
 package com.paper;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+
+import com.jakewharton.rxbinding2.view.RxView;
+import com.paper.shared.model.PaperModel;
+
+import java.util.concurrent.TimeUnit;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Function;
 
 public class MyPaperGalleryActivity extends AppCompatActivity {
+
+    // View.
+    @BindView(R.id.btn_new)
+    View mBtnNewPaper;
+
+    Unbinder mViewUnbinder;
+
+    CompositeDisposable mDisposables;
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
@@ -32,5 +58,47 @@ public class MyPaperGalleryActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_paper_gallery);
+
+        mViewUnbinder = ButterKnife.bind(this);
+
+        mDisposables = new CompositeDisposable();
+        mDisposables.add(
+            RxView.clicks(mBtnNewPaper)
+                  .debounce(150, TimeUnit.MILLISECONDS)
+                  // TODO: MVP's Presenter's transformer.
+                  .compose(new ObservableTransformer<Object, Object>() {
+                      @Override
+                      public ObservableSource<Object> apply(@NonNull Observable<Object> upstream) {
+                          return upstream
+                              .observeOn(AndroidSchedulers.mainThread())
+                              .map(new Function<Object, Object>() {
+                                  @Override
+                                  public Object apply(@NonNull Object o) throws Exception {
+                                      navigateToPaperEditor(new PaperModel());
+                                      return o;
+                                  }
+                              });
+                      }
+                  })
+                  .subscribe());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        mViewUnbinder.unbind();
+
+        mDisposables.clear();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    // TODO: MVP's View method.
+    private void navigateToPaperEditor(PaperModel paperModel) {
+        startActivityForResult(new Intent(this, PaperEditorActivity.class), 0);
     }
 }

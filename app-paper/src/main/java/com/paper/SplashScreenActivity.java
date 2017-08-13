@@ -55,7 +55,8 @@ public class SplashScreenActivity extends AppCompatActivity {
             .subscribe(new Consumer<Boolean>() {
                 @Override
                 public void accept(Boolean ignored) throws Exception {
-                    startActivity(new Intent(SplashScreenActivity.this, MyPaperGalleryActivity.class));
+                    startActivity(new Intent(SplashScreenActivity.this,
+                                             MyPaperGalleryActivity.class));
                     finish();
                 }
             });

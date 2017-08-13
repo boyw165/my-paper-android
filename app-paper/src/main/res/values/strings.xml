@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Paper</string>
+
+    <!-- For Sketch Editor -->
+    <string name="doodle_clear_title">Clear All</string>
+    <string name="doodle_clear_message">Clear all your strokes and it is not a reversible action. Are you sure to continue?</string>
+    <string name="doodle_clear_ok">OK</string>
+    <string name="doodle_clear_cancel">CANCEL</string>
 </resources>

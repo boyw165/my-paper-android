@@ -29,8 +29,17 @@
 
         <!-- Start Page -->
         <activity
-            android:name=".MyPaperGalleryActivity"
-            android:label="@string/app_name">
+            android:name=".MyPaperGalleryActivity">
+        </activity>
+
+        <!-- Main Editor -->
+        <activity
+            android:name=".PaperEditorActivity">
+        </activity>
+
+        <!-- Sketch Editor -->
+        <activity
+            android:name="com.cardinalblue.lib.doodle.SketchEditorActivity">
         </activity>
     </application>
 
