@@ -18,20 +18,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper.shared.model;
+package com.paper.shared.model.repository
 
-import android.net.Uri;
+import com.paper.shared.model.PaperModel
+import com.paper.shared.model.sketch.SketchModel
 
-import java.util.ArrayList;
-import java.util.List;
+import io.reactivex.Single
+import io.realm.Realm
 
-public class PaperModel {
+class SketchModelRealmRepo {
 
-    public int baseWidth;
-    public int baseHeight;
+    fun addTempSketch(data: SketchModel) {
+        // TODO: Complete it.
+    }
 
-    public Uri thumbnailPath;
+    // TODO: Complete it.
+    val tempSketch: Single<PaperModel>?
+        get() = null
 
-    public final List<PaperScrapModel> paperScraps = new ArrayList<>();
+    fun containsSketch(data: SketchModel): Single<Boolean>? {
+        // TODO: Complete it.
+        return null
+    }
 
+    fun addSketch(data: SketchModel) {
+        // TODO: Complete it.
+    }
+
+    fun removeSketch(data: SketchModel) {
+        // TODO: Complete it.
+    }
+
+    fun updateSketch(data: SketchModel) {
+        // TODO: Complete it.
+    }
 }

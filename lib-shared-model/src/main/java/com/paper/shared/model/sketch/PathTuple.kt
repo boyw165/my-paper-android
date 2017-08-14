@@ -18,11 +18,58 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper.shared.model;
+package com.paper.shared.model.sketch
 
-import com.paper.shared.model.sketch.SketchModel;
+import android.graphics.PointF
 
-public class PaperScrapModel {
+import java.util.ArrayList
 
-    public SketchModel sketch;
+/**
+ * A path tuple represents a path node. It may contains more than one x-y
+ * pair in order to draw Bezier curve. A x-y pair is called TuplePoint.
+ */
+class PathTuple {
+
+    private val mPoints = ArrayList<PointF>()
+
+    constructor() {
+        // EMPTY.
+    }
+
+    constructor(x: Float,
+                y: Float) {
+        addPoint(x, y)
+    }
+
+    constructor(points: List<PointF>) {
+        mPoints.clear()
+        mPoints.addAll(points)
+    }
+
+    fun addPoint(x: Float, y: Float) {
+        mPoints.add(PointF(x, y))
+    }
+
+    fun getPointAt(position: Int): PointF {
+        return mPoints[position]
+    }
+
+    val lastPoint: PointF
+        get() = mPoints[pointSize - 1]
+
+    val pointSize: Int
+        get() = mPoints.size
+
+    val allPoints: List<PointF>
+        get() = mPoints
+
+    fun describeContents(): Int {
+        return 0
+    }
+
+    override fun toString(): String {
+        return "PathTuple[" +
+                mPoints +
+                ']'
+    }
 }

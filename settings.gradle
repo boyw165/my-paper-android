@@ -1,5 +1,6 @@
 include ':app-paper',
         ':lib-shared-model',
+        ':lib-shared-model-repository',
         ':lib-reactive',
         ':lib-core',
         ':lib-common-theme',
