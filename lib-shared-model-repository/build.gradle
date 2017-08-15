@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 // Enable realm.
 apply plugin: 'realm-android'
 
@@ -23,11 +24,19 @@ android {
     }
 }
 
+repositories {
+    // For JetBrain Kotlin extension, ... and more.
+    mavenCentral()
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     // Google Support Library.
     compile rootProject.ext.dep.supportAppcompatV7
+
+    // Kotlin.
+    compile rootProject.ext.dep.kotlinStdlib
 
     // JSON.
     compile rootProject.ext.dep.gson
