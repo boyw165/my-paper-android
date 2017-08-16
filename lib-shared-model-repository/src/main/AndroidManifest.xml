@@ -1,4 +1,4 @@
-<manifest package="com.paper.shared.model.repository"
-          xmlns:android="http://schemas.android.com/apk/res/android">
-    <application/>
+<manifest package="com.paper.shared.model.repository">
+    <application>
+    </application>
 </manifest>

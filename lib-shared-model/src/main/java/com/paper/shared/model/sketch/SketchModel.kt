@@ -21,9 +21,7 @@
 package com.paper.shared.model.sketch
 
 import android.graphics.RectF
-
-import java.util.ArrayList
-import java.util.Collections
+import java.util.*
 
 /**
  * A sketch scrap could contains multiple strokes. Every stroke has an array of
@@ -52,13 +50,13 @@ import java.util.Collections
  * |      +--+         |
  * |                   |
  * '-------------------'
-</pre> *
+ * </pre>
  */
-class SketchModel {
+class SketchModel constructor(id: Long) {
 
     private val mMutex = Any()
 
-    var id: Long = 0
+    val id: Long = id
     var width: Int = 0
         private set
     var height: Int = 0
@@ -67,16 +65,17 @@ class SketchModel {
     private var mStrokesBoundDirty = true
     private var mStrokesBound = RectF()
 
-    constructor(width: Int,
-                height: Int) : this(0, width, height,
-            emptyList<SketchStrokeModel>()) {
+    constructor(id: Long,
+                width: Int,
+                height: Int)
+            : this(0, width, height, emptyList<SketchStrokeModel>()) {
     }
 
-    @JvmOverloads constructor(id: Long,
-                              width: Int,
-                              height: Int,
-                              strokes: List<SketchStrokeModel>? = emptyList<SketchStrokeModel>()) {
-        this.id = id
+    constructor(id: Long,
+                width: Int,
+                height: Int,
+                strokes: List<SketchStrokeModel>? = emptyList<SketchStrokeModel>())
+            : this(id) {
         this.width = width
         this.height = height
 
@@ -85,15 +84,14 @@ class SketchModel {
         }
     }
 
-    constructor(other: SketchModel?) {
+    constructor(other: SketchModel?)
+            : this(other?.id ?: 0) {
         if (other == null) {
-            id = 0
             width = 1440
             height = 1440
             mStrokes = ArrayList<SketchStrokeModel>()
             mStrokesBoundDirty = true
         } else {
-            id = other.id
             width = other.width
             height = other.height
             mStrokes = ArrayList(other.allStrokes)
@@ -111,12 +109,11 @@ class SketchModel {
         }
     }
 
-    val strokeSize: Int
-        get() {
-            synchronized(mMutex) {
-                return mStrokes!!.size
-            }
+    val strokeSize: Int get() {
+        synchronized(mMutex) {
+            return mStrokes!!.size
         }
+    }
 
     fun getStrokeAt(position: Int): SketchStrokeModel {
         synchronized(mMutex) {
@@ -131,12 +128,11 @@ class SketchModel {
         }
     }
 
-    val allStrokes: List<SketchStrokeModel>
-        get() {
-            synchronized(mMutex) {
-                return mStrokes
-            }
+    val allStrokes: List<SketchStrokeModel> get() {
+        synchronized(mMutex) {
+            return ArrayList(mStrokes)
         }
+    }
 
     fun clearStrokes() {
         synchronized(mMutex) {
@@ -160,13 +156,15 @@ class SketchModel {
                     val aspectRatio = width.toFloat() / height
                     for (stroke in mStrokes!!) {
                         val strokeBound = stroke.bound
-                        val halfStrokeWidth = stroke.width / 2
+                        val halfStrokeWidth = stroke.getWidth() / 2
 
                         mStrokesBound.left = Math.min(mStrokesBound.left, strokeBound.left - halfStrokeWidth)
                         mStrokesBound.top = Math.min(mStrokesBound.top, strokeBound.top - halfStrokeWidth * aspectRatio)
                         mStrokesBound.right = Math.max(mStrokesBound.right, strokeBound.right + halfStrokeWidth)
                         mStrokesBound.bottom = Math.max(mStrokesBound.bottom, strokeBound.bottom + halfStrokeWidth * aspectRatio)
                     }
+
+                    // Clamp the bound within a 1x1 square.
                     mStrokesBound.left = Math.max(mStrokesBound.left, 0f)
                     mStrokesBound.top = Math.max(mStrokesBound.top, 0f)
                     mStrokesBound.right = Math.min(mStrokesBound.right, 1f)

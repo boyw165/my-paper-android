@@ -1,4 +1,7 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+// Enable realm.
+apply plugin: 'realm-android'
 
 // Prepare the keystore for signing the APK.
 def keystorePropertiesFile = rootProject.file("../my-google-play-certs/bigbite-keystore.properties")
@@ -106,6 +109,7 @@ dependencies {
     compile project(":lib-common-theme")
     compile project(":lib-reactive")
     compile project(":lib-shared-model")
+    compile project(":lib-shared-model-repository")
     compile project(":lib-doodle-editor")
 
     // Unit tests.

@@ -41,6 +41,10 @@
         <activity
             android:name="com.cardinalblue.lib.doodle.SketchEditorActivity">
         </activity>
-    </application>
 
+        <!-- Paper Database -->
+        <provider
+            android:authorities="${packageName}"
+            android:name="com.paper.shared.model.repository.sqlite.PaperContentProvider"/>
+    </application>
 </manifest>

@@ -22,7 +22,9 @@ package com.paper.shared.model
 
 import com.paper.shared.model.sketch.SketchModel
 
-class PaperScrapModel {
+class PaperScrapModel constructor(id: Long) {
+
+    val id: Long = id
 
     var sketch: SketchModel? = null
 }

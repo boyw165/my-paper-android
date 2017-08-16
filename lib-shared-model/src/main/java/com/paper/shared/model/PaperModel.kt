@@ -20,19 +20,23 @@
 
 package com.paper.shared.model
 
-import android.net.Uri
-
-import java.util.ArrayList
+import java.util.*
 
 class PaperModel {
 
-    var id: Long = 0
+    var id: Long = 0L
+
+    var createdAt: Long = 0L
+    var modifiedAt: Long = 0L
 
     var baseWidth: Int = 0
     var baseHeight: Int = 0
 
-    var thumbnailPath: Uri? = null
+    var thumbnailPath: String? = null
+    var thumbnailWidth: Int = 0
+    var thumbnailHeight: Int = 0
 
-    val paperScraps: List<PaperScrapModel> = ArrayList()
+    var caption: String = ""
 
+    val scraps: List<PaperScrapModel> = ArrayList()
 }
