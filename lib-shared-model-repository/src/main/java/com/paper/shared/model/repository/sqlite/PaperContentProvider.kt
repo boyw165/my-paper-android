@@ -26,32 +26,29 @@ import android.net.Uri
 class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
 
     // SQLite.
-    var mDbHelper: SQLiteHelper? = null
+    private var mDbHelper: SQLiteHelper? = null
     // Resolver.
-    var mResolver: ContentResolver? = null
+    private var mResolver: ContentResolver? = null
 
     // URI.
-    val MATCHER_CODE_PAPER_ID: Int = 1
-    val MATCHER_CODE_PAPER_ALL: Int = 2
-    val MATCHER_CODE_TEMP_PAPER: Int = 20
+    private val MATCHER_CODE_PAPER_ID: Int = 1
+    private val MATCHER_CODE_PAPER_ALL: Int = 2
 
-    var mUriMatcher: UriMatcher? = null
+    private var mUriMatcher: UriMatcher? = null
 
     // Table commands.
-    val COMMA_SEPARATOR: String = ", "
-    // Table names.
-    val TABLE_NAME_PAPER: String = "paper"
-    val TABLE_NAME_TEMP_PAPER: String = "paper_temp"
+    private val COMMA: String = ", "
 
     override fun onCreate(): Boolean {
         val authority = context.packageName
+        val dbName = context.packageName
 
         mUriMatcher = UriMatcher(UriMatcher.NO_MATCH)
         mUriMatcher?.addURI(authority, "paper", MATCHER_CODE_PAPER_ALL)
         mUriMatcher?.addURI(authority, "paper/#", MATCHER_CODE_PAPER_ID)
-        mUriMatcher?.addURI(authority, "paper/temp", MATCHER_CODE_TEMP_PAPER)
 
-        mDbHelper = SQLiteHelper(context, "paper", 1, this)
+        // TODO: Dynamic DB version?
+        mDbHelper = SQLiteHelper(context, dbName, 1, this)
         mResolver = context.contentResolver
 
         return true
@@ -65,36 +62,36 @@ class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
 
     override fun onDbCreate(db: SQLiteDatabase) {
         val sharedCommand: String =
-            "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA_SEPARATOR" +
-                "${PaperTable.COL_CREATED_AT} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_WIDTH} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_HEIGHT} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_CAPTION} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_THUMB_PATH} STRING NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA_SEPARATOR" +
-                "${PaperTable.COL_BLOB} BLOB NOT NULL"
+            "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA" +
+            "${PaperTable.COL_CREATED_AT} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_WIDTH} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_HEIGHT} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_CAPTION} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
+            "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_DATA_BLOB} BLOB NOT NULL"
 
         // Normal table.
-        db.execSQL("create table $TABLE_NAME_PAPER ($sharedCommand)")
+        db.execSQL("create table ${PaperTable.TABLE_NAME} ($sharedCommand)")
         // Temporary table.
-        db.execSQL("create table $TABLE_NAME_TEMP_PAPER ($sharedCommand)")
+        db.execSQL("create table ${PaperTable.TABLE_NAME_TEMP} ($sharedCommand)")
     }
 
     override fun onDbUpgrade(db: SQLiteDatabase,
                              oldVersion: Int,
                              newVersion: Int) {
-        // DO NOTHING.
+        TODO("onDbUpgrade")
     }
 
     override fun insert(uri: Uri,
                         values: ContentValues?): Uri {
-        val db: SQLiteDatabase? = mDbHelper!!.writableDatabase
+        val db: SQLiteDatabase = mDbHelper!!.writableDatabase
 
         when (mUriMatcher!!.match(uri)) {
             MATCHER_CODE_PAPER_ALL -> {
-                val newId: Long = db!!.insert(TABLE_NAME_PAPER, null, values)
+                val newId: Long = db.insert(PaperTable.TABLE_NAME, null, values)
                 if (newId == -1L) {
                     throw SQLiteDatabaseCorruptException("Cannot insert data.")
                 }
@@ -104,13 +101,6 @@ class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
                 mResolver?.notifyChange(newUri, null)
 
                 return newUri
-            }
-            MATCHER_CODE_TEMP_PAPER -> {
-                // TODO: Remove the existing one.
-
-                // TODO: Insert the new one.
-
-                throw IllegalArgumentException("Yet implemented!")
             }
             else -> {
                 throw IllegalArgumentException("Unrecognized insert URI, $uri.")
@@ -130,16 +120,14 @@ class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
                 throw RuntimeException("Yet implemented!")
             }
             MATCHER_CODE_PAPER_ALL -> {
-                return db!!.query(TABLE_NAME_PAPER,
+                return db!!.query(PaperTable.TABLE_NAME,
                                   projection,
                                   selection,
                                   selectionArgs,
                                   null, null,
                                   sortOrder)
             }
-            MATCHER_CODE_TEMP_PAPER -> {
-                throw RuntimeException("Yet implemented!")
-            } else -> {
+            else -> {
                 throw SQLiteDatabaseCorruptException("Cannot query $uri")
             }
         }
@@ -159,7 +147,5 @@ class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun getType(uri: Uri): String? {
-        return null
-    }
+    override fun getType(uri: Uri): String? = null
 }

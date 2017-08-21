@@ -26,6 +26,8 @@ dependencies {
     // Google Support Library.
     compile rootProject.ext.dep.supportAppcompatV7
 
+    // RxKotlin.
+    compile rootProject.ext.dep.rxKotlin
     // Rx-Java.
     compile rootProject.ext.dep.rxJava
     compile rootProject.ext.dep.rxAndroid

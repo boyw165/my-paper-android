@@ -34,7 +34,7 @@ dependencies {
     compile rootProject.ext.dep.supportAppcompatV7
 
     // Kotlin.
-    compile rootProject.ext.dep.kotlinStdlib
+    compile rootProject.ext.dep.kotlinStdlibJre7
 
     // JSON.
     compile rootProject.ext.dep.gson

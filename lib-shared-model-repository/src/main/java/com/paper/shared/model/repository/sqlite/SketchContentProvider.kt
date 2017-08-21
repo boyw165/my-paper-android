@@ -15,14 +15,72 @@
 package com.paper.shared.model.repository.sqlite
 
 import android.content.ContentProvider
+import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.UriMatcher
 import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 
-class SketchContentProvider : ContentProvider() {
+class SketchContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
+
+    // SQLite.
+    private var mDbHelper: SQLiteHelper? = null
+    // Resolver.
+    private var mResolver: ContentResolver? = null
+
+    // URI.
+    private val MATCHER_CODE_SKETCH_ID: Int = 1
+    private val MATCHER_CODE_SKETCH_ALL: Int = 2
+    private val MATCHER_CODE_TEMP_SKETCH: Int = 20
+
+    private var mUriMatcher: UriMatcher? = null
+
+    // Table commands.
+    private val COMMA: String = ", "
 
     override fun onCreate(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val authority = context.packageName
+        val dbName = context.packageName
+
+        mUriMatcher = UriMatcher(UriMatcher.NO_MATCH)
+        mUriMatcher?.addURI(authority, "sketch", MATCHER_CODE_SKETCH_ALL)
+        mUriMatcher?.addURI(authority, "sketch/#", MATCHER_CODE_SKETCH_ID)
+        // TODO: Support dynamically saving strokes.
+        mUriMatcher?.addURI(authority, "sketch/temp", MATCHER_CODE_TEMP_SKETCH)
+
+        // TODO: Dynamic DB version?
+        mDbHelper = SQLiteHelper(context, dbName, 1, this)
+        mResolver = context.contentResolver
+
+        return true
+    }
+
+    override fun shutdown() {
+        super.shutdown()
+
+        mDbHelper?.close()
+    }
+
+    override fun onDbCreate(db: SQLiteDatabase) {
+        val sharedCommand: String =
+            "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA" +
+            "FOREIGN KEY(${SketchTable.COL_PAPER_ID}) REFERENCES ${PaperTable.TABLE_NAME}(${PaperTable.COL_ID}) $COMMA" +
+            "${SketchTable.COL_WIDTH} INTEGER NOT NULL $COMMA" +
+            "${SketchTable.COL_HEIGHT} INTEGER NOT NULL $COMMA" +
+            "${SketchTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
+            "${SketchTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
+            "${SketchTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +
+            "${SketchTable.COL_DATA_BLOB} BLOB NOT NULL"
+
+        // Normal table.
+        db.execSQL("create table $${SketchTable.TABLE_NAME} ($sharedCommand)")
+//        // Temporary table.
+//        db.execSQL("create table $TABLE_NAME_TEMP ($sharedCommand)")
+    }
+
+    override fun onDbUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        TODO("onDbUpgrade")
     }
 
     override fun insert(uri: Uri?,

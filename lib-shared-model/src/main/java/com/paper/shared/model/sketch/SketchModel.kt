@@ -58,23 +58,24 @@ class SketchModel constructor(id: Long) {
 
     val id: Long = id
     var width: Int = 0
-        private set
     var height: Int = 0
-        private set
     private var mStrokes: MutableList<SketchStrokeModel>? = null
     private var mStrokesBoundDirty = true
     private var mStrokesBound = RectF()
 
-    constructor(id: Long,
-                width: Int,
+    constructor()
+            : this(0, 0, 0, emptyList()) {
+    }
+
+    constructor(width: Int,
                 height: Int)
-            : this(0, width, height, emptyList<SketchStrokeModel>()) {
+            : this(0, width, height, emptyList()) {
     }
 
     constructor(id: Long,
                 width: Int,
                 height: Int,
-                strokes: List<SketchStrokeModel>? = emptyList<SketchStrokeModel>())
+                strokes: List<SketchStrokeModel>? = emptyList())
             : this(id) {
         this.width = width
         this.height = height

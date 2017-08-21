@@ -29,8 +29,8 @@ class PaperModel {
     var createdAt: Long = 0L
     var modifiedAt: Long = 0L
 
-    var baseWidth: Int = 0
-    var baseHeight: Int = 0
+    var width: Int = 0
+    var height: Int = 0
 
     var thumbnailPath: String? = null
     var thumbnailWidth: Int = 0
