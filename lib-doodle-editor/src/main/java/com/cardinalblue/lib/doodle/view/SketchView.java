@@ -43,11 +43,11 @@ import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 
 import com.cardinalblue.lib.doodle.protocol.IMatrix;
-import com.cardinalblue.lib.doodle.protocol.IPathTuple;
-import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.jakewharton.rxbinding2.view.RxView;
 import com.my.reactive.AnimatorSetObservable;
+import com.paper.shared.model.sketch.PathTuple;
+import com.paper.shared.model.sketch.SketchStrokeModel;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class SketchView
     private final Xfermode mEraserMode = new PorterDuffXfermode(PorterDuff.Mode.CLEAR);
     private final Path mStrokePath = new Path();
     private int mDrawFromPosition;
-    private List<ISketchStroke> mTransientStrokes = new ArrayList<>();
+    private List<SketchStrokeModel> mTransientStrokes = new ArrayList<>();
 
     // Animation.
     private AnimatorSet mAnimSet;
@@ -95,7 +95,7 @@ public class SketchView
 
     // DEBUG.
     private boolean mIsDebug;
-    private List<ISketchStroke> mDebugStrokes = new ArrayList<>();
+    private List<SketchStrokeModel> mDebugStrokes = new ArrayList<>();
     private Paint mDebugPaint;
 
     public SketchView(Context context) {
@@ -197,7 +197,7 @@ public class SketchView
     }
 
     @Override
-    public void drawStrokeFrom(ISketchStroke stroke,
+    public void drawStrokeFrom(SketchStrokeModel stroke,
                                int from) {
         mTransientStrokes.clear();
         mTransientStrokes.add(stroke);
@@ -208,7 +208,7 @@ public class SketchView
     }
 
     @Override
-    public void drawStrokes(List<ISketchStroke> strokes) {
+    public void drawStrokes(List<SketchStrokeModel> strokes) {
         mTransientStrokes.clear();
         mTransientStrokes.addAll(strokes);
 
@@ -218,7 +218,7 @@ public class SketchView
     }
 
     @Override
-    public void drawAndSharpenStrokes(List<ISketchStroke> strokes) {
+    public void drawAndSharpenStrokes(List<SketchStrokeModel> strokes) {
         // TODO: Make the stroke sharpen.
 //        if (strokes != null) {
 //            mTransientStrokes.addAll(strokes);
@@ -375,7 +375,7 @@ public class SketchView
     }
 
     @Override
-    public void debugStrokes(List<ISketchStroke> strokes) {
+    public void debugStrokes(List<SketchStrokeModel> strokes) {
         if (mIsDebug) {
             mDebugStrokes.clear();
             mDebugStrokes.addAll(strokes);
@@ -460,7 +460,7 @@ public class SketchView
         // TODO: canvas already.
         // Render path strokes
         if (!mTransientStrokes.isEmpty()) {
-            for (ISketchStroke stroke : mTransientStrokes) {
+            for (SketchStrokeModel stroke : mTransientStrokes) {
                 drawPathTupleFrom(stroke, mDrawFromPosition);
             }
             mTransientStrokes.clear();
@@ -540,7 +540,7 @@ public class SketchView
         };
     }
 
-    private void drawPathTupleFrom(ISketchStroke stroke,
+    private void drawPathTupleFrom(SketchStrokeModel stroke,
                                    int from) {
         if (from < 0) return;
 
@@ -579,7 +579,7 @@ public class SketchView
             // ]
 
             for (int i = from; i < stroke.size(); ++i) {
-                final IPathTuple pathTuple = stroke.getPathTupleAt(i);
+                final PathTuple pathTuple = stroke.getPathTupleAt(i);
 
                 if (i == from) {
                     mStrokePath.moveTo(pathTuple.getLastPoint().x * getCanvasWidth(),

@@ -28,6 +28,8 @@ import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.my.reactive.uiEvent.UiEvent;
+import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.SketchStrokeModel;
 
 import java.io.InputStream;
 import java.util.List;
@@ -51,7 +53,7 @@ public abstract class SketchContract {
 
         void close();
 
-        void closeWithUpdate(ISketchModel model, int brushColor, int strokeWidth);
+        void closeWithUpdate(SketchModel model, int brushColor, int strokeWidth);
 
         void showErrorAlertThenClose(Throwable error);
 
@@ -111,11 +113,11 @@ public abstract class SketchContract {
 
         void eraseCanvas();
 
-        void drawStrokeFrom(ISketchStroke stroke, int from);
+        void drawStrokeFrom(SketchStrokeModel stroke, int from);
 
-        void drawStrokes(List<ISketchStroke> strokes);
+        void drawStrokes(List<SketchStrokeModel> strokes);
 
-        void drawAndSharpenStrokes(List<ISketchStroke> strokes);
+        void drawAndSharpenStrokes(List<SketchStrokeModel> strokes);
 
         // Pinch methods...
 
@@ -142,7 +144,7 @@ public abstract class SketchContract {
 
         void setDebug(boolean isDebug);
 
-        void debugStrokes(List<ISketchStroke> strokes);
+        void debugStrokes(List<SketchStrokeModel> strokes);
     }
 
     /**
@@ -168,7 +170,7 @@ public abstract class SketchContract {
 
         ObservableTransformer<Object, ?> clearStrokes();
 
-        ObservableTransformer<Object,?> done();
+        ObservableTransformer<Object, ?> done();
 
         ObservableTransformer<Object, ?> close();
     }
@@ -184,9 +186,9 @@ public abstract class SketchContract {
 
         void setBrushSize(float baseWidth, int value);
 
-        ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(ISketchModel sketchModel);
+        ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(SketchModel sketchModel);
 
-        ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(ISketchModel sketchModel);
+        ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(SketchModel sketchModel);
     }
 
     // TODO: Make it public rather than just made for this contract.
@@ -208,14 +210,14 @@ public abstract class SketchContract {
 
         int sizeOfRedo();
 
-        ObservableTransformer<Object, List<ISketchStroke>> undo(ISketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> undo(SketchModel sketchModel);
 
-        ObservableTransformer<Object, List<ISketchStroke>> undoAll(ISketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(SketchModel sketchModel);
 
-        ObservableTransformer<Object, List<ISketchStroke>> redo(ISketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> redo(SketchModel sketchModel);
 
-        ObservableTransformer<Object, List<ISketchStroke>> clearAll(ISketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(SketchModel sketchModel);
 
-        ObservableTransformer<Object, ?> onSpyingStrokesUpdate(ISketchModel sketchModel);
+        ObservableTransformer<Object, ?> onSpyingStrokesUpdate(SketchModel sketchModel);
     }
 }

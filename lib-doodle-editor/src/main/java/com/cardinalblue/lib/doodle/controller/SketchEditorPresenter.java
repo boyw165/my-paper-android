@@ -31,12 +31,12 @@ import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
 import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.cardinalblue.lib.doodle.protocol.ISketchModel;
-import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.my.reactive.uiEvent.UiEvent;
 import com.my.reactive.uiModel.UiModel;
 import com.my.reactive.util.ObservableConst;
+import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.SketchStrokeModel;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private static final int DEFAULT_BG_COLOR = 0xFFFFFFFF;
 
     // Given
-    private final ISketchModel mSketchModel;
+    private final SketchModel mSketchModel;
     private final SketchContract.IEditorView mEditorView;
     private final SketchContract.ISketchView mSketchView;
     private final SketchContract.IDrawStrokeManipulator mDrawStrokeManipulator;
@@ -77,7 +77,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private AtomicBoolean mIfApplyChangeForClose = new AtomicBoolean(false);
 
     // TODO: Inject it.
-    public SketchEditorPresenter(ISketchModel sketchModel,
+    public SketchEditorPresenter(SketchModel sketchModel,
                                  SketchContract.IEditorView editorView,
                                  SketchContract.ISketchView sketchView,
                                  SketchContract.IDrawStrokeManipulator drawStrokeManipulator,
@@ -107,10 +107,10 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     @Override
     public Observable<?> prepareInitialStrokes() {
         return Observable
-            .fromCallable(new Callable<List<ISketchStroke>>() {
+            .fromCallable(new Callable<List<SketchStrokeModel>>() {
                 @Override
-                public List<ISketchStroke> call() throws Exception {
-                    final List<ISketchStroke> strokes  = mSketchModel.getAllStrokes();
+                public List<SketchStrokeModel> call() throws Exception {
+                    final List<SketchStrokeModel> strokes  = mSketchModel.getAllStrokes();
 
                     // TODO: A improvement that progressively have view
                     // TODO: draw strokes without freezing UI.
@@ -677,15 +677,15 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             }
         };
 
-    private ObservableTransformer<List<ISketchStroke>, ?> mUpdateCanvasStrokes =
-        new ObservableTransformer<List<ISketchStroke>, UndoRedoEvent>() {
+    private ObservableTransformer<List<SketchStrokeModel>, ?> mUpdateCanvasStrokes =
+        new ObservableTransformer<List<SketchStrokeModel>, UndoRedoEvent>() {
             @Override
-            public ObservableSource<UndoRedoEvent> apply(Observable<List<ISketchStroke>> upstream) {
+            public ObservableSource<UndoRedoEvent> apply(Observable<List<SketchStrokeModel>> upstream) {
                 return upstream
                     .observeOn(mUiScheduler)
-                    .map(new Function<List<ISketchStroke>, UndoRedoEvent>() {
+                    .map(new Function<List<SketchStrokeModel>, UndoRedoEvent>() {
                         @Override
-                        public UndoRedoEvent apply(List<ISketchStroke> strokes)
+                        public UndoRedoEvent apply(List<SketchStrokeModel> strokes)
                             throws Exception {
                             mSketchView.eraseCanvas();
                             mSketchView.drawStrokes(strokes);

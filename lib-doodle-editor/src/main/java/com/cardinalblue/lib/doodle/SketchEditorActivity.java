@@ -43,13 +43,11 @@ import com.cardinalblue.lib.doodle.controller.DrawStrokeManipulator;
 import com.cardinalblue.lib.doodle.controller.PinchCanvasManipulator;
 import com.cardinalblue.lib.doodle.controller.SketchEditorPresenter;
 import com.cardinalblue.lib.doodle.controller.SketchUndoRedoManipulator;
-import com.cardinalblue.lib.doodle.data.SketchModel;
 import com.cardinalblue.lib.doodle.event.UiTouchEvent;
 import com.cardinalblue.lib.doodle.gesture.GestureRecognizer;
 import com.cardinalblue.lib.doodle.gesture.MotionEvent2TouchEventMapper;
 import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.cardinalblue.lib.doodle.protocol.ISketchModel;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.cardinalblue.lib.doodle.util.AndroidLogger;
 import com.cardinalblue.lib.doodle.view.SketchView;
@@ -61,6 +59,7 @@ import com.my.reactive.AlertDialogObservable;
 import com.my.reactive.SeekBarChangeObservable;
 import com.my.reactive.activity.RxAppCompatActivity;
 import com.my.reactive.uiEvent.UiEvent;
+import com.paper.shared.model.sketch.SketchModel;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -160,7 +159,7 @@ public class SketchEditorActivity
     GestureRecognizer mGestureRecognizer;
 
     // Model
-    ISketchModel mSketchModel;
+    SketchModel mSketchModel;
 
     // Controllers.
     SketchContract.ISketchEditorPresenter mEditorPresenter;
@@ -225,14 +224,18 @@ public class SketchEditorActivity
     }
 
     @Override
-    public void closeWithUpdate(ISketchModel model,
+    public void closeWithUpdate(SketchModel model,
                                 int brushColor,
                                 int strokeWidth) {
         if (isFinishing()) return;
 
+        // TODO: Write to the repository.
+//        setResult(RESULT_OK,
+//                  new Intent().putExtra(PARAMS_SKETCH_STRUCT, model)
+//                              .putExtra(PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
+//                              .putExtra(PARAMS_REMEMBERING_BRUSH_SIZE, strokeWidth));
         setResult(RESULT_OK,
-                  new Intent().putExtra(PARAMS_SKETCH_STRUCT, model)
-                              .putExtra(PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
+                  new Intent().putExtra(PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
                               .putExtra(PARAMS_REMEMBERING_BRUSH_SIZE, strokeWidth));
         finish();
     }
@@ -426,7 +429,9 @@ public class SketchEditorActivity
 
         // Deserialize the given sketch struct.
         if (savedState == null) {
-            mSketchModel = new SketchModel((ISketchModel) intent.getParcelableExtra(PARAMS_SKETCH_STRUCT));
+            // FIXME: Get the sketch from repo.
+//            mSketchModel = new SketchModel((SketchModel) intent.getParcelableExtra(PARAMS_SKETCH_STRUCT));
+            mSketchModel = new SketchModel(600, 800);
         } else {
             mSketchModel = savedState.getParcelable(SAVED_SKETCH_MODEL);
         }
@@ -541,7 +546,8 @@ public class SketchEditorActivity
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        outState.putParcelable(SAVED_SKETCH_MODEL, mSketchModel);
+        // FIXME: Use repo to save the sketch.
+//        outState.putParcelable(SAVED_SKETCH_MODEL, mSketchModel);
     }
 
     private Observable<Object> onClickBack() {

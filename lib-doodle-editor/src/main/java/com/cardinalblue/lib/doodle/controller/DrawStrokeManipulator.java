@@ -25,16 +25,15 @@ package com.cardinalblue.lib.doodle.controller;
 import android.graphics.PointF;
 import android.graphics.RectF;
 
-import com.cardinalblue.lib.doodle.data.PointPathTuple;
 import com.cardinalblue.lib.doodle.event.DragEvent;
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.IPathTuple;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.cardinalblue.lib.doodle.protocol.ISketchModel;
-import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
+import com.paper.shared.model.sketch.PathTuple;
+import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.SketchStrokeModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +63,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     // Brush and stroke.
     private float mBrushSize;
     private ISketchBrush mBrush;
-    private ISketchStroke mStroke;
+    private SketchStrokeModel mStroke;
     private final List<PointF> mCachedPoints = new ArrayList<>();
 
     // Drawing state.
@@ -110,7 +109,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     }
 
     @Override
-    public ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(final ISketchModel sketchModel) {
+    public ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(final SketchModel sketchModel) {
         return new ObservableTransformer<DragEvent, DrawStrokeEvent>() {
             @Override
             public ObservableSource<DrawStrokeEvent> apply(Observable<DragEvent> upstream) {
@@ -143,7 +142,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 
                                 // New stroke and store the normalized value.
                                 mStroke = mBrush.newStroke();
-                                mStroke.savePathTuple(new PointPathTuple(nx, ny));
+                                mStroke.savePathTuple(new PathTuple(nx, ny));
 
                                 // Save as a record for first time.
                                 mLastPoint.set(x, y);
@@ -196,7 +195,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                             // later use.
                                             final int from = mStroke.size() - 1;
                                             // Add tuple.
-                                            mStroke.savePathTuple(new PointPathTuple(mCachedPoints));
+                                            mStroke.savePathTuple(new PathTuple(mCachedPoints));
                                             // Clear the cache.
                                             mCachedPoints.clear();
 
@@ -211,7 +210,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                         // later use.
                                         final int from = mStroke.size() - 1;
                                         // Add tuple.
-                                        mStroke.savePathTuple(new PointPathTuple(nx, ny));
+                                        mStroke.savePathTuple(new PathTuple(nx, ny));
 
                                         return Observable.just(DrawStrokeEvent.drawing(mStroke, from));
                                     }
@@ -230,7 +229,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                         // Save the position of latest tuple-path for
                                         // later use.
                                         final int from = mStroke.size() - 1;
-                                        mStroke.savePathTuple(new PointPathTuple(mCachedPoints));
+                                        mStroke.savePathTuple(new PathTuple(mCachedPoints));
                                         source = Observable.just(
                                             DrawStrokeEvent.drawing(mStroke, from),
                                             DrawStrokeEvent.stop(
@@ -287,7 +286,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     }
 
     @Override
-    public ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(final ISketchModel sketchModel) {
+    public ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(final SketchModel sketchModel) {
         return new ObservableTransformer<SingleTapEvent, DrawStrokeEvent>() {
             @Override
             public ObservableSource<DrawStrokeEvent> apply(Observable<SingleTapEvent> upstream) {
@@ -315,9 +314,9 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 
                             if (sCanvasBound.contains(nx, ny)) {
                                 // New stroke and store the normalized value.
-                                final ISketchStroke stroke = mBrush.newStroke();
+                                final SketchStrokeModel stroke = mBrush.newStroke();
 
-                                stroke.savePathTuple(new PointPathTuple(nx, ny));
+                                stroke.savePathTuple(new PathTuple(nx, ny));
                                 // Commit to the model.
                                 sketchModel.addStroke(stroke);
 
@@ -384,7 +383,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
         if (strokesNum == 0) return;
 
         // Previous tuple must have more than or equal to 2 points.
-        final IPathTuple prevTuple = mStroke.getPathTupleAt(strokesNum - 1);
+        final PathTuple prevTuple = mStroke.getPathTupleAt(strokesNum - 1);
         final int prevTupleSize = prevTuple.getPointSize();
         if (prevTupleSize < 2) return;
 

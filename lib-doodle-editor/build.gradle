@@ -51,6 +51,7 @@ dependencies {
     // My Libraries
     compile project(":lib-reactive")
     compile project(":lib-shared-model")
+    compile project(":lib-shared-model-repository")
 
     testCompile rootProject.ext.dep.testJunit
 

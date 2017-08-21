@@ -64,19 +64,17 @@ class SketchModel constructor(id: Long) {
     private var mStrokesBound = RectF()
 
     constructor()
-            : this(0, 0, 0, emptyList()) {
-    }
+        : this(0, 0, 0, emptyList())
 
     constructor(width: Int,
                 height: Int)
-            : this(0, width, height, emptyList()) {
-    }
+        : this(0, width, height, emptyList())
 
     constructor(id: Long,
                 width: Int,
                 height: Int,
                 strokes: List<SketchStrokeModel>? = emptyList())
-            : this(id) {
+        : this(id) {
         this.width = width
         this.height = height
 
@@ -86,7 +84,7 @@ class SketchModel constructor(id: Long) {
     }
 
     constructor(other: SketchModel?)
-            : this(other?.id ?: 0) {
+        : this(other?.id ?: 0) {
         if (other == null) {
             width = 1440
             height = 1440
@@ -110,11 +108,12 @@ class SketchModel constructor(id: Long) {
         }
     }
 
-    val strokeSize: Int get() {
-        synchronized(mMutex) {
-            return mStrokes!!.size
+    val strokeSize: Int
+        get() {
+            synchronized(mMutex) {
+                return mStrokes!!.size
+            }
         }
-    }
 
     fun getStrokeAt(position: Int): SketchStrokeModel {
         synchronized(mMutex) {
@@ -129,11 +128,12 @@ class SketchModel constructor(id: Long) {
         }
     }
 
-    val allStrokes: List<SketchStrokeModel> get() {
-        synchronized(mMutex) {
-            return ArrayList(mStrokes)
+    val allStrokes: List<SketchStrokeModel>
+        get() {
+            synchronized(mMutex) {
+                return ArrayList(mStrokes)
+            }
         }
-    }
 
     fun clearStrokes() {
         synchronized(mMutex) {
@@ -148,11 +148,11 @@ class SketchModel constructor(id: Long) {
             if (mStrokesBoundDirty) {
                 synchronized(mMutex) {
                     mStrokesBound.set(
-                            java.lang.Float.MAX_VALUE,
-                            java.lang.Float.MAX_VALUE,
-                            java.lang.Float.MIN_VALUE,
-                            java.lang.Float.MIN_VALUE
-                    )
+                        java.lang.Float.MAX_VALUE,
+                        java.lang.Float.MAX_VALUE,
+                        java.lang.Float.MIN_VALUE,
+                        java.lang.Float.MIN_VALUE
+                                     )
 
                     val aspectRatio = width.toFloat() / height
                     for (stroke in mStrokes!!) {
@@ -196,9 +196,9 @@ class SketchModel constructor(id: Long) {
 
     override fun toString(): String {
         return "SketchModel{" +
-                ", width=" + width +
-                ", height=" + height +
-                ", strokes=[" + mStrokes + "]" +
-                '}'
+               ", width=" + width +
+               ", height=" + height +
+               ", strokes=[" + mStrokes + "]" +
+               '}'
     }
 }

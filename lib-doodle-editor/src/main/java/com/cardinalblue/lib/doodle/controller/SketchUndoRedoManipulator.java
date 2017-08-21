@@ -26,9 +26,9 @@ import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
 import com.cardinalblue.lib.doodle.history.UndoRedoList;
 import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.ISketchModel;
-import com.cardinalblue.lib.doodle.protocol.ISketchStroke;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
+import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.SketchStrokeModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +47,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     private final ILogger mLogger;
 
     // Record.
-    private final UndoRedoList<List<ISketchStroke>> mRecords;
+    private final UndoRedoList<List<SketchStrokeModel>> mRecords;
 
     public SketchUndoRedoManipulator(ILogger logger) {
         mLogger = logger;
@@ -66,10 +66,10 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<ISketchStroke>> undo(final ISketchModel sketchModel) {
-        return new ObservableTransformer<Object, List<ISketchStroke>>() {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> undo(final SketchModel sketchModel) {
+        return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
-            public ObservableSource<List<ISketchStroke>> apply(Observable<Object> upstream) {
+            public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
                 return upstream
                     .filter(new Predicate<Object>() {
                         @Override
@@ -77,14 +77,14 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                             return mRecords.sizeOfUndo() > 0;
                         }
                     })
-                    .map(new Function<Object, List<ISketchStroke>>() {
+                    .map(new Function<Object, List<SketchStrokeModel>>() {
                         @Override
-                        public List<ISketchStroke> apply(Object o)
+                        public List<SketchStrokeModel> apply(Object o)
                             throws Exception {
                             // Send analytics event.
                             mLogger.sendEvent("Doodle editor - undo");
 
-                            List<ISketchStroke> prev = mRecords.undo();
+                            List<SketchStrokeModel> prev = mRecords.undo();
                             if (prev == null) {
                                 prev = Collections.emptyList();
                             }
@@ -100,13 +100,13 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<ISketchStroke>> undoAll(final ISketchModel sketchModel) {
-        return new ObservableTransformer<Object, List<ISketchStroke>>() {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(final SketchModel sketchModel) {
+        return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
-            public ObservableSource<List<ISketchStroke>> apply(Observable<Object> upstream) {
-                return upstream.map(new Function<Object, List<ISketchStroke>>() {
+            public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
+                return upstream.map(new Function<Object, List<SketchStrokeModel>>() {
                     @Override
-                    public List<ISketchStroke> apply(Object ignored)
+                    public List<SketchStrokeModel> apply(Object ignored)
                         throws Exception {
                         // Rollback all the undo and keep all the redo records.
                         while (mRecords.sizeOfUndo() > 0) {
@@ -123,10 +123,10 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<ISketchStroke>> redo(final ISketchModel sketchModel) {
-        return new ObservableTransformer<Object, List<ISketchStroke>>() {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> redo(final SketchModel sketchModel) {
+        return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
-            public ObservableSource<List<ISketchStroke>> apply(Observable<Object> upstream) {
+            public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
                 return upstream
                     .filter(new Predicate<Object>() {
                         @Override
@@ -134,14 +134,14 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                             return mRecords.sizeOfRedo() > 0;
                         }
                     })
-                    .map(new Function<Object, List<ISketchStroke>>() {
+                    .map(new Function<Object, List<SketchStrokeModel>>() {
                         @Override
-                        public List<ISketchStroke> apply(Object o)
+                        public List<SketchStrokeModel> apply(Object o)
                             throws Exception {
                             // Send analytics event.
                             mLogger.sendEvent("Doodle editor - redo");
 
-                            final List<ISketchStroke> next = mRecords.redo();
+                            final List<SketchStrokeModel> next = mRecords.redo();
 
                             // TODO: Recursively clone.
                             sketchModel.setStrokes(next);
@@ -154,13 +154,13 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<ISketchStroke>> clearAll(final ISketchModel sketchModel) {
-        return new ObservableTransformer<Object, List<ISketchStroke>>() {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(final SketchModel sketchModel) {
+        return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
-            public ObservableSource<List<ISketchStroke>> apply(Observable<Object> upstream) {
-                return upstream.map(new Function<Object, List<ISketchStroke>>() {
+            public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
+                return upstream.map(new Function<Object, List<SketchStrokeModel>>() {
                     @Override
-                    public List<ISketchStroke> apply(Object ignored)
+                    public List<SketchStrokeModel> apply(Object ignored)
                         throws Exception {
                         mRecords.clear();
                         sketchModel.clearStrokes();
@@ -173,7 +173,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, ?> onSpyingStrokesUpdate(final ISketchModel sketchModel) {
+    public ObservableTransformer<Object, ?> onSpyingStrokesUpdate(final SketchModel sketchModel) {
         return new ObservableTransformer<Object, Object>() {
             @Override
             public ObservableSource<Object> apply(@NonNull Observable<Object> upstream) {
@@ -201,9 +201,9 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                                         // Stop drawing... it's about time to add undo record.
                                         if (sketchModel.getAllStrokes().size() > 0 &&
                                             event.isModelChanged) {
-                                            List<ISketchStroke> src = sketchModel.getAllStrokes();
+                                            List<SketchStrokeModel> src = sketchModel.getAllStrokes();
                                             // TODO: Recursively clone.
-                                            List<ISketchStroke> copy = new ArrayList<>(src);
+                                            List<SketchStrokeModel> copy = new ArrayList<>(src);
                                             mRecords.add(copy);
                                         }
 
@@ -211,19 +211,19 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                                                                     mRecords.sizeOfRedo());
                                     }
                                 }),
-                            // By list of ISketchStroke.
+                            // By list of SketchStrokeModel.
                             Observable
                                 .just(o)
                                 .ofType(List.class)
                                 .map(new Function<List, UndoRedoEvent>() {
                                     @Override
                                     public UndoRedoEvent apply(List list) throws Exception {
-                                        final List<ISketchStroke> strokes = new ArrayList<>();
+                                        final List<SketchStrokeModel> strokes = new ArrayList<>();
                                         for (int i = 0; i < list.size(); ++i) {
                                             final Object data = list.get(i);
-                                            if (data instanceof ISketchStroke) {
+                                            if (data instanceof SketchStrokeModel) {
                                                 // Accumulate strokes.
-                                                strokes.add((ISketchStroke) data);
+                                                strokes.add((SketchStrokeModel) data);
 
                                                 // Add to record.
                                                 mRecords.add(new ArrayList<>(strokes));

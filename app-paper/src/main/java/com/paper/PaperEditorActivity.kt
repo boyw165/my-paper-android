@@ -26,7 +26,6 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import com.cardinalblue.lib.doodle.SketchEditorActivity
-import com.cardinalblue.lib.doodle.data.SketchModel
 import com.my.core.protocol.IProgressBarView
 import com.my.reactive.uiModel.UiModel
 import com.paper.shared.model.repository.PaperModelRepo
@@ -136,11 +135,13 @@ class PaperEditorActivity : AppCompatActivity(),
         mDisposables2?.clear()
     }
 
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-//        super.onActivityResult(requestCode, resultCode, data)
+    override fun onActivityResult(requestCode: Int,
+                                  resultCode: Int,
+                                  data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
 //        // FIXME: Workaround of leaving the editor immediately.
 //        finish()
-//    }
+    }
 
     override fun showProgressBar() {
         mProgressBar.setMessage(getString(R.string.loading))
@@ -160,19 +161,19 @@ class PaperEditorActivity : AppCompatActivity(),
         TODO("not implemented")
     }
 
-    fun showError(err: Throwable) {
+    private fun showError(err: Throwable) {
         Toast.makeText(this@PaperEditorActivity,
                        err.toString(),
                        Toast.LENGTH_SHORT).show()
     }
 
-    fun navigateToSketchEditor() {
+    private fun navigateToSketchEditor() {
         // FIXME: Workaround of creating a new paper model and navigate to the
         // FIXME: sketch editor immediately.
-        startActivity(
+        startActivityForResult(
             Intent(this, SketchEditorActivity::class.java)
                 // Pass a sketch struct.
-                .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, SketchModel(0, 500, 500))
+//                .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, SketchModel(0, 500, 500))
                 // Pass a sketch background.
                 //                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
                 // Remembering brush color and stroke width.
@@ -186,6 +187,7 @@ class PaperEditorActivity : AppCompatActivity(),
                 // Ask the editor enter fullscreen mode.
                 .putExtra(SketchEditorActivity.PARAMS_FULLSCREEN_MODE, false)
                 // DEBUG mode.
-                .putExtra(SketchEditorActivity.PARAMS_DEBUG_MODE, true))
+                .putExtra(SketchEditorActivity.PARAMS_DEBUG_MODE, true),
+            0)
     }
 }

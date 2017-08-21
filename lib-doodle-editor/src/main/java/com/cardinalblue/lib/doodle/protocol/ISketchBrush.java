@@ -22,14 +22,16 @@
 
 package com.cardinalblue.lib.doodle.protocol;
 
+import com.paper.shared.model.sketch.SketchStrokeModel;
+
 /**
  * A sketch brush instance is a factory for generating new stroke.
  * <br/>
- * See {@link ISketchStroke}.
+ * See {@link SketchStrokeModel}.
  */
 public interface ISketchBrush {
 
-    ISketchStroke newStroke();
+    SketchStrokeModel newStroke();
 
     float getBrushSize();
     ISketchBrush setBrushSize(final float size);
