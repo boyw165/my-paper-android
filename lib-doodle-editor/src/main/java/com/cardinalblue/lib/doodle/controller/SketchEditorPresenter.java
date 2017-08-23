@@ -586,9 +586,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     public Object apply(GestureEvent event)
                         throws Exception {
                         mLogger.d("sketch", String.format(
-                            Locale.ENGLISH,
-                            "==> %s is fired",
-                            event));
+                            Locale.ENGLISH, "==> %s", event));
 
                         return event;
                     }
