@@ -223,6 +223,9 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         public ObservableSource<Object> apply(Observable<GestureEvent> shared) throws Exception {
                             return Observable
                                 .mergeArray(
+                                    // DEBUG.
+                                    shared.ofType(GestureEvent.class)
+                                          .compose(mDebug),
                                     // Draw strokes.
                                     shared.ofType(DragEvent.class)
                                           // Update the canvas model.
@@ -523,10 +526,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                   .compose(mEnterFullscreenMode),
                             // Undo/redo.
                             shared.ofType(UndoRedoEvent.class)
-                                  .compose(mUpdateUndoRedoUi),
-                            // DEBUG.
-                            shared.ofType(GestureEvent.class)
-                                  .compose(mDebug)
+                                  .compose(mUpdateUndoRedoUi)
                         );
                     }
                 });
@@ -585,9 +585,10 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     @Override
                     public Object apply(GestureEvent event)
                         throws Exception {
-                        if (!event.justStart && !event.doing) {
-                            mLogger.d("sketch", "GestureStop: model=" + mSketchModel);
-                        }
+                        mLogger.d("sketch", String.format(
+                            Locale.ENGLISH,
+                            "==> %s is fired",
+                            event));
 
                         return event;
                     }
