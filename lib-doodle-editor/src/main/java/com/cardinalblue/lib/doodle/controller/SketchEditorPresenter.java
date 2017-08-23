@@ -71,8 +71,9 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private final Scheduler mUiScheduler;
     private final ILogger mLogger;
 
-    // Model
+    // Model and related states.
     private SketchModel mSketchModel;
+    private final AtomicBoolean mIsModelReady = new AtomicBoolean(false);
 
     // Brush.
     private List<ISketchBrush> mBrushes = new ArrayList<>();
@@ -148,12 +149,20 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                               // Update model.
                                               mSketchModel = sketchModel;
 
+                                              // Request the view to allocate Bitmap for the model.
+                                              mSketchView.createCanvasSource(mSketchModel.getWidth(),
+                                                                             mSketchModel.getHeight(),
+                                                                             DEFAULT_BG_COLOR);
+
                                               // TODO: A improvement that progressively have view
                                               // TODO: draw strokes without freezing UI.
                                               // Init strokes preview.
                                               final List<SketchStrokeModel> strokes = mSketchModel.getAllStrokes();
                                               mSketchView.eraseCanvas();
                                               mSketchView.drawStrokes(strokes);
+
+                                              // Flat the model is ready.
+                                              mIsModelReady.set(true);
 
                                               return strokes;
                                           }
@@ -209,13 +218,15 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             public ObservableSource<Object> apply(Observable<GestureEvent> upstream) {
                 // Have manipulator to convert gesture event to model level event.
                 return upstream
-                    // Skip when the view is animating or the presenter is
-                    // flagged DEAD.
+                    // Skip when either the view is animating, the presenter is
+                    // flagged DEAD or the model is not loaded from the repository.
                     .filter(new Predicate<GestureEvent>() {
                         @Override
                         public boolean test(GestureEvent ignored)
                             throws Exception {
-                            return mIsAlive.get() && !mSketchView.isAnimating();
+                            return mIsAlive.get() &&
+                                   mIsModelReady.get() &&
+                                   !mSketchView.isAnimating();
                         }
                     })
                     .publish(new Function<Observable<GestureEvent>, ObservableSource<Object>>() {
@@ -229,12 +240,12 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                     // Draw strokes.
                                     shared.ofType(DragEvent.class)
                                           // Update the canvas model.
-                                          .compose(mDrawStrokeManipulator.drawStroke(mSketchModel))
+                                          .compose(mDrawStrokeManipulator.drawStroke(SketchEditorPresenter.this))
                                           .compose(mDrawStrokeOnCanvas),
                                     // Draw dots.
                                     shared.ofType(SingleTapEvent.class)
                                           // Update the canvas model.
-                                          .compose(mDrawStrokeManipulator.drawDot(mSketchModel))
+                                          .compose(mDrawStrokeManipulator.drawDot(SketchEditorPresenter.this))
                                           .compose(mDrawStrokeOnCanvas),
                                     // Pinch in or out canvas.
                                     shared.ofType(PinchEvent.class)
@@ -612,7 +623,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                                        event.from);
                         } else {
                             // Just stop...
-                            mSketchView.debugStrokes(mSketchModel.getAllStrokes());
+                            mSketchView.debugStrokes(getSketchModel().getAllStrokes());
                         }
                         return event;
                     }

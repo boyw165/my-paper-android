@@ -192,9 +192,9 @@ public abstract class SketchContract {
 
         void setBrushSize(float baseWidth, int value);
 
-        ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(SketchModel sketchModel);
+        ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(IModelProvider modelProvider);
 
-        ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(SketchModel sketchModel);
+        ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(IModelProvider modelProvider);
     }
 
     // TODO: Make it public rather than just made for this contract.

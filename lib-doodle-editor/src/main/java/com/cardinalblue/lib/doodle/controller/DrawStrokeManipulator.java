@@ -116,7 +116,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     }
 
     @Override
-    public ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(final SketchModel sketchModel) {
+    public ObservableTransformer<DragEvent, DrawStrokeEvent> drawStroke(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<DragEvent, DrawStrokeEvent>() {
             @Override
             public ObservableSource<DrawStrokeEvent> apply(Observable<DragEvent> upstream) {
@@ -126,6 +126,9 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                         public ObservableSource<DrawStrokeEvent> apply(DragEvent event)
                             throws Exception {
                             if (mBrush == null) return Observable.just(DrawStrokeEvent.IDLE);
+
+                            // The model.
+                            final SketchModel model = modelProvider.getSketchModel();
 
                             // The x and y are observed from the parent world.
                             final float x = event.x;
@@ -144,8 +147,8 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                 // Get the point relative to the canvas coordinate.
                                 event.parentToTargetMatrix.mapPoints(mMappedPoint);
                                 // Normalized x and y.
-                                final float nx = mMappedPoint[0] / sketchModel.getWidth();
-                                final float ny = mMappedPoint[1] / sketchModel.getHeight();
+                                final float nx = mMappedPoint[0] / model.getWidth();
+                                final float ny = mMappedPoint[1] / model.getHeight();
 
                                 // New stroke and store the normalized value.
                                 mStroke = mBrush.newStroke();
@@ -168,8 +171,8 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                     // Get the point relative to the canvas coordinate.
                                     event.parentToTargetMatrix.mapPoints(mMappedPoint);
                                     // Normalized x and y.
-                                    final float nx = mMappedPoint[0] / sketchModel.getWidth();
-                                    final float ny = mMappedPoint[1] / sketchModel.getHeight();
+                                    final float nx = mMappedPoint[0] / model.getWidth();
+                                    final float ny = mMappedPoint[1] / model.getHeight();
 
                                     // Flag intersection.
                                     if (!mIfIntersectsWithCanvas) {
@@ -240,21 +243,21 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                         source = Observable.just(
                                             DrawStrokeEvent.drawing(mStroke, from),
                                             DrawStrokeEvent.stop(
-                                                sketchModel.getAllStrokes(),
+                                                model.getAllStrokes(),
                                                 // A boolean indicating whether
                                                 // the model is changed.
                                                 true));
                                     } else {
                                         source = Observable.just(
                                             DrawStrokeEvent.stop(
-                                                sketchModel.getAllStrokes(),
+                                                model.getAllStrokes(),
                                                 // A boolean indicating whether
                                                 // the model is changed.
                                                 true));
                                     }
 
                                     // Commit to the model.
-                                    sketchModel.addStroke(mStroke);
+                                    model.addStroke(mStroke);
 
                                     // Send analytics event.
                                     if (mStroke.isEraser()) {
@@ -266,7 +269,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                 } else {
                                     source = Observable.just(
                                         DrawStrokeEvent.stop(
-                                            sketchModel.getAllStrokes(),
+                                            model.getAllStrokes(),
                                             false));
                                 }
 
@@ -293,7 +296,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     }
 
     @Override
-    public ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(final SketchModel sketchModel) {
+    public ObservableTransformer<SingleTapEvent, DrawStrokeEvent> drawDot(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<SingleTapEvent, DrawStrokeEvent>() {
             @Override
             public ObservableSource<DrawStrokeEvent> apply(Observable<SingleTapEvent> upstream) {
@@ -303,6 +306,9 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                         public ObservableSource<DrawStrokeEvent> apply(SingleTapEvent event)
                             throws Exception {
                             if (mBrush == null) return Observable.just(DrawStrokeEvent.IDLE);
+
+                            // The model.
+                            final SketchModel model = modelProvider.getSketchModel();
 
                             // The x and y are observed from the parent world.
                             final float x = event.x;
@@ -316,8 +322,8 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                             // Get the point relative to the canvas coordinate.
                             event.parentToTargetMatrix.mapPoints(mMappedPoint);
                             // Normalized x and y.
-                            final float nx = mMappedPoint[0] / sketchModel.getWidth();
-                            final float ny = mMappedPoint[1] / sketchModel.getHeight();
+                            final float nx = mMappedPoint[0] / model.getWidth();
+                            final float ny = mMappedPoint[1] / model.getHeight();
 
                             if (sCanvasBound.contains(nx, ny)) {
                                 // New stroke and store the normalized value.
@@ -325,11 +331,11 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 
                                 stroke.savePathTuple(new PathTuple(nx, ny));
                                 // Commit to the model.
-                                sketchModel.addStroke(stroke);
+                                model.addStroke(stroke);
 
                                 return Observable.fromArray(
                                     DrawStrokeEvent.start(stroke),
-                                    DrawStrokeEvent.stop(sketchModel.getAllStrokes(), true)
+                                    DrawStrokeEvent.stop(model.getAllStrokes(), true)
                                 );
                             } else {
                                 return Observable.just(DrawStrokeEvent.IDLE);
