@@ -41,11 +41,13 @@ import com.paper.shared.model.repository.protocol.ISketchModelRepo;
 import com.paper.shared.model.sketch.SketchModel;
 import com.paper.shared.model.sketch.SketchStrokeModel;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
@@ -57,6 +59,7 @@ import io.reactivex.functions.Predicate;
 public class SketchEditorPresenter implements SketchContract.ISketchEditorPresenter,
                                               SketchContract.IModelProvider {
 
+    private static final String TAG = "sketch";
     private static final int DEFAULT_BG_COLOR = 0xFFFFFFFF;
 
     // Given
@@ -82,6 +85,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private AtomicBoolean mIsAlive = new AtomicBoolean(true);
     // Save condition state.
     private AtomicBoolean mIfApplyChangeForClose = new AtomicBoolean(false);
+    // View state.
+    private AtomicInteger mCountOfDoing = new AtomicInteger(0);
 
     // TODO: Inject it.
     public SketchEditorPresenter(ISketchModelRepo sketchModelRepo,
@@ -114,139 +119,72 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
         mLogger = logger;
     }
 
+    // TODO: Merge loading background.
     @Override
     public Observable<?> initEditorAndLoadSketch(final int brushColor,
                                                  final int brushSize) {
-        if (mSketchModelRepository == null) {
-            return Observable.empty();
-        } else {
-            return mSketchModelRepository
-                .hasTempSketch()
-                .toObservable()
-                // TODO: Use .compose(mToUiModelTransformer) and .compose(mUiModelObserver)
-                .flatMap(new Function<Boolean, ObservableSource<SketchModel>>() {
-                    @Override
-                    public ObservableSource<SketchModel> apply(Boolean has) throws Exception {
-                        if (has) {
-                            return mSketchModelRepository
-                                .getTempSketch()
-                                .toObservable();
-                        } else {
-                            throw new FileNotFoundException(
-                                "The temporary sketch doesn't exist!");
-                        }
-                    }
-                })
-                .observeOn(mUiScheduler)
-                .map(new Function<SketchModel, List<SketchStrokeModel>>() {
-                    @Override
-                    public List<SketchStrokeModel> apply(SketchModel sketchModel) throws Exception {
-                        // Update model.
-                        mSketchModel = sketchModel;
+        return Observable
+            .mergeArray(
+            Observable.fromCallable(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    // Init the brush color and size.
+                    prepareBrushes(brushColor, brushSize);
 
-                        // TODO: A improvement that progressively have view
-                        // TODO: draw strokes without freezing UI.
-                        // Init strokes preview.
-                        final List<SketchStrokeModel> strokes = mSketchModel.getAllStrokes();
-                        mSketchView.eraseCanvas();
-                        mSketchView.drawStrokes(strokes);
-
-                        // Init the brush color and size.
-                        prepareBrushes(brushColor, brushSize);
-
-                        return strokes;
-                    }
-                })
-                .publish(new Function<Observable<List<SketchStrokeModel>>, ObservableSource<Object>>() {
+                    return ObservableConst.IGNORED;
+                }
+            }),
+            mSketchModelRepository
+                .getTempSketch()
+                .publish(new Function<Observable<SketchModel>, ObservableSource<Object>>() {
                     @Override
-                    public ObservableSource<Object> apply(Observable<List<SketchStrokeModel>> shared)
+                    public ObservableSource<Object> apply(Observable<SketchModel> shared)
                         throws Exception {
                         return Observable.mergeArray(
-                            shared.compose(mToUiModelTransformer)
-                                  .compose(mUiModelObserver),
-                            shared.compose(mUndoRedoManipulator.onSpyingStrokesUpdate(SketchEditorPresenter.this))
-                                  .compose(mPostTouchCanvas));
+                            // For triggering the start UI state.
+                            shared.compose(mToUiModelTransformer),
+                            // Init the model.
+                            shared.observeOn(mUiScheduler)
+                                  .map(new Function<SketchModel, List<SketchStrokeModel>>() {
+                                      @Override
+                                      public List<SketchStrokeModel> apply(SketchModel sketchModel)
+                                          throws Exception {
+                                          Log.d(TAG, String.format(Locale.ENGLISH,
+                                                                   "Load sketch(w=%d, h=%d)",
+                                                                   sketchModel.getWidth(),
+                                                                   sketchModel.getHeight()));
+                                          // Update model.
+                                          mSketchModel = sketchModel;
+
+                                          // TODO: A improvement that progressively have view
+                                          // TODO: draw strokes without freezing UI.
+                                          // Init strokes preview.
+                                          final List<SketchStrokeModel> strokes = mSketchModel.getAllStrokes();
+                                          mSketchView.eraseCanvas();
+                                          mSketchView.drawStrokes(strokes);
+
+
+
+                                          return strokes;
+                                      }
+                                  })
+                                  // React to views.
+                                  .publish(new Function<Observable<List<SketchStrokeModel>>, ObservableSource<Object>>() {
+                                      @Override
+                                      public ObservableSource<Object> apply(Observable<List<SketchStrokeModel>> shared)
+                                          throws Exception {
+                                          return Observable.mergeArray(
+                                              shared.compose(mToUiModelTransformer),
+                                              shared.compose(mUndoRedoManipulator.onSpyingStrokesUpdate(SketchEditorPresenter.this))
+                                                    .compose(mPostTouchCanvas));
+                                      }
+                                  }));
                     }
-                });
-        }
-//            // TODO: Use .compose(mToUiModelTransformer) and .compose(mUiModelObserver)
-//            .compose(mUndoRedoManipulator.onSpyingStrokesUpdate(SketchEditorPresenter.this))
-//            .compose(mPostTouchCanvas);
-
-//        return Observable
-//            .fromCallable(new Callable<List<SketchStrokeModel>>() {
-//                @Override
-//                public List<SketchStrokeModel> call() throws Exception {
-//                    final List<SketchStrokeModel> strokes = mSketchModel.getAllStrokes();
-//
-//                    // TODO: A improvement that progressively have view
-//                    // TODO: draw strokes without freezing UI.
-//                    // Init strokes preview.
-//                    mSketchView.eraseCanvas();
-//                    mSketchView.drawStrokes(strokes);
-//
-//                    return strokes;
-//                }
-//            })
-//            .subscribeOn(mUiScheduler)
-//            .compose(mUndoRedoManipulator.onSpyingStrokesUpdate(SketchEditorPresenter.this))
-//            .compose(mPostTouchCanvas);
+                }))
+            .compose(mUiModelObserver);
     }
 
-    private void prepareBrushes(final int brushColor,
-                                final int brushSize) {
-        mBrushes.addAll(
-            new SketchBrushFactory()
-                .addEraserBrush()
-                .addColorBrush(0xFFFFFFFF)
-                .addColorBrush(0xFF000000)
-                .addColorBrush(0xFF3897F0)
-                .addColorBrush(0xFF70C050)
-                .addColorBrush(0xFFFDCB5C)
-                .addColorBrush(0xFFFD8D32)
-                .addColorBrush(0xFFED4956)
-                .addColorBrush(0xFFD13076)
-                .addColorBrush(0xFFA307BA)
-                .addColorBrush(0xFFFFB7C5)
-                .addColorBrush(0xFFD1AF94)
-                .addColorBrush(0xFF97D5E0)
-                .addColorBrush(0xFF4FC3C6)
-                .addColorBrush(0xFF0C4C8A)
-                .addColorBrush(0xFF5C7148)
-                .addColorBrush(0xFF262626)
-                .addColorBrush(0xFF595959)
-                .addColorBrush(0xFF7F7F7F)
-                .addColorBrush(0xFF999999)
-                .addColorBrush(0xFFB3B3B3)
-                .addColorBrush(0xFFCCCCCC)
-                .addColorBrush(0xFFE6E6E6)
-                .build());
-
-        // Update brush colors and set default color selection.
-        if (brushColor == 0) {
-            mEditorView.setBrushItemsAndSelectAt(mBrushes, 3);
-        } else {
-            final int rgb = brushColor & 0xFFFFFF;
-
-            for (int i = 0; i < mBrushes.size(); ++i) {
-                final ISketchBrush brush = mBrushes.get(i);
-                final int otherRgb = brush.getBrushColor() & 0xFFFFFF;
-
-                if (rgb == otherRgb) {
-                    mEditorView.setBrushItemsAndSelectAt(mBrushes, i);
-                    break;
-                }
-            }
-        }
-
-        // Set default brush size.
-        if (brushSize < 0 || brushSize > 100) {
-            mEditorView.setBrushSize(20);
-        } else {
-            mEditorView.setBrushSize(brushSize);
-        }
-    }
-
+    // FIXME: Race condition (single source of truth) in mUiModelObserver.
     @Override
     public ObservableTransformer<InputStream, ?> setBackground() {
         return new ObservableTransformer<InputStream, Object>() {
@@ -263,14 +201,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             // Close the given input stream.
                             inputStream.close();
 
-                            return UiModel.succeed("Loading background... done");
-                        }
-                    })
-                    .startWith(UiModel.inProgress("Loading..."))
-                    .onErrorReturn(new Function<Throwable, Object>() {
-                        @Override
-                        public Object apply(Throwable error) throws Exception {
-                            return UiModel.failed(error);
+                            return ObservableConst.IGNORED;
                         }
                     })
                     .compose(mToUiModelTransformer)
@@ -789,15 +720,20 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         @Override
                         public Object apply(UiModel vm) throws Exception {
                             if (vm.isInProgress) {
-                                Log.d("xyz", "showProgress");
+                                // Increase the number of ongoing tasks by one.
+                                mCountOfDoing.incrementAndGet();
+
                                 mEditorView.showProgress("Loading...");
                             } else if (vm.isSuccessful) {
-                                Log.d("xyz", "hideProgress");
-                                mEditorView.hideProgress();
+                                // Decrease the number of ongoing tasks by one.
+                                if (mCountOfDoing.decrementAndGet() == 0) {
+                                    mEditorView.hideProgress();
+                                }
                             } else {
-                                Log.d("xyz", "err & hideProgress");
-                                mEditorView.hideProgress();
-                                mEditorView.showErrorAlertThenClose(vm.error);
+                                if (mCountOfDoing.decrementAndGet() == 0) {
+                                    mEditorView.hideProgress();
+//                                    mEditorView.showErrorAlertThenClose(vm.error);
+                                }
                             }
 
                             return ObservableConst.IGNORED;
@@ -806,6 +742,60 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     .compose(ObservableConst.FILTER_IGNORED);
             }
         };
+
+    private void prepareBrushes(final int brushColor,
+                                final int brushSize) {
+        mBrushes.addAll(
+            new SketchBrushFactory()
+                .addEraserBrush()
+                .addColorBrush(0xFFFFFFFF)
+                .addColorBrush(0xFF000000)
+                .addColorBrush(0xFF3897F0)
+                .addColorBrush(0xFF70C050)
+                .addColorBrush(0xFFFDCB5C)
+                .addColorBrush(0xFFFD8D32)
+                .addColorBrush(0xFFED4956)
+                .addColorBrush(0xFFD13076)
+                .addColorBrush(0xFFA307BA)
+                .addColorBrush(0xFFFFB7C5)
+                .addColorBrush(0xFFD1AF94)
+                .addColorBrush(0xFF97D5E0)
+                .addColorBrush(0xFF4FC3C6)
+                .addColorBrush(0xFF0C4C8A)
+                .addColorBrush(0xFF5C7148)
+                .addColorBrush(0xFF262626)
+                .addColorBrush(0xFF595959)
+                .addColorBrush(0xFF7F7F7F)
+                .addColorBrush(0xFF999999)
+                .addColorBrush(0xFFB3B3B3)
+                .addColorBrush(0xFFCCCCCC)
+                .addColorBrush(0xFFE6E6E6)
+                .build());
+
+        // Update brush colors and set default color selection.
+        if (brushColor == 0) {
+            mEditorView.setBrushItemsAndSelectAt(mBrushes, 3);
+        } else {
+            final int rgb = brushColor & 0xFFFFFF;
+
+            for (int i = 0; i < mBrushes.size(); ++i) {
+                final ISketchBrush brush = mBrushes.get(i);
+                final int otherRgb = brush.getBrushColor() & 0xFFFFFF;
+
+                if (rgb == otherRgb) {
+                    mEditorView.setBrushItemsAndSelectAt(mBrushes, i);
+                    break;
+                }
+            }
+        }
+
+        // Set default brush size.
+        if (brushSize < 0 || brushSize > 100) {
+            mEditorView.setBrushSize(20);
+        } else {
+            mEditorView.setBrushSize(brushSize);
+        }
+    }
 
     /**
      * The stroke based width is a reference to determine the exact value. In

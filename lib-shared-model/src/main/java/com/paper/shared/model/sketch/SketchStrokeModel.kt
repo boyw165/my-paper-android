@@ -37,7 +37,8 @@ class SketchStrokeModel {
     private var mColor: Int = 0
     private var mWidth: Float = 0.toFloat()
     var isEraser: Boolean = false
-        get() = this.isEraser
+        get() = field
+        set(value) { field = value }
     private val mPathTupleList = ArrayList<PathTuple>()
     val bound = RectF(java.lang.Float.MAX_VALUE,
             java.lang.Float.MAX_VALUE,

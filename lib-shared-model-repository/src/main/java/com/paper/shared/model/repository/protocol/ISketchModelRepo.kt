@@ -15,6 +15,7 @@
 package com.paper.shared.model.repository.protocol
 
 import com.paper.shared.model.sketch.SketchModel
+import io.reactivex.Observable
 import io.reactivex.Single
 
 interface ISketchModelRepo {
@@ -29,7 +30,7 @@ interface ISketchModelRepo {
 
     fun hasTempSketch(): Single<Boolean>
 
-    fun getTempSketch(): Single<SketchModel>
+    fun getTempSketch(): Observable<SketchModel>
 
     /**
      * There is only one inventory for the temporary paper.

@@ -458,6 +458,7 @@ public class SketchEditorActivity
             AndroidSchedulers.mainThread(),
             mLogger);
 
+        // FIXME: Race condition (single source of truth)
         // Prepare the initial strokes.
         mDisposables.add(
             mEditorPresenter
@@ -465,6 +466,7 @@ public class SketchEditorActivity
                                          intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_SIZE, -1))
                 .subscribe());
 
+        // FIXME: Race condition (single source of truth)
         // Create canvas resource...
         mDisposables.add(
             loadBackground(getIntent())

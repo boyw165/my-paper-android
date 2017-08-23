@@ -17,13 +17,13 @@ package com.paper.shared.model.repository
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.Cursor
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.paper.shared.model.repository.json.SketchModelTranslator
 import com.paper.shared.model.repository.protocol.ISketchModelRepo
 import com.paper.shared.model.repository.sqlite.SketchTable
 import com.paper.shared.model.sketch.SketchModel
+import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import java.io.File
@@ -59,19 +59,17 @@ class SketchModelRepo(authority: String,
     override fun hasTempSketch(): Single<Boolean> {
         return Single
             .fromCallable {
-                Log.d("xyz", "hasTempSketch")
                 mTempFile.exists()
             }
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getTempSketch(): Single<SketchModel> {
-        return Single
+    override fun getTempSketch(): Observable<SketchModel> {
+        return Observable
             .fromCallable {
                 mTempFile
                     .bufferedReader()
                     .use { reader ->
-                        Log.d("xyz", "getTempSketch")
                         mGson.fromJson(reader, SketchModel::class.java)
                     }
             }
