@@ -27,9 +27,9 @@ interface ISketchModelRepo {
 
     // For temporary store.
 
-    fun hasTempPaper(): Single<Boolean>
+    fun hasTempSketch(): Single<Boolean>
 
-    fun getTempPaper(): Single<SketchModel>
+    fun getTempSketch(): Single<SketchModel>
 
     /**
      * There is only one inventory for the temporary paper.
@@ -39,7 +39,7 @@ interface ISketchModelRepo {
     /**
      * There is only one inventory for the temporary paper.
      */
-    fun newTempPaper(other: SketchModel): Single<SketchModel>
+    fun newTempSketch(other: SketchModel): Single<SketchModel>
 
-    fun commitTempPaper(): Single<SketchModel>
+    fun commitTempSketch(): Single<SketchModel>
 }

@@ -37,6 +37,7 @@ import java.util.List;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
+import io.reactivex.Scheduler;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -44,12 +45,18 @@ import io.reactivex.functions.Predicate;
 public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedoManipulator {
 
     // Given...
+    private final Scheduler mWorkerScheduler;
+    private final Scheduler mUiScheduler;
     private final ILogger mLogger;
 
     // Record.
     private final UndoRedoList<List<SketchStrokeModel>> mRecords;
 
-    public SketchUndoRedoManipulator(ILogger logger) {
+    public SketchUndoRedoManipulator(Scheduler workerScheduler,
+                                     Scheduler uiScheduler,
+                                     ILogger logger) {
+        mWorkerScheduler = workerScheduler;
+        mUiScheduler = uiScheduler;
         mLogger = logger;
 
         mRecords = new UndoRedoList<>();
@@ -66,7 +73,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<SketchStrokeModel>> undo(final SketchModel sketchModel) {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> undo(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
             public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
@@ -90,7 +97,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                             }
 
                             // TODO: Recursively clone.
-                            sketchModel.setStrokes(prev);
+                            modelProvider.getSketchModel().setStrokes(prev);
 
                             return prev;
                         }
@@ -100,7 +107,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(final SketchModel sketchModel) {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
             public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
@@ -113,7 +120,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                             mRecords.undo();
                         }
 
-                        sketchModel.clearStrokes();
+                        modelProvider.getSketchModel().clearStrokes();
 
                         return Collections.emptyList();
                     }
@@ -123,7 +130,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<SketchStrokeModel>> redo(final SketchModel sketchModel) {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> redo(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
             public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
@@ -144,7 +151,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                             final List<SketchStrokeModel> next = mRecords.redo();
 
                             // TODO: Recursively clone.
-                            sketchModel.setStrokes(next);
+                            modelProvider.getSketchModel().setStrokes(next);
 
                             return next;
                         }
@@ -154,7 +161,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(final SketchModel sketchModel) {
+    public ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<Object, List<SketchStrokeModel>>() {
             @Override
             public ObservableSource<List<SketchStrokeModel>> apply(Observable<Object> upstream) {
@@ -163,7 +170,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                     public List<SketchStrokeModel> apply(Object ignored)
                         throws Exception {
                         mRecords.clear();
-                        sketchModel.clearStrokes();
+                        modelProvider.getSketchModel().clearStrokes();
 
                         return Collections.emptyList();
                     }
@@ -173,7 +180,7 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
     }
 
     @Override
-    public ObservableTransformer<Object, ?> onSpyingStrokesUpdate(final SketchModel sketchModel) {
+    public ObservableTransformer<Object, ?> onSpyingStrokesUpdate(final SketchContract.IModelProvider modelProvider) {
         return new ObservableTransformer<Object, Object>() {
             @Override
             public ObservableSource<Object> apply(@NonNull Observable<Object> upstream) {
@@ -198,6 +205,8 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                                 .map(new Function<DrawStrokeEvent, UndoRedoEvent>() {
                                     @Override
                                     public UndoRedoEvent apply(DrawStrokeEvent event) throws Exception {
+                                        final SketchModel sketchModel = modelProvider.getSketchModel();
+
                                         // Stop drawing... it's about time to add undo record.
                                         if (sketchModel.getAllStrokes().size() > 0 &&
                                             event.isModelChanged) {

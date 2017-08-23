@@ -41,6 +41,7 @@ import java.util.List;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
@@ -58,6 +59,8 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     private long mMinPathSegmentInterval;
     private final float mMinBrushSize;
     private final float mMaxBrushSize;
+    private final Scheduler mWorkerScheduler;
+    private final Scheduler mUiScheduler;
     private final ILogger mLogger;
 
     // Brush and stroke.
@@ -79,11 +82,15 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                  long minPathSegmentInterval,
                                  float minStrokeWidth,
                                  float maxStrokeWidth,
+                                 Scheduler workerScheduler,
+                                 Scheduler uiScheduler,
                                  ILogger logger) {
         mMinPathSegmentLength = minPathSegmentLength;
         mMinPathSegmentInterval = minPathSegmentInterval;
         mMinBrushSize = minStrokeWidth;
         mMaxBrushSize = maxStrokeWidth;
+        mWorkerScheduler = workerScheduler;
+        mUiScheduler = uiScheduler;
         mLogger = logger;
     }
 

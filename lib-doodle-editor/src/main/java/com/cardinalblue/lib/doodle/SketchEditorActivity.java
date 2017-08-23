@@ -50,8 +50,8 @@ import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.cardinalblue.lib.doodle.util.AndroidLogger;
-import com.cardinalblue.lib.doodle.view.SketchView;
 import com.cardinalblue.lib.doodle.view.BrushSizeSeekBar;
+import com.cardinalblue.lib.doodle.view.SketchView;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapter;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapterObservable;
 import com.jakewharton.rxbinding2.view.RxView;
@@ -59,10 +59,12 @@ import com.my.reactive.AlertDialogObservable;
 import com.my.reactive.SeekBarChangeObservable;
 import com.my.reactive.activity.RxAppCompatActivity;
 import com.my.reactive.uiEvent.UiEvent;
+import com.paper.shared.model.repository.SketchModelRepo;
 import com.paper.shared.model.sketch.SketchModel;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -157,9 +159,6 @@ public class SketchEditorActivity
 
     // Gesture recognizer.
     GestureRecognizer mGestureRecognizer;
-
-    // Model
-    SketchModel mSketchModel;
 
     // Controllers.
     SketchContract.ISketchEditorPresenter mEditorPresenter;
@@ -427,15 +426,6 @@ public class SketchEditorActivity
         final float dragSlop = getResources().getDimension(R.dimen.drag_slop);
         mGestureRecognizer = new GestureRecognizer(mSketchView, dragSlop, mLogger);
 
-        // Deserialize the given sketch struct.
-        if (savedState == null) {
-            // FIXME: Get the sketch from repo.
-//            mSketchModel = new SketchModel((SketchModel) intent.getParcelableExtra(PARAMS_SKETCH_STRUCT));
-            mSketchModel = new SketchModel(600, 800);
-        } else {
-            mSketchModel = savedState.getParcelable(SAVED_SKETCH_MODEL);
-        }
-
         // Init editor controller.
         final float minPathSegmentLength = getResources().getDimension(
             R.dimen.sketch_min_path_segment_length);
@@ -443,17 +433,27 @@ public class SketchEditorActivity
             R.integer.sketch_min_path_segment_interval);
         final float minStrokeWidth = getResources().getDimension(R.dimen.sketch_min_stroke_width);
         final float maxStrokeWidth = getResources().getDimension(R.dimen.sketch_max_stroke_width);
+
         mEditorPresenter = new SketchEditorPresenter(
-            mSketchModel,
+            new SketchModelRepo(getPackageName(),
+                                getContentResolver(),
+                                getExternalCacheDir(),
+                                Schedulers.io()),
             this,
             mSketchView,
             new DrawStrokeManipulator(minPathSegmentLength,
                                       minPathSegmentInterval,
                                       minStrokeWidth,
                                       maxStrokeWidth,
+                                      Schedulers.computation(),
+                                      AndroidSchedulers.mainThread(),
                                       mLogger),
-            new PinchCanvasManipulator(mLogger),
-            new SketchUndoRedoManipulator(mLogger),
+            new PinchCanvasManipulator(Schedulers.computation(),
+                                       AndroidSchedulers.mainThread(),
+                                       mLogger),
+            new SketchUndoRedoManipulator(Schedulers.computation(),
+                                          AndroidSchedulers.mainThread(),
+                                          mLogger),
             Schedulers.computation(),
             AndroidSchedulers.mainThread(),
             mLogger);
@@ -461,14 +461,8 @@ public class SketchEditorActivity
         // Prepare the initial strokes.
         mDisposables.add(
             mEditorPresenter
-                .prepareInitialStrokes()
-                .subscribe());
-
-        // Create brushes...
-        mDisposables.add(
-            mEditorPresenter
-                .prepareBrushes(intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_COLOR, 0),
-                                intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_SIZE, -1))
+                .initEditorAndLoadSketch(intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_COLOR, 0),
+                                         intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_SIZE, -1))
                 .subscribe());
 
         // Create canvas resource...
@@ -685,7 +679,7 @@ public class SketchEditorActivity
                         // Create canvas resource from asset URI.
                         return getAssets().open(backgroundUri.getPathSegments().get(1));
                     } else {
-                        return null;
+                        throw new FileNotFoundException("No background is provided.");
                     }
                 }
             })

@@ -17,12 +17,11 @@ package com.paper.shared.model.repository
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.Cursor
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.json.SketchModelTranslator
 import com.paper.shared.model.repository.protocol.ISketchModelRepo
-import com.paper.shared.model.repository.sqlite.PaperTable
 import com.paper.shared.model.repository.sqlite.SketchTable
 import com.paper.shared.model.sketch.SketchModel
 import io.reactivex.Scheduler
@@ -57,27 +56,24 @@ class SketchModelRepo(authority: String,
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun hasTempPaper(): Single<Boolean> {
+    override fun hasTempSketch(): Single<Boolean> {
         return Single
             .fromCallable {
+                Log.d("xyz", "hasTempSketch")
                 mTempFile.exists()
             }
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getTempPaper(): Single<SketchModel> {
+    override fun getTempSketch(): Single<SketchModel> {
         return Single
             .fromCallable {
-                var sketch: SketchModel? = null
-
                 mTempFile
                     .bufferedReader()
                     .use { reader ->
-                        sketch = mGson.fromJson(reader, SketchModel::class.java)
+                        Log.d("xyz", "getTempSketch")
+                        mGson.fromJson(reader, SketchModel::class.java)
                     }
-
-                // Return.
-                sketch!!
             }
             .subscribeOn(mIoScheduler)
     }
@@ -101,11 +97,11 @@ class SketchModelRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempPaper(other: SketchModel): Single<SketchModel> {
+    override fun newTempSketch(other: SketchModel): Single<SketchModel> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun commitTempPaper(): Single<SketchModel> {
+    override fun commitTempSketch(): Single<SketchModel> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

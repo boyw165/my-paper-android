@@ -148,13 +148,19 @@ public abstract class SketchContract {
     }
 
     /**
+     * For the manipulators to get model.
+     */
+    public interface IModelProvider {
+
+        SketchModel getSketchModel();
+    }
+
+    /**
      * Presenter in charge of the sketch editor.
      */
     public interface ISketchEditorPresenter {
 
-        Observable<?> prepareInitialStrokes();
-
-        Observable<?> prepareBrushes(int brushColor, int brushSize);
+        Observable<?> initEditorAndLoadSketch(int brushColor, int brushSize);
 
         ObservableTransformer<InputStream, ?> setBackground();
 
@@ -210,14 +216,14 @@ public abstract class SketchContract {
 
         int sizeOfRedo();
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> undo(SketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> undo(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(SketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> redo(SketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> redo(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(SketchModel sketchModel);
+        ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, ?> onSpyingStrokesUpdate(SketchModel sketchModel);
+        ObservableTransformer<Object, ?> onSpyingStrokesUpdate(IModelProvider modelProvider);
     }
 }

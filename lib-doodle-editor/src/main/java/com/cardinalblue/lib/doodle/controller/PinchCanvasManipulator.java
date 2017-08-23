@@ -32,16 +32,18 @@ import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.Function;
 
 /**
  * Apply the pinch-in and pinch-out gesture to the given target. The given
  * target is an {@link IMatrix} instance.
- * <br/>
- * See {@link PinchCanvasManipulator#PinchCanvasManipulator(ILogger)}
  */
 public class PinchCanvasManipulator implements SketchContract.IPinchCanvasManipulator {
 
+    // Given...
+    private final Scheduler mWorkerScheduler;
+    private final Scheduler mUiScheduler;
     private final ILogger mLogger;
 
     /**
@@ -89,7 +91,11 @@ public class PinchCanvasManipulator implements SketchContract.IPinchCanvasManipu
      */
     private final PointF mStopPivotInParent = new PointF();
 
-    public PinchCanvasManipulator(ILogger logger) {
+    public PinchCanvasManipulator(Scheduler workerScheduler,
+                                  Scheduler uiScheduler,
+                                  ILogger logger) {
+        mWorkerScheduler = workerScheduler;
+        mUiScheduler = uiScheduler;
         mLogger = logger;
     }
 
