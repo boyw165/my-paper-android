@@ -60,7 +60,7 @@ public class DragEvent extends GestureEvent {
         return "DragEvent{" +
                "justStart=" + justStart +
                ", doing=" + doing +
-               ", stop=" + !(justStart && doing) +
+               ", stop=" + !(justStart || doing) +
                ", x=" + x +
                ", y=" + y +
                '}';

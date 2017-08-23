@@ -66,7 +66,10 @@ public class PinchEvent extends GestureEvent {
     @Override
     public String toString() {
         return "PinchEvent{" +
-               stringOfPointers() +
+               "justStart=" + justStart +
+               ", doing=" + doing +
+               ", stop=" + !(justStart || doing) +
+               ", " + stringOfPointers() +
                '}';
     }
 
