@@ -39,7 +39,7 @@ public class SingleTapEvent extends GestureEvent {
 
     @Override
     public String toString() {
-        return "DragEvent{" +
+        return "SingleTapEvent{" +
                String.format(Locale.ENGLISH, "x=%.3f, y=%.3f", x, y) +
                '}';
     }
