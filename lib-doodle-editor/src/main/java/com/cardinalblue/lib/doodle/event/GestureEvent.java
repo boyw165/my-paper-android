@@ -54,7 +54,7 @@ public class GestureEvent {
         return "GestureEvent{" +
                "justStart=" + justStart +
                ", doing=" + doing +
-               ", stop=" + !(justStart && doing) +
+               ", stop=" + !(justStart || doing) +
                '}';
     }
 
