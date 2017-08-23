@@ -81,11 +81,12 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private int mStrokeWidthProgress;
 
     // Life state.
-    private AtomicBoolean mIsAlive = new AtomicBoolean(true);
+    private final AtomicBoolean mIsAlive = new AtomicBoolean(true);
     // Save condition state.
-    private AtomicBoolean mIfApplyChangeForClose = new AtomicBoolean(false);
+    private final AtomicBoolean mIfApplyChangeForClose = new AtomicBoolean(false);
     // View state.
-    private AtomicInteger mCountOfDoing = new AtomicInteger(0);
+    private final AtomicInteger mCountOfDoing = new AtomicInteger(0);
+    private final AtomicBoolean mSkipDrawing = new AtomicBoolean(false);
 
     // TODO: Inject it.
     public SketchEditorPresenter(ISketchModelRepo sketchModelRepo,
@@ -218,25 +219,15 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             public ObservableSource<Object> apply(Observable<GestureEvent> upstream) {
                 // Have manipulator to convert gesture event to model level event.
                 return upstream
-                    // Skip when either the view is animating, the presenter is
-                    // flagged DEAD or the model is not loaded from the repository.
-                    .filter(new Predicate<GestureEvent>() {
-                        @Override
-                        public boolean test(GestureEvent ignored)
-                            throws Exception {
-                            return mIsAlive.get() &&
-                                   mIsModelReady.get() &&
-                                   !mSketchView.isAnimating();
-                        }
-                    })
+                    // DEBUG.
+                    .compose(mDebug)
+                    // Apply certain filter for touching the canvas.
+                    .compose(mPreTouchCanvas)
                     .publish(new Function<Observable<GestureEvent>, ObservableSource<Object>>() {
                         @Override
                         public ObservableSource<Object> apply(Observable<GestureEvent> shared) throws Exception {
                             return Observable
                                 .mergeArray(
-                                    // DEBUG.
-                                    shared.ofType(GestureEvent.class)
-                                          .compose(mDebug),
                                     // Draw strokes.
                                     shared.ofType(DragEvent.class)
                                           // Update the canvas model.
@@ -588,13 +579,13 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             }
         };
 
-    private ObservableTransformer<? super GestureEvent, ?> mDebug =
-        new ObservableTransformer<GestureEvent, Object>() {
+    private ObservableTransformer<? super GestureEvent, GestureEvent> mDebug =
+        new ObservableTransformer<GestureEvent, GestureEvent>() {
             @Override
-            public ObservableSource<Object> apply(Observable<GestureEvent> upstream) {
-                return upstream.map(new Function<GestureEvent, Object>() {
+            public ObservableSource<GestureEvent> apply(Observable<GestureEvent> upstream) {
+                return upstream.map(new Function<GestureEvent, GestureEvent>() {
                     @Override
-                    public Object apply(GestureEvent event)
+                    public GestureEvent apply(GestureEvent event)
                         throws Exception {
                         mLogger.d("sketch", String.format(
                             Locale.ENGLISH, "==> %s", event));
@@ -602,6 +593,42 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         return event;
                     }
                 });
+            }
+        };
+
+    private ObservableTransformer<GestureEvent, GestureEvent> mPreTouchCanvas =
+        new ObservableTransformer<GestureEvent, GestureEvent>() {
+            @Override
+            public ObservableSource<GestureEvent> apply(Observable<GestureEvent> upstream) {
+                return upstream
+                    // Skip when either the view is animating, the presenter is
+                    // flagged DEAD or the model is not loaded from the repository.
+                    .filter(new Predicate<GestureEvent>() {
+                        @Override
+                        public boolean test(GestureEvent event) throws Exception {
+
+                            return mIsAlive.get() &&
+                                   mIsModelReady.get() &&
+                                   !mSketchView.isAnimating();
+                        }
+                    })
+                    // The gesture life is enclose with a START and STOP.
+                    // Once the user do a pinch during the gesture life, the later
+                    // drawing events would be ALL skipped.
+                    .filter(new Predicate<GestureEvent>() {
+                        @Override
+                        public boolean test(GestureEvent event) throws Exception {
+                            if (event instanceof PinchEvent) {
+                                mSkipDrawing.set(true);
+                            } else if (event == GestureEvent.START ||
+                                       event == GestureEvent.STOP) {
+                                mSkipDrawing.set(false);
+                            }
+
+                            return event instanceof PinchEvent ||
+                                   !mSkipDrawing.get();
+                        }
+                    });
             }
         };
 

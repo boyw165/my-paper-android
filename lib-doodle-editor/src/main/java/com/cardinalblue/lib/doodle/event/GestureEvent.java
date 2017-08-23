@@ -35,27 +35,27 @@ public class GestureEvent {
     public final boolean justStart;
     public final boolean doing;
 
+    public final static GestureEvent START = new GestureEvent(true, false, null);
+    public final static GestureEvent DOING = new GestureEvent(false, true, null);
+    public final static GestureEvent STOP = new GestureEvent(false, false, null);
+    // TODO: Remove it!
     public final static GestureEvent IDLE = new GestureEvent(false, false, null);
-
-    public static GestureEvent start() {
-        return new GestureEvent(true, false, null);
-    }
-
-    public static GestureEvent doing() {
-        return new GestureEvent(false, true, null);
-    }
-
-    public static GestureEvent stop() {
-        return new GestureEvent(false, false, null);
-    }
 
     @Override
     public String toString() {
-        return "GestureEvent{" +
-               "justStart=" + justStart +
-               ", doing=" + doing +
-               ", stop=" + !(justStart || doing) +
-               '}';
+        if (START.equals(this)) {
+            return "GestureEvent.START";
+        } else if (DOING.equals(this)) {
+            return "GestureEvent.DOING";
+        } else if (STOP.equals(this)) {
+            return "GestureEvent.STOP";
+        } else {
+            return "GestureEvent{" +
+                   "justStart=" + justStart +
+                   ", doing=" + doing +
+                   ", stop=" + !(justStart || doing) +
+                   '}';
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

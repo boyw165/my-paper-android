@@ -187,7 +187,7 @@ public class GestureRecognizer implements ObservableTransformer<UiTouchEvent, Ge
         mCouldBeSingleTap = true;
 
         // TODO: Reusable?
-        return Observable.just(GestureEvent.start());
+        return Observable.just(GestureEvent.START);
     }
 
     private Observable<GestureEvent> recognizeActionUp(IMotionEvent event) {
@@ -195,23 +195,23 @@ public class GestureRecognizer implements ObservableTransformer<UiTouchEvent, Ge
         if (mGesture == DRAG) {
             source = Observable.just(
                 DragEvent.stop(),
-                GestureEvent.stop());
+                GestureEvent.STOP);
         } else if (mGesture == PINCH) {
             source = Observable.just(
                 PinchEvent.stop(mMatrixProvider.getMatrixOfParentToTarget(),
                                 event.getX(0), event.getY(0),
                                 event.getX(1), event.getY(1)),
-                GestureEvent.stop());
+                GestureEvent.STOP);
         } else {
             if (mCouldBeSingleTap && event.getPointerCount() == 1) {
                 source = Observable.just(
                     SingleTapEvent.just(mMatrixProvider.getMatrixOfParentToTarget(),
                                         event.getX(0),
                                         event.getY(0)),
-                    GestureEvent.stop());
+                    GestureEvent.STOP);
             } else {
                 source = Observable.just(
-                    GestureEvent.stop());
+                    GestureEvent.STOP);
             }
         }
 
