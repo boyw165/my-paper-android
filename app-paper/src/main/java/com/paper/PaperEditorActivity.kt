@@ -67,25 +67,13 @@ class PaperEditorActivity : AppCompatActivity(),
 
         mDisposables1.add(
             mPaperRepo
-                // Check has temporary paper
-                .hasTempPaper()
-                .toObservable()
                 // Get the temporary paper if it exists.
-                .flatMap { has: Boolean ->
-                    if (has) {
-                        mPaperRepo
-                            .getTempPaper()
-                            .toObservable()
-                    } else {
-                        throw RuntimeException("No temp paper")
-                    }
-                }
+                .getTempPaper()
                 // TODO: New temp sketch.
                 .flatMap { paper ->
                     mSketchRepo
                         .newTempSketch(paper.width,
                                        paper.height)
-                        .toObservable()
                 }
                 // Convert to view-model.
                 .compose { upstream ->
@@ -175,10 +163,10 @@ class PaperEditorActivity : AppCompatActivity(),
                 // Pass a sketch struct.
 //                .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, SketchModel(0, 500, 500))
                 // Pass a sketch background.
-                //                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
+//                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
                 // Remembering brush color and stroke width.
-                //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
-                //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_SIZE, brushSize)
+//                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
+//                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_SIZE, brushSize)
                 // Alert message.
                 .putExtra(SketchEditorActivity.PARAMS_ALERT_TITLE_MESSAGE, getString(R.string.doodle_clear_title))
                 .putExtra(SketchEditorActivity.PARAMS_ALERT_CONFIRM_MESSAGE, getString(R.string.doodle_clear_message))

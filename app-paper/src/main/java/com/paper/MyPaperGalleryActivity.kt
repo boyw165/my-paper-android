@@ -79,7 +79,6 @@ class MyPaperGalleryActivity : AppCompatActivity(),
                 .flatMap {
                     mPaperRepo
                         .getPaperSnapshotList()
-                        .toObservable()
                         // TODO: Refactoring.
                         .compose { upstream ->
                             upstream
@@ -126,7 +125,6 @@ class MyPaperGalleryActivity : AppCompatActivity(),
                         mPaperRepo
                             // TODO: Presenter's responsibility to assign the caption.
                             .newTempPaper("New Paper")
-                            .toObservable()
                             // TODO: Refactoring.
                             .compose { upstream ->
                                 upstream

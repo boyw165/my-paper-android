@@ -24,8 +24,8 @@ import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.json.PaperModelTranslator
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.paper.shared.model.repository.sqlite.PaperTable
+import io.reactivex.Observable
 import io.reactivex.Scheduler
-import io.reactivex.Single
 import java.io.File
 
 class PaperModelRepo(authority: String,
@@ -48,8 +48,8 @@ class PaperModelRepo(authority: String,
             .create()
     }
 
-    override fun getPaperSnapshotList(): Single<List<PaperModel>> {
-        return Single
+    override fun getPaperSnapshotList(): Observable<List<PaperModel>> {
+        return Observable
             .fromCallable {
                 val uri: Uri = Uri.Builder()
                     .scheme("content")
@@ -94,52 +94,50 @@ class PaperModelRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getPaperById(id: Long): Single<PaperModel> {
+    override fun getPaperById(id: Long): Observable<PaperModel> {
         TODO("not implemented")
     }
 
-    override fun duplicatePaperById(id: Long): Single<PaperModel> {
+    override fun duplicatePaperById(id: Long): Observable<PaperModel> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun deletePaperById(id: Long): Single<Boolean> {
+    override fun deletePaperById(id: Long): Observable<Boolean> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun hasTempPaper(): Single<Boolean> {
-        return Single
+    override fun hasTempPaper(): Observable<Boolean> {
+        return Observable
             .fromCallable {
                 mTempFile.exists()
             }
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getTempPaper(): Single<PaperModel> {
-        return Single
+    override fun getTempPaper(): Observable<PaperModel> {
+        return Observable
             .fromCallable {
-                var paper: PaperModel? = null
                 mTempFile
                     .bufferedReader()
                     .use { reader ->
-                        paper = mGson.fromJson(reader, PaperModel::class.java)
+                        mGson.fromJson(reader, PaperModel::class.java)
                     }
-
-                // Return.
-                paper!!
             }
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempPaper(caption: String): Single<PaperModel> {
-        return Single
+    override fun newTempPaper(caption: String): Observable<PaperModel> {
+        return Observable
             .fromCallable {
                 // TODO: Assign default portrait size.
                 val timestamp = getCurrentTime()
                 val newPaper = PaperModel()
                 newPaper.createdAt = timestamp
                 newPaper.modifiedAt = timestamp
-                newPaper.width = 210
-                newPaper.height = 297
+//                newPaper.width = 210
+//                newPaper.height = 297
+                newPaper.width = 840
+                newPaper.height = 1188
                 newPaper.caption = caption
 
                 val json = mGson.toJson(newPaper)
@@ -156,12 +154,12 @@ class PaperModelRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempPaper(other: PaperModel): Single<PaperModel> {
+    override fun newTempPaper(other: PaperModel): Observable<PaperModel> {
         TODO("not implemented")
     }
 
-    override fun removeTempPaper(): Single<Boolean> {
-        return Single
+    override fun removeTempPaper(): Observable<Boolean> {
+        return Observable
             .fromCallable {
                 if (mTempFile.exists()) {
                     mTempFile.delete()
@@ -171,7 +169,7 @@ class PaperModelRepo(authority: String,
             }
     }
 
-    override fun commitTempPaper(): Single<PaperModel> {
+    override fun commitTempPaper(): Observable<PaperModel> {
         TODO("not implemented")
     }
 

@@ -25,7 +25,6 @@ import com.paper.shared.model.repository.sqlite.SketchTable
 import com.paper.shared.model.sketch.SketchModel
 import io.reactivex.Observable
 import io.reactivex.Scheduler
-import io.reactivex.Single
 import java.io.File
 
 class SketchModelRepo(authority: String,
@@ -48,16 +47,16 @@ class SketchModelRepo(authority: String,
             .create()
     }
 
-    override fun getSketchById(id: Long): Single<SketchModel> {
+    override fun getSketchById(id: Long): Observable<SketchModel> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun deletePaperById(id: Long): Single<Boolean> {
+    override fun deletePaperById(id: Long): Observable<Boolean> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun hasTempSketch(): Single<Boolean> {
-        return Single
+    override fun hasTempSketch(): Observable<Boolean> {
+        return Observable
             .fromCallable {
                 mTempFile.exists()
             }
@@ -77,8 +76,8 @@ class SketchModelRepo(authority: String,
     }
 
     override fun newTempSketch(width: Int,
-                               height: Int): Single<SketchModel> {
-        return Single
+                               height: Int): Observable<SketchModel> {
+        return Observable
             .fromCallable {
                 val newSketch = SketchModel(width, height)
                 val json = mGson.toJson(newSketch)
@@ -95,11 +94,11 @@ class SketchModelRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempSketch(other: SketchModel): Single<SketchModel> {
+    override fun newTempSketch(other: SketchModel): Observable<SketchModel> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun commitTempSketch(): Single<SketchModel> {
+    override fun commitTempSketch(): Observable<SketchModel> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

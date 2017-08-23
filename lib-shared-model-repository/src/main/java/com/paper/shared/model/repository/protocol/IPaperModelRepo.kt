@@ -15,37 +15,37 @@
 package com.paper.shared.model.repository.protocol
 
 import com.paper.shared.model.PaperModel
-import io.reactivex.Single
+import io.reactivex.Observable
 
 interface IPaperModelRepo {
 
     // For persistent store.
 
-    fun getPaperSnapshotList(): Single<List<PaperModel>>
+    fun getPaperSnapshotList(): Observable<List<PaperModel>>
 
-    fun getPaperById(id: Long): Single<PaperModel>
+    fun getPaperById(id: Long): Observable<PaperModel>
 
-    fun duplicatePaperById(id: Long): Single<PaperModel>
+    fun duplicatePaperById(id: Long): Observable<PaperModel>
 
-    fun deletePaperById(id: Long): Single<Boolean>
+    fun deletePaperById(id: Long): Observable<Boolean>
 
     // For temporary store.
 
-    fun hasTempPaper(): Single<Boolean>
+    fun hasTempPaper(): Observable<Boolean>
 
-    fun getTempPaper(): Single<PaperModel>
-
-    /**
-     * There is only one inventory for the temporary paper.
-     */
-    fun newTempPaper(caption: String): Single<PaperModel>
+    fun getTempPaper(): Observable<PaperModel>
 
     /**
      * There is only one inventory for the temporary paper.
      */
-    fun newTempPaper(other: PaperModel): Single<PaperModel>
+    fun newTempPaper(caption: String): Observable<PaperModel>
 
-    fun removeTempPaper(): Single<Boolean>
+    /**
+     * There is only one inventory for the temporary paper.
+     */
+    fun newTempPaper(other: PaperModel): Observable<PaperModel>
 
-    fun commitTempPaper(): Single<PaperModel>
+    fun removeTempPaper(): Observable<Boolean>
+
+    fun commitTempPaper(): Observable<PaperModel>
 }
