@@ -148,7 +148,8 @@ public class SketchView
         mCanvasBackgroundPaint.setStyle(Paint.Style.FILL);
         mCanvasBackgroundPaint.setColor(color);
 
-        // It would trigger onLayoutChanged call.
+        // It would trigger onLayoutChanged call, the view port matrix would be
+        // updated.
         forceLayout();
     }
 
@@ -472,7 +473,7 @@ public class SketchView
         // DEBUG.
         if (mIsDebug) {
             final float startX = 16f;
-            final float startY = 128f;
+            final float startY = 160f;
 
             // Ready to draw something with stroke only...
             mDebugPaint.setStyle(Paint.Style.STROKE);
@@ -495,8 +496,15 @@ public class SketchView
                                           "strokes=%s",
                                           debugStringOfStrokes()),
                             0, 0, mDebugPaint);
+            // The canvas.
             canvas.translate(0, 36f);
+            canvas.drawText(String.format(Locale.ENGLISH,
+                                          "canvas w=%d, h=%d",
+                                          getCanvasWidth(),
+                                          getCanvasHeight()),
+                            0, 0, mDebugPaint);
             // The transform of the canvas.
+            canvas.translate(0, 36f);
             canvas.drawText(String.format(Locale.ENGLISH,
                                           "tx=%.3f, ty=%.3f, sx=%.3f, sy=%.3f",
                                           mMatrix.getTranslationX(),
