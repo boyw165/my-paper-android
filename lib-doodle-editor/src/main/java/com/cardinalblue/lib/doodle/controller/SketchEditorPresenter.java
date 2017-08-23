@@ -22,8 +22,6 @@
 
 package com.cardinalblue.lib.doodle.controller;
 
-import android.util.Log;
-
 import com.cardinalblue.lib.doodle.data.SketchBrushFactory;
 import com.cardinalblue.lib.doodle.event.DragEvent;
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
@@ -143,10 +141,10 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                           @Override
                                           public List<SketchStrokeModel> apply(SketchModel sketchModel)
                                               throws Exception {
-                                              Log.d(TAG, String.format(Locale.ENGLISH,
-                                                                       "Load sketch(w=%d, h=%d)",
-                                                                       sketchModel.getWidth(),
-                                                                       sketchModel.getHeight()));
+                                              mLogger.d(TAG, String.format(Locale.ENGLISH,
+                                                                           "Load sketch(w=%d, h=%d)",
+                                                                           sketchModel.getWidth(),
+                                                                           sketchModel.getHeight()));
                                               // Update model.
                                               mSketchModel = sketchModel;
 
