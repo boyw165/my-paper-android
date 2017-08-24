@@ -210,11 +210,6 @@ public class SketchEditorActivity
     }
 
     @Override
-    public void setBrushSize(int brushSize) {
-        mBrushSizePicker.setProgress(brushSize);
-    }
-
-    @Override
     public void close() {
         if (isFinishing()) return;
 
@@ -240,9 +235,17 @@ public class SketchEditorActivity
     }
 
     @Override
-    public void setBrushItemsAndSelectAt(List<ISketchBrush> brushes,
-                                         int defaultSelection) {
+    public void setBrushSize(int brushSize) {
+        mBrushSizePicker.setProgress(brushSize);
+    }
+
+    @Override
+    public void setBrushItems(List<ISketchBrush> brushes) {
         mBrushPickerAdapter.setItems(brushes);
+    }
+
+    @Override
+    public void selectBrushAt(int defaultSelection) {
         mBrushPickerAdapter.selectItem(defaultSelection);
 
         // In order to show ascendants of selected one, we shift the showing

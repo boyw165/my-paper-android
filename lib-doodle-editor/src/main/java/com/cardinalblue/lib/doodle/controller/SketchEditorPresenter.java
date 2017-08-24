@@ -51,6 +51,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.Scheduler;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
@@ -71,9 +72,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private final Scheduler mUiScheduler;
     private final ILogger mLogger;
 
-    // Model and related states.
+    // Model.
     private SketchModel mSketchModel;
-    private final AtomicBoolean mIsModelReady = new AtomicBoolean(false);
 
     // Brush.
     private List<ISketchBrush> mBrushes = new ArrayList<>();
@@ -81,7 +81,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private int mStrokeWidthProgress;
 
     // Life state.
-    private final AtomicBoolean mIsAlive = new AtomicBoolean(true);
+    private final AtomicBoolean mIsBusy = new AtomicBoolean(true);
     // Save condition state.
     private final AtomicBoolean mIfApplyChangeForClose = new AtomicBoolean(false);
     // View state.
@@ -105,9 +105,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
 
         mEditorView = editorView;
         mSketchView = sketchView;
-        mSketchView.createCanvasSource(mSketchModel.getWidth(),
-                                       mSketchModel.getHeight(),
-                                       DEFAULT_BG_COLOR);
+        // Allocate minimum resource for the dummy model.
+        mSketchView.createCanvasSource(1, 1, DEFAULT_BG_COLOR);
 
         mDrawStrokeManipulator = drawStrokeManipulator;
         mPinchCanvasController = pinchCanvasManipulator;
@@ -125,8 +124,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
         return Observable
             .mergeArray(
                 // TODO: Init the background.
-                // Init the brushes (color and size).
-                initBrushes(brushColor, brushSize),
+                // Init the brushes.
+                initBrushes(),
                 // Init the sketch model.
                 mSketchModelRepository
                     .getTempSketch()
@@ -139,10 +138,11 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                 shared.compose(mToUiModelTransformer),
                                 // Init the model.
                                 shared.observeOn(mUiScheduler)
-                                      .map(new Function<SketchModel, List<SketchStrokeModel>>() {
+                                      .flatMap(new Function<SketchModel, ObservableSource<Object>>() {
                                           @Override
-                                          public List<SketchStrokeModel> apply(SketchModel sketchModel)
+                                          public ObservableSource<Object> apply(@NonNull SketchModel sketchModel)
                                               throws Exception {
+
                                               mLogger.d(TAG, String.format(Locale.ENGLISH,
                                                                            "Load sketch(w=%d, h=%d)",
                                                                            sketchModel.getWidth(),
@@ -151,9 +151,44 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                               mSketchModel = sketchModel;
 
                                               // Request the view to allocate Bitmap for the model.
-                                              mSketchView.createCanvasSource(mSketchModel.getWidth(),
-                                                                             mSketchModel.getHeight(),
-                                                                             DEFAULT_BG_COLOR);
+                                              return mSketchView.createCanvasSource(
+                                                  mSketchModel.getWidth(),
+                                                  mSketchModel.getHeight(),
+                                                  DEFAULT_BG_COLOR);
+                                          }
+                                      })
+                                      .observeOn(mUiScheduler)
+                                      .map(new Function<Object, List<SketchStrokeModel>>() {
+                                          @Override
+                                          public List<SketchStrokeModel> apply(Object ignored)
+                                              throws Exception {
+                                              // FIXME: Code behind depends on the layout callback triggered
+                                              // FIXME: by createCanvasSource();
+
+                                              // Update brush colors and set default color selection.
+                                              if (brushColor == 0) {
+                                                  final int defaultPosition = 3;
+                                                  mEditorView.selectBrushAt(defaultPosition);
+                                              } else {
+                                                  final int rgb = brushColor & 0xFFFFFF;
+
+                                                  for (int i = 0; i < mBrushes.size(); ++i) {
+                                                      final ISketchBrush brush = mBrushes.get(i);
+                                                      final int otherRgb = brush.getBrushColor() & 0xFFFFFF;
+
+                                                      if (rgb == otherRgb) {
+                                                          mEditorView.selectBrushAt(i);
+                                                          break;
+                                                      }
+                                                  }
+                                              }
+
+                                              // Set default brush size.
+                                              if (brushSize < 0 || brushSize > 100) {
+                                                  mEditorView.setBrushSize(20);
+                                              } else {
+                                                  mEditorView.setBrushSize(brushSize);
+                                              }
 
                                               // TODO: A improvement that progressively have view
                                               // TODO: draw strokes without freezing UI.
@@ -161,9 +196,6 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                               final List<SketchStrokeModel> strokes = mSketchModel.getAllStrokes();
                                               mSketchView.eraseCanvas();
                                               mSketchView.drawStrokes(strokes);
-
-                                              // Flat the model is ready.
-                                              mIsModelReady.set(true);
 
                                               return strokes;
                                           }
@@ -183,10 +215,10 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                       }));
                         }
                     }))
-            .compose(mUiModelObserver);
+            .compose(mUiModelObserverForInitialization);
     }
 
-    // FIXME: Race condition (single source of truth) in mUiModelObserver.
+    // FIXME: Race condition (single source of truth) in mUiModelObserverForInitialization.
     @Override
     public ObservableTransformer<InputStream, ?> setBackground() {
         return new ObservableTransformer<InputStream, Object>() {
@@ -207,7 +239,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                         }
                     })
                     .compose(mToUiModelTransformer)
-                    .compose(mUiModelObserver);
+                    .compose(mUiModelObserverForInitialization);
             }
         };
     }
@@ -474,8 +506,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             // Send analytics event.
                             mLogger.sendEvent("Doodle editor - cancel");
 
-                            // A flag indicating the presenter is dead.
-                            mIsAlive.set(false);
+                            // Flag busy.
+                            mIsBusy.set(true);
                             // Ask view to play reset animation.
                             return mSketchView.resetAnimation();
                         }
@@ -606,9 +638,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     .filter(new Predicate<GestureEvent>() {
                         @Override
                         public boolean test(GestureEvent event) throws Exception {
-
-                            return mIsAlive.get() &&
-                                   mIsModelReady.get() &&
+                            return !mIsBusy.get() &&
                                    !mSketchView.isAnimating();
                         }
                     })
@@ -738,7 +768,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             }
         };
 
-    private ObservableTransformer<Object, Object> mUiModelObserver =
+    private ObservableTransformer<Object, Object> mUiModelObserverForInitialization =
         new ObservableTransformer<Object, Object>() {
             @Override
             public ObservableSource<Object> apply(Observable<Object> upstream) {
@@ -752,10 +782,16 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                 // Increase the number of ongoing tasks by one.
                                 mCountOfDoing.incrementAndGet();
 
+                                // Flag busy.
+                                mIsBusy.set(true);
+
                                 mEditorView.showProgress("Loading...");
                             } else if (vm.isSuccessful) {
                                 // Decrease the number of ongoing tasks by one.
                                 if (mCountOfDoing.decrementAndGet() == 0) {
+                                    // Flag available.
+                                    mIsBusy.set(false);
+
                                     mEditorView.hideProgress();
                                 }
                             } else {
@@ -772,8 +808,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             }
         };
 
-    private Observable<Object> initBrushes(final int brushColor,
-                                           final int brushSize) {
+    private Observable<Object> initBrushes() {
         return Observable
             .fromCallable(new Callable<Object>() {
                 @Override
@@ -805,30 +840,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             .addColorBrush(0xFFE6E6E6)
                             .build());
 
-                    // Update brush colors and set default color selection.
-                    if (brushColor == 0) {
-                        final int defaultPosition = 3;
-                        mEditorView.setBrushItemsAndSelectAt(mBrushes, defaultPosition);
-                    } else {
-                        final int rgb = brushColor & 0xFFFFFF;
-
-                        for (int i = 0; i < mBrushes.size(); ++i) {
-                            final ISketchBrush brush = mBrushes.get(i);
-                            final int otherRgb = brush.getBrushColor() & 0xFFFFFF;
-
-                            if (rgb == otherRgb) {
-                                mEditorView.setBrushItemsAndSelectAt(mBrushes, i);
-                                break;
-                            }
-                        }
-                    }
-
-                    // Set default brush size.
-                    if (brushSize < 0 || brushSize > 100) {
-                        mEditorView.setBrushSize(20);
-                    } else {
-                        mEditorView.setBrushSize(brushSize);
-                    }
+                    // Update brushes to view.
+                    mEditorView.setBrushItems(mBrushes);
 
                     return ObservableConst.IGNORED;
                 }

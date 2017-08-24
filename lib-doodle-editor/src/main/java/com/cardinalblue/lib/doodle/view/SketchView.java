@@ -55,16 +55,16 @@ import java.util.List;
 import java.util.Locale;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Function;
+import io.reactivex.functions.Consumer;
 
 public class SketchView
     extends View
     implements SketchContract.ISketchView {
+
+    // View state.
+    private final Observable<Object> mOnLayoutChanges;
 
     // Canvas state.
     private Canvas mStrokeCanvas = null;
@@ -128,14 +128,18 @@ public class SketchView
         mDebugPaint.setColor(Color.GREEN);
         mDebugPaint.setTextSize(24f);
         mDebugPaint.setStrokeWidth(5f);
+
+        // Init others...
+        mOnLayoutChanges = RxView.layoutChanges(this);
     }
 
     @Override
-    public void createCanvasSource(int width,
-                                   int height,
-                                   int color) {
+    public Observable<Object> createCanvasSource(int width,
+                                                 int height,
+                                                 int color) {
         if (mStrokeCanvasBitmap != null) {
             mStrokeCanvasBitmap.recycle();
+            mStrokeCanvasBitmap = null;
         }
 
         // TODO: Handle oom.
@@ -148,9 +152,14 @@ public class SketchView
         mCanvasBackgroundPaint.setStyle(Paint.Style.FILL);
         mCanvasBackgroundPaint.setColor(color);
 
-        // It would trigger onLayoutChanged call, the view port matrix would be
-        // updated.
-        forceLayout();
+        // Will trigger updateCanvasMatrixByNewWidthAndHeight() to update the
+        // canvas matrix with new canvas width and height.
+        // The reason of requesting layout to trigger the update function is
+        // because the view width and height is necessary for calculating the
+        // transform.
+        requestLayout();
+
+        return mOnLayoutChanges;
     }
 
     @Override
@@ -409,9 +418,13 @@ public class SketchView
 
         // Add onLayoutChange observable.
         mDisposables.add(
-            RxView.layoutChanges(this)
-                  .compose(onLayoutChanged())
-                  .subscribe());
+            mOnLayoutChanges
+                .subscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object o) throws Exception {
+                        updateCanvasMatrixByNewWidthAndHeight();
+                    }
+                }));
     }
 
     @Override
@@ -516,36 +529,23 @@ public class SketchView
         }
     }
 
-    private ObservableTransformer<Object, Object> onLayoutChanged() {
-        return new ObservableTransformer<Object, Object>() {
-            @Override
-            public ObservableSource<Object> apply(@NonNull Observable<Object> upstream) {
-                return upstream.map(new Function<Object, Object>() {
-                    @Override
-                    public Object apply(Object ignored)
-                        throws Exception {
-                        // Determine the rendering matrix.
-                        final float scale = Math.min((float) getWidth() / getCanvasWidth(),
-                                                     (float) getHeight() / getCanvasHeight());
-                        final float dx = ((float) getWidth() - scale * getCanvasWidth()) / 2f;
-                        final float dy = ((float) getHeight() - scale * getCanvasHeight()) / 2f;
+    private void updateCanvasMatrixByNewWidthAndHeight() {
+        // Determine the rendering matrix.
+        final float scale = Math.min((float) getWidth() / getCanvasWidth(),
+                                     (float) getHeight() / getCanvasHeight());
+        final float dx = ((float) getWidth() - scale * getCanvasWidth()) / 2f;
+        final float dy = ((float) getHeight() - scale * getCanvasHeight()) / 2f;
 
-                        mMatrix.reset()
-                               .postScale(scale, scale, 0, 0)
-                               .postTranslate(dx, dy);
-                        // Cache the start matrix right after layout.
-                        mStartMatrix = (AndroidMatrix) mMatrix.clone();
+        mMatrix.reset()
+               .postScale(scale, scale, 0, 0)
+               .postTranslate(dx, dy);
+        // Cache the start matrix right after layout.
+        mStartMatrix = (AndroidMatrix) mMatrix.clone();
 
-                        // Determine the relative minimum scale.
-                        mMinScale = scale / 3f;
-                        // Determine the relative maximum scale.
-                        mMaxScale = scale * 4f;
-
-                        return ignored;
-                    }
-                });
-            }
-        };
+        // Determine the relative minimum scale.
+        mMinScale = scale / 3f;
+        // Determine the relative maximum scale.
+        mMaxScale = scale * 4f;
     }
 
     private void drawPathTupleFrom(SketchStrokeModel stroke,

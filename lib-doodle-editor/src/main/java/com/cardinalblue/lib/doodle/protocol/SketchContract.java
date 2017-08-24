@@ -59,7 +59,9 @@ public abstract class SketchContract {
 
         void setBrushSize(int brushSize);
 
-        void setBrushItemsAndSelectAt(List<ISketchBrush> brushes, int defaultSelection);
+        void setBrushItems(List<ISketchBrush> brushes);
+
+        void selectBrushAt(int defaultSelection);
 
         void showBrushColor(int color);
 
@@ -87,14 +89,13 @@ public abstract class SketchContract {
 
         /**
          * Create canvas. This is NECESSARY for using the editor.
-         *
          * @param width  Desired width.
          * @param height Desired height.
          * @param color  Default background color.
          */
-        void createCanvasSource(int width,
-                                int height,
-                                int color);
+        Observable<Object> createCanvasSource(int width,
+                                              int height,
+                                              int color);
 
         int getCanvasWidth();
 
@@ -132,13 +133,13 @@ public abstract class SketchContract {
          */
         boolean isAnimating();
 
-        // DEBUG methods...
-
         /**
          * Run an animation that reset the view to the transform at first
-         * onLayoutChanged call.
+         * onCanvasSourceReady call.
          */
         Observable<?> resetAnimation();
+
+        // DEBUG methods...
 
         boolean isDebug();
 
