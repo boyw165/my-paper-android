@@ -89,6 +89,7 @@ public abstract class SketchContract {
 
         /**
          * Create canvas. This is NECESSARY for using the editor.
+         *
          * @param width  Desired width.
          * @param height Desired height.
          * @param color  Default background color.

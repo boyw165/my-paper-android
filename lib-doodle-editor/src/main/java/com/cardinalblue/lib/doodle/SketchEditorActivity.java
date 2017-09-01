@@ -33,7 +33,6 @@ import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -105,13 +104,6 @@ public class SketchEditorActivity
      * The previous brush size (stroke width).
      */
     public static final String PARAMS_REMEMBERING_BRUSH_SIZE = "previous_brush_size";
-
-    // Dialog consts.
-    public static final String PARAMS_ALERT_TITLE_MESSAGE = "title_message";
-    public static final String PARAMS_ALERT_CONFIRM_MESSAGE = "confirm_message";
-    public static final String PARAMS_ALERT_POSITIVE_MESSAGE = "positive_message";
-    public static final String PARAMS_ALERT_NEGATIVE_MESSAGE = "negative_message";
-
     /**
      * Whether to run the editor in fullscreen mode.
      */
@@ -404,22 +396,10 @@ public class SketchEditorActivity
             mBrushPicker, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL);
 
         // Resource for showing alert dialog of clearing sketch.
-        mAlertTitle = intent.getStringExtra(PARAMS_ALERT_TITLE_MESSAGE);
-        if (TextUtils.isEmpty(mAlertTitle)) {
-            mAlertTitle = getResources().getString(R.string.alert_title_of_clearing_strokes);
-        }
-        mAlertMessage = intent.getStringExtra(PARAMS_ALERT_CONFIRM_MESSAGE);
-        if (TextUtils.isEmpty(mAlertMessage)) {
-            mAlertMessage = getResources().getString(R.string.alert_message_of_clearing_strokes);
-        }
-        mAlertPositiveMessage = intent.getStringExtra(PARAMS_ALERT_POSITIVE_MESSAGE);
-        if (TextUtils.isEmpty(mAlertPositiveMessage)) {
-            mAlertPositiveMessage = getResources().getString(R.string.alert_positive_message_of_clearing_strokes);
-        }
-        mAlertNegativeMessage = intent.getStringExtra(PARAMS_ALERT_NEGATIVE_MESSAGE);
-        if (TextUtils.isEmpty(mAlertNegativeMessage)) {
-            mAlertNegativeMessage = getResources().getString(R.string.alert_positive_message_of_clearing_strokes);
-        }
+        mAlertTitle = getResources().getString(R.string.doodle_clear_title);
+        mAlertMessage = getResources().getString(R.string.doodle_clear_message);
+        mAlertPositiveMessage = getResources().getString(R.string.doodle_clear_ok);
+        mAlertNegativeMessage = getResources().getString(R.string.doodle_clear_cancel);
 
         // Init logger.
         // FIXME: Use Dagger2.
@@ -544,6 +524,8 @@ public class SketchEditorActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+
+        mLogger.d("bread crumbs", "Serialize sketch model in Activity#save().");
 
         // FIXME: Use repo to save the sketch.
 //        outState.putParcelable(SAVED_SKETCH_MODEL, mSketchModel);

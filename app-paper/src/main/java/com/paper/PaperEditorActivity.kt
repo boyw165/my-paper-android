@@ -167,11 +167,6 @@ class PaperEditorActivity : AppCompatActivity(),
                 // Remembering brush color and stroke width.
 //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
 //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_SIZE, brushSize)
-                // Alert message.
-                .putExtra(SketchEditorActivity.PARAMS_ALERT_TITLE_MESSAGE, getString(R.string.doodle_clear_title))
-                .putExtra(SketchEditorActivity.PARAMS_ALERT_CONFIRM_MESSAGE, getString(R.string.doodle_clear_message))
-                .putExtra(SketchEditorActivity.PARAMS_ALERT_POSITIVE_MESSAGE, getString(R.string.doodle_clear_ok))
-                .putExtra(SketchEditorActivity.PARAMS_ALERT_NEGATIVE_MESSAGE, getString(R.string.doodle_clear_cancel))
                 // Ask the editor enter fullscreen mode.
                 .putExtra(SketchEditorActivity.PARAMS_FULLSCREEN_MODE, false)
                 // DEBUG mode.
