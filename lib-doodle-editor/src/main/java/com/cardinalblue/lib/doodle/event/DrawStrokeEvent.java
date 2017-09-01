@@ -84,7 +84,7 @@ public class DrawStrokeEvent {
         return "DrawStrokeEvent{" +
                "justStart=" + justStart +
                ", drawing=" + drawing +
-               ", stop=" + !(justStart && drawing) +
+               ", stop=" + !(justStart || drawing) +
                ", strokes=" + strokes +
                ", from=" + from +
                ", isModelChanged=" + isModelChanged +
