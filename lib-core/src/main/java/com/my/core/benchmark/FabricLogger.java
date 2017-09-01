@@ -20,33 +20,53 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.protocol;
+package com.my.core.benchmark;
 
-public interface ILogger {
+import android.util.Log;
 
-    /**
-     * Send a DEBUG log message.
-     *
-     * @param tag Used to identify the source of a log message.  It usually
-     *            identifies the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     */
-    int d(String tag, String msg);
+import com.my.core.protocol.ILogger;
 
-    /**
-     * Send an ERROR log message.
-     *
-     * @param tag Used to identify the source of a log message.  It usually
-     *            identifies the class or activity where the log call occurs.
-     * @param msg The message you would like logged.
-     */
-    int e(String tag, String msg);
+import java.util.Arrays;
 
-    /**
-     * Send event to the remote analytics server.
-     *
-     * @param action     The key.
-     * @param parameters The parameters with the key.
-     */
-    void sendEvent(String action, String... parameters);
+public class FabricLogger implements ILogger {
+
+    private static final String TAG = "fabric logger";
+
+    public FabricLogger() {
+    }
+
+    @Override
+    public int d(String tag, String msg) {
+        // TODO: Finish it.
+//        Crashlytics.log(msg);
+
+        return Log.d(tag, msg);
+    }
+
+    @Override
+    public int e(String tag, String msg) {
+//        Crashlytics.log(msg);
+
+        return Log.e(tag, msg);
+    }
+
+    @Override
+    public void sendEvent(String action, String... parameters) {
+//        Crashlytics.log(msg);
+
+        if (parameters.length == 0) {
+            Log.d(TAG, action + "");
+        } else {
+            Log.d(TAG, action + ": " + Arrays.toString(parameters));
+        }
+    }
+
+    @Override
+    public void sendException(Throwable error) {
+//        Crashlytics.logException(msg);
+
+        if (error != null) {
+            Log.e(TAG, error.toString());
+        }
+    }
 }

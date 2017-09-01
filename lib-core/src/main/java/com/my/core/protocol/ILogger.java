@@ -20,43 +20,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.util;
+package com.my.core.protocol;
 
-import android.util.Log;
+public interface ILogger {
 
-import com.cardinalblue.lib.doodle.protocol.ILogEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
+    /**
+     * Send a DEBUG log message.
+     *
+     * @param tag Used to identify the source of a log message.  It usually
+     *            identifies the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     */
+    int d(String tag, String msg);
 
-import java.util.Arrays;
+    /**
+     * Send an ERROR log message.
+     *
+     * @param tag Used to identify the source of a log message.  It usually
+     *            identifies the class or activity where the log call occurs.
+     * @param msg The message you would like logged.
+     */
+    int e(String tag, String msg);
 
-public class AndroidLogger implements ILogger {
+    /**
+     * Send event to the remote analytics server.
+     *
+     * @param action     The key.
+     * @param parameters The parameters with the key.
+     */
+    void sendEvent(String action, String... parameters);
 
-    private final ILogEvent mRemoteLogger;
-
-    public AndroidLogger(ILogEvent remoteLogger) {
-        mRemoteLogger = remoteLogger;
-    }
-
-    @Override
-    public int d(String tag, String msg) {
-        return Log.d(tag, msg);
-    }
-
-    @Override
-    public int e(String tag, String msg) {
-        return Log.e(tag, msg);
-    }
-
-    @Override
-    public void sendEvent(String action, String... parameters) {
-        if (parameters.length == 0) {
-            Log.d("event", action + "");
-        } else {
-            Log.d("event", action + ": " + Arrays.toString(parameters));
-        }
-
-        if (mRemoteLogger != null) {
-            mRemoteLogger.sendEvent(action, parameters);
-        }
-    }
+    /**
+     * Send exception to the remote crashlytics server.
+     *
+     * @param error {@link Throwable}.
+     */
+    void sendException(Throwable error);
 }

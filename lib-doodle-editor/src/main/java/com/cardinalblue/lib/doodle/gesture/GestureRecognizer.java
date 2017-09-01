@@ -27,11 +27,9 @@ import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.cardinalblue.lib.doodle.event.UiTouchEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.IMatrixProvider;
 import com.cardinalblue.lib.doodle.protocol.IMotionEvent;
-
-import java.util.Locale;
+import com.my.core.protocol.ILogger;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;

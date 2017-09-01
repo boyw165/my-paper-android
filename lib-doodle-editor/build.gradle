@@ -49,6 +49,7 @@ dependencies {
     compile 'me.everything:overscroll-decor-android:1.0.4'
 
     // My Libraries
+    compile project(":lib-core")
     compile project(":lib-reactive")
     compile project(":lib-shared-model")
     compile project(":lib-shared-model-repository")

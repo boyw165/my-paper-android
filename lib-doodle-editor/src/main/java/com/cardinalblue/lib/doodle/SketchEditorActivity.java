@@ -46,15 +46,15 @@ import com.cardinalblue.lib.doodle.controller.SketchUndoRedoManipulator;
 import com.cardinalblue.lib.doodle.event.UiTouchEvent;
 import com.cardinalblue.lib.doodle.gesture.GestureRecognizer;
 import com.cardinalblue.lib.doodle.gesture.MotionEvent2TouchEventMapper;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.cardinalblue.lib.doodle.util.AndroidLogger;
+import com.my.core.benchmark.FabricLogger;
 import com.cardinalblue.lib.doodle.view.BrushSizeSeekBar;
 import com.cardinalblue.lib.doodle.view.SketchView;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapter;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapterObservable;
 import com.jakewharton.rxbinding2.view.RxView;
+import com.my.core.protocol.ILogger;
 import com.my.reactive.AlertDialogObservable;
 import com.my.reactive.SeekBarChangeObservable;
 import com.my.reactive.activity.RxAppCompatActivity;
@@ -423,7 +423,7 @@ public class SketchEditorActivity
 
         // Init logger.
         // FIXME: Use Dagger2.
-        mLogger = new AndroidLogger(null);
+        mLogger = new FabricLogger();
 
         // Init gesture recognizer.
         final float dragSlop = getResources().getDimension(R.dimen.drag_slop);

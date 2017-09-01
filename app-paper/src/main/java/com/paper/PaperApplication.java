@@ -21,11 +21,10 @@
 package com.paper;
 
 import android.support.multidex.MultiDexApplication;
-import android.util.Log;
 
-import com.my.core.util.ProfilerUtil;
-
-import java.util.Locale;
+import com.my.core.benchmark.FabricLogger;
+import com.my.core.benchmark.LogProfiler;
+import com.my.core.protocol.IProfiler;
 
 import io.realm.Realm;
 
@@ -35,14 +34,12 @@ public class PaperApplication extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
 
-        float interval = 0f;
+        // Init the profiler.
+        final IProfiler profiler = new LogProfiler(new FabricLogger());
 
+        profiler.startProfiling("Init realm");
         // Init realm.
-        ProfilerUtil.startProfiling();
         Realm.init(this);
-        interval = ProfilerUtil.stopProfiling();
-        Log.d("xyz", String.format(Locale.ENGLISH,
-                                   "Init Realm... done (took %.3f ms)",
-                                   interval));
+        profiler.stopProfiling();
     }
 }

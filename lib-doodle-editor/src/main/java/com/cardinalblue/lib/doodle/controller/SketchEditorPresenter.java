@@ -29,9 +29,9 @@ import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
+import com.my.core.protocol.ILogger;
 import com.my.reactive.uiEvent.UiEvent;
 import com.my.reactive.uiModel.UiModel;
 import com.my.reactive.util.ObservableConst;
@@ -597,13 +597,12 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             if (event.sizeOfRedo == 0 && event.sizeOfUndo == 0) {
                                 mEditorView.showOrHideUndoButton(false, false);
                                 mEditorView.showOrHideRedoButton(false, false);
-                                mEditorView.showOrHideDoneButton(false);
                             } else {
                                 mEditorView.showOrHideUndoButton(true, event.sizeOfUndo > 0);
                                 mEditorView.showOrHideRedoButton(true, event.sizeOfRedo > 0);
-                                mEditorView.showOrHideDoneButton(true);
                             }
 
+                            mEditorView.showOrHideDoneButton(event.sizeOfUndo > 0);
                             mEditorView.showOrHideClearButton(event.sizeOfUndo > 0);
                             return event;
                         }
@@ -619,7 +618,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     @Override
                     public GestureEvent apply(GestureEvent event)
                         throws Exception {
-                        mLogger.d("sketch", String.format(
+                        mLogger.d(TAG, String.format(
                             Locale.ENGLISH, "==> %s", event));
 
                         return event;
