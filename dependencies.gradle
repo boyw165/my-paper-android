@@ -8,7 +8,7 @@ ext {
 
     SUPPORT_LIB_VER = '25.4.0'
     PLAY_SERVICES_VER = '10.2.6'
-    KOTLIN_VER = '1.1.4'
+    KOTLIN_VER = '1.1.4-3'
     FIREBASE_VER = '10.2.6'
     RX_BINDING_VER = '2.0.0'
     DAGGER2_VER = '2.11-rc2'
