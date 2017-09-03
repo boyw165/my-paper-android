@@ -203,7 +203,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 
                                             // Save the position of latest tuple-path for
                                             // later use.
-                                            final int from = mStroke.size() - 1;
+                                            final int from = mStroke.pathTupleSize() - 1;
                                             // Add tuple.
                                             mStroke.savePathTuple(new PathTuple(mCachedPoints));
                                             // Clear the cache.
@@ -218,7 +218,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 
                                         // Save the position of latest tuple-path for
                                         // later use.
-                                        final int from = mStroke.size() - 1;
+                                        final int from = mStroke.pathTupleSize() - 1;
                                         // Add tuple.
                                         mStroke.savePathTuple(new PathTuple(nx, ny));
 
@@ -238,7 +238,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                                     if (!mCachedPoints.isEmpty()) {
                                         // Save the position of latest tuple-path for
                                         // later use.
-                                        final int from = mStroke.size() - 1;
+                                        final int from = mStroke.pathTupleSize() - 1;
                                         mStroke.savePathTuple(new PathTuple(mCachedPoints));
                                         source = Observable.just(
                                             DrawStrokeEvent.drawing(mStroke, from),
@@ -392,7 +392,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
         if (points == null || points.size() < 2) return;
 
         // Must have previous tuple.
-        final int strokesNum = mStroke.size();
+        final int strokesNum = mStroke.pathTupleSize();
         if (strokesNum == 0) return;
 
         // Previous tuple must have more than or equal to 2 points.

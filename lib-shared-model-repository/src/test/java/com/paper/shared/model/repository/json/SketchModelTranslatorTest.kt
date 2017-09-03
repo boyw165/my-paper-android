@@ -42,8 +42,7 @@ class SketchModelTranslatorTest {
 
         // Every dot stroke has just one tuple-point.
         for (stroke in model.allStrokes) {
-            // TODO: Rename to tupleSize
-            Assert.assertEquals(1, stroke.size())
+            Assert.assertEquals(1, stroke.pathTupleSize())
         }
 
         // Every dot stroke's tuple-point has just one point.

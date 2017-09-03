@@ -563,7 +563,7 @@ public class SketchView
         }
 
         mStrokePath.reset();
-        if (stroke.size() - from == 1) {
+        if (stroke.pathTupleSize() - from == 1) {
             // Draw a "dot"...
             final PointF point = stroke.getPathTupleAt(from).getPointAt(0);
 
@@ -586,7 +586,7 @@ public class SketchView
             //   ...                              '--+
             // ]
 
-            for (int i = from; i < stroke.size(); ++i) {
+            for (int i = from; i < stroke.pathTupleSize(); ++i) {
                 final PathTuple pathTuple = stroke.getPathTupleAt(i);
 
                 if (i == from) {
@@ -646,7 +646,7 @@ public class SketchView
         final StringBuilder builder = new StringBuilder("[");
 
         for (int i = 0; i < mDebugStrokes.size(); ++i) {
-            builder.append(mDebugStrokes.get(i).size());
+            builder.append(mDebugStrokes.get(i).pathTupleSize());
 
             if (i < mDebugStrokes.size() - 1) {
                 builder.append(",");

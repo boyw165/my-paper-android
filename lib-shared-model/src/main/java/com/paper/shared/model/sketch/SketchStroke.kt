@@ -81,7 +81,7 @@ class SketchStrokeModel {
     val lastPathTuple: PathTuple
         get() = mPathTupleList[mPathTupleList.size - 1]
 
-    fun size(): Int = mPathTupleList.size
+    fun pathTupleSize(): Int = mPathTupleList.size
 
     fun add(pathTuple: PathTuple) {
         val point = pathTuple.getPointAt(0)
