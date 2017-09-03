@@ -15,20 +15,20 @@
 package com.paper.shared.model.repository.json
 
 import com.google.gson.GsonBuilder
-import com.paper.shared.model.sketch.SketchModel
+import com.paper.shared.model.sketch.Sketch
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
 import java.io.FileReader
 
-class SketchModelTranslatorTest {
+class SketchTranslatorTest {
 
     @Test
     fun deserializeSketch_With_ThreeDots() {
         val gson = GsonBuilder()
-            .registerTypeAdapter(SketchModel::class.java, SketchModelTranslator())
+            .registerTypeAdapter(Sketch::class.java, SketchTranslator())
             .create()
-        val model = gson.fromJson<SketchModel>(SKETCH_WITH_THREE_DOTS, SketchModel::class.java)
+        val model = gson.fromJson<Sketch>(SKETCH_WITH_THREE_DOTS, Sketch::class.java)
 
         // There should be just 3 strokes.
         Assert.assertEquals(3, model.strokeSize)
@@ -72,12 +72,12 @@ class SketchModelTranslatorTest {
     @Test
     fun deserializeAndThenSerialize_stringShouldBeSame() {
         val gson = GsonBuilder()
-            .registerTypeAdapter(SketchModel::class.java, SketchModelTranslator())
+            .registerTypeAdapter(Sketch::class.java, SketchTranslator())
             .create()
         // From JSON.
-        val model = gson.fromJson<SketchModel>(SKETCH_WITH_THREE_DOTS, SketchModel::class.java)
+        val model = gson.fromJson<Sketch>(SKETCH_WITH_THREE_DOTS, Sketch::class.java)
         // To Json.
-        val jsonString = gson.toJson(model, SketchModel::class.java)
+        val jsonString = gson.toJson(model, Sketch::class.java)
 
         // Two strings should be the same.
         Assert.assertEquals(SKETCH_WITH_THREE_DOTS, jsonString)
@@ -86,13 +86,13 @@ class SketchModelTranslatorTest {
     @Test
     fun deserializeJson_From_IosClient() {
         val gson = GsonBuilder()
-            .registerTypeAdapter(SketchModel::class.java, SketchModelTranslator())
+            .registerTypeAdapter(Sketch::class.java, SketchTranslator())
             .create()
         val classLoader = javaClass.classLoader
         // The JSON is belong to the sketch (ID is 166170906) from the server.
         val resource = classLoader.getResource("json/sketch_created_from_ios_client.json")
         val file = File(resource.path)
-        val model = gson.fromJson(FileReader(file), SketchModel::class.java)
+        val model = gson.fromJson(FileReader(file), Sketch::class.java)
 
         // Exactly has 27 strokes.
         Assert.assertEquals(27, model.strokeSize)

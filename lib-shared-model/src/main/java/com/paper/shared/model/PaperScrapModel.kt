@@ -20,11 +20,11 @@
 
 package com.paper.shared.model
 
-import com.paper.shared.model.sketch.SketchModel
+import com.paper.shared.model.sketch.Sketch
 
 class PaperScrapModel constructor(id: Long) {
 
     val id: Long = id
 
-    var sketch: SketchModel? = null
+    var sketch: Sketch? = null
 }

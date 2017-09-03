@@ -161,7 +161,7 @@ class PaperEditorActivity : AppCompatActivity(),
         startActivityForResult(
             Intent(this, SketchEditorActivity::class.java)
                 // Pass a sketch struct.
-//                .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, SketchModel(0, 500, 500))
+//                .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, Sketch(0, 500, 500))
                 // Pass a sketch background.
 //                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
                 // Remembering brush color and stroke width.

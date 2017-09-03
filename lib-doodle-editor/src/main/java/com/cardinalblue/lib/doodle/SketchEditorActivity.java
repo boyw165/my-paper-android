@@ -59,7 +59,7 @@ import com.my.reactive.SeekBarChangeObservable;
 import com.my.reactive.activity.RxAppCompatActivity;
 import com.my.reactive.uiEvent.UiEvent;
 import com.paper.shared.model.repository.SketchModelRepo;
-import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.Sketch;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -85,7 +85,7 @@ public class SketchEditorActivity
     implements SketchContract.IEditorView {
 
     /**
-     * SketchModel struct in the sketch.
+     * Sketch struct in the sketch.
      */
     public static final String PARAMS_SKETCH_STRUCT = "sketch_struct";
     /**
@@ -210,7 +210,7 @@ public class SketchEditorActivity
     }
 
     @Override
-    public void closeWithUpdate(SketchModel model,
+    public void closeWithUpdate(Sketch model,
                                 int brushColor,
                                 int strokeWidth) {
         if (isFinishing()) return;

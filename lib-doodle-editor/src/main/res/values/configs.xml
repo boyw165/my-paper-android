@@ -3,7 +3,7 @@
     <dimen name="toolbar_height">56dp</dimen>
     <dimen name="drag_slop">3dp</dimen>
 
-    <!-- SketchModel dimensions/integers -->
+    <!-- Sketch dimensions/integers -->
     <dimen name="sketch_min_stroke_width">1dp</dimen>
     <dimen name="sketch_max_stroke_width">50dp</dimen>
     <dimen name="sketch_min_path_segment_length">3dp</dimen>

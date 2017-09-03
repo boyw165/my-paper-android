@@ -26,7 +26,7 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <!-- SketchModel editor -->
+    <!-- Sketch editor -->
     <style name="AppTheme.SketchEditor" parent="AppTheme.CustomToolbar">
         <item name="android:windowBackground">@color/black_30</item>
     </style>

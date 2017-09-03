@@ -36,7 +36,7 @@ import com.my.reactive.uiEvent.UiEvent;
 import com.my.reactive.uiModel.UiModel;
 import com.my.reactive.util.ObservableConst;
 import com.paper.shared.model.repository.protocol.ISketchModelRepo;
-import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 
 import java.io.InputStream;
@@ -73,7 +73,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private final ILogger mLogger;
 
     // Model.
-    private SketchModel mSketchModel;
+    private Sketch mSketchModel;
 
     // Brush.
     private List<ISketchBrush> mBrushes = new ArrayList<>();
@@ -101,7 +101,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
         mSketchModelRepository = sketchModelRepo;
         // Create a dummy model and the presenter will inflate the real one with
         // the help of repository.
-        mSketchModel = new SketchModel(1, 1);
+        mSketchModel = new Sketch(1, 1);
 
         mEditorView = editorView;
         mSketchView = sketchView;
@@ -129,26 +129,26 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                 // Init the sketch model.
                 mSketchModelRepository
                     .getTempSketch()
-                    .publish(new Function<Observable<SketchModel>, ObservableSource<Object>>() {
+                    .publish(new Function<Observable<Sketch>, ObservableSource<Object>>() {
                         @Override
-                        public ObservableSource<Object> apply(Observable<SketchModel> shared)
+                        public ObservableSource<Object> apply(Observable<Sketch> shared)
                             throws Exception {
                             return Observable.mergeArray(
                                 // For triggering the start UI state.
                                 shared.compose(mToUiModelTransformer),
                                 // Init the model.
                                 shared.observeOn(mUiScheduler)
-                                      .flatMap(new Function<SketchModel, ObservableSource<Object>>() {
+                                      .flatMap(new Function<Sketch, ObservableSource<Object>>() {
                                           @Override
-                                          public ObservableSource<Object> apply(@NonNull SketchModel sketchModel)
+                                          public ObservableSource<Object> apply(@NonNull Sketch sketch)
                                               throws Exception {
 
                                               mLogger.d(TAG, String.format(Locale.ENGLISH,
                                                                            "Load sketch(w=%d, h=%d)",
-                                                                           sketchModel.getWidth(),
-                                                                           sketchModel.getHeight()));
+                                                                           sketch.getWidth(),
+                                                                           sketch.getHeight()));
                                               // Update model.
-                                              mSketchModel = sketchModel;
+                                              mSketchModel = sketch;
 
                                               // Request the view to allocate Bitmap for the model.
                                               return mSketchView.createCanvasSource(
@@ -860,7 +860,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     }
 
     @Override
-    public SketchModel getSketchModel() {
+    public Sketch getSketchModel() {
         return mSketchModel;
     }
 }

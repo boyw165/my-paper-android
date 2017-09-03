@@ -32,7 +32,7 @@ import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.my.core.protocol.ILogger;
 import com.paper.shared.model.sketch.PathTuple;
-import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 
 import java.util.ArrayList;
@@ -128,7 +128,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                             if (mBrush == null) return Observable.just(DrawStrokeEvent.IDLE);
 
                             // The model.
-                            final SketchModel model = modelProvider.getSketchModel();
+                            final Sketch model = modelProvider.getSketchModel();
 
                             // The x and y are observed from the parent world.
                             final float x = event.x;
@@ -308,7 +308,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
                             if (mBrush == null) return Observable.just(DrawStrokeEvent.IDLE);
 
                             // The model.
-                            final SketchModel model = modelProvider.getSketchModel();
+                            final Sketch model = modelProvider.getSketchModel();
 
                             // The x and y are observed from the parent world.
                             final float x = event.x;

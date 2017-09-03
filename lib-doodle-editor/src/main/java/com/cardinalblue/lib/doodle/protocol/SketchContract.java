@@ -28,7 +28,7 @@ import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.my.reactive.uiEvent.UiEvent;
-import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 
 import java.io.InputStream;
@@ -53,7 +53,7 @@ public abstract class SketchContract {
 
         void close();
 
-        void closeWithUpdate(SketchModel model, int brushColor, int strokeWidth);
+        void closeWithUpdate(Sketch model, int brushColor, int strokeWidth);
 
         void showErrorAlertThenClose(Throwable error);
 
@@ -154,7 +154,7 @@ public abstract class SketchContract {
      */
     public interface IModelProvider {
 
-        SketchModel getSketchModel();
+        Sketch getSketchModel();
     }
 
     /**

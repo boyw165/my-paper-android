@@ -12,7 +12,7 @@ For Example:
 startActivityForResult(
     new Intent(this, SketchEditorActivity.class)
         // Pass a sketch struct.
-        .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, sketchModel)
+        .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, sketch)
         // Pass a sketch background.
         .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
         // Remembering brush color and stroke width.
@@ -40,7 +40,7 @@ The [SketchContract](src/main/java/com/cardinalblue/lib/doodle/protocol/SketchCo
 Model
 ---
 
-The model contains all properties for making a sketch. There's no business logic here. 
+The model contains all properties for making a sketch. There's no business logic here.
 
 ### Class Diagram
 

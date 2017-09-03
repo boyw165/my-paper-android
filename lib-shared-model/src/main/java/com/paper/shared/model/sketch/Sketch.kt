@@ -52,7 +52,7 @@ import kotlin.collections.ArrayList
  * '-------------------'
  * </pre>
  */
-class SketchModel constructor(id: Long) {
+class Sketch constructor(id: Long) {
 
     private val mMutex = Any()
 
@@ -83,7 +83,7 @@ class SketchModel constructor(id: Long) {
         }
     }
 
-    constructor(other: SketchModel)
+    constructor(other: Sketch)
         : this(other.id,
                other.width,
                other.height,
@@ -197,12 +197,12 @@ class SketchModel constructor(id: Long) {
         }
     }
 
-    fun clone(): SketchModel {
-        return SketchModel(this)
+    fun clone(): Sketch {
+        return Sketch(this)
     }
 
     override fun toString(): String {
-        return "SketchModel{" +
+        return "Sketch{" +
                ", width=" + width +
                ", height=" + height +
                ", strokes=[" + mStrokes + "]" +

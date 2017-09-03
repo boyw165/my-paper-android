@@ -19,10 +19,10 @@ import android.content.ContentValues
 import android.database.Cursor
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.paper.shared.model.repository.json.SketchModelTranslator
+import com.paper.shared.model.repository.json.SketchTranslator
 import com.paper.shared.model.repository.protocol.ISketchModelRepo
 import com.paper.shared.model.repository.sqlite.SketchTable
-import com.paper.shared.model.sketch.SketchModel
+import com.paper.shared.model.sketch.Sketch
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import java.io.File
@@ -42,12 +42,12 @@ class SketchModelRepo(authority: String,
     // JSON translator.
     private val mGson: Gson by lazy {
         GsonBuilder()
-            .registerTypeAdapter(SketchModel::class.java,
-                                 SketchModelTranslator())
+            .registerTypeAdapter(Sketch::class.java,
+                                 SketchTranslator())
             .create()
     }
 
-    override fun getSketchById(id: Long): Observable<SketchModel> {
+    override fun getSketchById(id: Long): Observable<Sketch> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -63,23 +63,23 @@ class SketchModelRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getTempSketch(): Observable<SketchModel> {
+    override fun getTempSketch(): Observable<Sketch> {
         return Observable
             .fromCallable {
                 mTempFile
                     .bufferedReader()
                     .use { reader ->
-                        mGson.fromJson(reader, SketchModel::class.java)
+                        mGson.fromJson(reader, Sketch::class.java)
                     }
             }
             .subscribeOn(mIoScheduler)
     }
 
     override fun newTempSketch(width: Int,
-                               height: Int): Observable<SketchModel> {
+                               height: Int): Observable<Sketch> {
         return Observable
             .fromCallable {
-                val newSketch = SketchModel(width, height)
+                val newSketch = Sketch(width, height)
                 val json = mGson.toJson(newSketch)
 
                 mTempFile
@@ -94,18 +94,18 @@ class SketchModelRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempSketch(other: SketchModel): Observable<SketchModel> {
+    override fun newTempSketch(other: Sketch): Observable<Sketch> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun commitTempSketch(): Observable<SketchModel> {
+    override fun commitTempSketch(): Observable<Sketch> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun convertSketchToValues(sketch: SketchModel): ContentValues {
+    private fun convertSketchToValues(sketch: Sketch): ContentValues {
         val values = ContentValues()
 
 //        values.put(SketchTable.COL_WIDTH, sketch.width)
@@ -121,8 +121,8 @@ class SketchModelRepo(authority: String,
         return values
     }
 
-    private fun convertCursorToSketch(cursor: Cursor): SketchModel {
-        val paper = SketchModel(0, 0)
+    private fun convertCursorToSketch(cursor: Cursor): Sketch {
+        val paper = Sketch(0, 0)
 
 //        val colOfId = cursor.getColumnIndexOrThrow(PaperTable.COL_ID)
 //        paper.id = cursor.getLong(colOfId)

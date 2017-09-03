@@ -14,14 +14,14 @@
 
 package com.paper.shared.model.repository.protocol
 
-import com.paper.shared.model.sketch.SketchModel
+import com.paper.shared.model.sketch.Sketch
 import io.reactivex.Observable
 
 interface ISketchModelRepo {
 
     // For persistent store.
 
-    fun getSketchById(id: Long): Observable<SketchModel>
+    fun getSketchById(id: Long): Observable<Sketch>
 
     fun deletePaperById(id: Long): Observable<Boolean>
 
@@ -29,17 +29,17 @@ interface ISketchModelRepo {
 
     fun hasTempSketch(): Observable<Boolean>
 
-    fun getTempSketch(): Observable<SketchModel>
+    fun getTempSketch(): Observable<Sketch>
 
     /**
      * There is only one inventory for the temporary paper.
      */
-    fun newTempSketch(width: Int, height: Int): Observable<SketchModel>
+    fun newTempSketch(width: Int, height: Int): Observable<Sketch>
 
     /**
      * There is only one inventory for the temporary paper.
      */
-    fun newTempSketch(other: SketchModel): Observable<SketchModel>
+    fun newTempSketch(other: Sketch): Observable<Sketch>
 
-    fun commitTempSketch(): Observable<SketchModel>
+    fun commitTempSketch(): Observable<Sketch>
 }

@@ -27,7 +27,7 @@ import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
 import com.cardinalblue.lib.doodle.history.UndoRedoList;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.my.core.protocol.ILogger;
-import com.paper.shared.model.sketch.SketchModel;
+import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 
 import java.util.ArrayList;
@@ -205,12 +205,12 @@ public class SketchUndoRedoManipulator implements SketchContract.ISketchUndoRedo
                                 .map(new Function<DrawStrokeEvent, UndoRedoEvent>() {
                                     @Override
                                     public UndoRedoEvent apply(DrawStrokeEvent event) throws Exception {
-                                        final SketchModel sketchModel = modelProvider.getSketchModel();
+                                        final Sketch sketch = modelProvider.getSketchModel();
 
                                         // Stop drawing... it's about time to add undo record.
-                                        if (sketchModel.getAllStrokes().size() > 0 &&
+                                        if (sketch.getAllStrokes().size() > 0 &&
                                             event.isModelChanged) {
-                                            List<SketchStroke> src = sketchModel.getAllStrokes();
+                                            List<SketchStroke> src = sketch.getAllStrokes();
                                             // TODO: Recursively clone.
                                             List<SketchStroke> copy = new ArrayList<>(src);
                                             mRecords.add(copy);
