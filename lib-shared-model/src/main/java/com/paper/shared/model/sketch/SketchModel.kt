@@ -122,6 +122,20 @@ class SketchModel constructor(id: Long) {
         }
     }
 
+    val firstStroke: SketchStrokeModel
+        get() {
+            synchronized(mMutex) {
+                return mStrokes[0]
+            }
+        }
+
+    val lastStroke: SketchStrokeModel
+        get() {
+            synchronized(mMutex) {
+                return mStrokes[mStrokes.size - 1]
+            }
+        }
+
     val allStrokes: List<SketchStrokeModel>
         get() {
             synchronized(mMutex) {
