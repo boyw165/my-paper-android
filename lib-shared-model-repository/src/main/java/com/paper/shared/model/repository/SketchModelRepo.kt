@@ -108,8 +108,8 @@ class SketchModelRepo(authority: String,
     private fun convertSketchToValues(sketch: SketchModel): ContentValues {
         val values = ContentValues()
 
-        values.put(SketchTable.COL_WIDTH, sketch.width)
-        values.put(SketchTable.COL_HEIGHT, sketch.height)
+//        values.put(SketchTable.COL_WIDTH, sketch.width)
+//        values.put(SketchTable.COL_HEIGHT, sketch.height)
 
         // FIXME:
         values.put(SketchTable.COL_THUMB_PATH, "")

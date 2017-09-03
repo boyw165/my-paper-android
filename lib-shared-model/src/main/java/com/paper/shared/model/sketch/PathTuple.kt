@@ -50,9 +50,10 @@ class PathTuple {
         mPoints.add(PointF(x, y))
     }
 
-    fun getPointAt(position: Int): PointF {
-        return mPoints[position]
-    }
+    fun getPointAt(position: Int): PointF = mPoints[position]
+
+    val firstPoint: PointF
+        get() = mPoints[0]
 
     val lastPoint: PointF
         get() = mPoints[pointSize - 1]
@@ -62,10 +63,6 @@ class PathTuple {
 
     val allPoints: List<PointF>
         get() = mPoints
-
-    fun describeContents(): Int {
-        return 0
-    }
 
     override fun toString(): String {
         return "PathTuple[" +

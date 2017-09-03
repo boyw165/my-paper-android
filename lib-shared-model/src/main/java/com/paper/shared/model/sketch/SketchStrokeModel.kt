@@ -34,6 +34,7 @@ import java.util.ArrayList
 class SketchStrokeModel {
 
     // State.
+    // The byte order is ARGB.
     private var mColor: Int = 0
     private var mWidth: Float = 0.toFloat()
     var isEraser: Boolean = false
@@ -50,18 +51,17 @@ class SketchStrokeModel {
         return this
     }
 
-    fun getWidth(): Float {
-        return mWidth
-    }
+    fun getWidth(): Float = mWidth
 
+    /**
+     * Set color, the format is the same with [android.graphics.Color].
+     */
     fun setColor(color: Int): SketchStrokeModel {
         mColor = color
         return this
     }
 
-    fun getColor(): Int {
-        return mColor
-    }
+    fun getColor(): Int = mColor
 
     fun savePathTuple(tuple: PathTuple?): Boolean {
         if (tuple == null || tuple.pointSize == 0) return false
@@ -73,9 +73,7 @@ class SketchStrokeModel {
         return mPathTupleList.add(tuple)
     }
 
-    fun getPathTupleAt(position: Int): PathTuple {
-        return mPathTupleList[position]
-    }
+    fun getPathTupleAt(position: Int): PathTuple = mPathTupleList[position]
 
     val firstPathTuple: PathTuple
         get() = mPathTupleList[0]
@@ -83,9 +81,7 @@ class SketchStrokeModel {
     val lastPathTuple: PathTuple
         get() = mPathTupleList[mPathTupleList.size - 1]
 
-    fun size(): Int {
-        return mPathTupleList.size
-    }
+    fun size(): Int = mPathTupleList.size
 
     fun add(pathTuple: PathTuple) {
         val point = pathTuple.getPointAt(0)

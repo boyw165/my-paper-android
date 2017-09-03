@@ -1,4 +1,4 @@
-//  Copyright Aug 2017-present boyw165@gmail.com
+//  Copyright Sep 2017-present boyw165@gmail.com
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@ package com.paper.shared.model.repository.sqlite
 
 import android.provider.BaseColumns
 
-object SketchTable {
+object ScrapTable {
 
     // Table names.
     val TABLE_NAME: String = "paper"
     val TABLE_NAME_TEMP: String = "paper_temp"
 
     // Table columns.
+    // TODO: How to handle tags, location, or more?
     val COL_ID: String = BaseColumns._ID
     val COL_COUNT: String = BaseColumns._COUNT
-    // Foreign key to sketch table.
-    val COL_PAPER_ID: String = "paper_id"
-//    val COL_WIDTH: String = "width"
-//    val COL_HEIGHT: String = "height"
+    val COL_CREATED_AT: String = "create_time"
+    val COL_MODIFIED_AT: String = "modify_time"
+    val COL_WIDTH: String = "width"
+    val COL_HEIGHT: String = "height"
+    val COL_CAPTION: String = "caption"
     val COL_THUMB_PATH: String = "thumb_path"
     val COL_THUMB_WIDTH: String = "thumb_width"
     val COL_THUMB_HEIGHT: String = "thumb_height"

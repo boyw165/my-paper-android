@@ -66,8 +66,8 @@ class SketchContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
         val sharedCommand: String =
             "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA" +
             "FOREIGN KEY(${SketchTable.COL_PAPER_ID}) REFERENCES ${PaperTable.TABLE_NAME}(${PaperTable.COL_ID}) $COMMA" +
-            "${SketchTable.COL_WIDTH} INTEGER NOT NULL $COMMA" +
-            "${SketchTable.COL_HEIGHT} INTEGER NOT NULL $COMMA" +
+//            "${SketchTable.COL_WIDTH} INTEGER NOT NULL $COMMA" +
+//            "${SketchTable.COL_HEIGHT} INTEGER NOT NULL $COMMA" +
             "${SketchTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
             "${SketchTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
             "${SketchTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +

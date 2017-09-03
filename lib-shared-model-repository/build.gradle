@@ -49,6 +49,9 @@ dependencies {
     testCompile rootProject.ext.dep.testJunit
     testCompile rootProject.ext.dep.testMockito
     testCompile rootProject.ext.dep.leakcanaryNoOp
+    // Kotlin.
+    testCompile rootProject.ext.dep.kotlinStdlib
+    testCompile rootProject.ext.dep.kotlinUnitTest
 
     // Instrumentation tests.
     androidTestCompile(rootProject.ext.dep.testEspressoCore, {

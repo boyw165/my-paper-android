@@ -22,6 +22,7 @@ package com.paper.shared.model.sketch
 
 import android.graphics.RectF
 import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * A sketch scrap could contains multiple strokes. Every stroke has an array of
@@ -59,9 +60,9 @@ class SketchModel constructor(id: Long) {
     val id: Long = id
     var width: Int = 0
     var height: Int = 0
-    private var mStrokes: MutableList<SketchStrokeModel>? = null
-    private var mStrokesBoundDirty = true
-    private var mStrokesBound = RectF()
+    val mStrokes: MutableList<SketchStrokeModel> = ArrayList()
+    var mStrokesBoundDirty = true
+    var mStrokesBound = RectF()
 
     constructor()
         : this(0, 0, 0, emptyList())
@@ -73,30 +74,23 @@ class SketchModel constructor(id: Long) {
     constructor(id: Long,
                 width: Int,
                 height: Int,
-                strokes: List<SketchStrokeModel>? = emptyList())
+                strokes: List<SketchStrokeModel> = emptyList())
         : this(id) {
         this.width = width
         this.height = height
 
-        if (strokes != null) {
-            mStrokes = ArrayList(strokes)
+        if (!strokes.isEmpty()) {
+            mStrokes.addAll(strokes)
         }
     }
 
-    constructor(other: SketchModel?)
-        : this(other?.id ?: 0) {
-        if (other == null) {
-            width = 1440
-            height = 1440
-            mStrokes = ArrayList<SketchStrokeModel>()
-            mStrokesBoundDirty = true
-        } else {
-            width = other.width
-            height = other.height
-            mStrokes = ArrayList(other.allStrokes)
-            mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
-            mStrokesBoundDirty = false
-        }
+    constructor(other: SketchModel)
+        : this(other.id,
+               other.width,
+               other.height,
+               other.allStrokes) {
+        mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
+        mStrokesBoundDirty = false
     }
 
     fun setSize(width: Int, height: Int) {
