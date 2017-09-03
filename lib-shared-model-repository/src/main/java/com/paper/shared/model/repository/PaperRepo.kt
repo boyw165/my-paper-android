@@ -28,10 +28,10 @@ import io.reactivex.Observable
 import io.reactivex.Scheduler
 import java.io.File
 
-class PaperModelRepo(authority: String,
-                     resolver: ContentResolver,
-                     cacheDirFile: File,
-                     ioScheduler: Scheduler) : IPaperModelRepo {
+class PaperRepo(authority: String,
+                resolver: ContentResolver,
+                cacheDirFile: File,
+                ioScheduler: Scheduler) : IPaperModelRepo {
 
     // Given...
     private val mAuthority = authority

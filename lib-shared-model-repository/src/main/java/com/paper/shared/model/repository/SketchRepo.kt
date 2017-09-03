@@ -27,10 +27,10 @@ import io.reactivex.Observable
 import io.reactivex.Scheduler
 import java.io.File
 
-class SketchModelRepo(authority: String,
-                      resolver: ContentResolver,
-                      cacheDirFile: File,
-                      ioScheduler: Scheduler) : ISketchModelRepo {
+class SketchRepo(authority: String,
+                 resolver: ContentResolver,
+                 cacheDirFile: File,
+                 ioScheduler: Scheduler) : ISketchModelRepo {
 
     // Given...
     private val mAuthority: String = authority

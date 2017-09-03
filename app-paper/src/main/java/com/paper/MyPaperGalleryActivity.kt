@@ -25,13 +25,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.my.core.protocol.IProgressBarView
 import com.my.reactive.uiModel.UiModel
-import com.paper.shared.model.repository.PaperModelRepo
+import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -58,11 +57,11 @@ class MyPaperGalleryActivity : AppCompatActivity(),
 
     // Repo.
     // TODO: Inject the repo.
-    private val mPaperRepo: PaperModelRepo by lazy {
-        PaperModelRepo(packageName,
-                       contentResolver,
-                       externalCacheDir,
-                       Schedulers.io())
+    private val mPaperRepo: PaperRepo by lazy {
+        PaperRepo(packageName,
+                  contentResolver,
+                  externalCacheDir,
+                  Schedulers.io())
     }
 
     private val mDisposables1: CompositeDisposable = CompositeDisposable()

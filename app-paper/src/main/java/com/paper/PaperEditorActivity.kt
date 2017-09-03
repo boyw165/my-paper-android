@@ -28,8 +28,8 @@ import android.widget.Toast
 import com.cardinalblue.lib.doodle.SketchEditorActivity
 import com.my.core.protocol.IProgressBarView
 import com.my.reactive.uiModel.UiModel
-import com.paper.shared.model.repository.PaperModelRepo
-import com.paper.shared.model.repository.SketchModelRepo
+import com.paper.shared.model.repository.PaperRepo
+import com.paper.shared.model.repository.SketchRepo
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -46,17 +46,17 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // Repo.
     // TODO: Inject the repo.
-    private val mPaperRepo: PaperModelRepo by lazy {
-        PaperModelRepo(packageName,
-                       contentResolver,
-                       externalCacheDir,
-                       Schedulers.io())
+    private val mPaperRepo: PaperRepo by lazy {
+        PaperRepo(packageName,
+                  contentResolver,
+                  externalCacheDir,
+                  Schedulers.io())
     }
-    private val mSketchRepo: SketchModelRepo by lazy {
-        SketchModelRepo(packageName,
-                        contentResolver,
-                        externalCacheDir,
-                        Schedulers.io())
+    private val mSketchRepo: SketchRepo by lazy {
+        SketchRepo(packageName,
+                   contentResolver,
+                   externalCacheDir,
+                   Schedulers.io())
     }
 
     private var mDisposables1: CompositeDisposable = CompositeDisposable()

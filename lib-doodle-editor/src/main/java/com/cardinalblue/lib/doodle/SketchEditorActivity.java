@@ -58,7 +58,7 @@ import com.my.reactive.AlertDialogObservable;
 import com.my.reactive.SeekBarChangeObservable;
 import com.my.reactive.activity.RxAppCompatActivity;
 import com.my.reactive.uiEvent.UiEvent;
-import com.paper.shared.model.repository.SketchModelRepo;
+import com.paper.shared.model.repository.SketchRepo;
 import com.paper.shared.model.sketch.Sketch;
 
 import java.io.File;
@@ -436,10 +436,10 @@ public class SketchEditorActivity
         final float maxStrokeWidth = getResources().getDimension(R.dimen.sketch_max_stroke_width);
 
         mEditorPresenter = new SketchEditorPresenter(
-            new SketchModelRepo(getPackageName(),
-                                getContentResolver(),
-                                getExternalCacheDir(),
-                                Schedulers.io()),
+            new SketchRepo(getPackageName(),
+                           getContentResolver(),
+                           getExternalCacheDir(),
+                           Schedulers.io()),
             this,
             mSketchView,
             new DrawStrokeManipulator(minPathSegmentLength,
