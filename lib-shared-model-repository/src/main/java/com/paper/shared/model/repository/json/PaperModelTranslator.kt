@@ -14,7 +14,6 @@
 
 package com.paper.shared.model.repository.json
 
-import android.provider.DocumentsContract
 import com.google.gson.*
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.sqlite.PaperTable

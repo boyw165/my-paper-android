@@ -119,7 +119,9 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     }
 
     @Override
-    public Observable<?> initEditorAndLoadSketch(final int brushColor,
+    public Observable<?> initEditorAndLoadSketch(final int sketchWidth,
+                                                 final int sketchHeight,
+                                                 final int brushColor,
                                                  final int brushSize) {
         return Observable
             .mergeArray(
@@ -149,6 +151,8 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                                                            sketch.getHeight()));
                                               // Update model.
                                               mSketchModel = sketch;
+                                              mSketchModel.setWidth(sketchWidth);
+                                              mSketchModel.setHeight(sketchHeight);
 
                                               // Request the view to allocate Bitmap for the model.
                                               return mSketchView.createCanvasSource(

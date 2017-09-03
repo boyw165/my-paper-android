@@ -71,9 +71,8 @@ class PaperEditorActivity : AppCompatActivity(),
                 .getTempPaper()
                 // TODO: New temp sketch.
                 .flatMap { paper ->
-                    mSketchRepo
-                        .newTempSketch(paper.width,
-                                       paper.height)
+                    // FIXME: Create a temporary fullscreen size sketch.
+                    mSketchRepo.newTempSketch(paper.width, paper.height)
                 }
                 // Convert to view-model.
                 .compose { upstream ->
@@ -91,7 +90,8 @@ class PaperEditorActivity : AppCompatActivity(),
                         vm.isSuccessful -> {
                             hideProgressBar()
 
-                            navigateToSketchEditor()
+                            val sketch = vm.bundle
+                            navigateToSketchEditor(sketch.width, sketch.height)
                         }
                         else -> {
                             showError(vm.error)
@@ -155,13 +155,14 @@ class PaperEditorActivity : AppCompatActivity(),
                        Toast.LENGTH_SHORT).show()
     }
 
-    private fun navigateToSketchEditor() {
+    private fun navigateToSketchEditor(width: Int, height: Int) {
         // FIXME: Workaround of creating a new paper model and navigate to the
         // FIXME: sketch editor immediately.
         startActivityForResult(
             Intent(this, SketchEditorActivity::class.java)
-                // Pass a sketch struct.
-//                .putExtra(SketchEditorActivity.PARAMS_SKETCH_STRUCT, Sketch(0, 500, 500))
+                // Pass a sketch width and height.
+                .putExtra(SketchEditorActivity.PARAMS_SKETCH_WIDTH, width)
+                .putExtra(SketchEditorActivity.PARAMS_SKETCH_HEIGHT, height)
                 // Pass a sketch background.
 //                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
                 // Remembering brush color and stroke width.

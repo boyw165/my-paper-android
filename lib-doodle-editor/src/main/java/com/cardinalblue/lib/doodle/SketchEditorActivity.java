@@ -85,9 +85,15 @@ public class SketchEditorActivity
     implements SketchContract.IEditorView {
 
     /**
-     * Sketch struct in the sketch.
+     * Sketch width. The width property is not stored in the database because
+     * the scrap has it already.
      */
-    public static final String PARAMS_SKETCH_STRUCT = "sketch_struct";
+    public static final String PARAMS_SKETCH_WIDTH = "sketch_width";
+    /**
+     * Sketch height. The height property is not stored in the database because
+     * the scrap has it already.
+     */
+    public static final String PARAMS_SKETCH_HEIGHT = "sketch_height";
     /**
      * Background in the sketch.
      */
@@ -364,11 +370,23 @@ public class SketchEditorActivity
 
         // Common...
         final Intent intent = getIntent();
+        if (getExternalCacheDir() == null) {
+            throw new IllegalArgumentException(
+                "Cannot access external cache directory.");
+        }
 
         // Fullscreen mode.
         if (intent.getBooleanExtra(PARAMS_FULLSCREEN_MODE, false)) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                                  WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
+
+        // Sketch width and height.
+        final int sketchWidth = intent.getIntExtra(PARAMS_SKETCH_WIDTH, 0);
+        final int sketchHeight = intent.getIntExtra(PARAMS_SKETCH_HEIGHT, 0);
+        if (sketchWidth <= 0 || sketchHeight <= 0) {
+            throw new IllegalArgumentException(
+                "Sketch width or height is zero or negative.");
         }
 
         // Bind view.
@@ -445,8 +463,11 @@ public class SketchEditorActivity
         // Prepare the initial strokes.
         mDisposables.add(
             mEditorPresenter
-                .initEditorAndLoadSketch(intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_COLOR, 0),
-                                         intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_SIZE, -1))
+                .initEditorAndLoadSketch(
+                    sketchWidth,
+                    sketchHeight,
+                    intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_COLOR, 0),
+                    intent.getIntExtra(PARAMS_REMEMBERING_BRUSH_SIZE, -1))
                 .subscribe());
 
         // FIXME: Race condition (single source of truth)

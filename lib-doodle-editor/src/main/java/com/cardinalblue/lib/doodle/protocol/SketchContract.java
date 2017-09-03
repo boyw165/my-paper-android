@@ -162,7 +162,10 @@ public abstract class SketchContract {
      */
     public interface ISketchEditorPresenter {
 
-        Observable<?> initEditorAndLoadSketch(int brushColor, int brushSize);
+        Observable<?> initEditorAndLoadSketch(int sketchWidth,
+                                              int sketchHeight,
+                                              int brushColor,
+                                              int brushSize);
 
         ObservableTransformer<InputStream, ?> setBackground();
 
