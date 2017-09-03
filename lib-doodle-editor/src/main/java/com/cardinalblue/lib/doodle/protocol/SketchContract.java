@@ -29,7 +29,7 @@ import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.my.reactive.uiEvent.UiEvent;
 import com.paper.shared.model.sketch.SketchModel;
-import com.paper.shared.model.sketch.SketchStrokeModel;
+import com.paper.shared.model.sketch.SketchStroke;
 
 import java.io.InputStream;
 import java.util.List;
@@ -115,11 +115,11 @@ public abstract class SketchContract {
 
         void eraseCanvas();
 
-        void drawStrokeFrom(SketchStrokeModel stroke, int from);
+        void drawStrokeFrom(SketchStroke stroke, int from);
 
-        void drawStrokes(List<SketchStrokeModel> strokes);
+        void drawStrokes(List<SketchStroke> strokes);
 
-        void drawAndSharpenStrokes(List<SketchStrokeModel> strokes);
+        void drawAndSharpenStrokes(List<SketchStroke> strokes);
 
         // Pinch methods...
 
@@ -146,7 +146,7 @@ public abstract class SketchContract {
 
         void setDebug(boolean isDebug);
 
-        void debugStrokes(List<SketchStrokeModel> strokes);
+        void debugStrokes(List<SketchStroke> strokes);
     }
 
     /**
@@ -218,13 +218,13 @@ public abstract class SketchContract {
 
         int sizeOfRedo();
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> undo(IModelProvider modelProvider);
+        ObservableTransformer<Object, List<SketchStroke>> undo(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> undoAll(IModelProvider modelProvider);
+        ObservableTransformer<Object, List<SketchStroke>> undoAll(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> redo(IModelProvider modelProvider);
+        ObservableTransformer<Object, List<SketchStroke>> redo(IModelProvider modelProvider);
 
-        ObservableTransformer<Object, List<SketchStrokeModel>> clearAll(IModelProvider modelProvider);
+        ObservableTransformer<Object, List<SketchStroke>> clearAll(IModelProvider modelProvider);
 
         ObservableTransformer<Object, ?> onSpyingStrokesUpdate(IModelProvider modelProvider);
     }

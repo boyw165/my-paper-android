@@ -37,7 +37,7 @@ import com.my.reactive.uiModel.UiModel;
 import com.my.reactive.util.ObservableConst;
 import com.paper.shared.model.repository.protocol.ISketchModelRepo;
 import com.paper.shared.model.sketch.SketchModel;
-import com.paper.shared.model.sketch.SketchStrokeModel;
+import com.paper.shared.model.sketch.SketchStroke;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -158,9 +158,9 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                           }
                                       })
                                       .observeOn(mUiScheduler)
-                                      .map(new Function<Object, List<SketchStrokeModel>>() {
+                                      .map(new Function<Object, List<SketchStroke>>() {
                                           @Override
-                                          public List<SketchStrokeModel> apply(Object ignored)
+                                          public List<SketchStroke> apply(Object ignored)
                                               throws Exception {
                                               // FIXME: Code behind depends on the layout callback triggered
                                               // FIXME: by createCanvasSource();
@@ -193,7 +193,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                               // TODO: A improvement that progressively have view
                                               // TODO: draw strokes without freezing UI.
                                               // Init strokes preview.
-                                              final List<SketchStrokeModel> strokes = mSketchModel.getAllStrokes();
+                                              final List<SketchStroke> strokes = mSketchModel.getAllStrokes();
                                               mSketchView.eraseCanvas();
                                               mSketchView.drawStrokes(strokes);
 
@@ -201,10 +201,10 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                           }
                                       })
                                       // React to views.
-                                      .publish(new Function<Observable<List<SketchStrokeModel>>, ObservableSource<Object>>() {
+                                      .publish(new Function<Observable<List<SketchStroke>>, ObservableSource<Object>>() {
                                           @Override
                                           public ObservableSource<Object> apply(
-                                              Observable<List<SketchStrokeModel>> shared)
+                                              Observable<List<SketchStroke>> shared)
                                               throws Exception {
                                               return Observable.mergeArray(
                                                   shared.compose(mToUiModelTransformer),
@@ -723,15 +723,15 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
             }
         };
 
-    private ObservableTransformer<List<SketchStrokeModel>, ?> mUpdateCanvasStrokes =
-        new ObservableTransformer<List<SketchStrokeModel>, UndoRedoEvent>() {
+    private ObservableTransformer<List<SketchStroke>, ?> mUpdateCanvasStrokes =
+        new ObservableTransformer<List<SketchStroke>, UndoRedoEvent>() {
             @Override
-            public ObservableSource<UndoRedoEvent> apply(Observable<List<SketchStrokeModel>> upstream) {
+            public ObservableSource<UndoRedoEvent> apply(Observable<List<SketchStroke>> upstream) {
                 return upstream
                     .observeOn(mUiScheduler)
-                    .map(new Function<List<SketchStrokeModel>, UndoRedoEvent>() {
+                    .map(new Function<List<SketchStroke>, UndoRedoEvent>() {
                         @Override
-                        public UndoRedoEvent apply(List<SketchStrokeModel> strokes)
+                        public UndoRedoEvent apply(List<SketchStroke> strokes)
                             throws Exception {
                             mSketchView.eraseCanvas();
                             mSketchView.drawStrokes(strokes);

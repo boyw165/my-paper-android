@@ -17,7 +17,7 @@ package com.paper.shared.model.repository.json
 import com.google.gson.*
 import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.SketchModel
-import com.paper.shared.model.sketch.SketchStrokeModel
+import com.paper.shared.model.sketch.SketchStroke
 import java.lang.reflect.Type
 
 class SketchModelTranslator : JsonSerializer<SketchModel>,
@@ -83,7 +83,7 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
         // Parse stroke object.
         for (i in 0 until strokesJson.size()) {
             val strokeJson = strokesJson.get(i).asJsonObject
-            val stroke = SketchStrokeModel()
+            val stroke = SketchStroke()
 
             // Parse path-tuple
             val pathTuplesJson = strokeJson.get("path_tuples").asJsonArray

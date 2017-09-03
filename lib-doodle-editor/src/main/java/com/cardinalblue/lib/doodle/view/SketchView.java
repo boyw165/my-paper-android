@@ -47,7 +47,7 @@ import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.jakewharton.rxbinding2.view.RxView;
 import com.my.reactive.AnimatorSetObservable;
 import com.paper.shared.model.sketch.PathTuple;
-import com.paper.shared.model.sketch.SketchStrokeModel;
+import com.paper.shared.model.sketch.SketchStroke;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class SketchView
     private final Xfermode mEraserMode = new PorterDuffXfermode(PorterDuff.Mode.CLEAR);
     private final Path mStrokePath = new Path();
     private int mDrawFromPosition;
-    private List<SketchStrokeModel> mTransientStrokes = new ArrayList<>();
+    private List<SketchStroke> mTransientStrokes = new ArrayList<>();
 
     // Animation.
     private AnimatorSet mAnimSet;
@@ -95,7 +95,7 @@ public class SketchView
 
     // DEBUG.
     private boolean mIsDebug;
-    private List<SketchStrokeModel> mDebugStrokes = new ArrayList<>();
+    private List<SketchStroke> mDebugStrokes = new ArrayList<>();
     private Paint mDebugPaint;
 
     public SketchView(Context context) {
@@ -207,7 +207,7 @@ public class SketchView
     }
 
     @Override
-    public void drawStrokeFrom(SketchStrokeModel stroke,
+    public void drawStrokeFrom(SketchStroke stroke,
                                int from) {
         mTransientStrokes.clear();
         mTransientStrokes.add(stroke);
@@ -218,7 +218,7 @@ public class SketchView
     }
 
     @Override
-    public void drawStrokes(List<SketchStrokeModel> strokes) {
+    public void drawStrokes(List<SketchStroke> strokes) {
         mTransientStrokes.clear();
         mTransientStrokes.addAll(strokes);
 
@@ -228,7 +228,7 @@ public class SketchView
     }
 
     @Override
-    public void drawAndSharpenStrokes(List<SketchStrokeModel> strokes) {
+    public void drawAndSharpenStrokes(List<SketchStroke> strokes) {
         // TODO: Make the stroke sharpen.
 //        if (strokes != null) {
 //            mTransientStrokes.addAll(strokes);
@@ -385,7 +385,7 @@ public class SketchView
     }
 
     @Override
-    public void debugStrokes(List<SketchStrokeModel> strokes) {
+    public void debugStrokes(List<SketchStroke> strokes) {
         if (mIsDebug) {
             mDebugStrokes.clear();
             mDebugStrokes.addAll(strokes);
@@ -474,7 +474,7 @@ public class SketchView
         // TODO: canvas already.
         // Render path strokes
         if (!mTransientStrokes.isEmpty()) {
-            for (SketchStrokeModel stroke : mTransientStrokes) {
+            for (SketchStroke stroke : mTransientStrokes) {
                 drawPathTupleFrom(stroke, mDrawFromPosition);
             }
             mTransientStrokes.clear();
@@ -548,7 +548,7 @@ public class SketchView
         mMaxScale = scale * 4f;
     }
 
-    private void drawPathTupleFrom(SketchStrokeModel stroke,
+    private void drawPathTupleFrom(SketchStroke stroke,
                                    int from) {
         if (from < 0) return;
 

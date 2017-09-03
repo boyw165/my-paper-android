@@ -33,7 +33,7 @@ import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.my.core.protocol.ILogger;
 import com.paper.shared.model.sketch.PathTuple;
 import com.paper.shared.model.sketch.SketchModel;
-import com.paper.shared.model.sketch.SketchStrokeModel;
+import com.paper.shared.model.sketch.SketchStroke;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +66,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
     // Brush and stroke.
     private float mBrushSize;
     private ISketchBrush mBrush;
-    private SketchStrokeModel mStroke;
+    private SketchStroke mStroke;
     private final List<PointF> mCachedPoints = new ArrayList<>();
 
     // Drawing state.
@@ -327,7 +327,7 @@ public class DrawStrokeManipulator implements SketchContract.IDrawStrokeManipula
 
                             if (sCanvasBound.contains(nx, ny)) {
                                 // New stroke and store the normalized value.
-                                final SketchStrokeModel stroke = mBrush.newStroke();
+                                final SketchStroke stroke = mBrush.newStroke();
 
                                 stroke.savePathTuple(new PathTuple(nx, ny));
                                 // Commit to the model.

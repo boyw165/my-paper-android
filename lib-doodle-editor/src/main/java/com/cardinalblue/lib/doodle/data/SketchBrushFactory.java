@@ -25,7 +25,7 @@ package com.cardinalblue.lib.doodle.data;
 import android.util.Log;
 
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.paper.shared.model.sketch.SketchStrokeModel;
+import com.paper.shared.model.sketch.SketchStroke;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,8 +94,8 @@ public class SketchBrushFactory {
         }
 
         @Override
-        public SketchStrokeModel newStroke() {
-            SketchStrokeModel stroke = new SketchStrokeModel();
+        public SketchStroke newStroke() {
+            SketchStroke stroke = new SketchStroke();
             stroke.setWidth(getBrushSize());
             stroke.setColor(getBrushColor());
 
@@ -142,9 +142,9 @@ public class SketchBrushFactory {
         }
 
         @Override
-        public SketchStrokeModel newStroke() {
+        public SketchStroke newStroke() {
             Log.d("eraser", "new stroke");
-            SketchStrokeModel stroke = new SketchStrokeModel();
+            SketchStroke stroke = new SketchStroke();
             stroke.setEraser(true);
             stroke.setWidth(getBrushSize());
 

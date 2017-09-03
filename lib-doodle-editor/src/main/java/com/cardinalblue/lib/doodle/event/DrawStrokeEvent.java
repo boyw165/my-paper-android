@@ -22,7 +22,7 @@
 
 package com.cardinalblue.lib.doodle.event;
 
-import com.paper.shared.model.sketch.SketchStrokeModel;
+import com.paper.shared.model.sketch.SketchStroke;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +34,7 @@ public class DrawStrokeEvent {
     public final boolean justStart;
     public final boolean drawing;
 
-    public final List<SketchStrokeModel> strokes;
+    public final List<SketchStroke> strokes;
     public final int from;
 
     public final boolean isModelChanged;
@@ -42,7 +42,7 @@ public class DrawStrokeEvent {
     /**
      * A start event of drawing the given stroke.
      */
-    public static DrawStrokeEvent start(SketchStrokeModel stroke) {
+    public static DrawStrokeEvent start(SketchStroke stroke) {
         return new DrawStrokeEvent(true, false,
                                    Collections.singletonList(stroke), 0,
                                    false);
@@ -51,7 +51,7 @@ public class DrawStrokeEvent {
     /**
      * An on-going event of drawing the given stroke.
      */
-    public static DrawStrokeEvent drawing(SketchStrokeModel stroke,
+    public static DrawStrokeEvent drawing(SketchStroke stroke,
                                           int from) {
         return new DrawStrokeEvent(false, true,
                                    Collections.singletonList(stroke), from,
@@ -62,14 +62,14 @@ public class DrawStrokeEvent {
      * An stop event of drawing the given strokes. It's usually for post-process
      * of making strokes sharpen.
      */
-    public static DrawStrokeEvent stop(List<SketchStrokeModel> strokes,
+    public static DrawStrokeEvent stop(List<SketchStroke> strokes,
                                        boolean isModelChanged) {
         return new DrawStrokeEvent(false, false, strokes, 0, isModelChanged);
     }
 
     private DrawStrokeEvent(boolean justStart,
                             boolean drawing,
-                            List<SketchStrokeModel> strokes,
+                            List<SketchStroke> strokes,
                             int from,
                             boolean isModelChanged) {
         this.justStart = justStart;

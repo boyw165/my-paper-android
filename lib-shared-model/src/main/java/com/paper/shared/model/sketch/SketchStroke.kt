@@ -26,12 +26,12 @@ import android.graphics.RectF
 import java.util.ArrayList
 
 /**
- * The sketch model. A sketch contains stroke(s), [SketchStrokeModel]. Each
+ * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
  * stroke contains tuple(s), [PathTuple]. A tuple represents a node of
  * a path segment and contains at least one point, [PointF]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
-class SketchStrokeModel {
+class SketchStroke {
 
     // State.
     // The byte order is ARGB.
@@ -46,7 +46,7 @@ class SketchStrokeModel {
             java.lang.Float.MIN_VALUE,
             java.lang.Float.MIN_VALUE)
 
-    fun setWidth(width: Float): SketchStrokeModel {
+    fun setWidth(width: Float): SketchStroke {
         mWidth = width
         return this
     }
@@ -56,7 +56,7 @@ class SketchStrokeModel {
     /**
      * Set color, the format is the same with [android.graphics.Color].
      */
-    fun setColor(color: Int): SketchStrokeModel {
+    fun setColor(color: Int): SketchStroke {
         mColor = color
         return this
     }

@@ -21,7 +21,6 @@
 package com.paper.shared.model.sketch
 
 import android.graphics.RectF
-import java.util.*
 import kotlin.collections.ArrayList
 
 /**
@@ -60,7 +59,7 @@ class SketchModel constructor(id: Long) {
     val id: Long = id
     var width: Int = 0
     var height: Int = 0
-    val mStrokes: MutableList<SketchStrokeModel> = ArrayList()
+    val mStrokes: MutableList<SketchStroke> = ArrayList()
     var mStrokesBoundDirty = true
     var mStrokesBound = RectF()
 
@@ -74,7 +73,7 @@ class SketchModel constructor(id: Long) {
     constructor(id: Long,
                 width: Int,
                 height: Int,
-                strokes: List<SketchStrokeModel> = emptyList())
+                strokes: List<SketchStroke> = emptyList())
         : this(id) {
         this.width = width
         this.height = height
@@ -109,34 +108,34 @@ class SketchModel constructor(id: Long) {
             }
         }
 
-    fun getStrokeAt(position: Int): SketchStrokeModel {
+    fun getStrokeAt(position: Int): SketchStroke {
         synchronized(mMutex) {
             return mStrokes!![position]
         }
     }
 
-    fun addStroke(stroke: SketchStrokeModel) {
+    fun addStroke(stroke: SketchStroke) {
         synchronized(mMutex) {
             mStrokes!!.add(stroke)
             mStrokesBoundDirty = true
         }
     }
 
-    val firstStroke: SketchStrokeModel
+    val firstStroke: SketchStroke
         get() {
             synchronized(mMutex) {
                 return mStrokes[0]
             }
         }
 
-    val lastStroke: SketchStrokeModel
+    val lastStroke: SketchStroke
         get() {
             synchronized(mMutex) {
                 return mStrokes[mStrokes.size - 1]
             }
         }
 
-    val allStrokes: List<SketchStrokeModel>
+    val allStrokes: List<SketchStroke>
         get() {
             synchronized(mMutex) {
                 return ArrayList(mStrokes)
@@ -186,7 +185,7 @@ class SketchModel constructor(id: Long) {
             return mStrokesBound
         }
 
-    fun setStrokes(strokes: List<SketchStrokeModel>?) {
+    fun setStrokes(strokes: List<SketchStroke>?) {
         synchronized(mMutex) {
             mStrokes!!.clear()
 
