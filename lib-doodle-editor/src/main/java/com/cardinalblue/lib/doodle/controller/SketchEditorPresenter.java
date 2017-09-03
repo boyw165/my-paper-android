@@ -62,7 +62,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private static final int DEFAULT_BG_COLOR = 0xFFFFFFFF;
 
     // Given
-    private final ISketchModelRepo mSketchModelRepository;
+    private final ISketchModelRepo mSketchRepo;
     private final SketchContract.IEditorView mEditorView;
     private final SketchContract.ISketchView mSketchView;
     private final SketchContract.IDrawStrokeManipulator mDrawStrokeManipulator;
@@ -73,7 +73,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private final ILogger mLogger;
 
     // Model.
-    private Sketch mSketchModel;
+    private Sketch mSketch;
 
     // Brush.
     private List<ISketchBrush> mBrushes = new ArrayList<>();
@@ -98,10 +98,10 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                  Scheduler workerScheduler,
                                  Scheduler uiScheduler,
                                  ILogger logger) {
-        mSketchModelRepository = sketchModelRepo;
+        mSketchRepo = sketchModelRepo;
         // Create a dummy model and the presenter will inflate the real one with
         // the help of repository.
-        mSketchModel = new Sketch(1, 1);
+        mSketch = new Sketch(1, 1);
 
         mEditorView = editorView;
         mSketchView = sketchView;
@@ -129,8 +129,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                 // Init the brushes.
                 initBrushes(),
                 // Init the sketch model.
-                mSketchModelRepository
-                    .getTempSketch()
+                restoreSketch()
                     .publish(new Function<Observable<Sketch>, ObservableSource<Object>>() {
                         @Override
                         public ObservableSource<Object> apply(Observable<Sketch> shared)
@@ -150,14 +149,14 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                                                            sketch.getWidth(),
                                                                            sketch.getHeight()));
                                               // Update model.
-                                              mSketchModel = sketch;
-                                              mSketchModel.setWidth(sketchWidth);
-                                              mSketchModel.setHeight(sketchHeight);
+                                              mSketch = sketch;
+                                              mSketch.setWidth(sketchWidth);
+                                              mSketch.setHeight(sketchHeight);
 
                                               // Request the view to allocate Bitmap for the model.
                                               return mSketchView.createCanvasSource(
-                                                  mSketchModel.getWidth(),
-                                                  mSketchModel.getHeight(),
+                                                  mSketch.getWidth(),
+                                                  mSketch.getHeight(),
                                                   DEFAULT_BG_COLOR);
                                           }
                                       })
@@ -197,7 +196,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                               // TODO: A improvement that progressively have view
                                               // TODO: draw strokes without freezing UI.
                                               // Init strokes preview.
-                                              final List<SketchStroke> strokes = mSketchModel.getAllStrokes();
+                                              final List<SketchStroke> strokes = mSketch.getAllStrokes();
                                               mSketchView.eraseCanvas();
                                               mSketchView.drawStrokes(strokes);
 
@@ -466,19 +465,19 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             throws Exception {
                             // Send analytics event.
                             mLogger.sendEvent("Doodle editor - finish doodle",
-                                              "stroke_count", String.valueOf(mSketchModel.getStrokeSize()));
+                                              "stroke_count", String.valueOf(mSketch.getStrokeSize()));
 
                             // Prepare the extra data like stroke color and
                             // width (0-100).
-                            final int strokeSize = mSketchModel.getStrokeSize();
+                            final int strokeSize = mSketch.getStrokeSize();
                             final int strokeWidth = mStrokeWidthProgress;
                             final int color = strokeSize > 0 ?
-                                mSketchModel.getStrokeAt(strokeSize - 1).getColor() : 0;
+                                mSketch.getStrokeAt(strokeSize - 1).getColor() : 0;
 
                             // Close editor when the animation ends.
                             if (progress == 100) {
                                 mEditorView.closeWithUpdate(
-                                    mSketchModel.clone(),
+                                    mSketch.clone(),
                                     color,
                                     strokeWidth);
                             }
@@ -526,13 +525,13 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                                 if (mIfApplyChangeForClose.get()) {
                                     // Prepare the extra data like stroke color and
                                     // width (0-100).
-                                    final int strokeSize = mSketchModel.getStrokeSize();
+                                    final int strokeSize = mSketch.getStrokeSize();
                                     final int strokeWidth = mStrokeWidthProgress;
                                     final int color = strokeSize > 0 ?
-                                        mSketchModel.getStrokeAt(strokeSize - 1).getColor() : 0;
+                                        mSketch.getStrokeAt(strokeSize - 1).getColor() : 0;
 
                                     mEditorView.closeWithUpdate(
-                                        mSketchModel.clone(),
+                                        mSketch.clone(),
                                         color,
                                         strokeWidth);
                                 } else {
@@ -545,6 +544,16 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                     });
             }
         };
+    }
+
+    @Override
+    public Observable<Sketch> saveSketch() {
+        return mSketchRepo.saveTempSketch(mSketch);
+    }
+
+    @Override
+    public Observable<Sketch> restoreSketch() {
+        return mSketchRepo.getTempSketch();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -718,7 +727,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
 
                             // Let view to sharpen the strokes after stop
                             // updating canvas matrix.
-                            mSketchView.drawAndSharpenStrokes(mSketchModel.getAllStrokes());
+                            mSketchView.drawAndSharpenStrokes(mSketch.getAllStrokes());
                         }
 
                         return ObservableConst.IGNORED;
@@ -741,7 +750,7 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
                             mSketchView.drawStrokes(strokes);
 
                             // DEBUG.
-                            mSketchView.debugStrokes(mSketchModel.getAllStrokes());
+                            mSketchView.debugStrokes(mSketch.getAllStrokes());
 
                             return UndoRedoEvent.create(mUndoRedoManipulator.sizeOfUndo(),
                                                         mUndoRedoManipulator.sizeOfRedo());
@@ -860,11 +869,11 @@ public class SketchEditorPresenter implements SketchContract.ISketchEditorPresen
     private int getStrokeBaseWidth() {
         float scale = mSketchView.getMatrixOfTargetToParent().getScaleX();
 
-        return (int) (mSketchModel.getWidth() * scale);
+        return (int) (mSketch.getWidth() * scale);
     }
 
     @Override
     public Sketch getSketchModel() {
-        return mSketchModel;
+        return mSketch;
     }
 }

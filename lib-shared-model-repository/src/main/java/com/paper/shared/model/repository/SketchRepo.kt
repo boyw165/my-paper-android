@@ -94,8 +94,23 @@ class SketchRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempSketch(other: Sketch): Observable<Sketch> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun newTempSketch(other: Sketch): Observable<Sketch> = saveTempSketch(other)
+
+    override fun saveTempSketch(other: Sketch): Observable<Sketch> {
+        return Observable
+            .fromCallable {
+                val json = mGson.toJson(other)
+
+                mTempFile
+                    .bufferedWriter()
+                    .use { out ->
+                        out.write(json)
+                    }
+
+                // Return.
+                other
+            }
+            .subscribeOn(mIoScheduler)
     }
 
     override fun commitTempSketch(): Observable<Sketch> {

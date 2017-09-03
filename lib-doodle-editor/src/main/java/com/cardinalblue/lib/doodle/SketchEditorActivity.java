@@ -549,7 +549,7 @@ public class SketchEditorActivity
         mLogger.d("bread crumbs", "Serialize sketch model in Activity#save().");
 
         // FIXME: Use repo to save the sketch.
-//        outState.putParcelable(SAVED_SKETCH_MODEL, mSketchModel);
+        mEditorPresenter.saveSketch();
     }
 
     private Observable<Object> onClickBack() {

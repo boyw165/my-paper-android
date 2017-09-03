@@ -41,5 +41,10 @@ interface ISketchModelRepo {
      */
     fun newTempSketch(other: Sketch): Observable<Sketch>
 
+    /**
+     * There is only one inventory for the temporary paper.
+     */
+    fun saveTempSketch(other: Sketch): Observable<Sketch>
+
     fun commitTempSketch(): Observable<Sketch>
 }

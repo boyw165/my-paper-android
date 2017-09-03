@@ -184,6 +184,10 @@ public abstract class SketchContract {
         ObservableTransformer<Object, ?> done();
 
         ObservableTransformer<Object, ?> close();
+
+        Observable<Sketch> saveSketch();
+
+        Observable<Sketch> restoreSketch();
     }
 
     /**
