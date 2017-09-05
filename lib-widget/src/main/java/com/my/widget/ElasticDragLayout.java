@@ -724,6 +724,7 @@ public class ElasticDragLayout extends CoordinatorLayout {
             // FIXME: constructor is private.
             // FIXME: It might cause side effect like un-synchronized
             // FIXME: Remove it if the constructor is public in the new release.
+            gravity = p.gravity;
             anchorGravity = p.anchorGravity;
             keyline = p.keyline;
             insetEdge = p.insetEdge;
