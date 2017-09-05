@@ -90,20 +90,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
                                  int position,
                                  List<Object> payloads) {
         try {
-            if (!mDataValid) {
-                throw new IllegalStateException(
-                    "this should only be called when the cursor is valid");
-            }
-            if (!mCursor.moveToPosition(position)) {
-                throw new IllegalStateException(
-                    "couldn't move cursor to position " + position);
-            }
-            if (BuildConfig.DEBUG) {
-                Log.d("@", "onBindViewHolder(" + position +
-                           "), context=" + getContext() +
-                           ", running on " + Looper.myLooper());
-            }
-
+            checkDataAndCursorOrThrow(position);
             onBindViewHolder(viewHolder, mCursor, payloads);
         } catch (Throwable exception) {
             if (BuildConfig.DEBUG) {
@@ -233,6 +220,22 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    protected void checkDataAndCursorOrThrow(int position) {
+        if (!mDataValid) {
+            throw new IllegalStateException(
+                "this should only be called when the cursor is valid");
+        }
+        if (!mCursor.moveToPosition(position)) {
+            throw new IllegalStateException(
+                "couldn't move cursor to position " + position);
+        }
+        if (BuildConfig.DEBUG) {
+            Log.d("@", "onBindViewHolder(" + position +
+                       "), context=" + getContext() +
+                       ", running on " + Looper.myLooper());
+        }
+    }
 
     /**
      * Swap in a new Cursor, returning the old Cursor. Unlike
