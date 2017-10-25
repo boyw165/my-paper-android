@@ -19,7 +19,7 @@ public class MyGestureDetector {
     private static final int LONGPRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
     private static final int TAP_TIMEOUT = ViewConfiguration.getTapTimeout();
     private static final int DOUBLE_TAP_TIMEOUT = ViewConfiguration.getDoubleTapTimeout();
-//    private static final int DOUBLE_TAP_MIN_TIME = ViewConfiguration.getDoubleTapMinTime();
+    //    private static final int DOUBLE_TAP_MIN_TIME = ViewConfiguration.getDoubleTapMinTime();
     private static final int DOUBLE_TAP_MIN_TIME = ViewConfiguration.getDoubleTapTimeout();
 
     // constants for Message.what used by GestureHandler below
@@ -71,31 +71,32 @@ public class MyGestureDetector {
     /**
      * Creates a MyGestureDetector with the supplied listener.
      * You may only use this constructor from a {@link android.os.Looper} thread.
-     * @see android.os.Handler#Handler()
      *
-     * @param context the application's context
+     * @param context  the application's context
      * @param listener the listener invoked for all the callbacks, this must
-     * not be null.
-     *
+     *                 not be null.
      * @throws NullPointerException if {@code listener} is null.
+     * @see android.os.Handler#Handler()
      */
-    public MyGestureDetector(Context context, MyGestureDetector.OnGestureListener listener) {
+    public MyGestureDetector(Context context,
+                             MyGestureDetector.OnGestureListener listener) {
         this(context, listener, null);
     }
 
     /**
      * Creates a MyGestureDetector with the supplied listener that runs deferred events on the
      * thread associated with the supplied {@link android.os.Handler}.
-     * @see android.os.Handler#Handler()
      *
-     * @param context the application's context
+     * @param context  the application's context
      * @param listener the listener invoked for all the callbacks, this must
-     * not be null.
-     * @param handler the handler to use for running deferred listener events.
-     *
+     *                 not be null.
+     * @param handler  the handler to use for running deferred listener events.
      * @throws NullPointerException if {@code listener} is null.
+     * @see android.os.Handler#Handler()
      */
-    public MyGestureDetector(Context context, MyGestureDetector.OnGestureListener listener, Handler handler) {
+    public MyGestureDetector(Context context,
+                             MyGestureDetector.OnGestureListener listener,
+                             Handler handler) {
         if (handler != null) {
             mHandler = new GestureHandler(handler);
         } else {
@@ -114,18 +115,17 @@ public class MyGestureDetector {
     /**
      * Creates a MyGestureDetector with the supplied listener that runs deferred events on the
      * thread associated with the supplied {@link android.os.Handler}.
-     * @see android.os.Handler#Handler()
      *
-     * @param context the application's context
+     * @param context  the application's context
      * @param listener the listener invoked for all the callbacks, this must
-     * not be null.
-     * @param handler the handler to use for running deferred listener events.
-     * @param unused currently not used.
-     *
+     *                 not be null.
+     * @param handler  the handler to use for running deferred listener events.
+     * @param unused   currently not used.
      * @throws NullPointerException if {@code listener} is null.
+     * @see android.os.Handler#Handler()
      */
     public MyGestureDetector(Context context, MyGestureDetector.OnGestureListener listener, Handler handler,
-                           boolean unused) {
+                             boolean unused) {
         this(context, listener, handler);
     }
 
@@ -165,7 +165,7 @@ public class MyGestureDetector {
      * gestures.
      *
      * @param onDoubleTapListener the listener invoked for all the callbacks, or
-     *        null to stop listening for double-tap gestures.
+     *                            null to stop listening for double-tap gestures.
      */
     public void setOnDoubleTapListener(MyGestureDetector.OnDoubleTapListener onDoubleTapListener) {
         mDoubleTapListener = onDoubleTapListener;
@@ -175,7 +175,7 @@ public class MyGestureDetector {
      * Sets the listener which will be called for context clicks.
      *
      * @param onContextClickListener the listener invoked for all the callbacks, or null to stop
-     *            listening for context clicks.
+     *                               listening for context clicks.
      */
     public void setContextClickListener(MyGestureDetector.OnContextClickListener onContextClickListener) {
         mContextClickListener = onContextClickListener;
@@ -207,7 +207,7 @@ public class MyGestureDetector {
      *
      * @param ev The current motion event.
      * @return true if the {@link MyGestureDetector.OnGestureListener} consumed the event,
-     *              else false.
+     * else false.
      */
     public boolean onTouchEvent(MotionEvent ev) {
 //        if (mInputEventConsistencyVerifier != null) {
@@ -368,7 +368,7 @@ public class MyGestureDetector {
                     final float velocityX = velocityTracker.getXVelocity(pointerId);
 
                     if ((Math.abs(velocityY) > mMinimumFlingVelocity)
-                        || (Math.abs(velocityX) > mMinimumFlingVelocity)){
+                        || (Math.abs(velocityX) > mMinimumFlingVelocity)) {
                         handled = mListener.onFling(mCurrentDownEvent, ev, velocityX, velocityY);
                     }
                 }
@@ -495,6 +495,100 @@ public class MyGestureDetector {
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
+    public interface MyGestureListener {
+
+        void onFingerDown(MotionEvent event,
+                          Object touchingScrap,
+                          Object touchContext);
+
+        void onFingerUpOrCancel(MotionEvent event,
+                                Object touchingScrap,
+                                Object touchContext);
+
+        void onSingleTap(MotionEvent event,
+                         Object touchingScrap,
+                         Object touchContext);
+
+        void onDoubleTap(MotionEvent event,
+                         Object touchingScrap,
+                         Object touchContext);
+
+        void onLongTap(MotionEvent event,
+                       Object touchingScrap,
+                       Object touchContext);
+
+        void onLongPress(MotionEvent event,
+                         Object touchingScrap,
+                         Object touchContext);
+
+        // Drag ///////////////////////////////////////////////////////////////
+
+        void onDragBegin(MotionEvent event,
+                         Object touchingScrap,
+                         Object touchContext,
+                         float xInCanvas,
+                         float yInCanvas);
+
+        void onDrag(MotionEvent event,
+                    Object touchingScrap,
+                    Object touchContext,
+                    float[] translationInCanvas);
+
+        void onDragStop(MotionEvent event,
+                        Object touchingScrap,
+                        Object touchContext,
+                        float[] translationInCanvas);
+
+        // Fling //////////////////////////////////////////////////////////////
+
+        /**
+         * Notified of a fling event when it occurs with the initial on down
+         * {@link MotionEvent} and the matching up {@link MotionEvent}. The
+         * calculated velocity is supplied along the x and y axis in pixels per
+         * second.
+         *
+         * @param startPointerInCanvas The first down pointer that started the
+         *                             fling.
+         * @param stopPointerInCanvas  The move pointer that triggered the
+         *                             current onFling.
+         * @param velocityX            The velocity of this fling measured in
+         *                             pixels per second along the x axis.
+         * @param velocityY            The velocity of this fling measured in
+         *                             pixels per second along the y axis.
+         */
+        void onFling(MotionEvent event,
+                     Object touchingScrap,
+                     Object touchContext,
+                     float[] startPointerInCanvas,
+                     float[] stopPointerInCanvas,
+                     float velocityX,
+                     float velocityY);
+
+        // Pinch //////////////////////////////////////////////////////////////
+
+        void onPinchBegin(MotionEvent event,
+                          Object touchingScrap,
+                          Object touchContext,
+                          float pivotXInCanvas,
+                          float pivotYInCanvas);
+
+        void onPinch(MotionEvent event,
+                     Object touchingScrap,
+                     Object touchContext,
+                     float[] startPointerOneInCanvas,
+                     float[] startPointerTwoInCanvas,
+                     float[] stopPointerOneInCanvas,
+                     float[] stopPointerTwoInCanvas);
+
+        void onPinchStop(MotionEvent event,
+                         Object touchingScrap,
+                         Object touchContext,
+                         float[] startPointerOneInCanvas,
+                         float[] startPointerTwoInCanvas,
+                         float[] stopPointerOneInCanvas,
+                         float[] stopPointerTwoInCanvas);
+    }
+
     /**
      * The listener that is used to notify when gestures occur.
      * If you want to listen for all the different gestures then implement
@@ -535,14 +629,14 @@ public class MyGestureDetector {
          * current move {@link MotionEvent}. The distance in x and y is also supplied for
          * convenience.
          *
-         * @param e1 The first down motion event that started the scrolling.
-         * @param e2 The move motion event that triggered the current onScroll.
+         * @param e1        The first down motion event that started the scrolling.
+         * @param e2        The move motion event that triggered the current onScroll.
          * @param distanceX The distance along the X axis that has been scrolled since the last
-         *              call to onScroll. This is NOT the distance between {@code e1}
-         *              and {@code e2}.
+         *                  call to onScroll. This is NOT the distance between {@code e1}
+         *                  and {@code e2}.
          * @param distanceY The distance along the Y axis that has been scrolled since the last
-         *              call to onScroll. This is NOT the distance between {@code e1}
-         *              and {@code e2}.
+         *                  call to onScroll. This is NOT the distance between {@code e1}
+         *                  and {@code e2}.
          * @return true if the event is consumed, else false
          */
         boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY);
@@ -560,12 +654,12 @@ public class MyGestureDetector {
          * and the matching up {@link MotionEvent}. The calculated velocity is supplied along
          * the x and y axis in pixels per second.
          *
-         * @param e1 The first down motion event that started the fling.
-         * @param e2 The move motion event that triggered the current onFling.
+         * @param e1        The first down motion event that started the fling.
+         * @param e2        The move motion event that triggered the current onFling.
          * @param velocityX The velocity of this fling measured in pixels per second
-         *              along the x axis.
+         *                  along the x axis.
          * @param velocityY The velocity of this fling measured in pixels per second
-         *              along the y axis.
+         *                  along the y axis.
          * @return true if the event is consumed, else false
          */
         boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY);
