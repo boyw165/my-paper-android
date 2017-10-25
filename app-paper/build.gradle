@@ -105,12 +105,13 @@ dependencies {
     releaseCompile rootProject.ext.dep.leakcanaryNoOp
 
     // My Libraries.
-    compile project(":lib-core")
-    compile project(":lib-common-theme")
-    compile project(":lib-reactive")
-    compile project(":lib-shared-model")
-    compile project(":lib-shared-model-repository")
-    compile project(":lib-doodle-editor")
+    compile project(path: ":lib-core")
+    compile project(path: ":lib-common-theme")
+    compile project(path: ":lib-reactive")
+    compile project(path: ":lib-shared-model")
+    compile project(path: ":lib-shared-model-repository")
+    compile project(path: ":lib-doodle-editor")
+    compile project(path: ':lib-widget')
 
     // Unit tests.
     testCompile rootProject.ext.dep.testJunit

@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit
 class MyPaperGalleryActivity : AppCompatActivity(),
                                IProgressBarView {
     // View.
+    private val mBtnGestureText: TextView by lazy { findViewById(R.id.btn_gesture_test) as TextView }
     private val mBtnNewPaper: TextView by lazy { findViewById(R.id.btn_new) as TextView }
     private val mBtnList: TextView by lazy { findViewById(R.id.btn_list) as TextView }
     private val mText: TextView by lazy { findViewById(R.id.text_message) as TextView }
@@ -72,6 +73,11 @@ class MyPaperGalleryActivity : AppCompatActivity(),
         setContentView(R.layout.activity_my_paper_gallery)
 
         mDisposables1.addAll(
+            RxView.clicks(mBtnGestureText)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    startActivity(Intent(this, GestureEditorActivity::class.java))
+                },
             // Show how many papers in the database...
             RxView.clicks(mBtnList)
                 .debounce(150, TimeUnit.MILLISECONDS)
