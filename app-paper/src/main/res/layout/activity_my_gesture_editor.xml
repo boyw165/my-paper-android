@@ -7,13 +7,21 @@
     android:layout_height="match_parent"
     tools:context=".MyPaperGalleryActivity">
 
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/btn_clear"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:srcCompat="@android:drawable/ic_menu_delete"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
     <TextView
         android:id="@+id/text_gesture_test"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clickable="false"
         android:gravity="center"
-        android:text="No gesture detected."
+        android:text="@string/tap_anywhere_to_start"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

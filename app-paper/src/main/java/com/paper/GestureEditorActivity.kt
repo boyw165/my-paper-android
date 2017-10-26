@@ -3,7 +3,9 @@ package com.paper
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.MotionEvent
+import android.widget.ImageView
 import android.widget.TextView
+import com.jakewharton.rxbinding2.view.RxView
 import com.my.widget.gesture.MyGestureDetector
 
 class GestureEditorActivity : AppCompatActivity(),
@@ -11,7 +13,10 @@ class GestureEditorActivity : AppCompatActivity(),
 
     private val mLog: MutableList<String> = mutableListOf()
 
-    private val mGestureText: TextView by lazy {
+    private val mBtnClearLog: ImageView by lazy {
+        findViewById(R.id.btn_clear) as ImageView
+    }
+    private val mTxtLog: TextView by lazy {
         findViewById(R.id.text_gesture_test) as TextView
     }
 
@@ -23,6 +28,11 @@ class GestureEditorActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_my_gesture_editor)
+
+        RxView.clicks(mBtnClearLog)
+            .subscribe { _ ->
+                clearLog()
+            }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean =
@@ -148,6 +158,11 @@ class GestureEditorActivity : AppCompatActivity(),
             builder.append(System.lineSeparator())
         }
 
-        mGestureText.text = builder.toString()
+        mTxtLog.text = builder.toString()
+    }
+
+    private fun clearLog() {
+        mLog.clear()
+        mTxtLog.text = getString(R.string.tap_anywhere_to_start)
     }
 }
