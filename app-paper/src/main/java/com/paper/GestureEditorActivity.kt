@@ -33,31 +33,26 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onFingerDown(event: MyGestureDetector.MyMotionEvent,
                               touchingObject: Any?,
                               touchingContext: Any?) {
-        printLog("onFingerDown")
+        printLog("⬇︎onFingerDown")
     }
 
     override fun onFingerUpOrCancel(event: MyGestureDetector.MyMotionEvent,
                                     touchingObject: Any?,
                                     touchingContext: Any?,
                                     isCancel: Boolean) {
-        printLog("onFingerUpOrCancel")
+        printLog("⬆︎onFingerUpOrCancel")
     }
-
-//    override fun onPreSingleTap(event: MyGestureDetector.MyMotionEvent, touchingObject: Any?, touchingContext: Any?): Boolean {
-//        // Want to handle single-tap.
-//        return true
-//    }
 
     override fun onSingleTap(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
-        printLog("onSingleTap")
+        printLog(" 1⃣ onSingleTap")
     }
 
     override fun onDoubleTap(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?): Boolean {
-        printLog("onDoubleTap")
+        printLog(" 2⃣ onDoubleTap  ")
         return false
     }
 
@@ -71,7 +66,7 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onLongPress(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?): Boolean {
-        printLog("onLongPress")
+        printLog("\uD83D\uDD50 onLongPress")
         return false
     }
 
@@ -89,6 +84,7 @@ class GestureEditorActivity : AppCompatActivity(),
                         touchingContext: Any?,
                         translationInCanvas: FloatArray?) {
         // DO NOTHING.
+        printLog("⬌ onDrag")
     }
 
     override fun onDragEnd(event: MyGestureDetector.MyMotionEvent,
