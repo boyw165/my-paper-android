@@ -69,7 +69,7 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onLongTap(event: MyGestureDetector.MyMotionEvent,
                            touchingObject: Any?,
                            touchingContext: Any?): Boolean {
-        printLog("onLongTap")
+        printLog("\uD83D\uDD50 1⃣ onLongTap")
         return false
     }
 
