@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
-import android.view.View;
 import android.view.ViewConfiguration;
 
 public class MyGestureDetector {
@@ -23,20 +22,21 @@ public class MyGestureDetector {
     private static final int DOUBLE_TAP_MIN_TIME = ViewConfiguration.getDoubleTapTimeout();
 
     // constants for Message.what used by GestureHandler below
-    private static final int SHOW_PRESS = 1;
-    private static final int LONG_PRESS = 2;
-    private static final int TAP = 3;
+    private static final int MSG_FINGER_DOWN = -1;
+    private static final int MSG_FINGER_UP_OR_CANCEL = 0;
+    private static final int MSG_SHOW_PRESS = 1;
+    private static final int MSG_LONG_PRESS = 2;
+    private static final int MSG_SINGLE_TAP = 3;
+    private static final int MSG_DOUBLE_TAP = 4;
 
     private final Handler mHandler;
     private final MyGestureDetector.OnGestureListener mOldListener;
     private final MyGestureDetector.MyGestureListener mNewListener;
     private MyGestureDetector.OnDoubleTapListener mDoubleTapListener;
-    private MyGestureDetector.OnContextClickListener mContextClickListener;
 
     private boolean mStillDown;
     private boolean mDeferConfirmSingleTap;
     private boolean mInLongPress;
-    private boolean mInContextClick;
     private boolean mAlwaysInTapRegion;
     private boolean mAlwaysInBiggerTapRegion;
     private boolean mIgnoreNextUpEvent;
@@ -55,19 +55,12 @@ public class MyGestureDetector {
     private float mDownFocusX;
     private float mDownFocusY;
 
-    private boolean mIsLongpressEnabled;
+    private boolean mIsLongPressEnabled;
 
     /**
      * Determines speed during touch scrolling
      */
     private VelocityTracker mVelocityTracker;
-
-//    /**
-//     * Consistency verifier for debugging purposes.
-//     */
-//    private final InputEventConsistencyVerifier mInputEventConsistencyVerifier =
-//        InputEventConsistencyVerifier.isInstrumentationEnabled() ?
-//            new InputEventConsistencyVerifier(this, 0) : null;
 
     /**
      * Creates a MyGestureDetector with the supplied listener.
@@ -101,17 +94,14 @@ public class MyGestureDetector {
                              MyGestureDetector.MyGestureListener newListener,
                              Handler handler) {
         if (handler != null) {
-            mHandler = new GestureHandler(handler);
+            mHandler = new GestureHandler(handler, newListener);
         } else {
-            mHandler = new GestureHandler();
+            mHandler = new GestureHandler(newListener);
         }
         mOldListener = oldListener;
         mNewListener = newListener;
         if (oldListener instanceof MyGestureDetector.OnDoubleTapListener) {
             setOnDoubleTapListener((MyGestureDetector.OnDoubleTapListener) oldListener);
-        }
-        if (oldListener instanceof MyGestureDetector.OnContextClickListener) {
-            setContextClickListener((MyGestureDetector.OnContextClickListener) oldListener);
         }
         init(context);
     }
@@ -120,7 +110,7 @@ public class MyGestureDetector {
         if (mOldListener == null) {
             throw new NullPointerException("OnGestureListener must not be null");
         }
-        mIsLongpressEnabled = true;
+        mIsLongPressEnabled = true;
 
         // Fallback to support pre-donuts releases
         int touchSlop, doubleTapSlop, doubleTapTouchSlop;
@@ -159,16 +149,6 @@ public class MyGestureDetector {
     }
 
     /**
-     * Sets the listener which will be called for context clicks.
-     *
-     * @param onContextClickListener the listener invoked for all the callbacks, or null to stop
-     *                               listening for context clicks.
-     */
-    public void setContextClickListener(MyGestureDetector.OnContextClickListener onContextClickListener) {
-        mContextClickListener = onContextClickListener;
-    }
-
-    /**
      * Set whether longpress is enabled, if this is enabled when a user
      * presses and holds down you get a longpress event and nothing further.
      * If it's disabled the user can press and hold down and then later
@@ -178,38 +158,34 @@ public class MyGestureDetector {
      * @param isLongpressEnabled whether longpress should be enabled.
      */
     public void setIsLongpressEnabled(boolean isLongpressEnabled) {
-        mIsLongpressEnabled = isLongpressEnabled;
+        mIsLongPressEnabled = isLongpressEnabled;
     }
 
     /**
      * @return true if longpress is enabled, else false.
      */
     public boolean isLongpressEnabled() {
-        return mIsLongpressEnabled;
+        return mIsLongPressEnabled;
     }
 
     /**
      * Analyzes the given motion event and if applicable triggers the
-     * appropriate callbacks on the {@link MyGestureDetector.OnGestureListener} supplied.
+     * appropriate callbacks on the {@link MyGestureDetector.OnGestureListener}
+     * supplied.
      *
      * @param event The current motion event.
-     * @return true if the {@link MyGestureDetector.OnGestureListener} consumed the event,
-     * else false.
+     * @return true if the {@link MyGestureDetector.OnGestureListener} consumed
+     * the event, else false.
      */
     public boolean onTouchEvent(MotionEvent event,
                                 Object touchingObject,
                                 Object touchingContext) {
-//        if (mInputEventConsistencyVerifier != null) {
-//            mInputEventConsistencyVerifier.onTouchEvent(ev, 0);
-//        }
-
-        final int action = event.getActionMasked();
-
         if (mVelocityTracker == null) {
             mVelocityTracker = VelocityTracker.obtain();
         }
         mVelocityTracker.addMovement(event);
 
+        final int action = event.getActionMasked();
         final boolean pointerUp = (action == MotionEvent.ACTION_POINTER_UP);
         final int skipIndex = pointerUp ? event.getActionIndex() : -1;
 
@@ -263,22 +239,22 @@ public class MyGestureDetector {
                 break;
 
             case MotionEvent.ACTION_DOWN:
-                if (mDoubleTapListener != null) {
-                    boolean hadTapMessage = mHandler.hasMessages(TAP);
-                    if (hadTapMessage) mHandler.removeMessages(TAP);
-                    if ((mCurrentDownEvent != null) && (mPreviousUpEvent != null) && hadTapMessage &&
-                        isConsideredDoubleTap(mCurrentDownEvent, mPreviousUpEvent, event)) {
-                        // This is a second tap
-                        mIsDoubleTapping = true;
-                        // Give a callback with the first tap of the double-tap
-                        handled |= mDoubleTapListener.onDoubleTap(mCurrentDownEvent);
-                        // Give a callback with down event of the double-tap
-                        handled |= mDoubleTapListener.onDoubleTapEvent(event);
-                    } else {
-                        // This is a first tap
-                        mHandler.sendEmptyMessageDelayed(TAP, DOUBLE_TAP_TIMEOUT);
-                    }
-                }
+//                if (mDoubleTapListener != null) {
+//                    boolean hadTapMessage = mHandler.hasMessages(MSG_SINGLE_TAP);
+//                    if (hadTapMessage) mHandler.removeMessages(MSG_SINGLE_TAP);
+//                    if ((mCurrentDownEvent != null) && (mPreviousUpEvent != null) && hadTapMessage &&
+//                        isConsideredDoubleTap(mCurrentDownEvent, mPreviousUpEvent, event)) {
+//                        // This is a second tap
+//                        mIsDoubleTapping = true;
+//                        // Give a callback with the first tap of the double-tap
+//                        handled |= mDoubleTapListener.onDoubleTap(mCurrentDownEvent);
+//                        // Give a callback with down event of the double-tap
+//                        handled |= mDoubleTapListener.onDoubleTapEvent(event);
+//                    } else {
+//                        // This is a first tap
+//                        mHandler.sendEmptyMessageDelayed(MSG_SINGLE_TAP, DOUBLE_TAP_TIMEOUT);
+//                    }
+//                }
 
                 mDownFocusX = mLastFocusX = focusX;
                 mDownFocusY = mLastFocusY = focusY;
@@ -292,17 +268,25 @@ public class MyGestureDetector {
                 mInLongPress = false;
                 mDeferConfirmSingleTap = false;
 
-                if (mIsLongpressEnabled) {
-                    mHandler.removeMessages(LONG_PRESS);
-                    mHandler.sendEmptyMessageAtTime(LONG_PRESS, mCurrentDownEvent.getDownTime()
-                                                                + TAP_TIMEOUT + LONGPRESS_TIMEOUT);
+//                if (mIsLongPressEnabled) {
+//                    mHandler.removeMessages(MSG_LONG_PRESS);
+//                    mHandler.sendEmptyMessageAtTime(MSG_LONG_PRESS, mCurrentDownEvent.getDownTime()
+//                                                                    + TAP_TIMEOUT + LONGPRESS_TIMEOUT);
+//                }
+//                mHandler.sendEmptyMessageAtTime(MSG_SHOW_PRESS, mCurrentDownEvent.getDownTime() + TAP_TIMEOUT);
+//                handled |= mOldListener.onDown(event);
+
+                // TODO:
+                if (!ifIgnoreFingerDown()) {
+                    mHandler.sendMessage(obtainMessageWithPayload(MSG_FINGER_DOWN,
+                                                                  event,
+                                                                  touchingObject,
+                                                                  touchingContext));
                 }
-                mHandler.sendEmptyMessageAtTime(SHOW_PRESS, mCurrentDownEvent.getDownTime() + TAP_TIMEOUT);
-                handled |= mOldListener.onDown(event);
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if (mInLongPress || mInContextClick) {
+                if (mInLongPress) {
                     break;
                 }
                 final float scrollX = mLastFocusX - focusX;
@@ -319,14 +303,19 @@ public class MyGestureDetector {
                         mLastFocusX = focusX;
                         mLastFocusY = focusY;
                         mAlwaysInTapRegion = false;
-                        mHandler.removeMessages(TAP);
-                        mHandler.removeMessages(SHOW_PRESS);
-                        mHandler.removeMessages(LONG_PRESS);
+                        mHandler.removeMessages(MSG_SINGLE_TAP);
+                        mHandler.removeMessages(MSG_DOUBLE_TAP);
+                        mHandler.removeMessages(MSG_SHOW_PRESS);
+                        mHandler.removeMessages(MSG_LONG_PRESS);
+
+                        // TODO: Why not just use cancelTaps()?
+//                        cancelTaps();
                     }
                     if (distance > mDoubleTapTouchSlopSquare) {
                         mAlwaysInBiggerTapRegion = false;
                     }
                 } else if ((Math.abs(scrollX) >= 1) || (Math.abs(scrollY) >= 1)) {
+                    // TODO: onDragBegin, onDrag, and onDragEnd.
                     handled = mOldListener.onScroll(mCurrentDownEvent, event, scrollX, scrollY);
                     mLastFocusX = focusX;
                     mLastFocusY = focusY;
@@ -340,13 +329,27 @@ public class MyGestureDetector {
                     // Finally, give the up event of the double-tap
                     handled |= mDoubleTapListener.onDoubleTapEvent(event);
                 } else if (mInLongPress) {
-                    mHandler.removeMessages(TAP);
+                    mHandler.removeMessages(MSG_SINGLE_TAP);
+                    mHandler.removeMessages(MSG_DOUBLE_TAP);
                     mInLongPress = false;
                 } else if (mAlwaysInTapRegion && !mIgnoreNextUpEvent) {
-                    handled = mOldListener.onSingleTapUp(event);
-                    if (mDeferConfirmSingleTap && mDoubleTapListener != null) {
-                        mDoubleTapListener.onSingleTapConfirmed(event);
+
+                    // TODO: WIP...
+
+                    handled |= true;
+                    if (handled) {
+                        mHandler.sendMessageDelayed(
+                            obtainMessageWithPayload(MSG_SINGLE_TAP,
+                                                     event,
+                                                     touchingObject,
+                                                     touchingContext),
+                            TAP_TIMEOUT);
                     }
+
+//                    handled = mOldListener.onSingleTapUp(event);
+//                    if (mDeferConfirmSingleTap && mDoubleTapListener != null) {
+//                        mDoubleTapListener.onSingleTapConfirmed(event);
+//                    }
                 } else if (!mIgnoreNextUpEvent) {
 
                     // A fling must travel the minimum tap distance
@@ -375,8 +378,8 @@ public class MyGestureDetector {
                 mIsDoubleTapping = false;
                 mDeferConfirmSingleTap = false;
                 mIgnoreNextUpEvent = false;
-                mHandler.removeMessages(SHOW_PRESS);
-                mHandler.removeMessages(LONG_PRESS);
+                mHandler.removeMessages(MSG_SHOW_PRESS);
+                mHandler.removeMessages(MSG_LONG_PRESS);
                 break;
 
             case MotionEvent.ACTION_CANCEL:
@@ -384,55 +387,19 @@ public class MyGestureDetector {
                 break;
         }
 
-//        if (!handled && mInputEventConsistencyVerifier != null) {
-//            mInputEventConsistencyVerifier.onUnhandledEvent(ev, 0);
-//        }
         return handled;
     }
 
-//    /**
-//     * Analyzes the given generic motion event and if applicable triggers the
-//     * appropriate callbacks on the {@link MyGestureDetector.OnGestureListener} supplied.
-//     *
-//     * @param ev The current motion event.
-//     * @return true if the {@link MyGestureDetector.OnGestureListener} consumed the event,
-//     *              else false.
-//     */
-//    public boolean onGenericMotionEvent(MotionEvent ev) {
-//        if (mInputEventConsistencyVerifier != null) {
-//            mInputEventConsistencyVerifier.onGenericMotionEvent(ev, 0);
-//        }
-//
-//        final int actionButton = ev.getActionButton();
-//        switch (ev.getActionMasked()) {
-//            case MotionEvent.ACTION_BUTTON_PRESS:
-//                if (mContextClickListener != null && !mInContextClick && !mInLongPress
-//                    && (actionButton == MotionEvent.BUTTON_STYLUS_PRIMARY
-//                        || actionButton == MotionEvent.BUTTON_SECONDARY)) {
-//                    if (mContextClickListener.onContextClick(ev)) {
-//                        mInContextClick = true;
-//                        mHandler.removeMessages(LONG_PRESS);
-//                        mHandler.removeMessages(TAP);
-//                        return true;
-//                    }
-//                }
-//                break;
-//
-//            case MotionEvent.ACTION_BUTTON_RELEASE:
-//                if (mInContextClick && (actionButton == MotionEvent.BUTTON_STYLUS_PRIMARY
-//                                        || actionButton == MotionEvent.BUTTON_SECONDARY)) {
-//                    mInContextClick = false;
-//                    mIgnoreNextUpEvent = true;
-//                }
-//                break;
-//        }
-//        return false;
-//    }
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
 
     private void cancel() {
-        mHandler.removeMessages(SHOW_PRESS);
-        mHandler.removeMessages(LONG_PRESS);
-        mHandler.removeMessages(TAP);
+        mHandler.removeMessages(MSG_SHOW_PRESS);
+        mHandler.removeMessages(MSG_LONG_PRESS);
+
+        mHandler.removeMessages(MSG_SINGLE_TAP);
+        mHandler.removeMessages(MSG_DOUBLE_TAP);
+
         mVelocityTracker.recycle();
         mVelocityTracker = null;
         mIsDoubleTapping = false;
@@ -441,21 +408,44 @@ public class MyGestureDetector {
         mAlwaysInBiggerTapRegion = false;
         mDeferConfirmSingleTap = false;
         mInLongPress = false;
-        mInContextClick = false;
         mIgnoreNextUpEvent = false;
     }
 
     private void cancelTaps() {
-        mHandler.removeMessages(SHOW_PRESS);
-        mHandler.removeMessages(LONG_PRESS);
-        mHandler.removeMessages(TAP);
+        mHandler.removeMessages(MSG_SHOW_PRESS);
+        mHandler.removeMessages(MSG_LONG_PRESS);
+        mHandler.removeMessages(MSG_SINGLE_TAP);
+        mHandler.removeMessages(MSG_DOUBLE_TAP);
+
         mIsDoubleTapping = false;
         mAlwaysInTapRegion = false;
         mAlwaysInBiggerTapRegion = false;
         mDeferConfirmSingleTap = false;
         mInLongPress = false;
-        mInContextClick = false;
         mIgnoreNextUpEvent = false;
+    }
+
+    private boolean ifIgnoreFingerDown() {
+        return false;
+    }
+
+    private Message obtainMessageWithPayload(int what,
+                                             MotionEvent event,
+                                             Object touchingObject,
+                                             Object touchingContext) {
+        // TODO: Remember to pass x and y array.
+        MyMotionEvent eventClone = new MyMotionEvent(event.getActionMasked(), null, null);
+
+        final Message msg = mHandler.obtainMessage(what);
+        msg.obj = new MyMessagePayload(eventClone,
+                                       touchingObject,
+                                       touchingContext);
+
+        return msg;
+    }
+
+    private void recycleEventClones() {
+
     }
 
     private boolean isConsideredDoubleTap(MotionEvent firstDown,
@@ -476,7 +466,8 @@ public class MyGestureDetector {
     }
 
     private void dispatchLongPress() {
-        mHandler.removeMessages(TAP);
+        mHandler.removeMessages(MSG_SINGLE_TAP);
+        mHandler.removeMessages(MSG_DOUBLE_TAP);
         mDeferConfirmSingleTap = false;
         mInLongPress = true;
         mOldListener.onLongPress(mCurrentDownEvent);
@@ -487,46 +478,51 @@ public class MyGestureDetector {
 
     public interface MyGestureListener {
 
-        void onFingerDown(MotionEvent event,
-                          Object touchingScrap,
-                          Object touchContext);
+        void onFingerDown(MyMotionEvent event,
+                          Object touchingObject,
+                          Object touchingContext);
 
-        void onFingerUpOrCancel(MotionEvent event,
-                                Object touchingScrap,
-                                Object touchContext);
+        void onFingerUpOrCancel(MyMotionEvent event,
+                                Object touchingObject,
+                                Object touchingContext,
+                                boolean isCancel);
 
-        boolean onSingleTap(MotionEvent event,
-                            Object touchingScrap,
-                            Object touchContext);
+//        boolean onPreSingleTap(MyMotionEvent event,
+//                               Object touchingObject,
+//                               Object touchingContext);
 
-        boolean onDoubleTap(MotionEvent event,
-                            Object touchingScrap,
-                            Object touchContext);
+        void onSingleTap(MyMotionEvent event,
+                         Object touchingObject,
+                         Object touchingContext);
 
-        boolean onLongTap(MotionEvent event,
-                          Object touchingScrap,
-                          Object touchContext);
+        boolean onDoubleTap(MyMotionEvent event,
+                            Object touchingObject,
+                            Object touchingContext);
 
-        boolean onLongPress(MotionEvent event,
-                            Object touchingScrap,
-                            Object touchContext);
+        boolean onLongTap(MyMotionEvent event,
+                          Object touchingObject,
+                          Object touchingContext);
+
+        boolean onLongPress(MyMotionEvent event,
+                            Object touchingObject,
+                            Object touchingContext);
 
         // Drag ///////////////////////////////////////////////////////////////
 
-        boolean onDragBegin(MotionEvent event,
-                            Object touchingScrap,
-                            Object touchContext,
+        boolean onDragBegin(MyMotionEvent event,
+                            Object touchingObject,
+                            Object touchingContext,
                             float xInCanvas,
                             float yInCanvas);
 
-        void onDrag(MotionEvent event,
-                    Object touchingScrap,
-                    Object touchContext,
+        void onDrag(MyMotionEvent event,
+                    Object touchingObject,
+                    Object touchingContext,
                     float[] translationInCanvas);
 
-        void onDragEnd(MotionEvent event,
-                       Object touchingScrap,
-                       Object touchContext,
+        void onDragEnd(MyMotionEvent event,
+                       Object touchingObject,
+                       Object touchingContext,
                        float[] translationInCanvas);
 
         // Fling //////////////////////////////////////////////////////////////
@@ -537,6 +533,7 @@ public class MyGestureDetector {
          * calculated velocity is supplied along the x and y axis in pixels per
          * second.
          *
+         * @param event
          * @param startPointerInCanvas The first down pointer that started the
          *                             fling.
          * @param stopPointerInCanvas  The move pointer that triggered the
@@ -544,10 +541,9 @@ public class MyGestureDetector {
          * @param velocityX            The velocity of this fling measured in
          *                             pixels per second along the x axis.
          * @param velocityY            The velocity of this fling measured in
-         *                             pixels per second along the y axis.
          */
-        boolean onFling(MotionEvent event,
-                        Object touchingScrap,
+        boolean onFling(MyMotionEvent event,
+                        Object touchingObject,
                         Object touchContext,
                         float[] startPointerInCanvas,
                         float[] stopPointerInCanvas,
@@ -556,22 +552,22 @@ public class MyGestureDetector {
 
         // Pinch //////////////////////////////////////////////////////////////
 
-        boolean onPinchBegin(MotionEvent event,
-                             Object touchingScrap,
+        boolean onPinchBegin(MyMotionEvent event,
+                             Object touchingObject,
                              Object touchContext,
                              float pivotXInCanvas,
                              float pivotYInCanvas);
 
-        void onPinch(MotionEvent event,
-                     Object touchingScrap,
+        void onPinch(MyMotionEvent event,
+                     Object touchingObject,
                      Object touchContext,
                      float[] startPointerOneInCanvas,
                      float[] startPointerTwoInCanvas,
                      float[] stopPointerOneInCanvas,
                      float[] stopPointerTwoInCanvas);
 
-        void onPinchEnd(MotionEvent event,
-                        Object touchingScrap,
+        void onPinchEnd(MyMotionEvent event,
+                        Object touchingObject,
                         Object touchContext,
                         float[] startPointerOneInCanvas,
                         float[] startPointerTwoInCanvas,
@@ -691,55 +687,113 @@ public class MyGestureDetector {
         boolean onDoubleTapEvent(MotionEvent e);
     }
 
-    /**
-     * The listener that is used to notify when a context click occurs. When listening for a
-     * context click ensure that you call onGenericMotionEvent(MotionEvent)} in
-     * {@link View#onGenericMotionEvent(MotionEvent)}.
-     */
-    public interface OnContextClickListener {
-        /**
-         * Notified when a context click occurs.
-         *
-         * @param e The motion event that occurred during the context click.
-         * @return true if the event is consumed, else false
-         */
-        boolean onContextClick(MotionEvent e);
-    }
+    private static class GestureHandler extends Handler {
 
-    private class GestureHandler extends Handler {
-        GestureHandler() {
+        final MyGestureListener mListener;
+
+        GestureHandler(MyGestureListener listener) {
             super();
+
+            mListener = listener;
         }
 
-        GestureHandler(Handler handler) {
+        GestureHandler(Handler handler,
+                       MyGestureListener listener) {
             super(handler.getLooper());
+
+            mListener = listener;
         }
 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case SHOW_PRESS:
-                    mOldListener.onShowPress(mCurrentDownEvent);
-                    break;
 
-                case LONG_PRESS:
-                    dispatchLongPress();
+                case MSG_SHOW_PRESS: {
+//                    mOldListener.onShowPress(mCurrentDownEvent);
                     break;
+                }
 
-                case TAP:
-                    // If the user's finger is still down, do not count it as a tap
-                    if (mDoubleTapListener != null) {
-                        if (!mStillDown) {
-                            mDoubleTapListener.onSingleTapConfirmed(mCurrentDownEvent);
-                        } else {
-                            mDeferConfirmSingleTap = true;
-                        }
-                    }
+                case MSG_LONG_PRESS: {
+//                    dispatchLongPress();
                     break;
+                }
+
+                case MSG_FINGER_DOWN: {
+                    final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                    mListener.onFingerDown(payload.event,
+                                           payload.touchingTarget,
+                                           payload.touchingContext);
+                    break;
+                }
+
+                case MSG_FINGER_UP_OR_CANCEL: {
+                    final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                    mListener.onFingerUpOrCancel(payload.event,
+                                                 payload.touchingTarget,
+                                                 payload.touchingContext,
+                                                 payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
+                    break;
+                }
+
+                case MSG_SINGLE_TAP: {
+                    final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                    mListener.onSingleTap(payload.event,
+                                          payload.touchingTarget,
+                                          payload.touchingContext);
+                    mListener.onFingerUpOrCancel(payload.event,
+                                                 payload.touchingTarget,
+                                                 payload.touchingContext,
+                                                 payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
+
+//                    // If the user's finger is still down, do not count it as a tap
+//                    if (mDoubleTapListener != null) {
+//                        if (!mStillDown) {
+//                            mDoubleTapListener.onSingleTapConfirmed(mCurrentDownEvent);
+//                        } else {
+//                            mDeferConfirmSingleTap = true;
+//                        }
+//                    }
+                    break;
+                }
 
                 default:
                     throw new RuntimeException("Unknown message " + msg); //never
             }
+        }
+    }
+
+    public static final class MyMotionEvent {
+
+        public final int maskedAction;
+
+        public final float[] xArray;
+        public final float[] yArray;
+
+        private MyMotionEvent(int maskedAction,
+                              float[] xArray,
+                              float[] yArray) {
+            this.maskedAction = maskedAction;
+
+            this.xArray = xArray;
+            this.yArray = yArray;
+        }
+    }
+
+    private static class MyMessagePayload {
+
+        public final MyMotionEvent event;
+        public final Object touchingTarget;
+        public final Object touchingContext;
+
+        MyMessagePayload(MyMotionEvent event,
+                         Object touchingTarget,
+                         Object touchingContext) {
+            this.event = event;
+            this.touchingTarget = touchingTarget;
+            this.touchingContext = touchingContext;
         }
     }
 }

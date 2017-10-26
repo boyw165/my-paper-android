@@ -10,6 +10,8 @@ class GestureEditorActivity : AppCompatActivity(),
                               MyGestureDetector.OnGestureListener,
                               MyGestureDetector.MyGestureListener {
 
+    private val mLog: MutableList<String> = mutableListOf()
+
     private val mGestureText: TextView by lazy {
         findViewById(R.id.text_gesture_test) as TextView
     }
@@ -61,62 +63,128 @@ class GestureEditorActivity : AppCompatActivity(),
 
     // MyGestureListener ----------------------------------------------------->
 
-    override fun onFingerDown(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?) {
-        // DO NOTHING.
+    override fun onFingerDown(event: MyGestureDetector.MyMotionEvent,
+                              touchingObject: Any?,
+                              touchingContext: Any?) {
+        printLog("onFingerDown")
     }
 
-    override fun onFingerUpOrCancel(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?) {
-        // DO NOTHING.
+    override fun onFingerUpOrCancel(event: MyGestureDetector.MyMotionEvent,
+                                    touchingObject: Any?,
+                                    touchingContext: Any?,
+                                    isCancel: Boolean) {
+        printLog("onFingerUpOrCancel")
     }
 
-    override fun onSingleTap(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?): Boolean {
+//    override fun onPreSingleTap(event: MyGestureDetector.MyMotionEvent, touchingObject: Any?, touchingContext: Any?): Boolean {
+//        // Want to handle single-tap.
+//        return true
+//    }
+
+    override fun onSingleTap(event: MyGestureDetector.MyMotionEvent,
+                             touchingObject: Any?,
+                             touchingContext: Any?) {
+        printLog("onSingleTap")
+    }
+
+    override fun onDoubleTap(event: MyGestureDetector.MyMotionEvent,
+                             touchingObject: Any?,
+                             touchingContext: Any?): Boolean {
+        printLog("onDoubleTap")
+        return false
+    }
+
+    override fun onLongTap(event: MyGestureDetector.MyMotionEvent,
+                           touchingObject: Any?,
+                           touchingContext: Any?): Boolean {
+        printLog("onLongTap")
+        return false
+    }
+
+    override fun onLongPress(event: MyGestureDetector.MyMotionEvent,
+                             touchingObject: Any?,
+                             touchingContext: Any?): Boolean {
+        printLog("onLongPress")
+        return false
+    }
+
+    override fun onDragBegin(event: MyGestureDetector.MyMotionEvent,
+                             touchingObject: Any?,
+                             touchingContext: Any?,
+                             xInCanvas: Float,
+                             yInCanvas: Float): Boolean {
         // DO NOTHING.
         return false
     }
 
-    override fun onDoubleTap(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?): Boolean {
+    override fun onDrag(event: MyGestureDetector.MyMotionEvent,
+                        touchingObject: Any?,
+                        touchingContext: Any?,
+                        translationInCanvas: FloatArray?) {
+        // DO NOTHING.
+    }
+
+    override fun onDragEnd(event: MyGestureDetector.MyMotionEvent,
+                           touchingObject: Any?,
+                           touchingContext: Any?,
+                           translationInCanvas: FloatArray?) {
+        // DO NOTHING.
+    }
+
+    override fun onFling(event: MyGestureDetector.MyMotionEvent,
+                         touchingObject: Any?,
+                         touchContext: Any?,
+                         startPointerInCanvas: FloatArray?,
+                         stopPointerInCanvas: FloatArray?,
+                         velocityX: Float,
+                         velocityY: Float): Boolean {
         // DO NOTHING.
         return false
     }
 
-    override fun onLongTap(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?): Boolean {
+    override fun onPinchBegin(event: MyGestureDetector.MyMotionEvent,
+                              touchingObject: Any?,
+                              touchContext: Any?,
+                              pivotXInCanvas: Float,
+                              pivotYInCanvas: Float): Boolean {
         // DO NOTHING.
         return false
     }
 
-    override fun onLongPress(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?): Boolean {
-        // DO NOTHING.
-        return false
-    }
-
-    override fun onDragBegin(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, xInCanvas: Float, yInCanvas: Float): Boolean {
-        // DO NOTHING.
-        return false
-    }
-
-    override fun onDrag(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, translationInCanvas: FloatArray?) {
+    override fun onPinch(event: MyGestureDetector.MyMotionEvent,
+                         touchingObject: Any?,
+                         touchContext: Any?,
+                         startPointerOneInCanvas: FloatArray?,
+                         startPointerTwoInCanvas: FloatArray?,
+                         stopPointerOneInCanvas: FloatArray?,
+                         stopPointerTwoInCanvas: FloatArray?) {
         // DO NOTHING.
     }
 
-    override fun onDragEnd(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, translationInCanvas: FloatArray?) {
+    override fun onPinchEnd(event: MyGestureDetector.MyMotionEvent,
+                            touchingObject: Any?,
+                            touchContext: Any?,
+                            startPointerOneInCanvas: FloatArray?,
+                            startPointerTwoInCanvas: FloatArray?,
+                            stopPointerOneInCanvas: FloatArray?,
+                            stopPointerTwoInCanvas: FloatArray?) {
         // DO NOTHING.
     }
 
-    override fun onFling(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, startPointerInCanvas: FloatArray?, stopPointerInCanvas: FloatArray?, velocityX: Float, velocityY: Float): Boolean {
-        // DO NOTHING.
-        return false
-    }
+    // MyGestureListener <- end -----------------------------------------------
 
-    override fun onPinchBegin(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, pivotXInCanvas: Float, pivotYInCanvas: Float): Boolean {
-        // DO NOTHING.
-        return false
-    }
+    private fun printLog(msg: String) {
+        mLog.add(msg)
+        while (mLog.size > 10) {
+            mLog.removeAt(0)
+        }
 
-    override fun onPinch(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, startPointerOneInCanvas: FloatArray?, startPointerTwoInCanvas: FloatArray?, stopPointerOneInCanvas: FloatArray?, stopPointerTwoInCanvas: FloatArray?) {
-        // DO NOTHING.
-    }
+        val builder = StringBuilder()
+        mLog.forEach { line ->
+            builder.append(line)
+            builder.append(System.lineSeparator())
+        }
 
-    override fun onPinchEnd(event: MotionEvent?, touchingScrap: Any?, touchContext: Any?, startPointerOneInCanvas: FloatArray?, startPointerTwoInCanvas: FloatArray?, stopPointerOneInCanvas: FloatArray?, stopPointerTwoInCanvas: FloatArray?) {
-        // DO NOTHING.
+        mGestureText.text = builder.toString()
     }
 }
