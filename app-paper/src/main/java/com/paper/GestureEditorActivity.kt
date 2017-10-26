@@ -7,7 +7,6 @@ import android.widget.TextView
 import com.my.widget.gesture.MyGestureDetector
 
 class GestureEditorActivity : AppCompatActivity(),
-                              MyGestureDetector.OnGestureListener,
                               MyGestureDetector.MyGestureListener {
 
     private val mLog: MutableList<String> = mutableListOf()
@@ -17,7 +16,7 @@ class GestureEditorActivity : AppCompatActivity(),
     }
 
     private val mGestureDetector: MyGestureDetector by lazy {
-        MyGestureDetector(this@GestureEditorActivity, this, this)
+        MyGestureDetector(this@GestureEditorActivity, this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,38 +27,6 @@ class GestureEditorActivity : AppCompatActivity(),
 
     override fun onTouchEvent(event: MotionEvent?): Boolean =
         mGestureDetector.onTouchEvent(event, null, null)
-
-    // GestureListener ------------------------------------------------------->
-
-    override fun onDown(e: MotionEvent?): Boolean {
-        return false
-    }
-
-    override fun onShowPress(e: MotionEvent?) {
-        // DO NOTHING.
-    }
-
-    override fun onSingleTapUp(e: MotionEvent?): Boolean {
-        return false
-    }
-
-    override fun onScroll(e1: MotionEvent?,
-                          e2: MotionEvent?,
-                          distanceX: Float,
-                          distanceY: Float): Boolean {
-        return false
-    }
-
-    override fun onLongPress(e: MotionEvent?) {
-        // DO NOTHING.
-    }
-
-    override fun onFling(e1: MotionEvent?,
-                         e2: MotionEvent?,
-                         velocityX: Float,
-                         velocityY: Float): Boolean {
-        return false
-    }
 
     // MyGestureListener ----------------------------------------------------->
 
