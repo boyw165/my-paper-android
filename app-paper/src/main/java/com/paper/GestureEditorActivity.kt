@@ -40,17 +40,18 @@ class GestureEditorActivity : AppCompatActivity(),
 
     // MyGestureListener ----------------------------------------------------->
 
-    override fun onFingerDown(event: MyGestureDetector.MyMotionEvent,
+    override fun onActionDown(event: MyGestureDetector.MyMotionEvent,
                               touchingObject: Any?,
                               touchingContext: Any?) {
-        printLog("⬇︎onFingerDown")
+        printLog("--------------")
+        printLog("⬇onActionDown")
     }
 
-    override fun onFingerUpOrCancel(event: MyGestureDetector.MyMotionEvent,
+    override fun onActionUpOrCancel(event: MyGestureDetector.MyMotionEvent,
                                     touchingObject: Any?,
                                     touchingContext: Any?,
                                     isCancel: Boolean) {
-        printLog("⬆︎onFingerUpOrCancel")
+        printLog("⬆onActionUpOrCancel")
     }
 
     override fun onSingleTap(event: MyGestureDetector.MyMotionEvent,
@@ -148,7 +149,7 @@ class GestureEditorActivity : AppCompatActivity(),
 
     private fun printLog(msg: String) {
         mLog.add(msg)
-        while (mLog.size > 10) {
+        while (mLog.size > 16) {
             mLog.removeAt(0)
         }
 

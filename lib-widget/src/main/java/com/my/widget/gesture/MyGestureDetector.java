@@ -344,7 +344,7 @@ public class MyGestureDetector implements Handler.Callback {
             case MSG_FINGER_DOWN: {
                 final MyMessagePayload payload = (MyMessagePayload) msg.obj;
 
-                mNewListener.onFingerDown(payload.event,
+                mNewListener.onActionDown(payload.event,
                                           payload.touchingTarget,
                                           payload.touchingContext);
                 return true;
@@ -353,7 +353,7 @@ public class MyGestureDetector implements Handler.Callback {
             case MSG_FINGER_UP_OR_CANCEL: {
                 final MyMessagePayload payload = (MyMessagePayload) msg.obj;
 
-                mNewListener.onFingerUpOrCancel(payload.event,
+                mNewListener.onActionUpOrCancel(payload.event,
                                                 payload.touchingTarget,
                                                 payload.touchingContext,
                                                 payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
@@ -389,7 +389,7 @@ public class MyGestureDetector implements Handler.Callback {
                 mHadLongPress = false;
 
                 // Dispatch ACTION_UP (ACTION_CANCEL).
-                mNewListener.onFingerUpOrCancel(payload.event,
+                mNewListener.onActionUpOrCancel(payload.event,
                                                 payload.touchingTarget,
                                                 payload.touchingContext,
                                                 payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
@@ -413,7 +413,7 @@ public class MyGestureDetector implements Handler.Callback {
                 }
 
                 // Dispatch ACTION_UP (ACTION_CANCEL).
-                mNewListener.onFingerUpOrCancel(payload.event,
+                mNewListener.onActionUpOrCancel(payload.event,
                                                 payload.touchingTarget,
                                                 payload.touchingContext,
                                                 payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
@@ -516,11 +516,11 @@ public class MyGestureDetector implements Handler.Callback {
 
     public interface MyGestureListener {
 
-        void onFingerDown(MyMotionEvent event,
+        void onActionDown(MyMotionEvent event,
                           Object touchingObject,
                           Object touchingContext);
 
-        void onFingerUpOrCancel(MyMotionEvent event,
+        void onActionUpOrCancel(MyMotionEvent event,
                                 Object touchingObject,
                                 Object touchingContext,
                                 boolean isCancel);
