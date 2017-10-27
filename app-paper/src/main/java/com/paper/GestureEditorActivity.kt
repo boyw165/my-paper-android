@@ -7,9 +7,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.my.widget.gesture.MyGestureDetector
+import java.util.*
 
 class GestureEditorActivity : AppCompatActivity(),
-                              MyGestureDetector.MyGestureListener {
+                              MyGestureDetector.GestureListener {
 
     private val mLog: MutableList<String> = mutableListOf()
 
@@ -38,47 +39,51 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onTouchEvent(event: MotionEvent?): Boolean =
         mGestureDetector.onTouchEvent(event, null, null)
 
-    // MyGestureListener ----------------------------------------------------->
+    // GestureListener ----------------------------------------------------->
 
-    override fun onActionDown(event: MyGestureDetector.MyMotionEvent,
-                              touchingObject: Any?,
-                              touchingContext: Any?) {
+    override fun onActionBegin(event: MyGestureDetector.MyMotionEvent,
+                               touchingObject: Any?,
+                               touchingContext: Any?) {
         printLog("--------------")
-        printLog("⬇onActionDown")
+        printLog("⬇onActionBegin")
     }
 
-    override fun onActionUpOrCancel(event: MyGestureDetector.MyMotionEvent,
-                                    touchingObject: Any?,
-                                    touchingContext: Any?,
-                                    isCancel: Boolean) {
-        printLog("⬆onActionUpOrCancel")
+    override fun onActionEnd(event: MyGestureDetector.MyMotionEvent,
+                             touchingObject: Any?,
+                             touchingContext: Any?,
+                             isCancel: Boolean) {
+        printLog("⬆onActionEnd")
     }
 
     override fun onSingleTap(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
-        printLog(" 1⃣ onSingleTap")
+        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onMoreTap", 1))
     }
 
     override fun onDoubleTap(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
-                             touchingContext: Any?): Boolean {
-        printLog(" 2⃣ onDoubleTap  ")
-        return false
+                             touchingContext: Any?) {
+        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onMoreTap", 2))
+    }
+
+    override fun onMoreTap(event: MyGestureDetector.MyMotionEvent,
+                           touchingObject: Any?,
+                           touchingContext: Any?,
+                           tapCount: Int) {
+        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onMoreTap", tapCount))
     }
 
     override fun onLongTap(event: MyGestureDetector.MyMotionEvent,
                            touchingObject: Any?,
-                           touchingContext: Any?): Boolean {
-        printLog("\uD83D\uDD50 1⃣ onLongTap")
-        return false
+                           touchingContext: Any?) {
+        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onLongTap", 1))
     }
 
     override fun onLongPress(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
-                             touchingContext: Any?): Boolean {
+                             touchingContext: Any?) {
         printLog("\uD83D\uDD50 onLongPress")
-        return false
     }
 
     override fun onDragBegin(event: MyGestureDetector.MyMotionEvent,
@@ -145,7 +150,7 @@ class GestureEditorActivity : AppCompatActivity(),
         // DO NOTHING.
     }
 
-    // MyGestureListener <- end -----------------------------------------------
+    // GestureListener <- end -----------------------------------------------
 
     private fun printLog(msg: String) {
         mLog.add(msg)
