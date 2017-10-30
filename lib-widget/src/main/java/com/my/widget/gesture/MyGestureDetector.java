@@ -1,3 +1,20 @@
+//  Copyright Oct 2017-present CardinalBlue
+//
+//  Author: boy@cardinalblue.com
+//          jack.huang@cardinalblue.com
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 package com.my.widget.gesture;
 
 import android.content.Context;
@@ -88,35 +105,6 @@ public class MyGestureDetector implements Handler.Callback {
         mListener = listener;
 
         init(context);
-    }
-
-    private void init(Context context) {
-        // Fallback to support pre-donuts releases
-        int touchSlop, tapSlop;
-
-        if (context == null) {
-            // noinspection deprecation
-            touchSlop = ViewConfiguration.getTouchSlop();
-            // Hack rather than adding a hidden method for this
-            tapSlop = 3 * ViewConfiguration.getTouchSlop();
-
-            // noinspection deprecation
-            mMinimumFlingVelocity = ViewConfiguration.getMinimumFlingVelocity();
-            mMaximumFlingVelocity = ViewConfiguration.getMaximumFlingVelocity();
-        } else {
-            final ViewConfiguration configuration = ViewConfiguration.get(context);
-
-            touchSlop = (int) Math.min(context.getResources().getDimension(R.dimen.touch_slop),
-                                       configuration.getScaledTouchSlop());
-            tapSlop = (int) Math.min(context.getResources().getDimension(R.dimen.tap_slop),
-                                     configuration.getScaledDoubleTapSlop());
-
-            mMinimumFlingVelocity = configuration.getScaledMinimumFlingVelocity();
-            mMaximumFlingVelocity = configuration.getScaledMaximumFlingVelocity();
-        }
-
-        mTouchSlopSquare = touchSlop * touchSlop;
-        mTapSlopSquare = tapSlop * tapSlop;
     }
 
     public void setIsTapEnabled(boolean enabled) {
@@ -515,6 +503,35 @@ public class MyGestureDetector implements Handler.Callback {
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    private void init(Context context) {
+        // Fallback to support pre-donuts releases
+        int touchSlop, tapSlop;
+
+        if (context == null) {
+            // noinspection deprecation
+            touchSlop = ViewConfiguration.getTouchSlop();
+            // Hack rather than adding a hidden method for this
+            tapSlop = 3 * ViewConfiguration.getTouchSlop();
+
+            // noinspection deprecation
+            mMinimumFlingVelocity = ViewConfiguration.getMinimumFlingVelocity();
+            mMaximumFlingVelocity = ViewConfiguration.getMaximumFlingVelocity();
+        } else {
+            final ViewConfiguration configuration = ViewConfiguration.get(context);
+
+            touchSlop = (int) Math.min(context.getResources().getDimension(R.dimen.touch_slop),
+                                       configuration.getScaledTouchSlop());
+            tapSlop = (int) Math.min(context.getResources().getDimension(R.dimen.tap_slop),
+                                     configuration.getScaledDoubleTapSlop());
+
+            mMinimumFlingVelocity = configuration.getScaledMinimumFlingVelocity();
+            mMaximumFlingVelocity = configuration.getScaledMaximumFlingVelocity();
+        }
+
+        mTouchSlopSquare = touchSlop * touchSlop;
+        mTapSlopSquare = tapSlop * tapSlop;
+    }
 
     private void cancelAll() {
         mHandler.removeMessages(MSG_LONG_PRESS);
