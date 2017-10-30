@@ -58,13 +58,13 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onSingleTap(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
-        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onMoreTap", 1))
+        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onSingleTap", 1))
     }
 
     override fun onDoubleTap(event: MyGestureDetector.MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
-        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onMoreTap", 2))
+        printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onDoubleTap", 2))
     }
 
     override fun onMoreTap(event: MyGestureDetector.MyMotionEvent,
@@ -91,8 +91,8 @@ class GestureEditorActivity : AppCompatActivity(),
                              touchingContext: Any?,
                              xInCanvas: Float,
                              yInCanvas: Float): Boolean {
-        // DO NOTHING.
-        return false
+        printLog("✍️ onDragBegin")
+        return true
     }
 
     override fun onDrag(event: MyGestureDetector.MyMotionEvent,
@@ -100,14 +100,14 @@ class GestureEditorActivity : AppCompatActivity(),
                         touchingContext: Any?,
                         translationInCanvas: FloatArray?) {
         // DO NOTHING.
-        printLog("⬌ onDrag")
+        printLog("✍️ onDrag")
     }
 
     override fun onDragEnd(event: MyGestureDetector.MyMotionEvent,
                            touchingObject: Any?,
                            touchingContext: Any?,
                            translationInCanvas: FloatArray?) {
-        // DO NOTHING.
+        printLog("✍️ onDragEnd")
     }
 
     override fun onFling(event: MyGestureDetector.MyMotionEvent,
@@ -117,8 +117,8 @@ class GestureEditorActivity : AppCompatActivity(),
                          stopPointerInCanvas: FloatArray?,
                          velocityX: Float,
                          velocityY: Float): Boolean {
-        // DO NOTHING.
-        return false
+        printLog("\uD83C\uDFBC onFling")
+        return true
     }
 
     override fun onPinchBegin(event: MyGestureDetector.MyMotionEvent,
@@ -126,8 +126,8 @@ class GestureEditorActivity : AppCompatActivity(),
                               touchContext: Any?,
                               pivotXInCanvas: Float,
                               pivotYInCanvas: Float): Boolean {
-        // DO NOTHING.
-        return false
+        printLog("\uD83D\uDD0D onPinchBegin")
+        return true
     }
 
     override fun onPinch(event: MyGestureDetector.MyMotionEvent,
@@ -137,7 +137,7 @@ class GestureEditorActivity : AppCompatActivity(),
                          startPointerTwoInCanvas: FloatArray?,
                          stopPointerOneInCanvas: FloatArray?,
                          stopPointerTwoInCanvas: FloatArray?) {
-        // DO NOTHING.
+        printLog("\uD83D\uDD0D onPinch")
     }
 
     override fun onPinchEnd(event: MyGestureDetector.MyMotionEvent,
@@ -147,7 +147,7 @@ class GestureEditorActivity : AppCompatActivity(),
                             startPointerTwoInCanvas: FloatArray?,
                             stopPointerOneInCanvas: FloatArray?,
                             stopPointerTwoInCanvas: FloatArray?) {
-        // DO NOTHING.
+        printLog("\uD83D\uDD0D onPinchEnd")
     }
 
     // GestureListener <- end -----------------------------------------------

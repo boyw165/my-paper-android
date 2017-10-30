@@ -30,20 +30,27 @@ public class MyGestureDetector implements Handler.Callback {
     private static final int TAP_TIMEOUT = Math.max(150, ViewConfiguration.getTapTimeout());
 
     // constants for Message.what used by GestureHandler below
-    private static final int MSG_ACTION_BEGIN = 0;
-    private static final int MSG_ACTION_END = 1;
-    private static final int MSG_LONG_PRESS = 2;
-    private static final int MSG_LONG_TAP = 3;
-    private static final int MSG_TAP = 4;
+    private static final int MSG_ACTION_BEGIN = 0x0;
+    private static final int MSG_ACTION_END = 0xFFFFFFFF;
+    private static final int MSG_LONG_PRESS = 0xA1;
+    private static final int MSG_LONG_TAP = 0xA2;
+    private static final int MSG_TAP = 0xA3;
+    private static final int MSG_FLING = 0xB1;
+    private static final int MSG_DRAG_BEGIN = 0xB2;
+    private static final int MSG_DRAGGING = 0xB3;
+    private static final int MSG_DRAG_END = 0xB4;
+    private static final int MSG_PINCH_BEGIN = 0xC1;
+    private static final int MSG_PINCHING = 0xC2;
+    private static final int MSG_PINCH_END = 0xC3;
 
     private final Handler mHandler;
     private final GestureListener mListener;
 
+    private boolean mIsDragging;
     private boolean mHadLongPress;
     private boolean mAlwaysInTapRegion;
 
     private MotionEvent mPreviousUpEvent;
-
     private MotionEvent mCurrentUpEvent;
     private MotionEvent mCurrentDownEvent;
 
@@ -102,7 +109,7 @@ public class MyGestureDetector implements Handler.Callback {
             touchSlop = (int) Math.min(context.getResources().getDimension(R.dimen.touch_slop),
                                        configuration.getScaledTouchSlop());
             tapSlop = (int) Math.min(context.getResources().getDimension(R.dimen.tap_slop),
-                                           configuration.getScaledDoubleTapSlop());
+                                     configuration.getScaledDoubleTapSlop());
 
             mMinimumFlingVelocity = configuration.getScaledMinimumFlingVelocity();
             mMaximumFlingVelocity = configuration.getScaledMaximumFlingVelocity();
@@ -213,6 +220,7 @@ public class MyGestureDetector implements Handler.Callback {
                 mCurrentDownEvent = MotionEvent.obtain(event);
                 mAlwaysInTapRegion = true;
                 mHadLongPress = false;
+                mIsDragging = false;
 
                 // Handle long-press.
                 if (mIsLongPressEnabled) {
@@ -243,22 +251,32 @@ public class MyGestureDetector implements Handler.Callback {
                     final int distance = (deltaX * deltaX) + (deltaY * deltaY);
 
                     if (distance > mTouchSlopSquare) {
-//                        handled = mOldListener.onScroll(mCurrentDownEvent, event, scrollX, scrollY);
                         mLastFocusX = focusX;
                         mLastFocusY = focusY;
 
                         // Cancel taps.
                         cancelTaps();
-
                         // Cancel long-press.
                         cancelLongPress();
 
                         // Indicate that the current pointer is over the tap slope.
                         mAlwaysInTapRegion = false;
+                        mHandler.sendMessage(
+                            obtainMessageWithPayload(MSG_DRAG_BEGIN,
+                                                     event,
+                                                     touchingObject,
+                                                     touchingContext));
                     }
                 } else if ((Math.abs(scrollX) >= 1) || (Math.abs(scrollY) >= 1)) {
-                    // TODO: onDragBegin, onDrag, and onDragEnd.
-//                    handled = mOldListener.onScroll(mCurrentDownEvent, event, scrollX, scrollY);
+                    // Begin the drag.
+                    mHandler.sendMessage(
+                        obtainMessageWithPayload(MSG_DRAGGING,
+                                                 event,
+                                                 touchingObject,
+                                                 touchingContext));
+
+                    mIsDragging = true;
+
                     mLastFocusX = focusX;
                     mLastFocusY = focusY;
                 }
@@ -295,6 +313,12 @@ public class MyGestureDetector implements Handler.Callback {
                                                  touchingObject,
                                                  touchingContext),
                         TAP_TIMEOUT);
+                } else if (mIsDragging) {
+                    mHandler.sendMessage(
+                        obtainMessageWithPayload(MSG_DRAG_END,
+                                                 event,
+                                                 touchingObject,
+                                                 touchingContext));
                 } else {
                     mHandler.sendMessage(
                         obtainMessageWithPayload(MSG_ACTION_END,
@@ -324,6 +348,7 @@ public class MyGestureDetector implements Handler.Callback {
                 }
 
                 cancelLongPress();
+                cancelDrag();
                 break;
 
             case MotionEvent.ACTION_CANCEL:
@@ -418,6 +443,48 @@ public class MyGestureDetector implements Handler.Callback {
                 return true;
             }
 
+            case MSG_DRAG_BEGIN: {
+                final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                if (mListener != null) {
+                    mListener.onDragBegin(payload.event,
+                                          payload.touchingTarget,
+                                          payload.touchingContext,
+                                          0, 0);
+                }
+
+                return true;
+            }
+
+            case MSG_DRAGGING: {
+                final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                if (mListener != null) {
+                    mListener.onDrag(payload.event,
+                                     payload.touchingTarget,
+                                     payload.touchingContext,
+                                     new float[2]);
+                }
+
+                return true;
+            }
+
+            case MSG_DRAG_END: {
+                final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                if (mListener != null) {
+                    mListener.onDragEnd(payload.event,
+                                        payload.touchingTarget,
+                                        payload.touchingContext,
+                                        new float[2]);
+                }
+
+                // Dispatch ACTION_UP (ACTION_CANCEL).
+                dispatchActionEnd(payload);
+
+                return true;
+            }
+
             default:
                 return false;
         }
@@ -442,7 +509,7 @@ public class MyGestureDetector implements Handler.Callback {
             mListener.onActionEnd(payload.event,
                                   payload.touchingTarget,
                                   payload.touchingContext,
-                                         payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
+                                  payload.event.maskedAction == MotionEvent.ACTION_CANCEL);
         }
     }
 
@@ -472,6 +539,10 @@ public class MyGestureDetector implements Handler.Callback {
 
         mTapCount = 0;
 //        mAlwaysInTapRegion = false;
+    }
+
+    private void cancelDrag() {
+        mIsDragging = false;
     }
 
     private Message obtainMessageWithPayload(int what,
