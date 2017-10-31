@@ -22,20 +22,6 @@ import android.view.MotionEvent;
 
 public interface IGestureStateOwner {
 
-//    // constants for Message.what used by GestureHandler below
-//    int MSG_ACTION_BEGIN = 0x0;
-//    int MSG_ACTION_END = 0xFFFFFFFF;
-//    int MSG_LONG_PRESS = 0xA1;
-//    int MSG_LONG_TAP = 0xA2;
-//    int MSG_TAP = 0xA3;
-//    int MSG_FLING = 0xB1;
-//    int MSG_DRAG_BEGIN = 0xB2;
-//    int MSG_DRAGGING = 0xB3;
-//    int MSG_DRAG_END = 0xB4;
-//    int MSG_PINCH_BEGIN = 0xC1;
-//    int MSG_PINCHING = 0xC2;
-//    int MSG_PINCH_END = 0xC3;
-
     // All recognized states.
     enum State {
         STATE_IDLE,
@@ -55,10 +41,8 @@ public interface IGestureStateOwner {
 
     IGestureListener getListener();
 
-    void issueStateTransition(State newState);
-
-    void issueStateTransitionAndRun(State newState,
-                                    MotionEvent event,
-                                    Object touchingObject,
-                                    Object touchingContext);
+    void issueStateTransition(State newState,
+                              MotionEvent event,
+                              Object touchingObject,
+                              Object touchingContext);
 }

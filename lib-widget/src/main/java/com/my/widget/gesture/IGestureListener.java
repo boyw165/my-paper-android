@@ -50,9 +50,7 @@ public interface IGestureListener {
 
     boolean onDragBegin(MyMotionEvent event,
                         Object touchingObject,
-                        Object touchingContext,
-                        float xInCanvas,
-                        float yInCanvas);
+                        Object touchingContext);
 
     void onDrag(MyMotionEvent event,
                 Object touchingObject,

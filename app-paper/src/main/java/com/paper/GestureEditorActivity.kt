@@ -85,9 +85,7 @@ class GestureEditorActivity : AppCompatActivity(),
 
     override fun onDragBegin(event: MyMotionEvent,
                              touchingObject: Any?,
-                             touchingContext: Any?,
-                             xInCanvas: Float,
-                             yInCanvas: Float): Boolean {
+                             touchingContext: Any?): Boolean {
         printLog("✍️ onDragBegin")
         return true
     }

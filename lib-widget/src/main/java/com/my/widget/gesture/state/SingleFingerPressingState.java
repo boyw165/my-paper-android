@@ -52,6 +52,7 @@ public class SingleFingerPressingState extends BaseGestureState {
 
     private MotionEvent mPreviousDownEvent;
     private MotionEvent mCurrentDownEvent;
+    private MotionEvent mCurrentUpEvent;
 
     private Object mTouchingObject;
     private Object mTouchingContext;
@@ -70,15 +71,17 @@ public class SingleFingerPressingState extends BaseGestureState {
     }
 
     @Override
-    public void onEnter() {
+    public void onEnter(MotionEvent event,
+                        Object touchingObject,
+                        Object touchingContext) {
         mTapCount = 0;
         mHadLongPress = false;
 
-        mTouchingObject = null;
-        mTouchingContext = null;
+        // Hold touching things.
+        mTouchingObject = touchingObject;
+        mTouchingContext = touchingContext;
 
-        mPreviousDownEvent = null;
-        mCurrentDownEvent = null;
+        onDoing(event, touchingObject, touchingContext);
     }
 
     @Override
@@ -101,13 +104,11 @@ public class SingleFingerPressingState extends BaseGestureState {
         final float focusX = sumX / div;
         final float focusY = sumY / div;
 
-        // Update touching things.
-        mTouchingObject = touchingObject;
-        mTouchingContext = touchingContext;
-
         switch (action) {
             case MotionEvent.ACTION_POINTER_DOWN:
-                mOwner.issueStateTransition(STATE_MULTIPLE_FINGERS_PRESSING);
+                mOwner.issueStateTransition(
+                    STATE_MULTIPLE_FINGERS_PRESSING,
+                    event, touchingObject, touchingContext);
                 break;
 
             case MotionEvent.ACTION_POINTER_UP:
@@ -145,7 +146,7 @@ public class SingleFingerPressingState extends BaseGestureState {
                     mDownFocusY = focusY;
                 } else {
                     // Transit to new state.
-                    mOwner.issueStateTransitionAndRun(
+                    mOwner.issueStateTransition(
                         STATE_MULTIPLE_FINGERS_PRESSING,
                         event, touchingObject, touchingContext);
                 }
@@ -159,22 +160,22 @@ public class SingleFingerPressingState extends BaseGestureState {
 
                 if (distance > mTouchSlopSquare) {
                     // Transit to new state.
-                    mOwner.issueStateTransitionAndRun(
+                    mOwner.issueStateTransition(
                         STATE_DRAG,
                         event, touchingObject, touchingContext);
                 }
                 break;
 
             case MotionEvent.ACTION_UP:
-                if (mHadLongPress) {
-//                    final MyMotionEvent clone = obtainMyMotionEvent(event);
-//                    if (mIsLongPressEnabled && mOwner.getListener() != null) {
-//                        mOwner.getListener().onLongTap(
-//                            clone, touchingObject, touchingContext);
-//                    }
+                // Hold up event.
+                if (mCurrentUpEvent != null) {
+                    mCurrentUpEvent.recycle();
+                }
+                mCurrentUpEvent = MotionEvent.obtain(event);
 
+                if (mHadLongPress) {
                     // Transit to IDLE state.
-                    mOwner.issueStateTransitionAndRun(
+                    mOwner.issueStateTransition(
                         STATE_IDLE, event, touchingObject, touchingContext);
                 } else {
                     // TODO: Two continuous taps far away doesn't count as a double tap.
@@ -198,13 +199,17 @@ public class SingleFingerPressingState extends BaseGestureState {
 
             case MotionEvent.ACTION_CANCEL:
                 // Transit to IDLE state.
-                mOwner.issueStateTransition(STATE_IDLE);
+                mOwner.issueStateTransition(STATE_IDLE, null, null, null);
                 break;
         }
     }
 
     @Override
-    public void onExit() {
+    public void onExit(MotionEvent event,
+                       Object touchingObject,
+                       Object touchingContext) {
+        final int action = event.getActionMasked();
+
         // Cancel tap.
         mOwner.getHandler().removeMessages(MSG_TAP);
         // Cancel long-press.
@@ -214,20 +219,23 @@ public class SingleFingerPressingState extends BaseGestureState {
 
         // TODO: Discuss with our UX designer.
         // Dispatch tap callback.
-        final MyMotionEvent clone = obtainMyMotionEvent(mCurrentDownEvent);
-        if (mIsLongPressEnabled && mHadLongPress) {
-            mOwner.getListener().onLongTap(
-                clone, mTouchingObject, mTouchingContext);
-        } else if (mIsTapEnabled && mTapCount > 0) {
-            if (mTapCount == 1) {
-                mOwner.getListener().onSingleTap(
+        if (action == MotionEvent.ACTION_UP) {
+            final MyMotionEvent clone = obtainMyMotionEvent(mCurrentUpEvent);
+
+            if (mIsLongPressEnabled && mHadLongPress) {
+                mOwner.getListener().onLongTap(
                     clone, mTouchingObject, mTouchingContext);
-            } else if (mTapCount == 2) {
-                mOwner.getListener().onDoubleTap(
-                    clone, mTouchingObject, mTouchingContext);
-            } else {
-                mOwner.getListener().onMoreTap(
-                    clone, mTouchingObject, mTouchingContext, mTapCount);
+            } else if (mIsTapEnabled && mTapCount > 0) {
+                if (mTapCount == 1) {
+                    mOwner.getListener().onSingleTap(
+                        clone, mTouchingObject, mTouchingContext);
+                } else if (mTapCount == 2) {
+                    mOwner.getListener().onDoubleTap(
+                        clone, mTouchingObject, mTouchingContext);
+                } else {
+                    mOwner.getListener().onMoreTap(
+                        clone, mTouchingObject, mTouchingContext, mTapCount);
+                }
             }
         }
 
@@ -239,6 +247,10 @@ public class SingleFingerPressingState extends BaseGestureState {
         if (mCurrentDownEvent != null) {
             mCurrentDownEvent.recycle();
             mCurrentDownEvent = null;
+        }
+        if (mCurrentUpEvent != null) {
+            mCurrentUpEvent.recycle();
+            mCurrentUpEvent = null;
         }
     }
 
@@ -263,7 +275,10 @@ public class SingleFingerPressingState extends BaseGestureState {
 
             case MSG_TAP: {
                 // Transit to IDLE state.
-                mOwner.issueStateTransition(STATE_IDLE);
+                // Note: the IDLE state would received a recycled hold-down-event.
+                mOwner.issueStateTransition(
+                    STATE_IDLE, mCurrentUpEvent,
+                    mTouchingObject, mTouchingContext);
                 return true;
             }
 

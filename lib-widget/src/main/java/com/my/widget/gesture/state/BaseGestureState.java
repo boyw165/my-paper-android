@@ -31,13 +31,17 @@ public abstract class BaseGestureState {
         mOwner = owner;
     }
 
-    public abstract void onEnter();
+    public abstract void onEnter(MotionEvent event,
+                                 Object touchingObject,
+                                 Object touchingContext);
 
     public abstract void onDoing(MotionEvent event,
                                  Object touchingObject,
                                  Object touchingContext);
 
-    public abstract void onExit();
+    public abstract void onExit(MotionEvent event,
+                                Object touchingObject,
+                                Object touchingContext);
 
     public abstract boolean onHandleMessage(Message msg);
 

@@ -22,12 +22,9 @@ import android.view.MotionEvent;
 
 import com.my.widget.gesture.IGestureStateOwner;
 
-import static com.my.widget.gesture.IGestureStateOwner.State.STATE_MULTIPLE_FINGERS_PRESSING;
-import static com.my.widget.gesture.IGestureStateOwner.State.STATE_SINGLE_FINGER_PRESSING;
+public class MultipleFingersPressingState extends BaseGestureState {
 
-public class IdleState extends BaseGestureState {
-
-    public IdleState(IGestureStateOwner owner) {
+    public MultipleFingersPressingState(IGestureStateOwner owner) {
         super(owner);
     }
 
@@ -35,41 +32,25 @@ public class IdleState extends BaseGestureState {
     public void onEnter(MotionEvent event,
                         Object touchingObject,
                         Object touchingContext) {
-        mOwner.getListener().onActionEnd();
+        // DO NOTHING.
     }
 
     @Override
     public void onDoing(MotionEvent event,
                         Object touchingObject,
                         Object touchingContext) {
-        final int action = event.getActionMasked();
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                boolean isSingleFinger = event.getPointerCount() == 1;
-
-                if (isSingleFinger) {
-                    mOwner.issueStateTransition(
-                        STATE_SINGLE_FINGER_PRESSING,
-                        event, touchingObject, touchingContext);
-                } else {
-                    mOwner.issueStateTransition(
-                        STATE_MULTIPLE_FINGERS_PRESSING,
-                        event, touchingObject, touchingContext);
-                }
-
-                break;
-        }
+        // DO NOTHING.
     }
 
     @Override
     public void onExit(MotionEvent event,
                        Object touchingObject,
                        Object touchingContext) {
-        mOwner.getListener().onActionBegin();
+        // DO NOTHING.
     }
 
     @Override
     public boolean onHandleMessage(Message msg) {
-        return true;
+        return false;
     }
 }
