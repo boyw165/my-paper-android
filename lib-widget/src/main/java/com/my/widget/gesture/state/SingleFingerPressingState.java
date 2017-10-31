@@ -1,0 +1,328 @@
+//  Copyright Oct 2017-present CardinalBlue
+//
+//  Author: boy@cardinalblue.com
+//          jack.huang@cardinalblue.com
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+package com.my.widget.gesture.state;
+
+import android.os.Message;
+import android.util.Log;
+import android.view.MotionEvent;
+
+import com.my.widget.gesture.IGestureStateOwner;
+import com.my.widget.gesture.MyMotionEvent;
+
+import static com.my.widget.gesture.IGestureStateOwner.State.STATE_DRAG;
+import static com.my.widget.gesture.IGestureStateOwner.State.STATE_IDLE;
+import static com.my.widget.gesture.IGestureStateOwner.State.STATE_MULTIPLE_FINGERS_PRESSING;
+
+public class SingleFingerPressingState extends BaseGestureState {
+
+    private static final int MSG_TAP = 0xA1;
+    private static final int MSG_LONG_PRESS = 0xA2;
+
+    // Given...
+    private final int mTapSlopSquare;
+    private final int mTouchSlopSquare;
+    private final int mTapTimeout;
+    private final int mLongPressTimeout;
+
+    // Configurations.
+    private boolean mIsTapEnabled = true;
+    private boolean mIsLongPressEnabled = true;
+
+    private boolean mHadLongPress;
+
+    private int mTapCount;
+
+    private float mDownFocusX;
+    private float mDownFocusY;
+
+    private MotionEvent mPreviousDownEvent;
+    private MotionEvent mCurrentDownEvent;
+
+    private Object mTouchingObject;
+    private Object mTouchingContext;
+
+    public SingleFingerPressingState(IGestureStateOwner owner,
+                                     int tapSlopSquare,
+                                     int touchSlopSquare,
+                                     int tapTimeout,
+                                     int longPressTimeout) {
+        super(owner);
+
+        mTapSlopSquare = tapSlopSquare;
+        mTouchSlopSquare = touchSlopSquare;
+        mTapTimeout = tapTimeout;
+        mLongPressTimeout = longPressTimeout;
+    }
+
+    @Override
+    public void onEnter() {
+        mTapCount = 0;
+        mHadLongPress = false;
+
+        mTouchingObject = null;
+        mTouchingContext = null;
+
+        mPreviousDownEvent = null;
+        mCurrentDownEvent = null;
+    }
+
+    @Override
+    public void onDoing(MotionEvent event,
+                        Object touchingObject,
+                        Object touchingContext) {
+        final int action = event.getActionMasked();
+        final boolean pointerUp = (action == MotionEvent.ACTION_POINTER_UP);
+        final int skipIndex = pointerUp ? event.getActionIndex() : -1;
+
+        // Determine focal point.
+        float sumX = 0, sumY = 0;
+        final int count = event.getPointerCount();
+        for (int i = 0; i < count; i++) {
+            if (skipIndex == i) continue;
+            sumX += event.getX(i);
+            sumY += event.getY(i);
+        }
+        final int div = pointerUp ? count - 1 : count;
+        final float focusX = sumX / div;
+        final float focusY = sumY / div;
+
+        // Update touching things.
+        mTouchingObject = touchingObject;
+        mTouchingContext = touchingContext;
+
+        switch (action) {
+            case MotionEvent.ACTION_POINTER_DOWN:
+                mOwner.issueStateTransition(STATE_MULTIPLE_FINGERS_PRESSING);
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:
+                // TODO: Ready to do drag after MultipleFingersPressing.
+                break;
+
+            case MotionEvent.ACTION_DOWN:
+                // Hold events.
+                if (mPreviousDownEvent != null) {
+                    mPreviousDownEvent.recycle();
+                    mPreviousDownEvent = null;
+                }
+                mPreviousDownEvent = mCurrentDownEvent;
+                mCurrentDownEvent = MotionEvent.obtain(event);
+
+                final boolean isSingleFinger = event.getPointerCount() == 1;
+                if (isSingleFinger) {
+                    boolean hadTapMessage = mOwner.getHandler().hasMessages(MSG_TAP);
+                    if (hadTapMessage) {
+                        // Remove unhandled tap.
+                        mOwner.getHandler().removeMessages(MSG_TAP);
+                    }
+
+                    // Handle long-press.
+                    if (mIsLongPressEnabled) {
+                        // Remove unhandled long-press.
+                        mOwner.getHandler().removeMessages(MSG_LONG_PRESS);
+                        mOwner.getHandler().sendMessageAtTime(
+                            obtainMessageWithPayload(
+                                MSG_LONG_PRESS, event, touchingObject, touchingContext),
+                            event.getDownTime() + mTapTimeout + mLongPressTimeout);
+                    }
+
+                    mDownFocusX = focusX;
+                    mDownFocusY = focusY;
+                } else {
+                    // Transit to new state.
+                    mOwner.issueStateTransitionAndRun(
+                        STATE_MULTIPLE_FINGERS_PRESSING,
+                        event, touchingObject, touchingContext);
+                }
+
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                final int deltaX = (int) (focusX - mDownFocusX);
+                final int deltaY = (int) (focusY - mDownFocusY);
+                final int distance = (deltaX * deltaX) + (deltaY * deltaY);
+
+                if (distance > mTouchSlopSquare) {
+                    // Transit to new state.
+                    mOwner.issueStateTransitionAndRun(
+                        STATE_DRAG,
+                        event, touchingObject, touchingContext);
+                }
+                break;
+
+            case MotionEvent.ACTION_UP:
+                if (mHadLongPress) {
+//                    final MyMotionEvent clone = obtainMyMotionEvent(event);
+//                    if (mIsLongPressEnabled && mOwner.getListener() != null) {
+//                        mOwner.getListener().onLongTap(
+//                            clone, touchingObject, touchingContext);
+//                    }
+
+                    // Transit to IDLE state.
+                    mOwner.issueStateTransitionAndRun(
+                        STATE_IDLE, event, touchingObject, touchingContext);
+                } else {
+                    // TODO: Two continuous taps far away doesn't count as a double tap.
+                    // Accumulate the tap count if the current is closed to .
+                    if (isConsideredCloseTap(mPreviousDownEvent, mCurrentDownEvent)) {
+                        ++mTapCount;
+                    }
+
+                    // Because it is a TAP, cancel the upcoming long-press delay.
+                    cancelLongPress();
+
+                    // Defer the transition to IDLE state.
+                    mOwner.getHandler().sendMessageDelayed(
+                        obtainMessageWithPayload(MSG_TAP,
+                                                 event,
+                                                 touchingObject,
+                                                 touchingContext),
+                        mTapTimeout);
+                }
+                break;
+
+            case MotionEvent.ACTION_CANCEL:
+                // Transit to IDLE state.
+                mOwner.issueStateTransition(STATE_IDLE);
+                break;
+        }
+    }
+
+    @Override
+    public void onExit() {
+        // Cancel tap.
+        mOwner.getHandler().removeMessages(MSG_TAP);
+        // Cancel long-press.
+        if (mIsLongPressEnabled) {
+            mOwner.getHandler().removeMessages(MSG_LONG_PRESS);
+        }
+
+        // TODO: Discuss with our UX designer.
+        // Dispatch tap callback.
+        final MyMotionEvent clone = obtainMyMotionEvent(mCurrentDownEvent);
+        if (mIsLongPressEnabled && mHadLongPress) {
+            mOwner.getListener().onLongTap(
+                clone, mTouchingObject, mTouchingContext);
+        } else if (mIsTapEnabled && mTapCount > 0) {
+            if (mTapCount == 1) {
+                mOwner.getListener().onSingleTap(
+                    clone, mTouchingObject, mTouchingContext);
+            } else if (mTapCount == 2) {
+                mOwner.getListener().onDoubleTap(
+                    clone, mTouchingObject, mTouchingContext);
+            } else {
+                mOwner.getListener().onMoreTap(
+                    clone, mTouchingObject, mTouchingContext, mTapCount);
+            }
+        }
+
+        // Recycle hold events.
+        if (mPreviousDownEvent != null) {
+            mPreviousDownEvent.recycle();
+            mPreviousDownEvent = null;
+        }
+        if (mCurrentDownEvent != null) {
+            mCurrentDownEvent.recycle();
+            mCurrentDownEvent = null;
+        }
+    }
+
+    @Override
+    public boolean onHandleMessage(Message msg) {
+        switch (msg.what) {
+            case MSG_LONG_PRESS: {
+                final MyMessagePayload payload = (MyMessagePayload) msg.obj;
+
+                // Notify the detector that it's NOT a tap anymore.
+                cancelTaps();
+                mHadLongPress = true;
+
+                if (mIsLongPressEnabled && mOwner.getListener() != null) {
+                    mOwner.getListener().onLongPress(
+                        payload.event,
+                        payload.touchingTarget,
+                        payload.touchingContext);
+                }
+                return true;
+            }
+
+            case MSG_TAP: {
+                // Transit to IDLE state.
+                mOwner.issueStateTransition(STATE_IDLE);
+                return true;
+            }
+
+            default:
+                return false;
+        }
+    }
+
+    public boolean getIsTapEnabled() {
+        return mIsTapEnabled;
+    }
+
+    public void setIsTapEnabled(boolean enabled) {
+        mIsTapEnabled = enabled;
+    }
+
+    public boolean getIsLongPressEnabled() {
+        return mIsLongPressEnabled;
+    }
+
+    /**
+     * Set whether long-press is enabled, if this is enabled when a user
+     * presses and holds down you get a long-press event and nothing further.
+     * If it's disabled the user can press and hold down and then later
+     * moved their finger and you will get scroll events. By default
+     * long-press is enabled.
+     *
+     * @param enabled whether long-press should be enabled.
+     */
+    public void setIsLongPressEnabled(boolean enabled) {
+        mIsLongPressEnabled = enabled;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private boolean isConsideredCloseTap(MotionEvent previousDown,
+                                         MotionEvent currentDown) {
+        if (previousDown == null) return true;
+
+//            final long deltaTime = currentUp.getEventTime() - previousUp.getEventTime();
+//            if (deltaTime > TAP_TIMEOUT) {
+//                // The previous-up is too long ago, it is definitely a new tap!
+//                return false;
+//            }
+
+        final int deltaX = (int) currentDown.getX() - (int) previousDown.getX();
+        final int deltaY = (int) currentDown.getY() - (int) previousDown.getY();
+        Log.d("xyz", "delta=" + (deltaX * deltaX + deltaY * deltaY) + ", slop=" + mTapSlopSquare);
+        return (deltaX * deltaX + deltaY * deltaY < mTapSlopSquare);
+    }
+
+    private void cancelLongPress() {
+        mOwner.getHandler().removeMessages(MSG_LONG_PRESS);
+
+        mHadLongPress = false;
+    }
+
+    private void cancelTaps() {
+        mOwner.getHandler().removeMessages(MSG_TAP);
+    }
+}

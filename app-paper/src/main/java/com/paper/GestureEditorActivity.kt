@@ -6,11 +6,13 @@ import android.view.MotionEvent
 import android.widget.ImageView
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
+import com.my.widget.gesture.IGestureListener
 import com.my.widget.gesture.MyGestureDetector
+import com.my.widget.gesture.MyMotionEvent
 import java.util.*
 
 class GestureEditorActivity : AppCompatActivity(),
-                              MyGestureDetector.GestureListener {
+                              IGestureListener {
 
     private val mLog: MutableList<String> = mutableListOf()
 
@@ -41,52 +43,47 @@ class GestureEditorActivity : AppCompatActivity(),
 
     // GestureListener ----------------------------------------------------->
 
-    override fun onActionBegin(event: MyGestureDetector.MyMotionEvent,
-                               touchingObject: Any?,
-                               touchingContext: Any?) {
+    override fun onActionBegin() {
         printLog("--------------")
         printLog("⬇onActionBegin")
     }
 
-    override fun onActionEnd(event: MyGestureDetector.MyMotionEvent,
-                             touchingObject: Any?,
-                             touchingContext: Any?,
-                             isCancel: Boolean) {
+    override fun onActionEnd() {
         printLog("⬆onActionEnd")
     }
 
-    override fun onSingleTap(event: MyGestureDetector.MyMotionEvent,
+    override fun onSingleTap(event: MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
         printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onSingleTap", 1))
     }
 
-    override fun onDoubleTap(event: MyGestureDetector.MyMotionEvent,
+    override fun onDoubleTap(event: MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
         printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onDoubleTap", 2))
     }
 
-    override fun onMoreTap(event: MyGestureDetector.MyMotionEvent,
+    override fun onMoreTap(event: MyMotionEvent,
                            touchingObject: Any?,
                            touchingContext: Any?,
                            tapCount: Int) {
         printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onMoreTap", tapCount))
     }
 
-    override fun onLongTap(event: MyGestureDetector.MyMotionEvent,
+    override fun onLongTap(event: MyMotionEvent,
                            touchingObject: Any?,
                            touchingContext: Any?) {
         printLog(String.format(Locale.ENGLISH, "\uD83D\uDD95 x%d onLongTap", 1))
     }
 
-    override fun onLongPress(event: MyGestureDetector.MyMotionEvent,
+    override fun onLongPress(event: MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
         printLog("\uD83D\uDD50 onLongPress")
     }
 
-    override fun onDragBegin(event: MyGestureDetector.MyMotionEvent,
+    override fun onDragBegin(event: MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?,
                              xInCanvas: Float,
@@ -95,7 +92,7 @@ class GestureEditorActivity : AppCompatActivity(),
         return true
     }
 
-    override fun onDrag(event: MyGestureDetector.MyMotionEvent,
+    override fun onDrag(event: MyMotionEvent,
                         touchingObject: Any?,
                         touchingContext: Any?,
                         translationInCanvas: FloatArray?) {
@@ -103,14 +100,14 @@ class GestureEditorActivity : AppCompatActivity(),
         printLog("✍️ onDrag")
     }
 
-    override fun onDragEnd(event: MyGestureDetector.MyMotionEvent,
+    override fun onDragEnd(event: MyMotionEvent,
                            touchingObject: Any?,
                            touchingContext: Any?,
                            translationInCanvas: FloatArray?) {
         printLog("✍️ onDragEnd")
     }
 
-    override fun onFling(event: MyGestureDetector.MyMotionEvent,
+    override fun onFling(event: MyMotionEvent,
                          touchingObject: Any?,
                          touchContext: Any?,
                          startPointerInCanvas: FloatArray?,
@@ -121,7 +118,7 @@ class GestureEditorActivity : AppCompatActivity(),
         return true
     }
 
-    override fun onPinchBegin(event: MyGestureDetector.MyMotionEvent,
+    override fun onPinchBegin(event: MyMotionEvent,
                               touchingObject: Any?,
                               touchContext: Any?,
                               pivotXInCanvas: Float,
@@ -130,7 +127,7 @@ class GestureEditorActivity : AppCompatActivity(),
         return true
     }
 
-    override fun onPinch(event: MyGestureDetector.MyMotionEvent,
+    override fun onPinch(event: MyMotionEvent,
                          touchingObject: Any?,
                          touchContext: Any?,
                          startPointerOneInCanvas: FloatArray?,
@@ -140,7 +137,7 @@ class GestureEditorActivity : AppCompatActivity(),
         printLog("\uD83D\uDD0D onPinch")
     }
 
-    override fun onPinchEnd(event: MyGestureDetector.MyMotionEvent,
+    override fun onPinchEnd(event: MyMotionEvent,
                             touchingObject: Any?,
                             touchContext: Any?,
                             startPointerOneInCanvas: FloatArray?,
