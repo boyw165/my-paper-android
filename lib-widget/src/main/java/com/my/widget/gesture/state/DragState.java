@@ -106,8 +106,8 @@ public class DragState extends BaseGestureState {
 
         if (isConsideredFling(event)) {
             // TODO: Complete fling arguments.
-            mOwner.getListener().onFling(clone, touchingObject, touchingContext,
-                                         new float[2], new float[2], 0, 0);
+            mOwner.getListener().onDragFling(clone, touchingObject, touchingContext,
+                                             new float[2], new float[2], 0, 0);
         }
 
         // TODO: Complete the translation argument.

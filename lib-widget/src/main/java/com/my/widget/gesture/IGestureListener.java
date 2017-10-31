@@ -74,18 +74,18 @@ public interface IGestureListener {
      * @param startPointerInCanvas The first down pointer that started the
      *                             fling.
      * @param stopPointerInCanvas  The move pointer that triggered the
-     *                             current onFling.
+     *                             current onDragFling.
      * @param velocityX            The velocity of this fling measured in
      *                             pixels per second along the x axis.
      * @param velocityY            The velocity of this fling measured in
      */
-    boolean onFling(MyMotionEvent event,
-                    Object touchingObject,
-                    Object touchContext,
-                    float[] startPointerInCanvas,
-                    float[] stopPointerInCanvas,
-                    float velocityX,
-                    float velocityY);
+    boolean onDragFling(MyMotionEvent event,
+                        Object touchingObject,
+                        Object touchContext,
+                        float[] startPointerInCanvas,
+                        float[] stopPointerInCanvas,
+                        float velocityX,
+                        float velocityY);
 
     // Pinch //////////////////////////////////////////////////////////////
 
@@ -102,6 +102,11 @@ public interface IGestureListener {
                  float[] startPointerTwoInCanvas,
                  float[] stopPointerOneInCanvas,
                  float[] stopPointerTwoInCanvas);
+
+    // TODO: Figure out the arguments.
+    void onPinchFling(MyMotionEvent event,
+                 Object touchingObject,
+                 Object touchContext);
 
     void onPinchEnd(MyMotionEvent event,
                     Object touchingObject,

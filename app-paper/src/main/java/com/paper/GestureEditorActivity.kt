@@ -105,14 +105,14 @@ class GestureEditorActivity : AppCompatActivity(),
         printLog("✍️ onDragEnd")
     }
 
-    override fun onFling(event: MyMotionEvent,
-                         touchingObject: Any?,
-                         touchContext: Any?,
-                         startPointerInCanvas: FloatArray?,
-                         stopPointerInCanvas: FloatArray?,
-                         velocityX: Float,
-                         velocityY: Float): Boolean {
-        printLog("\uD83C\uDFBC onFling")
+    override fun onDragFling(event: MyMotionEvent,
+                             touchingObject: Any?,
+                             touchContext: Any?,
+                             startPointerInCanvas: FloatArray?,
+                             stopPointerInCanvas: FloatArray?,
+                             velocityX: Float,
+                             velocityY: Float): Boolean {
+        printLog("✍ \uD83C\uDFBC onDragFling")
         return true
     }
 
@@ -133,6 +133,12 @@ class GestureEditorActivity : AppCompatActivity(),
                          stopPointerOneInCanvas: FloatArray?,
                          stopPointerTwoInCanvas: FloatArray?) {
         printLog("\uD83D\uDD0D onPinch")
+    }
+
+    override fun onPinchFling(event: MyMotionEvent,
+                              touchingObject: Any?,
+                              touchContext: Any?) {
+        printLog("\uD83D\uDD0D onPinchFling")
     }
 
     override fun onPinchEnd(event: MyMotionEvent,
