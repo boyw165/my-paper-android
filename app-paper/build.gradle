@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-// Enable realm.
-apply plugin: 'realm-android'
+//// Enable realm.
+//apply plugin: 'realm-android'
 
 // Prepare the keystore for signing the APK.
 def keystorePropertiesFile = rootProject.file("../my-google-play-certs/bigbite-keystore.properties")
