@@ -93,7 +93,8 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onDrag(event: MyMotionEvent,
                         touchingObject: Any?,
                         touchingContext: Any?,
-                        translationInCanvas: FloatArray?) {
+                        startPointerInCanvas: FloatArray?,
+                        stopPointerInCanvas: FloatArray?) {
         // DO NOTHING.
         printLog("✍️ onDrag")
     }

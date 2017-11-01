@@ -55,7 +55,8 @@ public interface IGestureListener {
     void onDrag(MyMotionEvent event,
                 Object touchingObject,
                 Object touchingContext,
-                float[] translationInCanvas);
+                float[] startPointerInCanvas,
+                float[] stopPointerInCanvas);
 
     void onDragEnd(MyMotionEvent event,
                    Object touchingObject,

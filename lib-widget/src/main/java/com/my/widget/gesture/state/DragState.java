@@ -73,24 +73,20 @@ public class DragState extends BaseGestureState {
 
         switch (action) {
             case MotionEvent.ACTION_POINTER_DOWN:
+                // Transit to multiple-fingers-pressing state.
                 mOwner.issueStateTransition(
                     STATE_MULTIPLE_FINGERS_PRESSING,
                     event, touchingObject, touchingContext);
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                final float scrollX = mStartFocusX - focusX;
-                final float scrollY = mStartFocusY - focusY;
-
                 mOwner.getListener().onDrag(
                     obtainMyMotionEvent(event), touchingObject, touchingContext,
-                    new float[] {scrollX, scrollY});
+                    new float[] {mStartFocusX, mStartFocusY},
+                    new float[] {focusX, focusY});
                 break;
 
             case MotionEvent.ACTION_UP:
-                mOwner.issueStateTransition(STATE_IDLE, event, touchingObject, touchingContext);
-                break;
-
             case MotionEvent.ACTION_CANCEL:
                 // Transit to IDLE state.
                 mOwner.issueStateTransition(STATE_IDLE, event, touchingObject, touchingContext);
