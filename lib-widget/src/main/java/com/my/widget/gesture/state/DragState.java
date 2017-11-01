@@ -17,6 +17,7 @@
 
 package com.my.widget.gesture.state;
 
+import android.graphics.PointF;
 import android.os.Message;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -82,8 +83,8 @@ public class DragState extends BaseGestureState {
             case MotionEvent.ACTION_MOVE:
                 mOwner.getListener().onDrag(
                     obtainMyMotionEvent(event), touchingObject, touchingContext,
-                    new float[] {mStartFocusX, mStartFocusY},
-                    new float[] {focusX, focusY});
+                    new PointF(mStartFocusX, mStartFocusY),
+                    new PointF(focusX, focusY));
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -99,16 +100,20 @@ public class DragState extends BaseGestureState {
                        Object touchingObject,
                        Object touchingContext) {
         final MyMotionEvent clone = obtainMyMotionEvent(event);
+        final float focusX = event.getX();
+        final float focusY = event.getY();
 
         if (isConsideredFling(event)) {
             // TODO: Complete fling arguments.
             mOwner.getListener().onDragFling(clone, touchingObject, touchingContext,
-                                             new float[2], new float[2], 0, 0);
+                                             new PointF(), new PointF(), 0, 0);
         }
 
         // TODO: Complete the translation argument.
         mOwner.getListener().onDragEnd(
-            clone, touchingObject, touchingContext, new float[2]);
+            clone, touchingObject, touchingContext,
+            new PointF(mStartFocusX, mStartFocusY),
+            new PointF(focusX, focusY));
 
         if (mVelocityTracker != null) {
             // This may have been cleared when we called out to the

@@ -29,6 +29,7 @@ import com.my.widget.gesture.state.BaseGestureState;
 import com.my.widget.gesture.state.DragState;
 import com.my.widget.gesture.state.IdleState;
 import com.my.widget.gesture.state.MultipleFingersPressingState;
+import com.my.widget.gesture.state.PinchState;
 import com.my.widget.gesture.state.SingleFingerPressingState;
 
 public class MyGestureDetector implements Handler.Callback,
@@ -59,6 +60,7 @@ public class MyGestureDetector implements Handler.Callback,
     private final SingleFingerPressingState mSingleFingerPressingState;
     private final MultipleFingersPressingState mMultipleFingersPressingState;
     private final DragState mDragState;
+    private final PinchState mPinchState;
 
     /**
      * Creates a MyGestureDetector with the supplied listener.
@@ -86,8 +88,9 @@ public class MyGestureDetector implements Handler.Callback,
             this,
             mTapSlopSquare, mTouchSlopSquare,
             TAP_TIMEOUT, LONG_PRESS_TIMEOUT);
-        mMultipleFingersPressingState = new MultipleFingersPressingState(this);
+        mMultipleFingersPressingState = new MultipleFingersPressingState(this, mTouchSlopSquare);
         mDragState = new DragState(this, mMinFlingVelocity, mMaxFlingVelocity);
+        mPinchState = new PinchState(this);
 
         // Init IDLE state.
         mState = mIdleState;
@@ -127,8 +130,7 @@ public class MyGestureDetector implements Handler.Callback,
                 mState = mMultipleFingersPressingState;
                 break;
             case STATE_PINCH:
-                // TODO
-                mState = mIdle;
+                mState = mPinchState;
                 break;
             default:
                 mState = mIdleState;

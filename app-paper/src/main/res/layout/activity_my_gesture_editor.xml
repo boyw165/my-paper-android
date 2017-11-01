@@ -22,7 +22,7 @@
         android:clickable="false"
         android:gravity="start"
         android:text="@string/tap_anywhere_to_start"
-        android:textSize="24sp"
+        android:textSize="12sp"
         android:padding="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

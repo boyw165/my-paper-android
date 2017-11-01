@@ -17,6 +17,7 @@
 
 package com.my.widget.gesture;
 
+import android.graphics.PointF;
 import android.view.MotionEvent;
 
 public interface IGestureListener {
@@ -55,13 +56,14 @@ public interface IGestureListener {
     void onDrag(MyMotionEvent event,
                 Object touchingObject,
                 Object touchingContext,
-                float[] startPointerInCanvas,
-                float[] stopPointerInCanvas);
+                PointF startPointerInCanvas,
+                PointF stopPointerInCanvas);
 
     void onDragEnd(MyMotionEvent event,
                    Object touchingObject,
                    Object touchingContext,
-                   float[] translationInCanvas);
+                   PointF startPointerInCanvas,
+                   PointF stopPointerInCanvas);
 
     // Fling //////////////////////////////////////////////////////////////
 
@@ -70,21 +72,20 @@ public interface IGestureListener {
      * {@link MotionEvent} and the matching up {@link MotionEvent}. The
      * calculated velocity is supplied along the x and y axis in pixels per
      * second.
-     *
-     * @param event                The MotionEvent alternative.
+     *  @param event                The MotionEvent alternative.
      * @param startPointerInCanvas The first down pointer that started the
      *                             fling.
      * @param stopPointerInCanvas  The move pointer that triggered the
-     *                             current onDragFling.
+ *                             current onDragFling.
      * @param velocityX            The velocity of this fling measured in
-     *                             pixels per second along the x axis.
+*                             pixels per second along the x axis.
      * @param velocityY            The velocity of this fling measured in
      */
     boolean onDragFling(MyMotionEvent event,
                         Object touchingObject,
                         Object touchContext,
-                        float[] startPointerInCanvas,
-                        float[] stopPointerInCanvas,
+                        PointF startPointerInCanvas,
+                        PointF stopPointerInCanvas,
                         float velocityX,
                         float velocityY);
 
@@ -93,27 +94,22 @@ public interface IGestureListener {
     boolean onPinchBegin(MyMotionEvent event,
                          Object touchingObject,
                          Object touchContext,
-                         float pivotXInCanvas,
-                         float pivotYInCanvas);
+                         PointF[] startPointers);
 
     void onPinch(MyMotionEvent event,
                  Object touchingObject,
                  Object touchContext,
-                 float[] startPointerOneInCanvas,
-                 float[] startPointerTwoInCanvas,
-                 float[] stopPointerOneInCanvas,
-                 float[] stopPointerTwoInCanvas);
+                 PointF[] startPointersInCanvas,
+                 PointF[] stopPointersInCanvas);
 
     // TODO: Figure out the arguments.
     void onPinchFling(MyMotionEvent event,
-                 Object touchingObject,
-                 Object touchContext);
+                      Object touchingObject,
+                      Object touchContext);
 
     void onPinchEnd(MyMotionEvent event,
                     Object touchingObject,
                     Object touchContext,
-                    float[] startPointerOneInCanvas,
-                    float[] startPointerTwoInCanvas,
-                    float[] stopPointerOneInCanvas,
-                    float[] stopPointerTwoInCanvas);
+                    PointF[] startPointersInCanvas,
+                    PointF[] stopPointersInCanvas);
 }

@@ -17,36 +17,142 @@
 
 package com.my.widget.gesture.state;
 
+import android.graphics.PointF;
 import android.os.Message;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 
 import com.my.widget.gesture.IGestureStateOwner;
 
+import static com.my.widget.gesture.IGestureStateOwner.State.STATE_IDLE;
+import static com.my.widget.gesture.IGestureStateOwner.State.STATE_PINCH;
+import static com.my.widget.gesture.IGestureStateOwner.State.STATE_SINGLE_FINGER_PRESSING;
+
 public class MultipleFingersPressingState extends BaseGestureState {
 
-    public MultipleFingersPressingState(IGestureStateOwner owner) {
+    // Given...
+    private final int mTouchSlopSquare;
+
+    // Pointers.
+    private final SparseArray<PointF> mStartPointers = new SparseArray<>();
+    private final SparseArray<PointF> mStopPointers = new SparseArray<>();
+
+    public MultipleFingersPressingState(IGestureStateOwner owner,
+                                        int touchSlopSquare) {
         super(owner);
+
+        mTouchSlopSquare = touchSlopSquare;
     }
 
     @Override
     public void onEnter(MotionEvent event,
                         Object touchingObject,
                         Object touchingContext) {
-        // DO NOTHING.
+        final int action = event.getActionMasked();
+
+        if (action == MotionEvent.ACTION_UP ||
+            action == MotionEvent.ACTION_CANCEL) {
+            // Transit to IDLE state.
+            mOwner.issueStateTransition(
+                STATE_IDLE,
+                event, touchingObject, touchingContext);
+        } else {
+            final boolean isUp = action == MotionEvent.ACTION_POINTER_UP;
+            final int pressCount = event.getPointerCount() - (isUp ? 1 : 0);
+            final boolean isMultipleFingers = pressCount > 1;
+
+            if (isMultipleFingers) {
+                // Hold the first two pointers.
+                mStartPointers.clear();
+                mStopPointers.clear();
+                for (int i = 0; i < 2; ++i) {
+                    final int id = event.getPointerId(i);
+
+                    mStartPointers.put(id, new PointF(event.getX(i),
+                                                      event.getY(i)));
+                    mStopPointers.put(id, new PointF(event.getX(i),
+                                                     event.getY(i)));
+                }
+            } else {
+                // Transit to single-finger-pressing state.
+                mOwner.issueStateTransition(
+                    STATE_SINGLE_FINGER_PRESSING,
+                    event, touchingObject, touchingContext);
+            }
+        }
     }
 
     @Override
     public void onDoing(MotionEvent event,
                         Object touchingObject,
                         Object touchingContext) {
-        // DO NOTHING.
+        final int action = event.getActionMasked();
+
+        switch (action) {
+            case MotionEvent.ACTION_MOVE: {
+                // Update the stop pointers.
+                for (int i = 0; i < 2; ++i) {
+                    final int id = event.getPointerId(i);
+                    final PointF pointer = mStopPointers.get(id);
+
+                    pointer.set(event.getX(i), event.getY(i));
+                }
+
+                // Transit to PINCH state.
+                if (isConsideredPinch(mStartPointers, mStopPointers)) {
+                    mOwner.issueStateTransition(
+                        STATE_PINCH, event, touchingObject, touchingContext);
+                }
+                break;
+            }
+
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int pressCount = event.getPointerCount() - 1;
+                final boolean isMultipleFingers = pressCount > 1;
+
+                if (!isMultipleFingers) {
+                    // Transit to single-finger-pressing state.
+                    mOwner.issueStateTransition(
+                        STATE_SINGLE_FINGER_PRESSING,
+                        event, touchingObject, touchingContext);
+                }
+                break;
+            }
+
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL: {
+                // Transit to IDLE state.
+                mOwner.issueStateTransition(
+                    STATE_IDLE,
+                    event, touchingObject, touchingContext);
+                break;
+            }
+        }
+    }
+
+    private boolean isConsideredPinch(SparseArray<PointF> startPointers,
+                                      SparseArray<PointF> stopPointers) {
+        final int size = Math.min(startPointers.size(), stopPointers.size());
+        for (int i = 0; i < size; ++i) {
+            final PointF start = startPointers.get(startPointers.keyAt(i));
+            final PointF stop = stopPointers.get(stopPointers.keyAt(i));
+            final float dx = stop.x - start.x;
+            final float dy = stop.y - start.y;
+
+            if (dx * dx + dy * dy > mTouchSlopSquare) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
     public void onExit(MotionEvent event,
                        Object touchingObject,
                        Object touchingContext) {
-        // DO NOTHING.
+        mStartPointers.clear();
+        mStopPointers.clear();
     }
 
     @Override

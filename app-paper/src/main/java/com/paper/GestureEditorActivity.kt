@@ -1,5 +1,6 @@
 package com.paper
 
+import android.graphics.PointF
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.MotionEvent
@@ -93,8 +94,8 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onDrag(event: MyMotionEvent,
                         touchingObject: Any?,
                         touchingContext: Any?,
-                        startPointerInCanvas: FloatArray?,
-                        stopPointerInCanvas: FloatArray?) {
+                        startPointerInCanvas: PointF,
+                        stopPointerInCanvas: PointF) {
         // DO NOTHING.
         printLog("✍️ onDrag")
     }
@@ -102,15 +103,16 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onDragEnd(event: MyMotionEvent,
                            touchingObject: Any?,
                            touchingContext: Any?,
-                           translationInCanvas: FloatArray?) {
+                           startPointerInCanvas: PointF,
+                           stopPointerInCanvas: PointF) {
         printLog("✍️ onDragEnd")
     }
 
     override fun onDragFling(event: MyMotionEvent,
                              touchingObject: Any?,
                              touchContext: Any?,
-                             startPointerInCanvas: FloatArray?,
-                             stopPointerInCanvas: FloatArray?,
+                             startPointerInCanvas: PointF,
+                             stopPointerInCanvas: PointF,
                              velocityX: Float,
                              velocityY: Float): Boolean {
         printLog("✍ \uD83C\uDFBC onDragFling")
@@ -120,8 +122,7 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onPinchBegin(event: MyMotionEvent,
                               touchingObject: Any?,
                               touchContext: Any?,
-                              pivotXInCanvas: Float,
-                              pivotYInCanvas: Float): Boolean {
+                              startPointers: Array<PointF>): Boolean {
         printLog("\uD83D\uDD0D onPinchBegin")
         return true
     }
@@ -129,10 +130,8 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onPinch(event: MyMotionEvent,
                          touchingObject: Any?,
                          touchContext: Any?,
-                         startPointerOneInCanvas: FloatArray?,
-                         startPointerTwoInCanvas: FloatArray?,
-                         stopPointerOneInCanvas: FloatArray?,
-                         stopPointerTwoInCanvas: FloatArray?) {
+                         startPointersInCanvas: Array<PointF>,
+                         stopPointersInCanvas: Array<PointF>) {
         printLog("\uD83D\uDD0D onPinch")
     }
 
@@ -145,10 +144,8 @@ class GestureEditorActivity : AppCompatActivity(),
     override fun onPinchEnd(event: MyMotionEvent,
                             touchingObject: Any?,
                             touchContext: Any?,
-                            startPointerOneInCanvas: FloatArray?,
-                            startPointerTwoInCanvas: FloatArray?,
-                            stopPointerOneInCanvas: FloatArray?,
-                            stopPointerTwoInCanvas: FloatArray?) {
+                            startPointersInCanvas: Array<PointF>,
+                            stopPointersInCanvas: Array<PointF>) {
         printLog("\uD83D\uDD0D onPinchEnd")
     }
 
@@ -156,7 +153,7 @@ class GestureEditorActivity : AppCompatActivity(),
 
     private fun printLog(msg: String) {
         mLog.add(msg)
-        while (mLog.size > 16) {
+        while (mLog.size > 32) {
             mLog.removeAt(0)
         }
 
