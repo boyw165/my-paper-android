@@ -51,19 +51,14 @@ public class MyGestureDetector implements Handler.Callback,
      */
     private static final int TAP_TIMEOUT = Math.max(150, ViewConfiguration.getTapTimeout());
 
-    // constants for Message.what used by GestureHandler below
-//    private static final int MSG_PINCH_BEGIN = 0xC1;
-//    private static final int MSG_PINCHING = 0xC2;
-//    private static final int MSG_PINCH_END = 0xC3;
-
     private final Handler mHandler;
     private final IGestureListener mListener;
 
     private BaseGestureState mState;
-    private final IdleState mIdle;
-    private final SingleFingerPressingState mSingleFingerPressing;
-    private final MultipleFingersPressingState mMultipleFingersPressing;
-    private final DragState mDrag;
+    private final IdleState mIdleState;
+    private final SingleFingerPressingState mSingleFingerPressingState;
+    private final MultipleFingersPressingState mMultipleFingersPressingState;
+    private final DragState mDragState;
 
     /**
      * Creates a MyGestureDetector with the supplied listener.
@@ -86,16 +81,16 @@ public class MyGestureDetector implements Handler.Callback,
         mListener = listener;
 
         // Internal states.
-        mIdle = new IdleState(this);
-        mSingleFingerPressing = new SingleFingerPressingState(
+        mIdleState = new IdleState(this);
+        mSingleFingerPressingState = new SingleFingerPressingState(
             this,
             mTapSlopSquare, mTouchSlopSquare,
             TAP_TIMEOUT, LONG_PRESS_TIMEOUT);
-        mMultipleFingersPressing = new MultipleFingersPressingState(this);
-        mDrag = new DragState(this, mMinFlingVelocity, mMaxFlingVelocity);
+        mMultipleFingersPressingState = new MultipleFingersPressingState(this);
+        mDragState = new DragState(this, mMinFlingVelocity, mMaxFlingVelocity);
 
         // Init IDLE state.
-        mState = mIdle;
+        mState = mIdleState;
     }
 
     @Override
@@ -120,41 +115,23 @@ public class MyGestureDetector implements Handler.Callback,
 
         switch (newState) {
             case STATE_IDLE:
-                mState = mIdle;
+                mState = mIdleState;
                 break;
             case STATE_SINGLE_FINGER_PRESSING:
-                mState = mSingleFingerPressing;
-                break;
-            case STATE_TAP:
-                // TODO
-                mState = mIdle;
-                break;
-            case STATE_LONG_TAP:
-                // TODO
-                mState = mIdle;
-                break;
-            case STATE_LONG_PRESS:
-                // TODO
-                mState = mIdle;
+                mState = mSingleFingerPressingState;
                 break;
             case STATE_DRAG:
-                // TODO
-                mState = mDrag;
-                break;
-            case STATE_FLING:
-                // TODO
-                mState = mIdle;
+                mState = mDragState;
                 break;
             case STATE_MULTIPLE_FINGERS_PRESSING:
-                // TODO
-                mState = mIdle;
+                mState = mMultipleFingersPressingState;
                 break;
             case STATE_PINCH:
                 // TODO
                 mState = mIdle;
                 break;
             default:
-                mState = mIdle;
+                mState = mIdleState;
         }
 
         // Enter new state.
@@ -162,7 +139,7 @@ public class MyGestureDetector implements Handler.Callback,
     }
 
     public void setIsTapEnabled(boolean enabled) {
-        mSingleFingerPressing.setIsTapEnabled(enabled);
+        mSingleFingerPressingState.setIsTapEnabled(enabled);
     }
 
     /**
@@ -175,7 +152,7 @@ public class MyGestureDetector implements Handler.Callback,
      * @param enabled whether long-press should be enabled.
      */
     public void setIsLongPressEnabled(boolean enabled) {
-        mSingleFingerPressing.setIsLongPressEnabled(enabled);
+        mSingleFingerPressingState.setIsLongPressEnabled(enabled);
     }
 
     /**
@@ -192,8 +169,8 @@ public class MyGestureDetector implements Handler.Callback,
                                 Object touchingContext) {
         mState.onDoing(event, touchingObject, touchingContext);
 
-        return mSingleFingerPressing.getIsTapEnabled() |
-               mSingleFingerPressing.getIsLongPressEnabled();
+        return mSingleFingerPressingState.getIsTapEnabled() |
+               mSingleFingerPressingState.getIsLongPressEnabled();
     }
 
     @Override

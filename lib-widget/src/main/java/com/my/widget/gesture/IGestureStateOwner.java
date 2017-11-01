@@ -27,11 +27,7 @@ public interface IGestureStateOwner {
         STATE_IDLE,
 
         STATE_SINGLE_FINGER_PRESSING,
-        STATE_TAP,
-        STATE_LONG_TAP,
-        STATE_LONG_PRESS,
         STATE_DRAG,
-        STATE_FLING,
 
         STATE_MULTIPLE_FINGERS_PRESSING,
         STATE_PINCH
