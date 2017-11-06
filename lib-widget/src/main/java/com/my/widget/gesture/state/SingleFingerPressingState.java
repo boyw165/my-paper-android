@@ -18,7 +18,6 @@
 package com.my.widget.gesture.state;
 
 import android.os.Message;
-import android.util.Log;
 import android.view.MotionEvent;
 
 import com.my.widget.gesture.IGestureStateOwner;
@@ -112,9 +111,11 @@ public class SingleFingerPressingState extends BaseGestureState {
                 break;
             }
 
-            case MotionEvent.ACTION_POINTER_UP:
-                // TODO: Ready to do drag after MultipleFingersPressing.
+            case MotionEvent.ACTION_POINTER_UP: {
+                mStartFocusX = focusX;
+                mStartFocusY = focusY;
                 break;
+            }
 
             case MotionEvent.ACTION_DOWN: {
                 // Hold events.
@@ -125,7 +126,7 @@ public class SingleFingerPressingState extends BaseGestureState {
                 mPreviousDownEvent = mCurrentDownEvent;
                 mCurrentDownEvent = MotionEvent.obtain(event);
 
-                final boolean isSingleFinger = event.getPointerCount() == 1;
+                final boolean isSingleFinger = pointerDownCount == 1;
                 if (isSingleFinger) {
                     boolean hadTapMessage = mOwner.getHandler().hasMessages(MSG_TAP);
                     if (hadTapMessage) {
@@ -322,7 +323,15 @@ public class SingleFingerPressingState extends BaseGestureState {
 
     private boolean isConsideredCloseTap(MotionEvent previousDown,
                                          MotionEvent currentDown) {
-        if (previousDown == null) return true;
+        if (currentDown == null) {
+            // The current down event might be null because the state is entered
+            // from ACTION_POINTER_UP action.
+            return false;
+        } else if (previousDown == null) {
+            // The previous down event is null only when the state is entered from
+            // ACTION_DOWN action.
+            return true;
+        }
 
 //            final long deltaTime = currentUp.getEventTime() - previousUp.getEventTime();
 //            if (deltaTime > TAP_TIMEOUT) {
