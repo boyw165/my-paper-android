@@ -84,6 +84,10 @@ public class PinchState extends BaseGestureState {
                 break;
             }
 
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                break;
+            }
+
             case MotionEvent.ACTION_POINTER_UP: {
                 final int fingers = event.getPointerCount() - 1;
 
