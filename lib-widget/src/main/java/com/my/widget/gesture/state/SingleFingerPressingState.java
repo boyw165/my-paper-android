@@ -129,6 +129,8 @@ public class SingleFingerPressingState extends BaseGestureState {
 
                 final boolean isSingleFinger = pointerDownCount == 1;
                 if (isSingleFinger) {
+                    // Handle TAP (determine if it is a TAP gesture by waiting
+                    // for a short period).
                     boolean hadTapMessage = mOwner.getHandler().hasMessages(MSG_TAP);
                     if (hadTapMessage) {
                         // Remove unhandled tap.
@@ -145,6 +147,7 @@ public class SingleFingerPressingState extends BaseGestureState {
                             event.getDownTime() + mTapTimeout + mLongPressTimeout);
                     }
 
+                    // Hold start x and y.
                     mStartFocusX = focusX;
                     mStartFocusY = focusY;
                 } else {

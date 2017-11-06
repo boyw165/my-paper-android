@@ -40,10 +40,16 @@ public class PinchState extends BaseGestureState {
     public void onEnter(MotionEvent event,
                         Object touchingObject,
                         Object touchingContext) {
-        // Hold the first two pointers.
+        final int action = event.getActionMasked();
+        final boolean pointerUp = action == MotionEvent.ACTION_POINTER_UP;
+        final int upIndex = pointerUp ? event.getActionIndex() : -1;
+
+        // Hold the all down pointers.
         mStartPointers.clear();
         mStopPointers.clear();
         for (int i = 0; i < event.getPointerCount(); ++i) {
+            if (i == upIndex) continue;
+
             final int id = event.getPointerId(i);
 
             mStartPointers.put(id, new PointF(event.getX(i),
@@ -65,11 +71,11 @@ public class PinchState extends BaseGestureState {
                         Object touchingContext) {
         final int action = event.getActionMasked();
         final boolean pointerUp = action == MotionEvent.ACTION_POINTER_UP;
+        final int upIndex = pointerUp ? event.getActionIndex() : -1;
         final int downPointerCount = event.getPointerCount() - (pointerUp ? 1 : 0);
 
         switch (action) {
             case MotionEvent.ACTION_MOVE: {
-
                 // Update stop pointers.
                 final PointF pointer1 = mStopPointers.get(mStopPointers.keyAt(0));
                 pointer1.set(event.getX(0), event.getY(0));
@@ -89,28 +95,23 @@ public class PinchState extends BaseGestureState {
             }
 
             case MotionEvent.ACTION_POINTER_DOWN: {
-
-                for (int i = mStartPointers.size(); i < downPointerCount; ++i) {
-                    final int id = event.getPointerId(i);
-
-                    mStartPointers.put(id, new PointF(event.getX(i),
-                        event.getY(i)));
-                    mStopPointers.put(id, new PointF(event.getX(i),
-                        event.getY(i)));
-                }
+                // Hold undocumented pointers.
+                int downIndex = event.getActionIndex();
+                int downId = event.getPointerId(downIndex);
+                mStartPointers.put(downId, new PointF(event.getX(downIndex),
+                                                      event.getY(downIndex)));
+                mStopPointers.put(downId, new PointF(event.getX(downIndex),
+                                                     event.getY(downIndex)));
                 break;
             }
 
             case MotionEvent.ACTION_POINTER_UP: {
-                final int fingers = event.getPointerCount() - 1;
-
-                if (fingers >= 2) {
-                    // 0, 1, 2
-                    final int upIndex = event.getActionIndex();
+                if (downPointerCount >= 2) {
                     final int upId = event.getPointerId(upIndex);
 
-                    if (mStartPointers.get(upId) != null) {
-                        // TODO: Refresh the start pointers.
+                    if (mStartPointers.indexOfKey(upId) < 2) {
+                        // The anchor pointers (first two) is changed, the gesture
+                        // would end and restart.
                         mOwner.getListener().onPinchEnd(
                             obtainMyMotionEvent(event), touchingObject, touchingContext,
                             new PointF[]{mStartPointers.get(mStartPointers.keyAt(0)),
@@ -118,10 +119,9 @@ public class PinchState extends BaseGestureState {
                             new PointF[]{mStopPointers.get(mStopPointers.keyAt(0)),
                                          mStopPointers.get(mStopPointers.keyAt(1))});
 
+                        // Refresh the start pointers.
                         mStartPointers.clear();
                         mStopPointers.clear();
-
-                        int size = 0;
                         for (int i = 0; i < event.getPointerCount(); ++i) {
                             if (i == upIndex) continue;
 
@@ -133,10 +133,15 @@ public class PinchState extends BaseGestureState {
                                                          event.getY(i)));
                         }
 
+                        // Restart the gesture.
                         mOwner.getListener().onPinchBegin(
                             obtainMyMotionEvent(event), touchingObject, touchingContext,
                             new PointF[]{mStartPointers.get(mStartPointers.keyAt(0)),
                                          mStartPointers.get(mStartPointers.keyAt(1))});
+                    } else {
+                        // Remove the hold (up) pointer.
+                        mStartPointers.remove(upId);
+                        mStopPointers.remove(upId);
                     }
                 } else {
                     // Transit to STATE_SINGLE_FINGER_PRESSING state.

@@ -49,6 +49,8 @@ public class MultipleFingersPressingState extends BaseGestureState {
                         Object touchingObject,
                         Object touchingContext) {
         final int action = event.getActionMasked();
+        final boolean pointerUp = action == MotionEvent.ACTION_POINTER_UP;
+        final int upIndex = pointerUp ? event.getActionIndex() : -1;
 
         if (action == MotionEvent.ACTION_UP ||
             action == MotionEvent.ACTION_CANCEL) {
@@ -62,10 +64,12 @@ public class MultipleFingersPressingState extends BaseGestureState {
             final boolean isMultipleFingers = pressCount > 1;
 
             if (isMultipleFingers) {
-                // Hold the first two pointers.
+                // Hold the all down pointers.
                 mStartPointers.clear();
                 mStopPointers.clear();
-                for (int i = 0; i < 2; ++i) {
+                for (int i = 0; i < event.getPointerCount(); ++i) {
+                    if (i == upIndex) continue;
+
                     final int id = event.getPointerId(i);
 
                     mStartPointers.put(id, new PointF(event.getX(i),
@@ -87,11 +91,14 @@ public class MultipleFingersPressingState extends BaseGestureState {
                         Object touchingObject,
                         Object touchingContext) {
         final int action = event.getActionMasked();
+        final boolean pointerUp = action == MotionEvent.ACTION_POINTER_UP;
+        final int upIndex = pointerUp ? event.getActionIndex() : -1;
+        final int downPointerCount = event.getPointerCount() - (pointerUp ? 1 : 0);
 
         switch (action) {
             case MotionEvent.ACTION_MOVE: {
                 // Update the stop pointers.
-                for (int i = 0; i < 2; ++i) {
+                for (int i = 0; i < downPointerCount; ++i) {
                     final int id = event.getPointerId(i);
                     final PointF pointer = mStopPointers.get(id);
 
@@ -106,10 +113,23 @@ public class MultipleFingersPressingState extends BaseGestureState {
                 break;
             }
 
-            case MotionEvent.ACTION_POINTER_UP: {
-                final int pressCount = event.getPointerCount() - 1;
-                final boolean isMultipleFingers = pressCount > 1;
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                // Hold undocumented pointers.
+                int downIndex = event.getActionIndex();
+                int downId = event.getPointerId(downIndex);
+                mStartPointers.put(downId, new PointF(event.getX(downIndex),
+                                                      event.getY(downIndex)));
+                mStopPointers.put(downId, new PointF(event.getX(downIndex),
+                                                     event.getY(downIndex)));
+                break;
+            }
 
+            case MotionEvent.ACTION_POINTER_UP: {
+                int upId = event.getPointerId(upIndex);
+                mStartPointers.remove(upId);
+                mStopPointers.remove(upId);
+
+                final boolean isMultipleFingers = downPointerCount > 1;
                 if (!isMultipleFingers) {
                     // Transit to single-finger-pressing state.
                     mOwner.issueStateTransition(
