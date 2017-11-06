@@ -47,8 +47,8 @@ public class SingleFingerPressingState extends BaseGestureState {
 
     private int mTapCount;
 
-    private float mDownFocusX;
-    private float mDownFocusY;
+    private float mStartFocusX;
+    private float mStartFocusY;
 
     private MotionEvent mPreviousDownEvent;
     private MotionEvent mCurrentDownEvent;
@@ -100,22 +100,23 @@ public class SingleFingerPressingState extends BaseGestureState {
             sumX += event.getX(i);
             sumY += event.getY(i);
         }
-        final int div = pointerUp ? count - 1 : count;
-        final float focusX = sumX / div;
-        final float focusY = sumY / div;
+        final int pointerDownCount = pointerUp ? count - 1 : count;
+        final float focusX = sumX / pointerDownCount;
+        final float focusY = sumY / pointerDownCount;
 
         switch (action) {
-            case MotionEvent.ACTION_POINTER_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN: {
                 mOwner.issueStateTransition(
                     STATE_MULTIPLE_FINGERS_PRESSING,
                     event, touchingObject, touchingContext);
                 break;
+            }
 
             case MotionEvent.ACTION_POINTER_UP:
                 // TODO: Ready to do drag after MultipleFingersPressing.
                 break;
 
-            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_DOWN: {
                 // Hold events.
                 if (mPreviousDownEvent != null) {
                     mPreviousDownEvent.recycle();
@@ -142,8 +143,8 @@ public class SingleFingerPressingState extends BaseGestureState {
                             event.getDownTime() + mTapTimeout + mLongPressTimeout);
                     }
 
-                    mDownFocusX = focusX;
-                    mDownFocusY = focusY;
+                    mStartFocusX = focusX;
+                    mStartFocusY = focusY;
                 } else {
                     // Transit to new state.
                     mOwner.issueStateTransition(
@@ -152,10 +153,11 @@ public class SingleFingerPressingState extends BaseGestureState {
                 }
 
                 break;
+            }
 
-            case MotionEvent.ACTION_MOVE:
-                final int deltaX = (int) (focusX - mDownFocusX);
-                final int deltaY = (int) (focusY - mDownFocusY);
+            case MotionEvent.ACTION_MOVE: {
+                final int deltaX = (int) (focusX - mStartFocusX);
+                final int deltaY = (int) (focusY - mStartFocusY);
                 final int distance = (deltaX * deltaX) + (deltaY * deltaY);
 
                 if (distance > mTouchSlopSquare) {
@@ -165,8 +167,9 @@ public class SingleFingerPressingState extends BaseGestureState {
                         event, touchingObject, touchingContext);
                 }
                 break;
+            }
 
-            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_UP: {
                 // Hold up event.
                 if (mCurrentUpEvent != null) {
                     mCurrentUpEvent.recycle();
@@ -196,11 +199,13 @@ public class SingleFingerPressingState extends BaseGestureState {
                         mTapTimeout);
                 }
                 break;
+            }
 
-            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_CANCEL: {
                 // Transit to IDLE state.
                 mOwner.issueStateTransition(STATE_IDLE, null, null, null);
                 break;
+            }
         }
     }
 
@@ -327,7 +332,6 @@ public class SingleFingerPressingState extends BaseGestureState {
 
         final int deltaX = (int) currentDown.getX() - (int) previousDown.getX();
         final int deltaY = (int) currentDown.getY() - (int) previousDown.getY();
-        Log.d("xyz", "delta=" + (deltaX * deltaX + deltaY * deltaY) + ", slop=" + mTapSlopSquare);
         return (deltaX * deltaX + deltaY * deltaY < mTapSlopSquare);
     }
 
