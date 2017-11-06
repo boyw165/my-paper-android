@@ -2,6 +2,7 @@
 //
 //  Author: boy@cardinalblue.com
 //          jack.huang@cardinalblue.com
+//          yolung.lu@cardinalblue.com
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,7 +25,6 @@ import android.os.Message;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 
-import com.my.widget.R;
 import com.my.widget.gesture.state.BaseGestureState;
 import com.my.widget.gesture.state.DragState;
 import com.my.widget.gesture.state.IdleState;
@@ -67,20 +67,28 @@ public class MyGestureDetector implements Handler.Callback,
      * You may only use this constructor from a {@link android.os.Looper} thread.
      *
      * @param context the application's context
-     * @throws NullPointerException if {@code listener} is null.
+     * @param touchSlop
+     * @param tapSlop
+     * @param minFlingVec
+     * @param maxFlingVec @throws NullPointerException if {@code listener} is null.
      * @see android.os.Handler#Handler()
      */
     public MyGestureDetector(Context context,
-                             IGestureListener listener) {
+                             IGestureListener listener,
+                             float touchSlop,
+                             float tapSlop,
+                             float minFlingVec,
+                             float maxFlingVec) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "The detector should be always initialized on the main thread.");
         }
 
-        init(context);
-
         mHandler = new GestureHandler(this);
         mListener = listener;
+
+        // Init properties like touch slop square, tap slop square, ..., etc.
+        init(context, touchSlop, tapSlop, minFlingVec, maxFlingVec);
 
         // Internal states.
         mIdleState = new IdleState(this);
@@ -184,21 +192,23 @@ public class MyGestureDetector implements Handler.Callback,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private void init(Context context) {
+    private void init(Context context,
+                      float touchSlop,
+                      float tapSlop,
+                      float minFlingVec,
+                      float maxFlingVec) {
         final ViewConfiguration configuration = ViewConfiguration.get(context);
 
-        int touchSlop = (int) Math.min(context.getResources().getDimension(R.dimen.touch_slop),
-                                       configuration.getScaledTouchSlop());
-        int tapSlop = (int) Math.min(context.getResources().getDimension(R.dimen.tap_slop),
-                                     configuration.getScaledDoubleTapSlop());
+        touchSlop = Math.min(touchSlop, configuration.getScaledTouchSlop());
+        tapSlop = Math.min(tapSlop, configuration.getScaledDoubleTapSlop());
 
-        mMinFlingVelocity = (int) Math.max(context.getResources().getDimension(R.dimen.fling_min_vec),
+        mTouchSlopSquare = (int) (touchSlop * touchSlop);
+        mTapSlopSquare = (int) (tapSlop * tapSlop);
+
+        mMinFlingVelocity = (int) Math.max(minFlingVec,
                                            configuration.getScaledMinimumFlingVelocity());
-        mMaxFlingVelocity = (int) Math.max(context.getResources().getDimension(R.dimen.fling_max_vec),
+        mMaxFlingVelocity = (int) Math.max(maxFlingVec,
                                            configuration.getScaledMaximumFlingVelocity());
-
-        mTouchSlopSquare = touchSlop * touchSlop;
-        mTapSlopSquare = tapSlop * tapSlop;
     }
 
     ///////////////////////////////////////////////////////////////////////////

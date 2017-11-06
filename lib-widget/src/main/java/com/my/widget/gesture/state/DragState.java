@@ -138,6 +138,7 @@ public class DragState extends BaseGestureState {
             // A fling must travel the minimum tap distance
             final int pointerId = event.getPointerId(0);
             mVelocityTracker.computeCurrentVelocity(1000, mMaxFlingVelocity);
+
             final float velocityY = mVelocityTracker.getYVelocity(pointerId);
             final float velocityX = mVelocityTracker.getXVelocity(pointerId);
 

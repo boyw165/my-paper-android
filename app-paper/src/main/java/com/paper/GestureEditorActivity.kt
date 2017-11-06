@@ -25,7 +25,12 @@ class GestureEditorActivity : AppCompatActivity(),
     }
 
     private val mGestureDetector: MyGestureDetector by lazy {
-        MyGestureDetector(this@GestureEditorActivity, this)
+        MyGestureDetector(this@GestureEditorActivity,
+                          this,
+                          resources.getDimension(R.dimen.touch_slop),
+                          resources.getDimension(R.dimen.tap_slop),
+                          resources.getDimension(R.dimen.fling_min_vec),
+                          resources.getDimension(R.dimen.fling_max_vec))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
