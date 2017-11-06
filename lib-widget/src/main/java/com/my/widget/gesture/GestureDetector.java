@@ -32,8 +32,8 @@ import com.my.widget.gesture.state.MultipleFingersPressingState;
 import com.my.widget.gesture.state.PinchState;
 import com.my.widget.gesture.state.SingleFingerPressingState;
 
-public class MyGestureDetector implements Handler.Callback,
-                                          IGestureStateOwner {
+public class GestureDetector implements Handler.Callback,
+                                        IGestureStateOwner {
 
     private int mTouchSlopSquare;
     private int mTapSlopSquare;
@@ -63,7 +63,7 @@ public class MyGestureDetector implements Handler.Callback,
     private final PinchState mPinchState;
 
     /**
-     * Creates a MyGestureDetector with the supplied listener.
+     * Creates a GestureDetector with the supplied listener.
      * You may only use this constructor from a {@link android.os.Looper} thread.
      *
      * @param context the application's context
@@ -73,12 +73,12 @@ public class MyGestureDetector implements Handler.Callback,
      * @param maxFlingVec @throws NullPointerException if {@code listener} is null.
      * @see android.os.Handler#Handler()
      */
-    public MyGestureDetector(Context context,
-                             IGestureListener listener,
-                             float touchSlop,
-                             float tapSlop,
-                             float minFlingVec,
-                             float maxFlingVec) {
+    public GestureDetector(Context context,
+                           IGestureListener listener,
+                           float touchSlop,
+                           float tapSlop,
+                           float minFlingVec,
+                           float maxFlingVec) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "The detector should be always initialized on the main thread.");

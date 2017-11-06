@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.my.widget.gesture.IGestureListener
-import com.my.widget.gesture.MyGestureDetector
+import com.my.widget.gesture.GestureDetector
 import com.my.widget.gesture.MyMotionEvent
 import java.util.*
 
@@ -24,13 +24,13 @@ class GestureEditorActivity : AppCompatActivity(),
         findViewById(R.id.text_gesture_test) as TextView
     }
 
-    private val mGestureDetector: MyGestureDetector by lazy {
-        MyGestureDetector(this@GestureEditorActivity,
-                          this,
-                          resources.getDimension(R.dimen.touch_slop),
-                          resources.getDimension(R.dimen.tap_slop),
-                          resources.getDimension(R.dimen.fling_min_vec),
-                          resources.getDimension(R.dimen.fling_max_vec))
+    private val mGestureDetector: GestureDetector by lazy {
+        GestureDetector(this@GestureEditorActivity,
+                                              this,
+                                              resources.getDimension(R.dimen.touch_slop),
+                                              resources.getDimension(R.dimen.tap_slop),
+                                              resources.getDimension(R.dimen.fling_min_vec),
+                                              resources.getDimension(R.dimen.fling_max_vec))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
