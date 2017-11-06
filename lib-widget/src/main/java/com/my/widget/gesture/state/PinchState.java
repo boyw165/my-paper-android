@@ -43,7 +43,7 @@ public class PinchState extends BaseGestureState {
         // Hold the first two pointers.
         mStartPointers.clear();
         mStopPointers.clear();
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < event.getPointerCount(); ++i) {
             final int id = event.getPointerId(i);
 
             mStartPointers.put(id, new PointF(event.getX(i),
@@ -64,14 +64,17 @@ public class PinchState extends BaseGestureState {
                         Object touchingObject,
                         Object touchingContext) {
         final int action = event.getActionMasked();
+        final boolean pointerUp = action == MotionEvent.ACTION_POINTER_UP;
+        final int downPointerCount = event.getPointerCount() - (pointerUp ? 1 : 0);
 
         switch (action) {
             case MotionEvent.ACTION_MOVE: {
+
                 // Update stop pointers.
-                final PointF pointer1 = mStopPointers.get(event.getPointerId(0));
+                final PointF pointer1 = mStopPointers.get(mStopPointers.keyAt(0));
                 pointer1.set(event.getX(0), event.getY(0));
 
-                final PointF pointer2 = mStopPointers.get(event.getPointerId(1));
+                final PointF pointer2 = mStopPointers.get(mStopPointers.keyAt(1));
                 pointer2.set(event.getX(1), event.getY(1));
 
                 // Dispatch callback.
@@ -81,10 +84,20 @@ public class PinchState extends BaseGestureState {
                                  mStartPointers.get(mStartPointers.keyAt(1))},
                     new PointF[]{mStopPointers.get(mStopPointers.keyAt(0)),
                                  mStopPointers.get(mStopPointers.keyAt(1))});
+
                 break;
             }
 
             case MotionEvent.ACTION_POINTER_DOWN: {
+
+                for (int i = mStartPointers.size(); i < downPointerCount; ++i) {
+                    final int id = event.getPointerId(i);
+
+                    mStartPointers.put(id, new PointF(event.getX(i),
+                        event.getY(i)));
+                    mStopPointers.put(id, new PointF(event.getX(i),
+                        event.getY(i)));
+                }
                 break;
             }
 
@@ -118,8 +131,6 @@ public class PinchState extends BaseGestureState {
                             mStopPointers.put(event.getPointerId(i),
                                               new PointF(event.getX(i),
                                                          event.getY(i)));
-
-                            if (++size == 2) break;
                         }
 
                         mOwner.getListener().onPinchBegin(
