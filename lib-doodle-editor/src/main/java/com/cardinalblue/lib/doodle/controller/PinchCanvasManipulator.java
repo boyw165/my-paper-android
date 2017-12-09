@@ -25,9 +25,9 @@ package com.cardinalblue.lib.doodle.controller;
 import android.graphics.PointF;
 
 import com.cardinalblue.lib.doodle.event.PinchEvent;
+import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.IMatrix;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.my.core.protocol.ILogger;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;

@@ -42,10 +42,10 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 
+import com.cardinalblue.lib.doodle.AnimatorSetObservable;
 import com.cardinalblue.lib.doodle.protocol.IMatrix;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.jakewharton.rxbinding2.view.RxView;
-import com.my.reactive.AnimatorSetObservable;
 import com.paper.shared.model.sketch.PathTuple;
 import com.paper.shared.model.sketch.SketchStroke;
 

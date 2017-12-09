@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.jakewharton.butterknife'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -26,37 +27,39 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // Google Support Library.
-    compile rootProject.ext.dep.supportAppcompatV7
-    compile rootProject.ext.dep.supportVectorDrawable
-    compile rootProject.ext.dep.supportRecyclerViewV7
-    compile rootProject.ext.dep.supportConstraintLayout
+    implementation rootProject.ext.dep.supportAppcompatV7
+    implementation rootProject.ext.dep.supportVectorDrawable
+    implementation rootProject.ext.dep.supportRecyclerViewV7
+    implementation rootProject.ext.dep.supportConstraintLayout
     // Multi-dex.
     compile rootProject.ext.dep.supportMultidex
 
-    // View Binding.
-    compile rootProject.ext.dep.butterKnife
-    annotationProcessor rootProject.ext.dep.butterKnifeCompiler
+    // RxKotlin.
+    implementation rootProject.ext.dep.rxKotlin
+    // Rx-Java.
+    implementation rootProject.ext.dep.rxJava
+    implementation rootProject.ext.dep.rxAndroid
+    // Rx-Binding.
+    implementation rootProject.ext.dep.rxBinding
 
     // Image loader.
-    compile rootProject.ext.dep.glide
+    implementation rootProject.ext.dep.glide
 
     // Circle image view.
-    compile 'de.hdodenhof:circleimageview:2.1.0'
+    implementation 'de.hdodenhof:circleimageview:2.1.0'
     // Overscroll decoration.
-    compile 'me.everything:overscroll-decor-android:1.0.4'
+    implementation 'me.everything:overscroll-decor-android:1.0.4'
 
     // My Libraries
-    compile project(":lib-core")
-    compile project(":lib-reactive")
-    compile project(":lib-shared-model")
-    compile project(":lib-shared-model-repository")
+    implementation project(":lib-shared-model")
+    implementation project(":lib-shared-model-repository")
 
-    testCompile rootProject.ext.dep.testJunit
+    // Unit tests.
+    testImplementation rootProject.ext.dep.testJunit
 
-    androidTestCompile(rootProject.ext.dep.testEspressoCore, {
-        exclude group: "com.android.support", module: "support-annotations"
-    })
+    // Instrumentation tests.
+    androidTestImplementation rootProject.ext.dep.testEspressoCore
 }

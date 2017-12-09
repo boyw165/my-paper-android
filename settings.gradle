@@ -1,12 +1,4 @@
 include ':app-paper',
         ':lib-shared-model',
         ':lib-shared-model-repository',
-        ':lib-reactive',
-        ':lib-core',
-        ':lib-common-theme',
-        ':lib-widget',
-        ':lib-protobuf',
-        ':lib-component',
         ':lib-doodle-editor'
-//        ':lib-dlib',
-//        ':lib-tensorflow'

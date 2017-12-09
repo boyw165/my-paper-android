@@ -1,4 +1,6 @@
-// Copyright (c) 2017-present boyw165
+// Copyright (c) 2017-present Cardinalblue
+//
+// Author: boy@cardinalblue.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,14 +20,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper;
+package com.cardinalblue.lib.doodle.view;
 
-import android.support.multidex.MultiDexApplication;
+import android.support.v7.app.AppCompatActivity;
 
-public class PaperApplication extends MultiDexApplication {
+import com.cardinalblue.lib.doodle.ObservableConst;
+
+import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
+
+public class RxAppCompatActivity extends AppCompatActivity {
+
+    // Subjects.
+    private final Subject<Object> onClickSystemBack = PublishSubject.create();
+
+    // Disposables.
+    protected final CompositeDisposable mDisposables = new CompositeDisposable();
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    public void onBackPressed() {
+        onClickSystemBack.onNext(ObservableConst.IGNORED);
+    }
+
+    public Observable<Object> onClickSystemBack() {
+        return onClickSystemBack;
     }
 }

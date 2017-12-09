@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -22,30 +23,22 @@ android {
     }
 }
 
-repositories {
-    // For JetBrain Kotlin extension, ... and more.
-    mavenCentral()
-}
-
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // Google Support Library.
-    compile rootProject.ext.dep.supportAppcompatV7
+    implementation rootProject.ext.dep.supportAppcompatV7
 
     // Kotlin.
-    compile rootProject.ext.dep.kotlinStdlibJre7
+    implementation rootProject.ext.dep.kotlinStdlibJre7
 
     // JSON.
-    compile rootProject.ext.dep.gson
+    implementation rootProject.ext.dep.gson
 
     // Unit tests.
-    testCompile rootProject.ext.dep.testJunit
-    testCompile rootProject.ext.dep.testMockito
-    testCompile rootProject.ext.dep.leakcanaryNoOp
+    testImplementation rootProject.ext.dep.testJunit
+    testImplementation rootProject.ext.dep.testMockito
 
     // Instrumentation tests.
-    androidTestCompile(rootProject.ext.dep.testEspressoCore, {
-        exclude group: "com.android.support", module: "support-annotations"
-    })
+    androidTestImplementation rootProject.ext.dep.testEspressoCore
 }

@@ -27,7 +27,7 @@ import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.GestureEvent;
 import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
-import com.my.reactive.uiEvent.UiEvent;
+import com.cardinalblue.lib.doodle.event.UiEvent;
 import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 

@@ -1,6 +1,4 @@
-// Copyright (c) 2017-present Cardinalblue
-//
-// Author: boy@cardinalblue.com
+// Copyright (c) 2017-present boyw165
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,16 +20,37 @@
 
 package com.cardinalblue.lib.doodle.event;
 
-import com.cardinalblue.lib.doodle.protocol.IMotionEvent;
+public class UiEvent<T> {
 
-public class UiTouchEvent extends UiEvent<IMotionEvent> {
+    public final boolean justStart, doing;
+    public final boolean isTriggeredByUser;
+    public final T bundle;
 
-    public UiTouchEvent(IMotionEvent bundle) {
-        super(bundle.getActionMasked() == bundle.ACTION_DOWN(),
-              (bundle.getActionMasked() != bundle.ACTION_DOWN() &&
-               (bundle.getActionMasked() != bundle.ACTION_UP() ||
-                bundle.getActionMasked() != bundle.ACTION_CANCEL())),
-              true,
-              bundle);
+    public static <T> UiEvent<T> start(T bundle) {
+        return new UiEvent<>(true, false, true, bundle);
+    }
+
+    public static <T> UiEvent<T> doing(boolean isTriggeredByUser,
+                                       T bundle) {
+        return new UiEvent<>(false, true,
+                             isTriggeredByUser,
+                             bundle);
+    }
+
+    public static <T> UiEvent<T> stop(T bundle) {
+        return new UiEvent<>(false, false, true, bundle);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    protected UiEvent(boolean justStart,
+                      boolean doing,
+                      boolean isTriggeredByUser,
+                      T bundle) {
+        this.justStart = justStart;
+        this.doing = doing;
+        this.isTriggeredByUser = isTriggeredByUser;
+        this.bundle = bundle;
     }
 }

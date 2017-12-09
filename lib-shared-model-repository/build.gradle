@@ -1,21 +1,21 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-// Enable realm.
-apply plugin: 'realm-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 26
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -24,37 +24,33 @@ android {
     }
 }
 
-repositories {
-    // For JetBrain Kotlin extension, ... and more.
-    mavenCentral()
-}
-
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // Google Support Library.
-    compile rootProject.ext.dep.supportAppcompatV7
+    implementation rootProject.ext.dep.supportAppcompatV7
 
     // Kotlin.
-    compile rootProject.ext.dep.kotlinStdlibJre7
+    implementation rootProject.ext.dep.kotlinStdlibJre7
+
+    // RxKotlin.
+    implementation rootProject.ext.dep.rxKotlin
+    // Rx-Java.
+    implementation rootProject.ext.dep.rxJava
+    implementation rootProject.ext.dep.rxAndroid
+    // Rx-Binding.
+    implementation rootProject.ext.dep.rxBinding
 
     // JSON.
-    compile rootProject.ext.dep.gson
+    implementation rootProject.ext.dep.gson
 
     // My Libraries.
-    compile project(":lib-reactive")
-    compile project(":lib-shared-model")
+    implementation project(":lib-shared-model")
 
     // Unit tests.
-    testCompile rootProject.ext.dep.testJunit
-    testCompile rootProject.ext.dep.testMockito
-    testCompile rootProject.ext.dep.leakcanaryNoOp
-    // Kotlin.
-    testCompile rootProject.ext.dep.kotlinStdlib
-    testCompile rootProject.ext.dep.kotlinUnitTest
+    testImplementation rootProject.ext.dep.testJunit
+    testImplementation rootProject.ext.dep.testMockito
 
     // Instrumentation tests.
-    androidTestCompile(rootProject.ext.dep.testEspressoCore, {
-        exclude group: "com.android.support", module: "support-annotations"
-    })
+    androidTestImplementation rootProject.ext.dep.testEspressoCore
 }

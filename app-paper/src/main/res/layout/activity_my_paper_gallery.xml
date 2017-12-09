@@ -8,19 +8,7 @@
     tools:context=".MyPaperGalleryActivity">
 
     <TextView
-        android:id="@+id/btn_gesture_test"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Enter gesture test"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_new"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="spread"/>
-
-    <TextView
-        android:id="@id/btn_new"
+        android:id="@+id/btn_new"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Click to create a paper"
@@ -28,7 +16,7 @@
         app:layout_constraintBottom_toTopOf="@+id/btn_list"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_gesture_test"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="spread"/>
 
     <TextView

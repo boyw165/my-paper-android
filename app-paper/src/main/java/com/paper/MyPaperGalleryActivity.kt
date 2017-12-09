@@ -27,9 +27,8 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.Toast
+import com.cardinalblue.lib.doodle.UiModel
 import com.jakewharton.rxbinding2.view.RxView
-import com.my.core.protocol.IProgressBarView
-import com.my.reactive.uiModel.UiModel
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -38,13 +37,11 @@ import io.reactivex.schedulers.Schedulers
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class MyPaperGalleryActivity : AppCompatActivity(),
-                               IProgressBarView {
+class MyPaperGalleryActivity : AppCompatActivity() {
     // View.
-    private val mBtnGestureText: TextView by lazy { findViewById(R.id.btn_gesture_test) as TextView }
-    private val mBtnNewPaper: TextView by lazy { findViewById(R.id.btn_new) as TextView }
-    private val mBtnList: TextView by lazy { findViewById(R.id.btn_list) as TextView }
-    private val mText: TextView by lazy { findViewById(R.id.text_message) as TextView }
+    private val mBtnNewPaper: TextView by lazy { findViewById<TextView>(R.id.btn_new) }
+    private val mBtnList: TextView by lazy { findViewById<TextView>(R.id.btn_list) }
+    private val mText: TextView by lazy { findViewById<TextView>(R.id.text_message) }
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@MyPaperGalleryActivity)
             .setCancelable(false)
@@ -73,11 +70,6 @@ class MyPaperGalleryActivity : AppCompatActivity(),
         setContentView(R.layout.activity_my_paper_gallery)
 
         mDisposables1.addAll(
-            RxView.clicks(mBtnGestureText)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
-                    startActivity(Intent(this, GestureEditorActivity::class.java))
-                },
             // Show how many papers in the database...
             RxView.clicks(mBtnList)
                 .debounce(150, TimeUnit.MILLISECONDS)
@@ -181,25 +173,21 @@ class MyPaperGalleryActivity : AppCompatActivity(),
         mDisposables2?.clear()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        super.onActivityResult(requestCode, resultCode, data)
-    }
-
-    override fun showProgressBar() {
+    fun showProgressBar() {
         mProgressBar.setMessage(getString(R.string.loading))
         mProgressBar.show()
     }
 
-    override fun showProgressBar(msg: String) {
+    fun showProgressBar(msg: String) {
         mProgressBar.setMessage(msg)
         mProgressBar.show()
     }
 
-    override fun hideProgressBar() {
+    fun hideProgressBar() {
         mProgressBar.hide()
     }
 
-    override fun updateProgress(progress: Int) {
+    fun updateProgress(progress: Int) {
         TODO("not implemented")
     }
 

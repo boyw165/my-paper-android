@@ -1,4 +1,4 @@
-// Copyright (c) 2017-present Cardinalblue
+// Copyright (c) 2017-present CardinalBlue
 //
 // Author: boy@cardinalblue.com
 //
@@ -42,22 +42,19 @@ import com.cardinalblue.lib.doodle.controller.DrawStrokeManipulator;
 import com.cardinalblue.lib.doodle.controller.PinchCanvasManipulator;
 import com.cardinalblue.lib.doodle.controller.SketchEditorPresenter;
 import com.cardinalblue.lib.doodle.controller.SketchUndoRedoManipulator;
+import com.cardinalblue.lib.doodle.event.UiEvent;
 import com.cardinalblue.lib.doodle.event.UiTouchEvent;
 import com.cardinalblue.lib.doodle.gesture.GestureRecognizer;
 import com.cardinalblue.lib.doodle.gesture.MotionEvent2TouchEventMapper;
+import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.my.core.benchmark.FabricLogger;
 import com.cardinalblue.lib.doodle.view.BrushSizeSeekBar;
+import com.cardinalblue.lib.doodle.view.RxAppCompatActivity;
 import com.cardinalblue.lib.doodle.view.SketchView;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapter;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapterObservable;
 import com.jakewharton.rxbinding2.view.RxView;
-import com.my.core.protocol.ILogger;
-import com.my.reactive.AlertDialogObservable;
-import com.my.reactive.SeekBarChangeObservable;
-import com.my.reactive.activity.RxAppCompatActivity;
-import com.my.reactive.uiEvent.UiEvent;
 import com.paper.shared.model.repository.SketchRepo;
 import com.paper.shared.model.sketch.Sketch;
 
@@ -69,9 +66,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -121,29 +115,16 @@ public class SketchEditorActivity
 
     private static final String SAVED_SKETCH_MODEL = "saved_sketch_model";
 
-    // Unbinder.
-    Unbinder mUnbinder;
-
     // View.
-    @BindView(R2.id.navigation_bar)
     View mNavigationBar;
-    @BindView(R2.id.btn_close)
     View mBtnClose;
-    @BindView(R2.id.btn_clear)
     View mBtnClear;
-    @BindView(R2.id.btn_undo)
     View mBtnUndo;
-    @BindView(R2.id.btn_redo)
     View mBtnRedo;
-    @BindView(R2.id.btn_done)
     View mBtnDone;
-    @BindView(R2.id.brush_size_picker)
     BrushSizeSeekBar mBrushSizePicker;
-    @BindView(R2.id.brush_picker)
     RecyclerView mBrushPicker;
-    @BindView(R2.id.bottom_bar_background)
     View mBottomBarBackground;
-    @BindView(R2.id.sketch_editor)
     SketchView mSketchView;
     ProgressDialog mProgressDialog;
 
@@ -389,8 +370,17 @@ public class SketchEditorActivity
                 "Sketch width or height is zero or negative.");
         }
 
-        // Bind view.
-        mUnbinder = ButterKnife.bind(this);
+        // Views.
+        mNavigationBar = findViewById(R.id.navigation_bar);
+        mBtnClose = findViewById(R.id.btn_close);
+        mBtnClear = findViewById(R.id.btn_clear);
+        mBtnUndo = findViewById(R.id.btn_undo);
+        mBtnRedo = findViewById(R.id.btn_redo);
+        mBtnDone = findViewById(R.id.btn_done);
+        mBrushSizePicker = findViewById(R.id.brush_size_picker);
+        mBrushPicker = findViewById(R.id.brush_picker);
+        mBottomBarBackground = findViewById(R.id.bottom_bar_background);
+        mSketchView = findViewById(R.id.sketch_editor);
 
         // Glide request manager.
         mGlide = Glide.with(this);
@@ -421,7 +411,7 @@ public class SketchEditorActivity
 
         // Init logger.
         // FIXME: Use Dagger2.
-        mLogger = new FabricLogger();
+        mLogger = new DummyLogger();
 
         // Init gesture recognizer.
         final float dragSlop = getResources().getDimension(R.dimen.drag_slop);
@@ -528,9 +518,6 @@ public class SketchEditorActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        // Unbind view.
-        mUnbinder.unbind();
 
         // Finish the remaining Glide request.
         mGlide.onDestroy();

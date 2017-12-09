@@ -25,8 +25,8 @@ package com.cardinalblue.lib.doodle.controller;
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
 import com.cardinalblue.lib.doodle.history.UndoRedoList;
+import com.cardinalblue.lib.doodle.protocol.ILogger;
 import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.my.core.protocol.ILogger;
 import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 

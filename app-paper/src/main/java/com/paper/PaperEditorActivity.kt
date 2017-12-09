@@ -26,16 +26,14 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import com.cardinalblue.lib.doodle.SketchEditorActivity
-import com.my.core.protocol.IProgressBarView
-import com.my.reactive.uiModel.UiModel
+import com.cardinalblue.lib.doodle.UiModel
 import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.SketchRepo
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 
-class PaperEditorActivity : AppCompatActivity(),
-                            IProgressBarView {
+class PaperEditorActivity : AppCompatActivity() {
 
     // View.
     private val mProgressBar: AlertDialog by lazy {
@@ -131,21 +129,21 @@ class PaperEditorActivity : AppCompatActivity(),
 //        finish()
     }
 
-    override fun showProgressBar() {
+    fun showProgressBar() {
         mProgressBar.setMessage(getString(R.string.loading))
         mProgressBar.show()
     }
 
-    override fun showProgressBar(msg: String) {
+    fun showProgressBar(msg: String) {
         mProgressBar.setMessage(msg)
         mProgressBar.show()
     }
 
-    override fun hideProgressBar() {
+    fun hideProgressBar() {
         mProgressBar.hide()
     }
 
-    override fun updateProgress(progress: Int) {
+    fun updateProgress(progress: Int) {
         TODO("not implemented")
     }
 
