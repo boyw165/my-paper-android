@@ -1,4 +1,4 @@
-// Copyright (c) 2017-present boyw165
+// Copyright (c) 2017-present WANG, TAI-CHUN
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,25 +24,34 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.SwitchCompat
+import android.view.View
 import android.widget.Toast
 import com.cardinalblue.lib.doodle.view.SketchEditorActivity
-import com.cardinalblue.lib.doodle.model.UiModel
+import com.jakewharton.rxbinding2.view.RxView
+import com.jakewharton.rxbinding2.widget.RxCompoundButton
+import com.paper.editor.PaperController
+import com.paper.editor.PaperEditorContract
+import com.paper.editor.PaperEditorPresenter
 import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.SketchRepo
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 
-class PaperEditorActivity : AppCompatActivity() {
+class PaperEditorActivity : AppCompatActivity(),
+                            PaperEditorContract.View {
 
     // View.
+    private val mBtnClose : View by lazy { findViewById<View>(R.id.btn_close) }
+    private val mBtnDraw : SwitchCompat by lazy { findViewById<SwitchCompat>(R.id.btn_draw) }
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
             .setCancelable(false)
             .create()
     }
 
-    // Repo.
+    // Repositories.
     // TODO: Inject the repo.
     private val mPaperRepo: PaperRepo by lazy {
         PaperRepo(packageName,
@@ -57,99 +66,114 @@ class PaperEditorActivity : AppCompatActivity() {
                    Schedulers.io())
     }
 
-    private var mDisposables1: CompositeDisposable = CompositeDisposable()
-    private var mDisposables2: CompositeDisposable? = null
+    // Presenters and controllers.
+    private val mPaperController : PaperController by lazy { PaperController() }
+    private val mEditorPresenter : PaperEditorPresenter by lazy {
+        PaperEditorPresenter(mPaperController,
+                             AndroidSchedulers.mainThread(),
+                             Schedulers.io())
+    }
+
+//    private var mDisposables1: CompositeDisposable = CompositeDisposable()
+//    private var mDisposables2: CompositeDisposable? = null
 
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        mDisposables1.add(
-            mPaperRepo
-                // Get the temporary paper if it exists.
-                .getTempPaper()
-                // TODO: New temp sketch.
-                .flatMap { paper ->
-                    // FIXME: Create a temporary fullscreen size sketch.
-                    mSketchRepo.newTempSketch(paper.width, paper.height)
-                }
-                // Convert to view-model.
-                .compose { upstream ->
-                    upstream
-                        .map { anything -> UiModel.succeed(anything) }
-//                        .startWith { UiModel.inProgress(null) }
-                        .onErrorReturn { err -> UiModel.failed(err) }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { vm ->
-                    when {
-                        vm.isInProgress -> {
-                            showProgressBar()
-                        }
-                        vm.isSuccessful -> {
-                            hideProgressBar()
+        setContentView(R.layout.activity_paper_editor)
 
-                            val sketch = vm.bundle
-                            navigateToSketchEditor(sketch.width, sketch.height)
-                        }
-                        else -> {
-                            showError(vm.error)
-                            hideProgressBar()
-                            finish()
-                        }
-                    }
-                })
+        mEditorPresenter.bindViewOnCreate(this)
+
+//        mDisposables1.add(
+//            mPaperRepo
+//                // Get the temporary paper if it exists.
+//                .getTempPaper()
+//                // TODO: New temp sketch.
+//                .flatMap { paper ->
+//                    // FIXME: Create a temporary fullscreen size sketch.
+//                    mSketchRepo.newTempSketch(paper.width, paper.height)
+//                }
+//                // Convert to view-model.
+//                .compose { upstream ->
+//                    upstream
+//                        .map { anything -> UiModel.succeed(anything) }
+////                        .startWith { UiModel.inProgress(null) }
+//                        .onErrorReturn { err -> UiModel.failed(err) }
+//                }
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { vm ->
+//                    when {
+//                        vm.isInProgress -> {
+//                            showProgressBar()
+//                        }
+//                        vm.isSuccessful -> {
+//                            hideProgressBar()
+//
+//                            val sketch = vm.bundle
+//                            navigateToSketchEditor(sketch.width, sketch.height)
+//                        }
+//                        else -> {
+//                            showError(vm.error)
+//                            hideProgressBar()
+//                            finish()
+//                        }
+//                    }
+//                })
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        // Force to hide the progress-bar.
-        hideProgressBar()
+        mEditorPresenter.unBindViewOnDestroy()
 
-        mDisposables1.clear()
+//        // Force to hide the progress-bar.
+//        hideProgressBar()
     }
 
     override fun onResume() {
         super.onResume()
 
-        mDisposables2 = CompositeDisposable()
+        mEditorPresenter.onResume()
     }
 
     override fun onPause() {
         super.onPause()
 
-        mDisposables2?.clear()
+        mEditorPresenter.onPause()
     }
 
-    override fun onActivityResult(requestCode: Int,
-                                  resultCode: Int,
-                                  data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-//        // FIXME: Workaround of leaving the editor immediately.
-//        finish()
+    override fun close() {
+        finish()
     }
 
-    fun showProgressBar() {
-        mProgressBar.setMessage(getString(R.string.loading))
-        mProgressBar.show()
+    override fun onClickCloseButton(): Observable<Any> {
+        return RxView.clicks(mBtnClose)
     }
 
-    fun showProgressBar(msg: String) {
-        mProgressBar.setMessage(msg)
-        mProgressBar.show()
+    override fun onClickDrawButton(): Observable<Boolean> {
+        return RxCompoundButton.checkedChanges(mBtnDraw)
     }
 
-    fun hideProgressBar() {
+    override fun onClickMenu(): Observable<Any> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun showProgressBar(progress: Int) {
+        if (!mProgressBar.isShowing) {
+            mProgressBar.show()
+        }
+
+        mProgressBar.setMessage(
+            "%s: %d".format(getString(R.string.loading), progress))
+    }
+
+    override fun hideProgressBar() {
         mProgressBar.hide()
     }
 
-    fun updateProgress(progress: Int) {
-        TODO("not implemented")
-    }
-
-    private fun showError(err: Throwable) {
+    override fun showErrorAlert(error: Throwable) {
         Toast.makeText(this@PaperEditorActivity,
-                       err.toString(),
+                       error.toString(),
                        Toast.LENGTH_SHORT).show()
     }
 
