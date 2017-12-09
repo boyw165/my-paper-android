@@ -20,13 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.controller;
+package com.cardinalblue.lib.doodle;
 
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
-import com.cardinalblue.lib.doodle.history.UndoRedoList;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.SketchContract;
+import com.cardinalblue.lib.doodle.model.UndoRedoList;
 import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
 

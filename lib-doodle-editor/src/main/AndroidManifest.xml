@@ -4,7 +4,7 @@
 
     <application>
         <activity
-            android:name=".SketchEditorActivity"
+            android:name=".view.SketchEditorActivity"
             android:theme="@style/AppTheme.SketchEditor">
         </activity>
     </application>

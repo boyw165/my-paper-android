@@ -25,8 +25,8 @@ import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
-import com.cardinalblue.lib.doodle.SketchEditorActivity
-import com.cardinalblue.lib.doodle.UiModel
+import com.cardinalblue.lib.doodle.view.SketchEditorActivity
+import com.cardinalblue.lib.doodle.model.UiModel
 import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.SketchRepo
 import io.reactivex.android.schedulers.AndroidSchedulers

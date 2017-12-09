@@ -25,7 +25,7 @@ package com.cardinalblue.lib.doodle.view;
 import android.animation.TypeEvaluator;
 import android.graphics.Matrix;
 
-import com.cardinalblue.lib.doodle.protocol.IMatrix;
+import com.cardinalblue.lib.doodle.IMatrix;
 
 import java.util.Locale;
 

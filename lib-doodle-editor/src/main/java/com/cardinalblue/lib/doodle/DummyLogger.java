@@ -2,9 +2,7 @@ package com.cardinalblue.lib.doodle;
 
 import android.util.Log;
 
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-
-class DummyLogger implements ILogger {
+public class DummyLogger implements ILogger {
 
     @Override
     public void d(String tag, String message) {

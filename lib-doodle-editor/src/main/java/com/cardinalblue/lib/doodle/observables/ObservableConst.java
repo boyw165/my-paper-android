@@ -20,9 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.protocol;
+package com.cardinalblue.lib.doodle.observables;
 
-public interface IBrushListener {
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.ObservableTransformer;
+import io.reactivex.functions.Predicate;
 
-    void onClickBrush(int position, ISketchBrush brush);
+public final class ObservableConst {
+
+    public static final Object IGNORED = new Object();
+
+    public static final ObservableTransformer<Object, ?> FILTER_IGNORED =
+        new ObservableTransformer<Object, Object>() {
+            @Override
+            public ObservableSource<Object> apply(Observable<Object> upstream) {
+                return upstream.filter(new Predicate<Object>() {
+                    @Override
+                    public boolean test(Object o) throws Exception {
+                        return o != IGNORED;
+                    }
+                });
+            }
+        };
 }

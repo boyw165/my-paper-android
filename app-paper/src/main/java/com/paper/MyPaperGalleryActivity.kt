@@ -27,7 +27,7 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.Toast
-import com.cardinalblue.lib.doodle.UiModel
+import com.cardinalblue.lib.doodle.model.UiModel
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions

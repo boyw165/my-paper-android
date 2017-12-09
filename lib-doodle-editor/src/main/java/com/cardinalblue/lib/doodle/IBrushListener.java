@@ -20,31 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.protocol;
+package com.cardinalblue.lib.doodle;
 
-import com.cardinalblue.lib.doodle.controller.PinchCanvasManipulator;
+public interface IBrushListener {
 
-/**
- * The component providing the {@link IMatrix} instance.
- * <br/>
- * See {@link PinchCanvasManipulator}.
- */
-public interface IMatrixProvider {
-
-    /**
-     * Whether is available to get matrix.
-     */
-    boolean isAvailable();
-
-    /**
-     * A matrix for converting points observing from the parent world to the
-     * target world.
-     */
-    IMatrix getMatrixOfTargetToParent();
-
-    /**
-     * A matrix for converting points observing from the parent world to the
-     * target world.
-     */
-    IMatrix getMatrixOfParentToTarget();
+    void onClickBrush(int position, ISketchBrush brush);
 }

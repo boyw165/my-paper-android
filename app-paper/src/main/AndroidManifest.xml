@@ -44,7 +44,7 @@
 
         <!-- Sketch Editor -->
         <activity
-            android:name="com.cardinalblue.lib.doodle.SketchEditorActivity">
+            android:name="com.cardinalblue.lib.doodle.view.SketchEditorActivity">
         </activity>
 
         <!-- Paper Database -->

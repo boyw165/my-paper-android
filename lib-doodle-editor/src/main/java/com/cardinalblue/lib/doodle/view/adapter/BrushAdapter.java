@@ -37,8 +37,8 @@ import android.view.animation.OvershootInterpolator;
 
 import com.bumptech.glide.RequestManager;
 import com.cardinalblue.lib.doodle.R;
-import com.cardinalblue.lib.doodle.protocol.IBrushListener;
-import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
+import com.cardinalblue.lib.doodle.IBrushListener;
+import com.cardinalblue.lib.doodle.ISketchBrush;
 
 import java.util.ArrayList;
 import java.util.Collections;

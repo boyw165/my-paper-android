@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle;
+package com.cardinalblue.lib.doodle.view;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -38,20 +38,21 @@ import android.view.WindowManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
-import com.cardinalblue.lib.doodle.controller.DrawStrokeManipulator;
-import com.cardinalblue.lib.doodle.controller.PinchCanvasManipulator;
-import com.cardinalblue.lib.doodle.controller.SketchEditorPresenter;
-import com.cardinalblue.lib.doodle.controller.SketchUndoRedoManipulator;
+import com.cardinalblue.lib.doodle.observables.AlertDialogObservable;
+import com.cardinalblue.lib.doodle.DummyLogger;
+import com.cardinalblue.lib.doodle.R;
+import com.cardinalblue.lib.doodle.observables.SeekBarChangeObservable;
+import com.cardinalblue.lib.doodle.DrawStrokeManipulator;
+import com.cardinalblue.lib.doodle.PinchCanvasManipulator;
+import com.cardinalblue.lib.doodle.SketchEditorPresenter;
+import com.cardinalblue.lib.doodle.SketchUndoRedoManipulator;
 import com.cardinalblue.lib.doodle.event.UiEvent;
 import com.cardinalblue.lib.doodle.event.UiTouchEvent;
 import com.cardinalblue.lib.doodle.gesture.GestureRecognizer;
 import com.cardinalblue.lib.doodle.gesture.MotionEvent2TouchEventMapper;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.cardinalblue.lib.doodle.protocol.SketchContract;
-import com.cardinalblue.lib.doodle.view.BrushSizeSeekBar;
-import com.cardinalblue.lib.doodle.view.RxAppCompatActivity;
-import com.cardinalblue.lib.doodle.view.SketchView;
+import com.cardinalblue.lib.doodle.ILogger;
+import com.cardinalblue.lib.doodle.ISketchBrush;
+import com.cardinalblue.lib.doodle.SketchContract;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapter;
 import com.cardinalblue.lib.doodle.view.adapter.BrushAdapterObservable;
 import com.jakewharton.rxbinding2.view.RxView;

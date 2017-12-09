@@ -22,8 +22,8 @@
 
 package com.cardinalblue.lib.doodle.view.adapter;
 
-import com.cardinalblue.lib.doodle.protocol.IBrushListener;
-import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
+import com.cardinalblue.lib.doodle.IBrushListener;
+import com.cardinalblue.lib.doodle.ISketchBrush;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;

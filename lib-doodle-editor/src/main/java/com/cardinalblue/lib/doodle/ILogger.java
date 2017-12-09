@@ -1,4 +1,4 @@
-package com.cardinalblue.lib.doodle.protocol;
+package com.cardinalblue.lib.doodle;
 
 public interface ILogger {
 

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.controller;
+package com.cardinalblue.lib.doodle;
 
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -28,9 +28,6 @@ import android.graphics.RectF;
 import com.cardinalblue.lib.doodle.event.DragEvent;
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.paper.shared.model.sketch.PathTuple;
 import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;

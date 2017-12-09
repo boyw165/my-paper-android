@@ -23,7 +23,7 @@ package com.cardinalblue.lib.doodle.gesture;
 import android.view.MotionEvent;
 
 import com.cardinalblue.lib.doodle.event.UiTouchEvent;
-import com.cardinalblue.lib.doodle.protocol.IMotionEvent;
+import com.cardinalblue.lib.doodle.IMotionEvent;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;

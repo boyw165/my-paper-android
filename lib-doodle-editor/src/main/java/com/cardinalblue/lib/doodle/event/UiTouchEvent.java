@@ -22,7 +22,7 @@
 
 package com.cardinalblue.lib.doodle.event;
 
-import com.cardinalblue.lib.doodle.protocol.IMotionEvent;
+import com.cardinalblue.lib.doodle.IMotionEvent;
 
 public class UiTouchEvent extends UiEvent<IMotionEvent> {
 

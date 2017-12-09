@@ -20,14 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.controller;
+package com.cardinalblue.lib.doodle;
 
 import android.graphics.PointF;
 
 import com.cardinalblue.lib.doodle.event.PinchEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.IMatrix;
-import com.cardinalblue.lib.doodle.protocol.SketchContract;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;

@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle;
+package com.cardinalblue.lib.doodle.observables;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;

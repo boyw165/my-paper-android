@@ -20,24 +20,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.protocol;
-
-import com.paper.shared.model.sketch.SketchStroke;
+package com.cardinalblue.lib.doodle;
 
 /**
- * A sketch brush instance is a factory for generating new stroke.
+ * The component providing the {@link IMatrix} instance.
  * <br/>
- * See {@link SketchStroke}.
+ * See {@link PinchCanvasManipulator}.
  */
-public interface ISketchBrush {
+public interface IMatrixProvider {
 
-    SketchStroke newStroke();
+    /**
+     * Whether is available to get matrix.
+     */
+    boolean isAvailable();
 
-    float getBrushSize();
-    ISketchBrush setBrushSize(final float size);
+    /**
+     * A matrix for converting points observing from the parent world to the
+     * target world.
+     */
+    IMatrix getMatrixOfTargetToParent();
 
-    int getBrushColor();
-    ISketchBrush setBrushColor(final int color);
-
-    boolean isEraser();
+    /**
+     * A matrix for converting points observing from the parent world to the
+     * target world.
+     */
+    IMatrix getMatrixOfParentToTarget();
 }

@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.data;
+package com.cardinalblue.lib.doodle.model;
 
 import android.util.Log;
 
-import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
+import com.cardinalblue.lib.doodle.ISketchBrush;
 import com.paper.shared.model.sketch.SketchStroke;
 
 import java.util.ArrayList;

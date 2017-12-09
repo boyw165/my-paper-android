@@ -22,25 +22,22 @@
 
 package com.cardinalblue.lib.doodle;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.ObservableTransformer;
-import io.reactivex.functions.Predicate;
+import com.paper.shared.model.sketch.SketchStroke;
 
-public final class ObservableConst {
+/**
+ * A sketch brush instance is a factory for generating new stroke.
+ * <br/>
+ * See {@link SketchStroke}.
+ */
+public interface ISketchBrush {
 
-    public static final Object IGNORED = new Object();
+    SketchStroke newStroke();
 
-    public static final ObservableTransformer<Object, ?> FILTER_IGNORED =
-        new ObservableTransformer<Object, Object>() {
-            @Override
-            public ObservableSource<Object> apply(Observable<Object> upstream) {
-                return upstream.filter(new Predicate<Object>() {
-                    @Override
-                    public boolean test(Object o) throws Exception {
-                        return o != IGNORED;
-                    }
-                });
-            }
-        };
+    float getBrushSize();
+    ISketchBrush setBrushSize(final float size);
+
+    int getBrushColor();
+    ISketchBrush setBrushColor(final int color);
+
+    boolean isEraser();
 }

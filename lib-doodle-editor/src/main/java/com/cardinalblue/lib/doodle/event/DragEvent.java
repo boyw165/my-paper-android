@@ -22,7 +22,7 @@
 
 package com.cardinalblue.lib.doodle.event;
 
-import com.cardinalblue.lib.doodle.protocol.IMatrix;
+import com.cardinalblue.lib.doodle.IMatrix;
 
 public class DragEvent extends GestureEvent {
 

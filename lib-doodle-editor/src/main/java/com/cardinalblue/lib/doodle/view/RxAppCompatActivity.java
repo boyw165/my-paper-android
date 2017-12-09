@@ -24,7 +24,7 @@ package com.cardinalblue.lib.doodle.view;
 
 import android.support.v7.app.AppCompatActivity;
 
-import com.cardinalblue.lib.doodle.ObservableConst;
+import com.cardinalblue.lib.doodle.observables.ObservableConst;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;

@@ -24,7 +24,7 @@ package com.cardinalblue.lib.doodle.event;
 
 import android.graphics.PointF;
 
-import com.cardinalblue.lib.doodle.protocol.IMatrix;
+import com.cardinalblue.lib.doodle.IMatrix;
 
 import java.util.Locale;
 

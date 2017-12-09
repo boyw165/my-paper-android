@@ -20,11 +20,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.cardinalblue.lib.doodle.controller;
+package com.cardinalblue.lib.doodle;
 
-import com.cardinalblue.lib.doodle.ObservableConst;
-import com.cardinalblue.lib.doodle.UiModel;
-import com.cardinalblue.lib.doodle.data.SketchBrushFactory;
+import com.cardinalblue.lib.doodle.observables.ObservableConst;
+import com.cardinalblue.lib.doodle.model.UiModel;
+import com.cardinalblue.lib.doodle.model.SketchBrushFactory;
 import com.cardinalblue.lib.doodle.event.DragEvent;
 import com.cardinalblue.lib.doodle.event.DrawStrokeEvent;
 import com.cardinalblue.lib.doodle.event.GestureEvent;
@@ -32,9 +32,6 @@ import com.cardinalblue.lib.doodle.event.PinchEvent;
 import com.cardinalblue.lib.doodle.event.SingleTapEvent;
 import com.cardinalblue.lib.doodle.event.UiEvent;
 import com.cardinalblue.lib.doodle.event.UndoRedoEvent;
-import com.cardinalblue.lib.doodle.protocol.ILogger;
-import com.cardinalblue.lib.doodle.protocol.ISketchBrush;
-import com.cardinalblue.lib.doodle.protocol.SketchContract;
 import com.paper.shared.model.repository.protocol.ISketchModelRepo;
 import com.paper.shared.model.sketch.Sketch;
 import com.paper.shared.model.sketch.SketchStroke;
