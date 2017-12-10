@@ -44,6 +44,8 @@ class PaperEditorPresenter(controller: PaperController,
 
     override fun unBindViewOnDestroy() {
         mDisposablesOnCreate.clear()
+
+        mView = null
     }
 
     override fun onResume() {

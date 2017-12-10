@@ -15,9 +15,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package com.paper.protocol;
+package com.paper.protocol
 
-public interface IPresenterProvider<V> {
+interface IPresenterProvider<V> {
 
-    IPresenter<V> getPresenter();
+    val presenter: IPresenter<V>
 }

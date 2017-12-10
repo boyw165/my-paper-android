@@ -14,8 +14,8 @@ import com.paper.editor.PaperCanvasContract
 import com.paper.editor.TwoDTransformUtils
 import com.paper.shared.model.TransformModel
 
-class PaperCanvasView : FrameLayout,
-                        PaperCanvasContract.BaseView {
+class BaseScrapView : FrameLayout,
+                      PaperCanvasContract.BaseView {
 
     // TODO: Make it a FrameLayout instead.
     // Scraps container.

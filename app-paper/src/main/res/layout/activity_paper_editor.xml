@@ -34,7 +34,7 @@
 
     <!-- Paper canvas -->
     <com.paper.editor.view.PaperCanvasView
-        android:id="@+id/canvas"
+        android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

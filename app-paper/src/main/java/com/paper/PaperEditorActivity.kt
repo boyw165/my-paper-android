@@ -20,6 +20,7 @@
 
 package com.paper
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
@@ -30,9 +31,12 @@ import android.widget.Toast
 import com.cardinalblue.lib.doodle.view.SketchEditorActivity
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxCompoundButton
+import com.paper.editor.PaperCanvasContract
 import com.paper.editor.PaperController
 import com.paper.editor.PaperEditorContract
 import com.paper.editor.PaperEditorPresenter
+import com.paper.editor.view.PaperCanvasView
+import com.paper.protocol.IContextProvider
 import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.SketchRepo
 import io.reactivex.Observable
@@ -40,11 +44,14 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
 class PaperEditorActivity : AppCompatActivity(),
+                            IContextProvider,
+                            PaperCanvasContract.Config,
                             PaperEditorContract.View {
 
     // View.
     private val mBtnClose : View by lazy { findViewById<View>(R.id.btn_close) }
     private val mBtnDraw : SwitchCompat by lazy { findViewById<SwitchCompat>(R.id.btn_draw) }
+    private val mCanvasView: PaperCanvasView by lazy { findViewById<PaperCanvasView>(R.id.paper_canvas) }
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
             .setCancelable(false)
@@ -67,21 +74,27 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     // Presenters and controllers.
-    private val mPaperController : PaperController by lazy { PaperController() }
+    private val mPaperController : PaperController by lazy {
+        PaperController(
+            // Context provider.
+            this,
+            // Config.
+            this,
+            AndroidSchedulers.mainThread(),
+            Schedulers.io())
+    }
     private val mEditorPresenter : PaperEditorPresenter by lazy {
         PaperEditorPresenter(mPaperController,
                              AndroidSchedulers.mainThread(),
                              Schedulers.io())
     }
 
-//    private var mDisposables1: CompositeDisposable = CompositeDisposable()
-//    private var mDisposables2: CompositeDisposable? = null
-
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
         setContentView(R.layout.activity_paper_editor)
 
+        mPaperController.bindViewOnCreate(mCanvasView)
         mEditorPresenter.bindViewOnCreate(this)
 
 //        mDisposables1.add(
@@ -141,6 +154,35 @@ class PaperEditorActivity : AppCompatActivity(),
 
         mEditorPresenter.onPause()
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Context provider ///////////////////////////////////////////////////////
+
+    override fun getContext(): Context {
+        return this
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Canvas config //////////////////////////////////////////////////////////
+
+    override fun getTouchSlop(): Float {
+        return resources.getDimension(R.dimen.touch_slop)
+    }
+
+    override fun getTapSlop(): Float {
+        return resources.getDimension(R.dimen.tap_slop)
+    }
+
+    override fun getMinFlingVec(): Float {
+        return resources.getDimension(R.dimen.fling_min_vec)
+    }
+
+    override fun getMaxFlingVec(): Float {
+        return resources.getDimension(R.dimen.fling_max_vec)
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Editor view ////////////////////////////////////////////////////////////
 
     override fun close() {
         finish()
