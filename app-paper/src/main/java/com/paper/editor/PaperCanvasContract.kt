@@ -9,7 +9,9 @@ class PaperCanvasContract private constructor() {
 
         fun getTransform(): TransformModel
 
-        fun setTransform(other: TransformModel)
+        fun setTransform(transform: TransformModel, pivotX: Float, pivotY: Float)
+
+        fun convertPointFromChildToParent(point: FloatArray)
 
         fun setInterceptTouchEvent(enabled: Boolean)
 

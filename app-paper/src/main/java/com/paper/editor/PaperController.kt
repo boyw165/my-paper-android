@@ -26,6 +26,7 @@ class PaperController(contextProvider: IContextProvider,
     private var mView: PaperCanvasContract.BaseView? = null
 
     // Gesture detector.
+    private val mPointerMap: FloatArray = floatArrayOf(0f, 0f)
     private var mStartTransform: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private var mStopTransform: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private val mGestureDetector: GestureDetector by lazy {
@@ -78,6 +79,7 @@ class PaperController(contextProvider: IContextProvider,
     override fun onActionEnd(event: MyMotionEvent,
                              touchingObject: Any?,
                              touchingContext: Any?) {
+        // TODO: Commit the temporary model to persistent model.
     }
 
     override fun onSingleTap(event: MyMotionEvent,
@@ -110,12 +112,7 @@ class PaperController(contextProvider: IContextProvider,
                              touchingObject: Any?,
                              touchingContext: Any?) {
         // Get the current transform from the view.
-        val start = mView!!.getTransform()
-        mStartTransform.translationX = start.translationX
-        mStartTransform.translationY = start.translationY
-        mStartTransform.scaleX = start.scaleX
-        mStartTransform.scaleY = start.scaleY
-        mStartTransform.rotationInRadians = start.rotationInRadians
+        holdStartTransform()
 
         mStopTransform.translationX = start.translationX
         mStopTransform.translationY = start.translationY
@@ -129,18 +126,38 @@ class PaperController(contextProvider: IContextProvider,
     override fun onDrag(event: MyMotionEvent,
                         touchingObject: Any?,
                         touchingContext: Any?,
-                        startPointerInCanvas: PointF,
-                        stopPointerInCanvas: PointF) {
-        val dx = stopPointerInCanvas.x - startPointerInCanvas.x
-        val dy = stopPointerInCanvas.y - startPointerInCanvas.y
+                        startPointer: PointF,
+                        stopPointer: PointF) {
+        mPointerMap[0] = startPointer.x
+        mPointerMap[1] = startPointer.y
 
-        mStopTransform.translationX += dx
-        mStopTransform.translationY += dy
+        mView!!.convertPointFromChildToParent(mPointerMap)
 
-        Log.d("xyz", "start x=%.3f, y=%.3f; stop x=%.3f, y=%.3f".format(
-            mStartTransform.translationX, mStartTransform.translationY,
+        val startXInParent = mPointerMap[0]
+        val startYInParent = mPointerMap[1]
+
+        mPointerMap[0] = stopPointer.x
+        mPointerMap[1] = stopPointer.y
+
+        mView!!.convertPointFromChildToParent(mPointerMap)
+
+        val stopXInParent = mPointerMap[0]
+        val stopYInParent = mPointerMap[1]
+
+        val dxInParent = stopXInParent - startXInParent
+        val dyInParent = stopYInParent - startYInParent
+
+        mStopTransform.translationX += dxInParent
+        mStopTransform.translationY += dyInParent
+
+        Log.d("xyz", "------------------------")
+        Log.d("xyz", "start=%s, stop=%s".format(startPointer, stopPointer))
+        Log.d("xyz", "drag: child(dx=%.3f, dy=%.3f), parent(dx=%.3f, dy=%.3f)".format(
+            stopPointer.x - startPointer.x, stopPointer.y - startPointer.y,
+            dxInParent, dyInParent))
+        Log.d("xyz", "drag: x=%.3f, y=%.3f".format(
             mStopTransform.translationX, mStopTransform.translationY))
-        mView!!.setTransform(mStopTransform.copy())
+        mView!!.setTransform(mStopTransform.copy(), 0f, 0f)
     }
 
     override fun onDragFling(event: MyMotionEvent,
@@ -157,7 +174,6 @@ class PaperController(contextProvider: IContextProvider,
                            touchingContext: Any?,
                            startPointerInCanvas: PointF,
                            stopPointerInCanvas: PointF) {
-        // TODO: Commit the temporary model to persistent model.
     }
 
     override fun onPinchBegin(event: MyMotionEvent,
@@ -186,4 +202,22 @@ class PaperController(contextProvider: IContextProvider,
     }
 
     ///////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun holdStartTransform() {
+        val start = mView!!.getTransform()
+        mStartTransform.translationX = start.translationX
+        mStartTransform.translationY = start.translationY
+        mStartTransform.scaleX = start.scaleX
+        mStartTransform.scaleY = start.scaleY
+        mStartTransform.rotationInRadians = start.rotationInRadians
+
+        mStopTransform.translationX = start.translationX
+        mStopTransform.translationY = start.translationY
+        mStopTransform.scaleX = start.scaleX
+        mStopTransform.scaleY = start.scaleY
+        mStopTransform.rotationInRadians = start.rotationInRadians
+    }
 }

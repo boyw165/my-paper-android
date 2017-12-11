@@ -5,7 +5,9 @@ import android.graphics.Color
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.AppCompatImageView
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import com.cardinalblue.gesture.GestureDetector
@@ -25,7 +27,6 @@ class PaperCanvasView : FrameLayout,
 
     // Gesture.
     private val mTransformHelper: TwoDTransformUtils = TwoDTransformUtils()
-    private val mTransformModel: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private var mGestureDetector: GestureDetector? = null
 
     constructor(context: Context?) : super(context)
@@ -57,6 +58,10 @@ class PaperCanvasView : FrameLayout,
         addView(mContainer)
     }
 
+    override fun convertPointFromChildToParent(point: FloatArray) {
+        matrix.mapPoints(point)
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
 
@@ -72,30 +77,25 @@ class PaperCanvasView : FrameLayout,
     }
 
     override fun getTransform(): TransformModel {
-        // Get the transform information from the view matrix.
-        mTransformHelper.getValues(matrix)
-
-        mTransformModel.translationX = mTransformHelper.translationX
-        mTransformModel.translationY = mTransformHelper.translationY
-        mTransformModel.scaleX = mTransformHelper.scaleX
-        mTransformModel.scaleY = mTransformHelper.scaleY
-        mTransformModel.rotationInRadians = mTransformHelper.rotationInRadians
-
-        return mTransformModel.copy()
+        return TransformModel(
+            translationX = this.translationX,
+            translationY = this.translationY,
+            scaleX = this.scaleX,
+            scaleY = this.scaleY,
+            rotationInRadians = Math.toRadians(this.rotation.toDouble()).toFloat())
     }
 
-    override fun setTransform(other: TransformModel) {
-        mTransformModel.translationX = other.translationX
-        mTransformModel.translationY = other.translationY
-        mTransformModel.scaleX = other.scaleX
-        mTransformModel.scaleY = other.scaleY
-        mTransformModel.rotationInRadians = other.rotationInRadians
-
-        scaleX = mTransformModel.scaleX
-        scaleY = mTransformModel.scaleY
-        rotation = Math.toDegrees(mTransformModel.rotationInRadians.toDouble()).toFloat()
-        translationX = mTransformModel.translationX
-        translationY = mTransformModel.translationY
+    override fun setTransform(transform: TransformModel,
+                              pivotX: Float,
+                              pivotY: Float) {
+        Log.d("xyz", "pivot x=%.3f, y=%.3f".format(pivotX, pivotY))
+        this.pivotX = pivotX
+        this.pivotY = pivotY
+        this.scaleX = transform.scaleX
+        this.scaleY = transform.scaleY
+        this.rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
+        this.translationX = transform.translationX
+        this.translationY = transform.translationY
     }
 
     override fun setInterceptTouchEvent(enabled: Boolean) {

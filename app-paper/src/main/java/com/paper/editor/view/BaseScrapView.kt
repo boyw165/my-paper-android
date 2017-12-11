@@ -25,7 +25,6 @@ class BaseScrapView : FrameLayout,
 
     // Gesture.
     private val mTransformHelper: TwoDTransformUtils = TwoDTransformUtils()
-    private val mTransformModel: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private var mGestureDetector: GestureDetector? = null
 
     constructor(context: Context?) : super(context)
@@ -72,30 +71,24 @@ class BaseScrapView : FrameLayout,
     }
 
     override fun getTransform(): TransformModel {
-        // Get the transform information from the view matrix.
-        mTransformHelper.getValues(matrix)
-
-        mTransformModel.translationX = mTransformHelper.translationX
-        mTransformModel.translationY = mTransformHelper.translationY
-        mTransformModel.scaleX = mTransformHelper.scaleX
-        mTransformModel.scaleY = mTransformHelper.scaleY
-        mTransformModel.rotationInRadians = mTransformHelper.rotationInRadians
-
-        return mTransformModel.copy()
+        return TransformModel(
+            translationX = this.translationX,
+            translationY = this.translationY,
+            scaleX = this.scaleX,
+            scaleY = this.scaleY,
+            rotationInRadians = Math.toRadians(this.rotation.toDouble()).toFloat())
     }
 
-    override fun setTransform(other: TransformModel) {
-        mTransformModel.translationX = other.translationX
-        mTransformModel.translationY = other.translationY
-        mTransformModel.scaleX = other.scaleX
-        mTransformModel.scaleY = other.scaleY
-        mTransformModel.rotationInRadians = other.rotationInRadians
+    override fun setTransform(transform: TransformModel, pivotX: Float, pivotY: Float) {
+        scaleX = transform.scaleX
+        scaleY = transform.scaleY
+        rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
+        translationX = transform.translationX
+        translationY = transform.translationY
+    }
 
-        scaleX = mTransformModel.scaleX
-        scaleY = mTransformModel.scaleY
-        rotation = Math.toDegrees(mTransformModel.rotationInRadians.toDouble()).toFloat()
-        translationX = mTransformModel.translationX
-        translationY = mTransformModel.translationY
+    override fun convertPointFromChildToParent(point: FloatArray) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun setInterceptTouchEvent(enabled: Boolean) {
