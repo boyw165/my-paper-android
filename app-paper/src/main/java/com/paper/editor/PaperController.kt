@@ -1,5 +1,6 @@
 package com.paper.editor
 
+import android.graphics.Matrix
 import android.graphics.PointF
 import android.util.Log
 import com.cardinalblue.gesture.GestureDetector
@@ -27,6 +28,8 @@ class PaperController(contextProvider: IContextProvider,
 
     // Gesture detector.
     private val mPointerMap: FloatArray = floatArrayOf(0f, 0f)
+    private val mStartMatrix: Matrix = Matrix()
+    private val mStopMatrix: Matrix = Matrix()
     private var mStartTransform: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private var mStopTransform: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private val mGestureDetector: GestureDetector by lazy {
@@ -74,6 +77,7 @@ class PaperController(contextProvider: IContextProvider,
     override fun onActionBegin(event: MyMotionEvent,
                                touchingObject: Any?,
                                touchingContext: Any?) {
+        mView!!.setTransformPivot(0f, 0f)
     }
 
     override fun onActionEnd(event: MyMotionEvent,
@@ -114,11 +118,18 @@ class PaperController(contextProvider: IContextProvider,
         // Get the current transform from the view.
         holdStartTransform()
 
-        mStopTransform.translationX = start.translationX
-        mStopTransform.translationY = start.translationY
-        mStopTransform.scaleX = start.scaleX
-        mStopTransform.scaleY = start.scaleY
-        mStopTransform.rotationInRadians = start.rotationInRadians
+        Log.d("xyz", "drag start: tx=%.3f, ty=%.3f, scaleX=%.3f, scaleY=%.3f, rotation in degrees=%.3f".format(
+            mStartTransform.translationX,
+            mStartTransform.translationY,
+            mStartTransform.scaleX,
+            mStartTransform.scaleY,
+            Math.toDegrees(mStartTransform.rotationInRadians.toDouble()).toFloat()))
+        Log.d("xyz", "drag start: tx=%.3f, ty=%.3f, scaleX=%.3f, scaleY=%.3f, rotation in degrees=%.3f".format(
+            TwoDTransformUtils.getTranslationX(mStartMatrix),
+            TwoDTransformUtils.getTranslationY(mStartMatrix),
+            TwoDTransformUtils.getScaleX(mStartMatrix),
+            TwoDTransformUtils.getScaleY(mStartMatrix),
+            TwoDTransformUtils.getRotationInDegrees(mStartMatrix)))
 
         // TODO: Create the temporary model for view to observe.
     }
@@ -157,7 +168,7 @@ class PaperController(contextProvider: IContextProvider,
             dxInParent, dyInParent))
         Log.d("xyz", "drag: x=%.3f, y=%.3f".format(
             mStopTransform.translationX, mStopTransform.translationY))
-        mView!!.setTransform(mStopTransform.copy(), 0f, 0f)
+        mView!!.setTransform(mStopTransform.copy())
     }
 
     override fun onDragFling(event: MyMotionEvent,
@@ -180,13 +191,74 @@ class PaperController(contextProvider: IContextProvider,
                               touchingObject: Any?,
                               touchContext: Any?,
                               startPointers: Array<out PointF>) {
+        // Get the current transform from the view.
+        holdStartTransform()
+
+        Log.d("xyz", "pinch start: tx=%.3f, ty=%.3f, scaleX=%.3f, scaleY=%.3f, degrees=%.3f".format(
+            mStartTransform.translationX,
+            mStartTransform.translationY,
+            mStartTransform.scaleX,
+            mStartTransform.scaleY,
+            Math.toDegrees(mStartTransform.rotationInRadians.toDouble())))
     }
 
     override fun onPinch(event: MyMotionEvent,
                          touchingObject: Any?,
                          touchContext: Any?,
-                         startPointersInCanvas: Array<out PointF>,
-                         stopPointersInCanvas: Array<out PointF>) {
+                         startPointers: Array<PointF>,
+                         stopPointers: Array<PointF>) {
+        // Map the coordinates from child world to the parent world.
+        val startPointersInParent = Array(startPointers.size, { i ->
+            val map = floatArrayOf(startPointers[i].x,
+                              startPointers[i].y)
+            mView!!.convertPointFromChildToParent(map)
+            PointF(map[0], map[1])
+        })
+        val stopPointersInParent = Array(stopPointers.size, { i ->
+            val map = floatArrayOf(stopPointers[i].x,
+                                   stopPointers[i].y)
+            mView!!.convertPointFromChildToParent(map)
+            PointF(map[0], map[1])})
+
+        // Calculate the transformation.
+        val transform = PointerUtils2.getTransformFromPointers(
+            startPointersInParent, stopPointersInParent)
+
+        val dx = transform[PointerUtils2.DELTA_X]
+        val dy = transform[PointerUtils2.DELTA_Y]
+        val dScale = transform[PointerUtils2.DELTA_SCALE_X]
+        val dRadians = transform[PointerUtils2.DELTA_RADIANS]
+        val pivotX = transform[PointerUtils2.PIVOT_X]
+        val pivotY = transform[PointerUtils2.PIVOT_Y]
+
+        mStartMatrix.set(mView!!.getTransformMatrix())
+        mStopMatrix.set(mStartMatrix)
+        mStopMatrix.postScale(dScale, dScale, pivotX, pivotY)
+        mStopMatrix.postRotate(Math.toDegrees(dRadians.toDouble()).toFloat(), pivotX, pivotY)
+        mStopMatrix.postTranslate(dx, dy)
+
+//        mStopTransform.translationX += dx
+//        mStopTransform.translationY += dy
+//        mStopTransform.scaleX *= dScale
+//        mStopTransform.scaleY *= dScale
+//        mStopTransform.rotationInRadians += dRadians
+
+        mStopTransform.translationX = TwoDTransformUtils.getTranslationX(mStopMatrix)
+        mStopTransform.translationY = TwoDTransformUtils.getTranslationY(mStopMatrix)
+        mStopTransform.scaleX = TwoDTransformUtils.getScaleX(mStopMatrix)
+        mStopTransform.scaleY = TwoDTransformUtils.getScaleY(mStopMatrix)
+        mStopTransform.rotationInRadians = TwoDTransformUtils.getRotationInRadians(mStopMatrix)
+
+        Log.d("xyz", "------------------------")
+        Log.d("xyz", "pinch: dx=%.3f, dy=%.3f; dScale=%.3f, delta degrees=%.3f".format(
+            dx, dy, dScale, Math.toDegrees(dRadians.toDouble())))
+        Log.d("xyz", "pinch: x=%.3f, y=%.3f; scale=%.3f, degrees=%.3f".format(
+            mStopTransform.translationX,
+            mStopTransform.translationY,
+            mStopTransform.scaleX,
+            Math.toDegrees(mStopTransform.rotationInRadians.toDouble())))
+
+        mView!!.setTransform(mStopTransform.copy())
     }
 
     override fun onPinchFling(event: MyMotionEvent,
@@ -219,5 +291,8 @@ class PaperController(contextProvider: IContextProvider,
         mStopTransform.scaleX = start.scaleX
         mStopTransform.scaleY = start.scaleY
         mStopTransform.rotationInRadians = start.rotationInRadians
+
+        mStartMatrix.reset()
+        mStartMatrix.set(mView!!.getTransformMatrix())
     }
 }

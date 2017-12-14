@@ -2,6 +2,7 @@ package com.paper.editor.view
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Matrix
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.AppCompatImageView
 import android.util.AttributeSet
@@ -79,12 +80,20 @@ class BaseScrapView : FrameLayout,
             rotationInRadians = Math.toRadians(this.rotation.toDouble()).toFloat())
     }
 
-    override fun setTransform(transform: TransformModel, pivotX: Float, pivotY: Float) {
+    override fun setTransform(transform: TransformModel) {
         scaleX = transform.scaleX
         scaleY = transform.scaleY
         rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
         translationX = transform.translationX
         translationY = transform.translationY
+    }
+
+    override fun setTransformPivot(pivotX: Float, pivotY: Float) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getTransformMatrix(): Matrix {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun convertPointFromChildToParent(point: FloatArray) {

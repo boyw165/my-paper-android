@@ -2,28 +2,18 @@ package com.paper.editor.view
 
 import android.content.Context
 import android.graphics.Color
-import android.support.v4.content.ContextCompat
-import android.support.v7.widget.AppCompatImageView
+import android.graphics.Matrix
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
-import android.view.View
 import android.widget.FrameLayout
-import android.widget.ImageView
 import com.cardinalblue.gesture.GestureDetector
-import com.paper.R
 import com.paper.editor.PaperCanvasContract
 import com.paper.editor.TwoDTransformUtils
 import com.paper.shared.model.TransformModel
 
 class PaperCanvasView : FrameLayout,
                         PaperCanvasContract.BaseView {
-
-    // TODO: Make it a FrameLayout instead.
-    // Scraps container.
-    private val mContainer: AppCompatImageView by lazy {
-        AppCompatImageView(context)
-    }
 
     // Gesture.
     private val mTransformHelper: TwoDTransformUtils = TwoDTransformUtils()
@@ -46,16 +36,19 @@ class PaperCanvasView : FrameLayout,
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        // Testing code that makes the container 500x500 dp.
-        val oneDp = resources.getDimension(R.dimen.one_dp)
-        mContainer.layoutParams = generateDefaultLayoutParams()
-        mContainer.layoutParams.width = (320f * oneDp).toInt()
-        mContainer.layoutParams.height = (240f * oneDp).toInt()
-        mContainer.setBackgroundColor(Color.BLUE)
-        mContainer.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.img_android))
-        mContainer.scaleType = ImageView.ScaleType.CENTER_CROP
+        // Changing the pivot to left-top at the beginning.
+        // Note: Changing the pivot will update the rendering matrix, where it
+        // is like making the parent see the child in a different angles.
+        pivotX = 0f
+        pivotY = 0f
 
-        addView(mContainer)
+        // TEST
+        translationX = -360f
+        translationY = -360f
+        scaleX = 1.5f
+        scaleY = 1.5f
+        rotation = -50f
+        setBackgroundColor(Color.RED)
     }
 
     override fun convertPointFromChildToParent(point: FloatArray) {
@@ -64,8 +57,6 @@ class PaperCanvasView : FrameLayout,
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-
-        removeView(mContainer)
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -85,17 +76,30 @@ class PaperCanvasView : FrameLayout,
             rotationInRadians = Math.toRadians(this.rotation.toDouble()).toFloat())
     }
 
-    override fun setTransform(transform: TransformModel,
-                              pivotX: Float,
-                              pivotY: Float) {
-        Log.d("xyz", "pivot x=%.3f, y=%.3f".format(pivotX, pivotY))
-        this.pivotX = pivotX
-        this.pivotY = pivotY
+    override fun getTransformMatrix(): Matrix {
+        return matrix
+    }
+
+    override fun setTransform(transform: TransformModel) {
+//        Log.d("xyz", "pivot x=%.3f, y=%.3f".format(pivotX, pivotY))
+//        this.pivotX = pivotX
+//        this.pivotY = pivotY
+
+        // Reset the translation so that the following scale and rotation
+        // transform works without the bias.
+//        this.translationX = 0f
+//        this.translationY = 0f
+
+        this.rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
         this.scaleX = transform.scaleX
         this.scaleY = transform.scaleY
-        this.rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
         this.translationX = transform.translationX
         this.translationY = transform.translationY
+    }
+
+    override fun setTransformPivot(pivotX: Float, pivotY: Float) {
+        this.pivotX = pivotX
+        this.pivotY = pivotY
     }
 
     override fun setInterceptTouchEvent(enabled: Boolean) {

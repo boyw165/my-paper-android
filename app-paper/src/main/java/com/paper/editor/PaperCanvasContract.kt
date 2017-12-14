@@ -1,5 +1,6 @@
 package com.paper.editor
 
+import android.graphics.Matrix
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.shared.model.TransformModel
 
@@ -9,7 +10,11 @@ class PaperCanvasContract private constructor() {
 
         fun getTransform(): TransformModel
 
-        fun setTransform(transform: TransformModel, pivotX: Float, pivotY: Float)
+        fun getTransformMatrix(): Matrix
+
+        fun setTransform(transform: TransformModel)
+
+        fun setTransformPivot(pivotX: Float, pivotY: Float)
 
         fun convertPointFromChildToParent(point: FloatArray)
 
