@@ -10,6 +10,7 @@
     <application
         android:name=".PaperApplication"
         android:allowBackup="true"
+        android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -37,11 +38,6 @@
             android:name=".PaperEditorActivity">
         </activity>
 
-        <!-- Gesture Editor -->
-        <activity
-            android:name=".GestureEditorActivity">
-        </activity>
-
         <!-- Sketch Editor -->
         <activity
             android:name="com.cardinalblue.lib.doodle.view.SketchEditorActivity">
@@ -49,7 +45,7 @@
 
         <!-- Paper Database -->
         <provider
-            android:authorities="${packageName}"
-            android:name="com.paper.shared.model.repository.sqlite.PaperContentProvider"/>
+            android:name="com.paper.shared.model.repository.sqlite.PaperContentProvider"
+            android:authorities="${packageName}"/>
     </application>
 </manifest>
