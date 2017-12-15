@@ -96,7 +96,7 @@ class BaseScrapView : FrameLayout,
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun convertPointFromChildToParent(point: FloatArray) {
+    override fun convertPointToParentWorld(point: FloatArray) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

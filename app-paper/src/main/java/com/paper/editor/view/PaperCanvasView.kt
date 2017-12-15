@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.Matrix
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
@@ -16,7 +15,6 @@ class PaperCanvasView : FrameLayout,
                         PaperCanvasContract.BaseView {
 
     // Gesture.
-    private val mTransformHelper: TwoDTransformUtils = TwoDTransformUtils()
     private var mGestureDetector: GestureDetector? = null
 
     constructor(context: Context?) : super(context)
@@ -27,11 +25,6 @@ class PaperCanvasView : FrameLayout,
     constructor(context: Context?,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr)
-
-    constructor(context: Context?,
-                attrs: AttributeSet?,
-                defStyleAttr: Int,
-                defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -51,7 +44,7 @@ class PaperCanvasView : FrameLayout,
         setBackgroundColor(Color.RED)
     }
 
-    override fun convertPointFromChildToParent(point: FloatArray) {
+    override fun convertPointToParentWorld(point: FloatArray) {
         matrix.mapPoints(point)
     }
 

@@ -16,7 +16,7 @@ class PaperCanvasContract private constructor() {
 
         fun setTransformPivot(pivotX: Float, pivotY: Float)
 
-        fun convertPointFromChildToParent(point: FloatArray)
+        fun convertPointToParentWorld(point: FloatArray)
 
         fun setInterceptTouchEvent(enabled: Boolean)
 
