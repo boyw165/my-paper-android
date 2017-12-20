@@ -25,23 +25,32 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.view.View
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import com.cardinalblue.lib.doodle.model.UiModel
 import com.jakewharton.rxbinding2.view.RxView
+import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class MyPaperGalleryActivity : AppCompatActivity() {
+
     // View.
+    private val mBtnExp: View by lazy { findViewById<View>(R.id.btn_other_exp) }
+    private val mBtnExpMenu: PopupMenu by lazy {
+        val m = PopupMenu(this@MyPaperGalleryActivity, mBtnExp)
+        m.inflate(R.menu.menu_exp)
+        m
+    }
     private val mBtnNewPaper: TextView by lazy { findViewById<TextView>(R.id.btn_new) }
-    private val mBtnList: TextView by lazy { findViewById<TextView>(R.id.btn_list) }
-    private val mText: TextView by lazy { findViewById<TextView>(R.id.text_message) }
+//    private val mBtnList: TextView by lazy { findViewById<TextView>(R.id.btn_list) }
+//    private val mText: TextView by lazy { findViewById<TextView>(R.id.text_message) }
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@MyPaperGalleryActivity)
             .setCancelable(false)
@@ -62,50 +71,75 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                   Schedulers.io())
     }
 
-    private val mDisposables1: CompositeDisposable = CompositeDisposable()
-    private var mDisposables2: CompositeDisposable? = null
+    private val mDisposablesOnCreate: CompositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_my_paper_gallery)
 
-        mDisposables1.addAll(
-            // Show how many papers in the database...
-            RxView.clicks(mBtnList)
+        // Show how many papers in the database...
+//        mDisposablesOnCreate.add(
+//            RxView.clicks(mBtnList)
+//                .debounce(150, TimeUnit.MILLISECONDS)
+//                .flatMap {
+//                    mPaperRepo
+//                        .getPaperSnapshotList()
+//                        // TODO: Refactoring.
+//                        .compose { upstream ->
+//                            upstream
+//                                .map { anything -> UiModel.succeed(anything) }
+//                                .startWithArray(UiModel.inProgress(null))
+//                        }
+//                }
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { vm ->
+//                    when {
+//                        vm.isSuccessful -> {
+//                            hideProgressBar()
+//
+//                            val papers = vm.bundle
+//                            mText.text = String.format(
+//                                Locale.ENGLISH,
+//                                "There are %d papers in your gallery",
+//                                papers.size)
+//
+//                        }
+//                        vm.isInProgress -> {
+//                            showProgressBar()
+//                        }
+//                        else -> {
+//                            hideProgressBar()
+//                            showError(vm.error)
+//                        }
+//                    }
+//                })
+
+        // Exp menu button.
+        mDisposablesOnCreate.add(
+            RxView.clicks(mBtnExp)
                 .debounce(150, TimeUnit.MILLISECONDS)
-                .flatMap {
-                    mPaperRepo
-                        .getPaperSnapshotList()
-                        // TODO: Refactoring.
-                        .compose { upstream ->
-                            upstream
-                                .map { anything -> UiModel.succeed(anything) }
-                                .startWithArray(UiModel.inProgress(null))
-                        }
-                }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { vm ->
-                    when {
-                        vm.isSuccessful -> {
-                            hideProgressBar()
+                .subscribe { _ ->
+                    mBtnExpMenu.show()
+                })
 
-                            val papers = vm.bundle
-                            mText.text = String.format(
-                                Locale.ENGLISH,
-                                "There are %d papers in your gallery",
-                                papers.size)
-
-                        }
-                        vm.isInProgress -> {
-                            showProgressBar()
-                        }
-                        else -> {
-                            hideProgressBar()
-                            showError(vm.error)
+        // Exp menu.
+        mDisposablesOnCreate.add(
+            RxPopupMenu.itemClicks(mBtnExpMenu)
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { item ->
+                    when (item.itemId) {
+                        R.id.rx_cancel -> {
+                            startActivity(Intent(
+                                this@MyPaperGalleryActivity,
+                                RxCancelActivity::class.java))
                         }
                     }
-                },
-            // Create a new paper...
+                })
+
+        // Create a new paper...
+        mDisposablesOnCreate.add(
             RxView.clicks(mBtnNewPaper)
                 .debounce(150, TimeUnit.MILLISECONDS)
                 // Grant permissions.
@@ -157,20 +191,7 @@ class MyPaperGalleryActivity : AppCompatActivity() {
         // Force to hide the progress-bar.
         hideProgressBar()
 
-        mDisposables1.clear()
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        mDisposables2 = CompositeDisposable()
-        // TODO: Refresh the list with difference comparison.
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        mDisposables2?.clear()
+        mDisposablesOnCreate.clear()
     }
 
     fun showProgressBar() {
