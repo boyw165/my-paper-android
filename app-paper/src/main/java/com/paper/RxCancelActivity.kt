@@ -55,7 +55,8 @@ class RxCancelActivity : AppCompatActivity(),
     private val mPresenter: RxCancelPresenter by lazy {
         RxCancelPresenter(this@RxCancelActivity,
                           Schedulers.io(),
-                          AndroidSchedulers.mainThread()) }
+                          AndroidSchedulers.mainThread())
+    }
 
     // Subjects.
     private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
@@ -119,7 +120,7 @@ class RxCancelActivity : AppCompatActivity(),
 
     override fun onClickClose(): Observable<Any> {
         return Observable.merge(
-            RxView.clicks (mBtnClose),
+            RxView.clicks(mBtnClose),
             mOnClickSystemBack)
     }
 
