@@ -21,6 +21,7 @@
 package com.paper
 
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ScrollView
@@ -28,6 +29,7 @@ import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.rxCancel.RxCancelContract
 import com.paper.exp.rxCancel.RxCancelPresenter
+import com.paper.observables.BooleanDialogObservable
 import com.paper.protocol.INavigator
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -90,7 +92,7 @@ class RxCancelActivity : AppCompatActivity(),
     override fun printLog(message: String) {
         // Add to log pool and clear message too old.
         mLog.add(message)
-        while (mLog.size > 128) {
+        while (mLog.size > 256) {
             mLog.removeAt(0)
         }
 
@@ -106,12 +108,24 @@ class RxCancelActivity : AppCompatActivity(),
         mTxtLogContainer.fullScroll(View.FOCUS_DOWN)
     }
 
-    override fun updateProgressBar(progress: Int) {
-        printLog(progress.toString())
+    override fun showConfirmDialog(): Observable<Boolean> {
+        val builder = AlertDialog.Builder(this@RxCancelActivity)
+            .setTitle(R.string.sample_dialog_title)
+            .setMessage(R.string.sample_dialog_message)
+            .setCancelable(true)
+
+        return BooleanDialogObservable(builder,
+                                       getString(R.string.yes),
+                                       getString(R.string.no))
+            .subscribeOn(AndroidSchedulers.mainThread())
     }
 
     override fun showProgressBar() {
         printLog("showProgressBar")
+    }
+
+    override fun updateProgressBar(progress: Int) {
+        printLog(progress.toString())
     }
 
     override fun hideProgressBar() {
@@ -144,5 +158,6 @@ class RxCancelActivity : AppCompatActivity(),
     }
 
     override fun gotoTarget(target: Int) {
+        // DUMMY.
     }
 }

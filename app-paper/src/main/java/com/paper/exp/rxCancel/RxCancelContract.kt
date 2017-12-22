@@ -30,6 +30,8 @@ abstract class RxCancelContract private constructor() {
 
         fun printLog(message: String)
 
+        fun showConfirmDialog(): Observable<Boolean>
+
         fun showProgressBar()
 
         fun updateProgressBar(progress: Int)
