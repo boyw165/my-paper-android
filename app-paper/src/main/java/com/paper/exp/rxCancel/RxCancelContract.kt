@@ -26,6 +26,8 @@ abstract class RxCancelContract private constructor() {
 
     interface View {
 
+        fun clearLog()
+
         fun printLog(message: String)
 
         fun showProgressBar()
@@ -39,5 +41,7 @@ abstract class RxCancelContract private constructor() {
         fun onClickStart(): Observable<Any>
 
         fun onClickCancel(): Observable<Any>
+
+        fun onClickClearLog(): Observable<Any>
     }
 }

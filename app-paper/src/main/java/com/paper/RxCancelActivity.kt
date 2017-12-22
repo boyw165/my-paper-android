@@ -32,6 +32,8 @@ import com.paper.protocol.INavigator
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import java.lang.StringBuilder
 
 class RxCancelActivity : AppCompatActivity(),
@@ -41,6 +43,7 @@ class RxCancelActivity : AppCompatActivity(),
     // View.
     private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
     private val mBtnStart: View by lazy { findViewById<View>(R.id.btn_start) }
+    private val mBtnClearLog: View by lazy { findViewById<View>(R.id.btn_clear_log) }
     private val mBtnCancel: View by lazy { findViewById<View>(R.id.btn_cancel) }
     private val mTxtLog: TextView by lazy { findViewById<TextView>(R.id.txt_log) }
     private val mTxtLogContainer: ScrollView by lazy { findViewById<ScrollView>(R.id.txt_log_container) }
@@ -53,6 +56,9 @@ class RxCancelActivity : AppCompatActivity(),
         RxCancelPresenter(this@RxCancelActivity,
                           Schedulers.io(),
                           AndroidSchedulers.mainThread()) }
+
+    // Subjects.
+    private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
 
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
@@ -68,8 +74,17 @@ class RxCancelActivity : AppCompatActivity(),
         mPresenter.unBindViewOnDestroy()
     }
 
+    override fun onBackPressed() {
+        mOnClickSystemBack.onNext(0)
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // RxCancelContract.View //////////////////////////////////////////////////
+
+    override fun clearLog() {
+        mLog.clear()
+        mTxtLog.text = ""
+    }
 
     override fun printLog(message: String) {
         // Add to log pool and clear message too old.
@@ -103,7 +118,9 @@ class RxCancelActivity : AppCompatActivity(),
     }
 
     override fun onClickClose(): Observable<Any> {
-        return RxView.clicks(mBtnClose)
+        return Observable.merge(
+            RxView.clicks (mBtnClose),
+            mOnClickSystemBack)
     }
 
     override fun onClickStart(): Observable<Any> {
@@ -112,6 +129,10 @@ class RxCancelActivity : AppCompatActivity(),
 
     override fun onClickCancel(): Observable<Any> {
         return RxView.clicks(mBtnCancel)
+    }
+
+    override fun onClickClearLog(): Observable<Any> {
+        return RxView.clicks(mBtnClearLog)
     }
 
     ///////////////////////////////////////////////////////////////////////////

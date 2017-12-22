@@ -27,6 +27,13 @@
         android:layout_height="wrap_content"
         android:text="Cancel"/>
 
+    <!--Clear log button-->
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/btn_clear_log"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Clear log"/>
+
     <!--Stream log-->
     <ScrollView
         android:id="@+id/txt_log_container"

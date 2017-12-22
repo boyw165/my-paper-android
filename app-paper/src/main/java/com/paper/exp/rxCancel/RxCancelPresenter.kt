@@ -57,22 +57,13 @@ class RxCancelPresenter(navigator: INavigator,
     private val mDisposablesOnCreate = CompositeDisposable()
 
     override fun bindViewOnCreate(view: RxCancelContract.View) {
-        // Close button.
-        mDisposablesOnCreate.add(
-            view.onClickClose()
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(mUiSchedulers)
-                .subscribe { _ ->
-                    mNavigator.gotoBack()
-                })
-
+        // Start and cancel buttons:
         //
         //   start +
         //          \
         //           +----> something in between ----> end.
         //          /
         //  cancel +
-        //
         mDisposablesOnCreate.add(
             Observable
                 .merge(
@@ -88,7 +79,10 @@ class RxCancelPresenter(navigator: INavigator,
                 // Create do-something intent or cancel intent.
                 .switchMap { intent ->
                     when (intent) {
-                        INTENT_OF_DO_SOMETHING -> toDoSmtAction(75)
+                        INTENT_OF_DO_SOMETHING ->
+                            toDoSmtAction(25)
+                                .compose(appendDoMoreAction(75))
+                                .compose(appendDoMoreAction(55))
                         INTENT_OF_CANCEL_EVERYTHING -> toCancelAction()
                         else -> toCancelAction()
                     }
@@ -96,6 +90,24 @@ class RxCancelPresenter(navigator: INavigator,
                 .observeOn(mUiSchedulers)
                 .subscribe { _ ->
                     view.printLog("all finished!")
+                })
+
+        // Clear log button.
+        mDisposablesOnCreate.add(
+            view.onClickClearLog()
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(mUiSchedulers)
+                .subscribe { _ ->
+                    view.clearLog()
+                })
+
+        // Close button.
+        mDisposablesOnCreate.add(
+            view.onClickClose()
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(mUiSchedulers)
+                .subscribe { _ ->
+                    mNavigator.gotoBack()
                 })
 
         // Progress.
@@ -182,5 +194,13 @@ class RxCancelPresenter(navigator: INavigator,
         return Observable
             .just(ProgressState(justStop = true))
             .doOnNext { state -> mOnUpdateProgress.onNext(state) }
+    }
+
+    private fun appendDoMoreAction(period: Long): ObservableTransformer<ProgressState, ProgressState> {
+        return ObservableTransformer { upstream ->
+            upstream.switchMap { _ ->
+                toDoSmtAction(period)
+            }
+        }
     }
 }
