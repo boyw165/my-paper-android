@@ -20,6 +20,7 @@
 
 package com.paper.exp.rxCancel
 
+import android.util.Log
 import com.paper.model.ProgressState
 import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
@@ -35,6 +36,12 @@ class RxCancelPresenter(navigator: INavigator,
                         workerSchedulers: Scheduler,
                         uiScheduler: Scheduler)
     : IPresenter<RxCancelContract.View> {
+
+    // Intents.
+    companion object {
+        val INTENT_OF_CANCEL_EVERYTHING = -1
+        val INTENT_OF_DO_SOMETHING = 0
+    }
 
     // Navigator.
     private val mNavigator = navigator
@@ -59,23 +66,36 @@ class RxCancelPresenter(navigator: INavigator,
                     mNavigator.gotoBack()
                 })
 
-        // Start button.
+        //
+        //   start +
+        //          \
+        //           +----> something in between ----> end.
+        //          /
+        //  cancel +
+        //
         mDisposablesOnCreate.add(
-            view.onClickStart()
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .throttleFirst(1000, TimeUnit.MILLISECONDS)
-                .switchMap { _ -> getDoSomethingIntent(150)}
+            Observable
+                .merge(
+                    // Start button.
+                    view.onClickStart()
+                        .debounce(150, TimeUnit.MILLISECONDS)
+                        .throttleFirst(1000, TimeUnit.MILLISECONDS)
+                        .map { _ -> INTENT_OF_DO_SOMETHING },
+                    // Cancel button.
+                    view.onClickCancel()
+                        .debounce(150, TimeUnit.MILLISECONDS)
+                        .map { _ -> INTENT_OF_CANCEL_EVERYTHING })
+                // Create do-something intent or cancel intent.
+                .switchMap { intent ->
+                    when (intent) {
+                        INTENT_OF_DO_SOMETHING -> toDoSmtAction(75)
+                        INTENT_OF_CANCEL_EVERYTHING -> toCancelAction()
+                        else -> toCancelAction()
+                    }
+                }
                 .observeOn(mUiSchedulers)
                 .subscribe { _ ->
-                })
-
-        // Cancel button.
-        mDisposablesOnCreate.add(
-            view.onClickCancel()
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(mUiSchedulers)
-                .subscribe { _ ->
-                    view.printLog("cancel")
+                    view.printLog("all finished!")
                 })
 
         // Progress.
@@ -84,9 +104,11 @@ class RxCancelPresenter(navigator: INavigator,
                 .observeOn(mUiSchedulers)
                 .subscribe { state ->
                     when {
-                        state.justStart -> view.printLog("start")
-                        state.justStop -> view.printLog("stop")
-                        state.doing -> view.printLog(state.progress.toString())
+                        state.justStart -> view.printLog("--- START ---")
+                        state.justStop -> view.printLog("---!!! STOP !!!---")
+                        state.doing -> view.printLog(
+                            "doing %d%%...".format(
+                                state.progress))
                     }
                 })
     }
@@ -103,28 +125,6 @@ class RxCancelPresenter(navigator: INavigator,
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
-
-    private fun getDoSomethingIntent(period: Long): Observable<ProgressState> {
-        return Observable
-            .intervalRange(
-                // Start progress.
-                1,
-                // End progress.
-                100,
-                // Start delay.
-                0,
-                // Interval period.
-                period, TimeUnit.MILLISECONDS)
-            .map { value ->
-                ProgressState(doing = true,
-                              progress = value.toInt())
-            }
-            .compose(handleProgress())
-    }
-
-    private fun getCancelIntent(): Observable<ProgressState> {
-        return Observable.just(ProgressState())
-    }
 
     private fun handleProgress(): ObservableTransformer<ProgressState, ProgressState> {
         return ObservableTransformer { upstream ->
@@ -148,5 +148,39 @@ class RxCancelPresenter(navigator: INavigator,
                     }
                 }
         }
+    }
+
+    private fun goUntilPreviousTaskStops(): ObservableTransformer<ProgressState, ProgressState> {
+        return ObservableTransformer { upstream ->
+            upstream
+                .filter { state -> state.justStop }
+                .debounce(300, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    private fun toDoSmtAction(period: Long): Observable<ProgressState> {
+        return Observable
+            .intervalRange(
+                // Start progress.
+                1,
+                // End progress.
+                100,
+                // Start delay.
+                0,
+                // Interval period.
+                period, TimeUnit.MILLISECONDS)
+            .map { value ->
+                Log.d("xyz", "real progress=%d%%".format(value.toInt()))
+                ProgressState(doing = true,
+                              progress = value.toInt())
+            }
+            .compose(handleProgress())
+            .compose(goUntilPreviousTaskStops())
+    }
+
+    private fun toCancelAction(): Observable<ProgressState> {
+        return Observable
+            .just(ProgressState(justStop = true))
+            .doOnNext { state -> mOnUpdateProgress.onNext(state) }
     }
 }
