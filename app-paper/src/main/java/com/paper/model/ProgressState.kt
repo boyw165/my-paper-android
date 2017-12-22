@@ -18,26 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper.exp.rxCancel
+package com.paper.model
 
-import io.reactivex.Observable
-
-abstract class RxCancelContract private constructor() {
-
-    interface View {
-
-        fun printLog(message: String)
-
-        fun showProgressBar()
-
-        fun updateProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun onClickClose(): Observable<Any>
-
-        fun onClickStart(): Observable<Any>
-
-        fun onClickCancel(): Observable<Any>
-    }
-}
+data class ProgressState(val justStart: Boolean = false,
+                         val doing: Boolean = false,
+                         val justStop: Boolean = false,
+                         val progress: Int = 0)

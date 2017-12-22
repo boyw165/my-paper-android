@@ -20,10 +20,15 @@
 
 package com.paper.exp.rxCancel
 
+import com.paper.model.ProgressState
 import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
+import io.reactivex.Observable
+import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import java.util.concurrent.TimeUnit
 
 class RxCancelPresenter(navigator: INavigator,
@@ -37,6 +42,9 @@ class RxCancelPresenter(navigator: INavigator,
     // Schedulers.
     private val mWorkerSchedulers = workerSchedulers
     private val mUiSchedulers = uiScheduler
+
+    // Progress.
+    private val mOnUpdateProgress: Subject<ProgressState> = PublishSubject.create()
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -56,9 +64,9 @@ class RxCancelPresenter(navigator: INavigator,
             view.onClickStart()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .throttleFirst(1000, TimeUnit.MILLISECONDS)
+                .switchMap { _ -> getDoSomethingIntent(150)}
                 .observeOn(mUiSchedulers)
                 .subscribe { _ ->
-                    view.printLog("start")
                 })
 
         // Cancel button.
@@ -68,6 +76,18 @@ class RxCancelPresenter(navigator: INavigator,
                 .observeOn(mUiSchedulers)
                 .subscribe { _ ->
                     view.printLog("cancel")
+                })
+
+        // Progress.
+        mDisposablesOnCreate.add(
+            mOnUpdateProgress
+                .observeOn(mUiSchedulers)
+                .subscribe { state ->
+                    when {
+                        state.justStart -> view.printLog("start")
+                        state.justStop -> view.printLog("stop")
+                        state.doing -> view.printLog(state.progress.toString())
+                    }
                 })
     }
 
@@ -79,5 +99,54 @@ class RxCancelPresenter(navigator: INavigator,
     }
 
     override fun onPause() {
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun getDoSomethingIntent(period: Long): Observable<ProgressState> {
+        return Observable
+            .intervalRange(
+                // Start progress.
+                1,
+                // End progress.
+                100,
+                // Start delay.
+                0,
+                // Interval period.
+                period, TimeUnit.MILLISECONDS)
+            .map { value ->
+                ProgressState(doing = true,
+                              progress = value.toInt())
+            }
+            .compose(handleProgress())
+    }
+
+    private fun getCancelIntent(): Observable<ProgressState> {
+        return Observable.just(ProgressState())
+    }
+
+    private fun handleProgress(): ObservableTransformer<ProgressState, ProgressState> {
+        return ObservableTransformer { upstream ->
+            upstream
+                // Create a "start" state.
+                .startWith(ProgressState(justStart = true))
+                .map { state ->
+                    return@map if (state.doing && state.progress == 100) {
+                        val stopState = state.copy(justStop = true)
+
+                        // Dispatch the progress and "stop" state.
+                        mOnUpdateProgress.onNext(state)
+                        mOnUpdateProgress.onNext(stopState)
+
+                        stopState
+                    } else {
+                        // Dispatch the progress.
+                        mOnUpdateProgress.onNext(state)
+
+                        state
+                    }
+                }
+        }
     }
 }

@@ -23,6 +23,7 @@ package com.paper
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.ScrollView
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.rxCancel.RxCancelContract
@@ -42,6 +43,7 @@ class RxCancelActivity : AppCompatActivity(),
     private val mBtnStart: View by lazy { findViewById<View>(R.id.btn_start) }
     private val mBtnCancel: View by lazy { findViewById<View>(R.id.btn_cancel) }
     private val mTxtLog: TextView by lazy { findViewById<TextView>(R.id.txt_log) }
+    private val mTxtLogContainer: ScrollView by lazy { findViewById<ScrollView>(R.id.txt_log_container) }
 
     // Log.
     private val mLog: ArrayList<String> = arrayListOf()
@@ -72,7 +74,7 @@ class RxCancelActivity : AppCompatActivity(),
     override fun printLog(message: String) {
         // Add to log pool and clear message too old.
         mLog.add(message)
-        while (mLog.size > 8) {
+        while (mLog.size > 128) {
             mLog.removeAt(0)
         }
 
@@ -83,12 +85,21 @@ class RxCancelActivity : AppCompatActivity(),
             builder.append("\n")
         }
         mTxtLog.text = builder.toString()
+
+        // Scroll to bottom.
+        mTxtLogContainer.fullScroll(View.FOCUS_DOWN)
+    }
+
+    override fun updateProgressBar(progress: Int) {
+        printLog(progress.toString())
     }
 
     override fun showProgressBar() {
+        printLog("showProgressBar")
     }
 
     override fun hideProgressBar() {
+        printLog("hideProgressBar")
     }
 
     override fun onClickClose(): Observable<Any> {
