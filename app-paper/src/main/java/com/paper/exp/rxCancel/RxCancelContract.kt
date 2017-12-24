@@ -21,6 +21,7 @@
 package com.paper.exp.rxCancel
 
 import io.reactivex.Observable
+import io.reactivex.Single
 
 abstract class RxCancelContract private constructor() {
 
@@ -30,7 +31,9 @@ abstract class RxCancelContract private constructor() {
 
         fun printLog(message: String)
 
-        fun showConfirmDialog(): Observable<Boolean>
+        fun showError(error: Throwable)
+
+        fun showConfirmDialog(): Single<Boolean>
 
         fun showProgressBar()
 

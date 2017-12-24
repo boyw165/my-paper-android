@@ -26,12 +26,14 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.rxCancel.RxCancelContract
 import com.paper.exp.rxCancel.RxCancelPresenter
-import com.paper.observables.BooleanDialogObservable
+import com.paper.observables.BooleanDialogSingle
 import com.paper.protocol.INavigator
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
@@ -108,15 +110,19 @@ class RxCancelActivity : AppCompatActivity(),
         mTxtLogContainer.fullScroll(View.FOCUS_DOWN)
     }
 
-    override fun showConfirmDialog(): Observable<Boolean> {
+    override fun showError(error: Throwable) {
+        Toast.makeText(this@RxCancelActivity, error.toString(), Toast.LENGTH_LONG).show()
+    }
+
+    override fun showConfirmDialog(): Single<Boolean> {
         val builder = AlertDialog.Builder(this@RxCancelActivity)
             .setTitle(R.string.sample_dialog_title)
             .setMessage(R.string.sample_dialog_message)
             .setCancelable(true)
 
-        return BooleanDialogObservable(builder,
-                                       getString(R.string.yes),
-                                       getString(R.string.no))
+        return BooleanDialogSingle(builder,
+                                   getString(R.string.yes),
+                                   getString(R.string.no))
             .subscribeOn(AndroidSchedulers.mainThread())
     }
 

@@ -24,20 +24,20 @@ package com.paper.observables
 
 import android.content.DialogInterface
 import android.support.v7.app.AlertDialog
-import io.reactivex.Observable
-import io.reactivex.Observer
+import io.reactivex.Single
+import io.reactivex.SingleObserver
 import io.reactivex.android.MainThreadDisposable
 
 /**
  * An observable encapsulate [AlertDialog] and emit a boolean to downstream.
  */
-class BooleanDialogObservable(
+class BooleanDialogSingle(
     private val mSource: AlertDialog.Builder,
     private val mPositiveButtonString: String,
     private val mNegativeButtonString: String)
-    : Observable<Boolean>() {
+    : Single<Boolean>() {
 
-    override fun subscribeActual(observer: Observer<in Boolean>) {
+    override fun subscribeActual(observer: SingleObserver<in Boolean>) {
         val disposable = Disposable(observer)
 
         mSource.setPositiveButton(mPositiveButtonString, disposable)
@@ -54,7 +54,7 @@ class BooleanDialogObservable(
     // Clazz //////////////////////////////////////////////////////////////////
 
     private class Disposable internal constructor(
-        internal val observer: Observer<in Boolean>)
+        internal val observer: SingleObserver<in Boolean>)
         : MainThreadDisposable(),
           DialogInterface.OnClickListener,
           DialogInterface.OnCancelListener {
@@ -68,16 +68,14 @@ class BooleanDialogObservable(
 
         override fun onClick(dialog: DialogInterface, which: Int) {
             if (which == DialogInterface.BUTTON_POSITIVE) {
-                observer.onNext(true)
+                observer.onSuccess(true)
             } else {
-                observer.onNext(false)
+                observer.onSuccess(false)
             }
-            observer.onComplete()
         }
 
         override fun onCancel(dialog: DialogInterface?) {
-            observer.onNext(false)
-            observer.onComplete()
+            observer.onSuccess(false)
         }
     }
 }

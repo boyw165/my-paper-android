@@ -54,6 +54,7 @@ class RxCancelPresenter(navigator: INavigator,
 
     // Progress.
     private val mOnUpdateProgress: Subject<ProgressState> = PublishSubject.create()
+    private val mOnThrowError: Subject<Throwable> = PublishSubject.create()
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -83,7 +84,7 @@ class RxCancelPresenter(navigator: INavigator,
                 // Create do-something intent or cancel intent.
                 .switchMap { intent ->
                     when (intent) {
-                        INTENT_OF_DO_SOMETHING -> toDoSmtAction()
+                        INTENT_OF_DO_SOMETHING -> toShareAction()
                         INTENT_OF_CANCEL_EVERYTHING -> toCancelAction()
                         else -> toCancelAction()
                     }
@@ -124,6 +125,14 @@ class RxCancelPresenter(navigator: INavigator,
                                 state.progress))
                     }
                 })
+
+        // Error.
+        mDisposablesOnCreate.add(
+            mOnThrowError
+                .observeOn(mUiSchedulers)
+                .subscribe { error ->
+                    mView.showError(error)
+                })
     }
 
     override fun unBindViewOnDestroy() {
@@ -144,9 +153,10 @@ class RxCancelPresenter(navigator: INavigator,
     /**
      * Returns a DO-SOMETHING action.
      */
-    private fun toDoSmtAction(): Observable<Any> {
+    private fun toShareAction(): Observable<Any> {
         // #1 observable simulating an arbitrary long-run process.
-        return getSimulatingLongRunProcess()
+        return generateBmp()
+            .compose(handleError(ProgressState(justStop = true)))
             // #2 observable that shows a dialog.
             .switchMap { _ ->
                 mView.showConfirmDialog()
@@ -154,17 +164,32 @@ class RxCancelPresenter(navigator: INavigator,
                     .doOnSubscribe { _ -> mView.printLog("Show a confirmation dialog...") }
                     .subscribeOn(mUiSchedulers)
                     .observeOn(mUiSchedulers)
-                    .doOnNext { v -> mView.printLog("Confirmation dialog returns %s".format(v)) }
+                    .doOnSuccess { v -> mView.printLog("Confirmation dialog returns %s".format(v)) }
+                    .toObservable()
             }
-            // TODO: Complete it.
-            // #3 observable simulating a file I/O operation.
+            // #3
             .switchMap { b: Boolean ->
                 if (b) {
-                    getSimulatingLongRunProcess()
+                    shareToFacebook()
+                        .compose(handleError(ProgressState(justStop = true)))
                 } else {
                     Observable.just(ProgressState(justStop = true))
                 }
             }
+    }
+
+    /**
+     * An observable emitting the status of generating the Bitmap.
+     */
+    private fun generateBmp(): Observable<ProgressState> {
+        return getSimulatingLongRunProcess()
+    }
+
+    /**
+     * An observable emitting the status of sharing.
+     */
+    private fun shareToFacebook(): Observable<ProgressState> {
+        return getSimulatingLongRunProcess()
     }
 
     /**
@@ -235,6 +260,22 @@ class RxCancelPresenter(navigator: INavigator,
             upstream
                 .filter { state -> state.justStop }
                 .debounce(300, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    /**
+     * A transformer that catches the exception and convert it to an ERROR state.
+     */
+    private fun <T> handleError(item: T): ObservableTransformer<T, T> {
+        return ObservableTransformer { upstream ->
+            upstream.onErrorReturn { error: Throwable ->
+                // Bypass the error to the error channel so that someone interested
+                // to it get notified.
+                mOnThrowError.onNext(error)
+
+                // Return whatever you want~~~
+                item
+            }
         }
     }
 }
