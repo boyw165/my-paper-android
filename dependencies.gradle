@@ -88,6 +88,8 @@ ext {
             dagger2                : "com.google.dagger:dagger:${DAGGER2_VER}",
             dagger2Support         : "com.google.dagger:dagger-android-support:${DAGGER2_VER}",
             dagger2Compiler        : "com.google.dagger:dagger-compiler:${DAGGER2_VER}",
+            // Navigation.
+            cicerone               : 'ru.terrakok.cicerone:cicerone:2.1.0',
             // Leak Detection.
             leakcanary             : 'com.squareup.leakcanary:leakcanary-android:1.5.1',
             leakcanaryNoOp         : 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1',
