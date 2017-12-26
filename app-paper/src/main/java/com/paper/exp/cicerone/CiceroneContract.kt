@@ -26,7 +26,13 @@ import ru.terrakok.cicerone.Router
 abstract class CiceroneContract private constructor() {
 
     companion object {
-        const val SCREEN_FRAGMENT_1: String = "/cicerone/fragment_1"
+        const val SCREEN_NEW_FRAGMENT: String = "/cicerone/new_fragment"
+        const val SCREEN_NEW_ACTIVITY: String = "/cicerone/new_activity"
+
+        const val ACTIVITY_NUMBER_FLAG: String = "activity_number_flag"
+        const val FRAGMENT_NUMBER_FLAG: String = "fragment_number_flag"
+
+        const val ACTIVITY_RESULT_CODE: Int = 666
     }
 
     interface View {
@@ -35,6 +41,6 @@ abstract class CiceroneContract private constructor() {
 
     interface CiceroneProvider {
 
-        fun getCicerone(): Cicerone<Router>
+        fun getRouter(): Router
     }
 }

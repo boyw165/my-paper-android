@@ -6,65 +6,94 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import com.jakewharton.rxbinding2.view.RxView
+import com.paper.ExampleOfCiceroneActivity
 import com.paper.R
 import com.paper.exp.cicerone.CiceroneContract
-import ru.terrakok.cicerone.Navigator
-import ru.terrakok.cicerone.android.SupportFragmentNavigator
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 
 class CiceroneFragment1 : Fragment() {
 
     // Router.
-    var mRouter: CiceroneContract.CiceroneProvider? = null
+//    var mRouter: CiceroneContract.CiceroneProvider? = null
+
+    // View.
+    private lateinit var mTvFragmentNumber: TextView
+    private lateinit var mBtnBack: Button
+
+    // Disposables.
+    private val mDisposablesOnCreateView = CompositeDisposable()
+
+    private var mFragmentNum = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_cicerone_fragment1, container, false)
+        val viewGroup: View = inflater.inflate(R.layout.fragment_cicerone_fragment1, container, false)
+        mTvFragmentNumber =  viewGroup.findViewById(R.id.tv_fragment_number)
+        mBtnBack = viewGroup.findViewById(R.id.btn_back_prev_frag)
+
+        mFragmentNum = arguments!!.getInt(CiceroneContract.FRAGMENT_NUMBER_FLAG)
+        mTvFragmentNumber.text = "Fragment " + mFragmentNum.toString()
+
+        mDisposablesOnCreateView.add(
+                RxView.clicks(mBtnBack)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe { _ ->
+                            (activity as ExampleOfCiceroneActivity).getRouter().exit()
+                })
+        return viewGroup
     }
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
-
-        mRouter = activity as CiceroneContract.CiceroneProvider
+//        mRouter = activity as CiceroneContract.CiceroneProvider
     }
 
     override fun onDetach() {
         super.onDetach()
 
-        mRouter = null
+        mDisposablesOnCreateView.clear()
+//        mRouter = null
+    }
+
+    fun getCurrentNumber(): Int{
+        return mFragmentNum
     }
 
     companion object {
-        fun create(): CiceroneFragment1 {
+        fun create(fragmentNumber: Int): CiceroneFragment1 {
             val fragment = CiceroneFragment1()
-//            val args = Bundle()
-//            args.putString(ARG_PARAM1, param1)
-//            args.putString(ARG_PARAM2, param2)
-//            fragment.arguments = args
+            val args = Bundle()
+            args.putInt(CiceroneContract.FRAGMENT_NUMBER_FLAG, fragmentNumber)
+            fragment.arguments = args
             return fragment
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
-
-    // Navigator.
-    var mInnerNavigator: Navigator? = null
-
-    private val mNavigator: Navigator = object :
-        SupportFragmentNavigator(activity.supportFragmentManager,
-                                 ) {
-
-        override fun createFragment(screenKey: String?, data: Any?): Fragment {
-            TODO("not supported")
-        }
-
-        override fun exit() {
-            TODO("not supported")
-        }
-
-        override fun showSystemMessage(message: String?) {
-            TODO("not supported")
-        }
-    }
+//
+//    // Navigator.
+//    var mInnerNavigator: Navigator? = null
+//
+//    private val mNavigator: Navigator = object :
+//        SupportFragmentNavigator(activity.supportFragmentManager,
+//                                 ) {
+//
+//        override fun createFragment(screenKey: String?, data: Any?): Fragment {
+//            TODO("not supported")
+//        }
+//
+//        override fun exit() {
+//            TODO("not supported")
+//        }
+//
+//        override fun showSystemMessage(message: String?) {
+//            TODO("not supported")
+//        }
+//    }
 }
