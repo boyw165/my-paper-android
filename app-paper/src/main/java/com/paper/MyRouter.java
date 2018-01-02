@@ -1,5 +1,29 @@
+// Copyright (c) 2017-present CardinalBlue
+//
+// Author: jack.huang@cardinalblue.com
+//         boy@cardinalblue.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+//    The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+//    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 package com.paper;
 
+import android.os.Looper;
 import java.util.HashMap;
 import ru.terrakok.cicerone.BaseRouter;
 import ru.terrakok.cicerone.Navigator;
@@ -10,13 +34,10 @@ import ru.terrakok.cicerone.commands.Replace;
 import ru.terrakok.cicerone.commands.SystemMessage;
 import ru.terrakok.cicerone.result.ResultListener;
 
-/**
- * Created by NullKnot on 2018/1/2.
- */
-
 public class MyRouter extends BaseRouter {
-    private HashMap<Integer, ResultListener> resultListeners = new HashMap<>();
-    private HashMap<Integer, Object> resultsBuffer = new HashMap<>();
+
+    private HashMap<Integer, ResultListener> mResultListeners = new HashMap<>();
+    private HashMap<Integer, Object> mResultsBuffer = new HashMap<>();
 
     public MyRouter() {
         super();
@@ -24,52 +45,54 @@ public class MyRouter extends BaseRouter {
 
     /**
      * Subscribe to the screen result.<br>
-     * <b>Note:</b> only one listener can subscribe to a unique resultCode!<br>
+     * <b>Note:</b> only one listener can subscribe to a unique requestCode!<br>
      * You must call a <b>removeResultListener()</b> to avoid a memory leak.
      *
-     * @param resultCode key for filter results
+     * @param requestCode key for filter results
      * @param listener   result listener
      */
-    public void setResultListener(Integer resultCode, ResultListener listener) {
-        resultListeners.put(resultCode, listener);
+    public void setResultListener(Integer requestCode, ResultListener listener) {
+        mResultListeners.put(requestCode, listener);
     }
 
-    public void dispatchResultOnResume(Integer resultCode){
-        Object result = resultsBuffer.get(resultCode);
-        ResultListener resultListener = resultListeners.get(resultCode);
+    /**
+     * Call this in onResume to get the buffer result by requestCode.
+     *
+     * @param requestCode The request code for the result.
+     */
+    public void dispatchResultOnResume(Integer requestCode) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
+
+        Object result = mResultsBuffer.get(requestCode);
+        ResultListener resultListener = mResultListeners.get(requestCode);
 
         if (result != null && resultListener != null) {
             resultListener.onResult(result);
-            // remove the buffer.
-            resultsBuffer.put(resultCode, null);
+            // Remove the buffer.
+            mResultsBuffer.remove(requestCode);
         }
     }
 
     /**
      * Unsubscribe from the screen result.
      *
-     * @param resultCode key for filter results
+     * @param requestCode key for filter results
      */
-    public void removeResultListener(Integer resultCode) {
-        resultListeners.remove(resultCode);
+    public void removeResultListener(Integer requestCode) {
+        mResultListeners.remove(requestCode);
     }
 
     /**
-     * Send result data to subscriber.
+     * Send a delayed result until the {@link #dispatchResultOnResume(Integer)} is called.
      *
-     * @param resultCode result data key
+     * @param requestCode result data key
      * @param result     result data
-     * @return TRUE if listener was notified and FALSE otherwise
      */
-    protected boolean sendResult(Integer resultCode, Object result) {
-        ResultListener resultListener = resultListeners.get(resultCode);
-        if (resultListener != null) {
-            resultListener.onResult(result);
-            return true;
-        } else {
-            resultsBuffer.put(resultCode, result);
-            return false;
-        }
+    protected void sendDelayedResult(Integer requestCode, Object result) {
+        mResultsBuffer.put(requestCode, result);
     }
 
     /**
@@ -190,12 +213,12 @@ public class MyRouter extends BaseRouter {
     /**
      * Return to the previous screen in the chain and send result data.
      *
-     * @param resultCode result data key
+     * @param requestCode result data key
      * @param result     result data
      */
-    public void exitWithResult(Integer resultCode, Object result) {
+    public void exitWithResult(Integer requestCode, Object result) {
         exit();
-        sendResult(resultCode, result);
+        sendDelayedResult(requestCode, result);
     }
 
     /**
