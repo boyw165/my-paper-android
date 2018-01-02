@@ -29,14 +29,13 @@ import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.cicerone.view.CiceroneFragment1
+import com.paper.protocol.IRouterProvider
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import ru.terrakok.cicerone.Cicerone
 import ru.terrakok.cicerone.Navigator
 import ru.terrakok.cicerone.NavigatorHolder
-import ru.terrakok.cicerone.Router
 import ru.terrakok.cicerone.android.SupportAppNavigator
 import java.util.concurrent.TimeUnit
 
@@ -44,13 +43,13 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
                                   CiceroneContract.CiceroneProvider {
 
     // Cicerone.
-    private val mCicerone: Cicerone<Router> by lazy { Cicerone.create() }
-    private val mRouter: Router by lazy { mCicerone.router }
-    private val mNavigatorHolder: NavigatorHolder by lazy { mCicerone.navigatorHolder }
+    private val mRouter: MyRouter by lazy { (application as IRouterProvider).router }
+    private val mNavigatorHolder: NavigatorHolder by lazy { (application as IRouterProvider).holder }
 
     // View.
     private val mBtnNewFrag: View by lazy { findViewById<View>(R.id.btn_back_prev_frag) }
     private val mBtnNewActivity: View by lazy { findViewById<View>(R.id.btn_new_activity) }
+    private val mBtnBackWithResult: View by lazy { findViewById<View>(R.id.btn_exit_with_result) }
     private val mTvActivityNumber: TextView by lazy { findViewById<TextView>(R.id.tv_activity_number) }
     // TODO: test the result listener
     private val mTvResult: TextView by lazy { findViewById<TextView>(R.id.tv_result) }
@@ -79,6 +78,16 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
             mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, 0)
         }
 
+        mRouter.setResultListener(CiceroneContract.ACTIVITY_RESULT_CODE, { resultData ->
+            val resultStr: String? = resultData.toString()
+            if (resultStr != null) {
+                mTvResult.visibility = View.VISIBLE
+                mTvResult.text = "Get Result: " + resultStr
+            } else {
+                mTvResult.visibility = View.INVISIBLE
+            }
+        })
+
         mTvActivityNumber.text = "Activity " + mActivityNumber.toString()
 
         // Exp new fragment button.
@@ -100,6 +109,15 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe { _ ->
                             mRouter.navigateTo(CiceroneContract.SCREEN_NEW_ACTIVITY, mActivityNumber + 1)
+                        })
+
+        // Exp back with result button.
+        mDisposablesOnCreate.add(
+                RxView.clicks(mBtnBackWithResult)
+                        .debounce(150, TimeUnit.MILLISECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe { _ ->
+                            mRouter.exitWithResult(CiceroneContract.ACTIVITY_RESULT_CODE, "From Act." + mActivityNumber)
                         })
 
         mDisposablesOnCreate.add(
@@ -127,13 +145,14 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
         super.onDestroy()
 
         mDisposablesOnCreate.clear()
+        mRouter.removeResultListener(CiceroneContract.ACTIVITY_RESULT_CODE)
     }
 
     override fun onBackPressed() {
         mOnClickSystemBack.onNext(0)
     }
 
-    override fun getRouter(): Router {
+    override fun getRouter(): MyRouter {
         return mRouter
     }
 
@@ -149,7 +168,7 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
                 return when (screenKey) {
                     CiceroneContract.SCREEN_NEW_ACTIVITY -> {
                         // TODO: set the data to intent.
-                        Intent(this@ExampleOfCiceroneActivity, ExampleOfCiceroneActivity::class.java)
+                        Intent(this@ExampleOfCiceroneActivity, ExampleOfCiceroneActivity2::class.java)
                                 .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
                     }
 //                    else -> throw IllegalArgumentException("Unknown screen key.")

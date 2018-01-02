@@ -46,6 +46,7 @@
         <!-- Experiments -->
         <activity android:name=".ExampleOfRxCancelActivity"/>
         <activity android:name=".ExampleOfCiceroneActivity"/>
+        <activity android:name=".ExampleOfCiceroneActivity2" />
 
         <!-- ContentProvider ///////////////////////////////////////////////-->
 
