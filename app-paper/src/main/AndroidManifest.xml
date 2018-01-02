@@ -43,8 +43,9 @@
             android:name="com.cardinalblue.lib.doodle.view.SketchEditorActivity">
         </activity>
 
-        <!-- Exp of rx cancel -->
-        <activity android:name=".RxCancelActivity"/>
+        <!-- Experiments -->
+        <activity android:name=".ExampleOfRxCancelActivity"/>
+        <activity android:name=".ExampleOfCiceroneActivity"/>
 
         <!-- ContentProvider ///////////////////////////////////////////////-->
 

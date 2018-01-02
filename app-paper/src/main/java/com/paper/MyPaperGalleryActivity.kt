@@ -130,10 +130,15 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { item ->
                     when (item.itemId) {
-                        R.id.rx_cancel -> {
+                        R.id.rx_cancel_ex -> {
                             startActivity(Intent(
                                 this@MyPaperGalleryActivity,
-                                RxCancelActivity::class.java))
+                                ExampleOfRxCancelActivity::class.java))
+                        }
+                        R.id.ciceron_ex -> {
+                            startActivity(Intent(
+                                this@MyPaperGalleryActivity,
+                                ExampleOfCiceroneActivity::class.java))
                         }
                     }
                 })

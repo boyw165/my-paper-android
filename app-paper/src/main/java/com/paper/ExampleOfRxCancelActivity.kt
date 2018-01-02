@@ -40,9 +40,9 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import java.lang.StringBuilder
 
-class RxCancelActivity : AppCompatActivity(),
-                         RxCancelContract.View,
-                         INavigator {
+class ExampleOfRxCancelActivity : AppCompatActivity(),
+                                  RxCancelContract.View,
+                                  INavigator {
 
     // View.
     private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
@@ -57,7 +57,7 @@ class RxCancelActivity : AppCompatActivity(),
 
     // Presenter.
     private val mPresenter: RxCancelPresenter by lazy {
-        RxCancelPresenter(this@RxCancelActivity,
+        RxCancelPresenter(this@ExampleOfRxCancelActivity,
                           Schedulers.io(),
                           AndroidSchedulers.mainThread())
     }
@@ -70,7 +70,7 @@ class RxCancelActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_rx_cancel)
 
-        mPresenter.bindViewOnCreate(this@RxCancelActivity)
+        mPresenter.bindViewOnCreate(this@ExampleOfRxCancelActivity)
     }
 
     override fun onDestroy() {
@@ -111,11 +111,11 @@ class RxCancelActivity : AppCompatActivity(),
     }
 
     override fun showError(error: Throwable) {
-        Toast.makeText(this@RxCancelActivity, error.toString(), Toast.LENGTH_LONG).show()
+        Toast.makeText(this@ExampleOfRxCancelActivity, error.toString(), Toast.LENGTH_LONG).show()
     }
 
     override fun showConfirmDialog(): Single<Boolean> {
-        val builder = AlertDialog.Builder(this@RxCancelActivity)
+        val builder = AlertDialog.Builder(this@ExampleOfRxCancelActivity)
             .setTitle(R.string.sample_dialog_title)
             .setMessage(R.string.sample_dialog_message)
             .setCancelable(true)

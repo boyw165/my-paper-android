@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+    
+    <FrameLayout
+        android:id="@+id/frame_container"
+        android:layout_width="240dp"
+        android:layout_height="240dp"/>
+
+    <TextView
+        android:id="@+id/tv_activity_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textSize="20sp"
+        android:text="Activity Number"/>
+
+    <Button
+        android:id="@+id/btn_back_prev_frag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:layout_marginTop="8dp"
+        android:text="New Frag ➔"/>
+
+    <Button
+        android:id="@+id/btn_new_activity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:layout_marginTop="8dp"
+        android:text="New activity"/>
+
+    <!-- TODO: use to present the result back from another activity.-->
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        android:gravity="center"
+        android:layout_marginTop="8dp"
+        android:background="@color/red"
+        android:text="Get Result"/>
+</LinearLayout>
