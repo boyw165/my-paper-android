@@ -5,6 +5,13 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical">
+    <Button
+        android:id="@+id/btn_exit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:layout_marginTop="8dp"
+        android:text="Exit"/>
 
     <Button
         android:id="@+id/btn_exit_with_result"
@@ -12,5 +19,5 @@
         android:layout_height="wrap_content"
         android:minWidth="200dp"
         android:layout_marginTop="8dp"
-        android:text="Back With Result"/>
+        android:text="Exit With Result"/>
 </LinearLayout>

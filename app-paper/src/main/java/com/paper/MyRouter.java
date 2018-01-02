@@ -16,6 +16,7 @@ import ru.terrakok.cicerone.result.ResultListener;
 
 public class MyRouter extends BaseRouter {
     private HashMap<Integer, ResultListener> resultListeners = new HashMap<>();
+    private HashMap<Integer, Object> resultsBuffer = new HashMap<>();
 
     public MyRouter() {
         super();
@@ -34,7 +35,14 @@ public class MyRouter extends BaseRouter {
     }
 
     public void dispatchResultOnResume(Integer resultCode){
-        // TODO: use the resultCode to check the result queue and dispatch it.
+        Object result = resultsBuffer.get(resultCode);
+        ResultListener resultListener = resultListeners.get(resultCode);
+
+        if (result != null && resultListener != null) {
+            resultListener.onResult(result);
+            // remove the buffer.
+            resultsBuffer.put(resultCode, null);
+        }
     }
 
     /**
@@ -59,7 +67,7 @@ public class MyRouter extends BaseRouter {
             resultListener.onResult(result);
             return true;
         } else {
-            // TODO: put the data in result queue for next specific Listener setup.
+            resultsBuffer.put(resultCode, result);
             return false;
         }
     }

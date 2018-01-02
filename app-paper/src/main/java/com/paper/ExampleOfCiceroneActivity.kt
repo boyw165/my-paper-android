@@ -49,7 +49,6 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
     // View.
     private val mBtnNewFrag: View by lazy { findViewById<View>(R.id.btn_back_prev_frag) }
     private val mBtnNewActivity: View by lazy { findViewById<View>(R.id.btn_new_activity) }
-    private val mBtnBackWithResult: View by lazy { findViewById<View>(R.id.btn_exit_with_result) }
     private val mTvActivityNumber: TextView by lazy { findViewById<TextView>(R.id.tv_activity_number) }
     // TODO: test the result listener
     private val mTvResult: TextView by lazy { findViewById<TextView>(R.id.tv_result) }
@@ -111,15 +110,6 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
                             mRouter.navigateTo(CiceroneContract.SCREEN_NEW_ACTIVITY, mActivityNumber + 1)
                         })
 
-        // Exp back with result button.
-        mDisposablesOnCreate.add(
-                RxView.clicks(mBtnBackWithResult)
-                        .debounce(150, TimeUnit.MILLISECONDS)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe { _ ->
-                            mRouter.exitWithResult(CiceroneContract.ACTIVITY_RESULT_CODE, "From Act." + mActivityNumber)
-                        })
-
         mDisposablesOnCreate.add(
                 mOnClickSystemBack.subscribe{
                     mRouter.exit()
@@ -131,6 +121,7 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
 
         // Set navigator.
         mNavigatorHolder.setNavigator(mNavigator)
+        mRouter.dispatchResultOnResume(CiceroneContract.ACTIVITY_RESULT_CODE)
     }
 
     override fun onPause() {

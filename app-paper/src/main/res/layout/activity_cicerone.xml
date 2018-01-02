@@ -35,14 +35,6 @@
         android:layout_marginTop="8dp"
         android:text="New activity"/>
 
-    <Button
-        android:id="@+id/btn_exit_with_result"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minWidth="200dp"
-        android:layout_marginTop="8dp"
-        android:text="Back With Result"/>
-
     <!-- TODO: use to present the result back from another activity.-->
     <TextView
         android:id="@+id/tv_result"

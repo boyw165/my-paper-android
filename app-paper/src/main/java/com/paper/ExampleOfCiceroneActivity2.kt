@@ -10,6 +10,7 @@ import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.cicerone.view.CiceroneFragment1
 import com.paper.protocol.IRouterProvider
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
@@ -25,7 +26,8 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
     private val mNavigatorHolder: NavigatorHolder by lazy { (application as IRouterProvider).holder }
 
     // View.
-    private val mBtnBackWithResult: View by lazy { findViewById<View>(R.id.btn_exit_with_result) }
+    private val mBtnExit: View by lazy { findViewById<View>(R.id.btn_exit) }
+    private val mBtnExitWithResult: View by lazy { findViewById<View>(R.id.btn_exit_with_result) }
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -39,8 +41,16 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
         setContentView(R.layout.activity_cicerone2)
 
         mDisposablesOnCreate.add(
+                RxView.clicks(mBtnExit)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe({ _ ->
+                            mRouter.exit()
+                        })
+        );
+
+        mDisposablesOnCreate.add(
             Observable
-                .merge(RxView.clicks(mBtnBackWithResult),
+                .merge(RxView.clicks(mBtnExitWithResult),
                        mOnClickSystemBack)
                 .subscribe {
                     mRouter.exitWithResult(CiceroneContract.ACTIVITY_RESULT_CODE, "From Act 2.")
