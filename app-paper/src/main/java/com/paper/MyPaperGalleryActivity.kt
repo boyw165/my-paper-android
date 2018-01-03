@@ -138,7 +138,7 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                         R.id.ciceron_ex -> {
                             startActivity(Intent(
                                 this@MyPaperGalleryActivity,
-                                ExampleOfCiceroneActivity::class.java))
+                                ExampleOfCiceroneActivity1::class.java))
                         }
                     }
                 })

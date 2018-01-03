@@ -1,30 +1,34 @@
-// Copyright (c) 2017-present CardinalBlue
+// Copyright Jan 2018-present CardinalBlue
 //
 // Author: jack.huang@cardinalblue.com
 //         boy@cardinalblue.com
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
 //
-//    The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
 //
-//    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 
-package com.paper;
+package com.paper.router;
 
 import android.os.Looper;
+
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 import ru.terrakok.cicerone.BaseRouter;
 import ru.terrakok.cicerone.Navigator;
 import ru.terrakok.cicerone.commands.Back;
@@ -36,63 +40,72 @@ import ru.terrakok.cicerone.result.ResultListener;
 
 public class MyRouter extends BaseRouter {
 
-    private HashMap<Integer, ResultListener> mResultListeners = new HashMap<>();
-    private HashMap<Integer, Object> mResultsBuffer = new HashMap<>();
+    private Map<Integer, ListenerAndResult> mResultsBuffer = new HashMap<>();
 
     public MyRouter() {
         super();
     }
 
     /**
-     * Subscribe to the screen result.<br>
-     * <b>Note:</b> only one listener can subscribe to a unique requestCode!<br>
+     * Subscribe to the screen resultHolder.<br>
+     * <b>Note:</b> only one listenerHolder can subscribe to a unique requestCode!<br>
      * You must call a <b>removeResultListener()</b> to avoid a memory leak.
      *
      * @param requestCode key for filter results
-     * @param listener   result listener
+     * @param listener   resultHolder listenerHolder
      */
-    public void setResultListener(Integer requestCode, ResultListener listener) {
-        mResultListeners.put(requestCode, listener);
-    }
-
-    /**
-     * Call this in onResume to get the buffer result by requestCode.
-     *
-     * @param requestCode The request code for the result.
-     */
-    public void dispatchResultOnResume(Integer requestCode) {
+    public void addResultListener(int requestCode, ResultListener listener) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
         }
 
-        Object result = mResultsBuffer.get(requestCode);
-        ResultListener resultListener = mResultListeners.get(requestCode);
+        if (mResultsBuffer.containsKey(requestCode)) {
+            final ListenerAndResult buffer = mResultsBuffer.get(requestCode);
+            buffer.listenerHolder.set(listener);
+        } else {
+            final ListenerAndResult buffer = new ListenerAndResult();
+            buffer.listenerHolder.set(listener);
 
-        if (result != null && resultListener != null) {
-            resultListener.onResult(result);
-            // Remove the buffer.
+            mResultsBuffer.put(requestCode, buffer);
+        }
+    }
+
+    /**
+     * Unsubscribe from the screen resultHolder.
+     *
+     * @param requestCode key for filter results
+     */
+    public void removeResultListener(int requestCode) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
+
+        if (mResultsBuffer.containsKey(requestCode)) {
             mResultsBuffer.remove(requestCode);
         }
     }
 
     /**
-     * Unsubscribe from the screen result.
-     *
-     * @param requestCode key for filter results
+     * Call this in onResume to get the buffer resultHolder by requestCode.
      */
-    public void removeResultListener(Integer requestCode) {
-        mResultListeners.remove(requestCode);
-    }
+    public void dispatchResultOnResume() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
 
-    /**
-     * Send a delayed result until the {@link #dispatchResultOnResume(Integer)} is called.
-     *
-     * @param requestCode result data key
-     * @param result     result data
-     */
-    protected void sendDelayedResult(Integer requestCode, Object result) {
-        mResultsBuffer.put(requestCode, result);
+        for (Integer requestCode : mResultsBuffer.keySet()) {
+            final ListenerAndResult buffer = mResultsBuffer.get(requestCode);
+            final Object result = buffer.resultHolder.get();
+            final ResultListener listener = buffer.listenerHolder.get();
+            if (result != null && listener != null) {
+                listener.onResult(result);
+                // Clear the cache.
+                buffer.resultHolder.set(null);
+            }
+        }
     }
 
     /**
@@ -211,12 +224,12 @@ public class MyRouter extends BaseRouter {
     }
 
     /**
-     * Return to the previous screen in the chain and send result data.
+     * Return to the previous screen in the chain and send resultHolder data.
      *
-     * @param requestCode result data key
-     * @param result     result data
+     * @param requestCode resultHolder data key
+     * @param result     resultHolder data
      */
-    public void exitWithResult(Integer requestCode, Object result) {
+    public void exitWithResult(int requestCode, Object result) {
         exit();
         sendDelayedResult(requestCode, result);
     }
@@ -238,5 +251,42 @@ public class MyRouter extends BaseRouter {
      */
     public void showSystemMessage(String message) {
         executeCommand(new SystemMessage(message));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    /**
+     * Send a delayed resultHolder until the {@link #dispatchResultOnResume()} is
+     * called.
+     *
+     * @param requestCode resultHolder data key
+     * @param result     resultHolder data
+     */
+    private void  sendDelayedResult(int requestCode, Object result) {
+        if (mResultsBuffer.containsKey(requestCode)) {
+            mResultsBuffer.get(requestCode)
+                          .resultHolder
+                          .set(result);
+        } else {
+            mResultsBuffer.put(requestCode, new ListenerAndResult(result));
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    private static class ListenerAndResult {
+
+        final AtomicReference<ResultListener> listenerHolder = new AtomicReference<>();
+        final AtomicReference<Object> resultHolder = new AtomicReference<>();
+
+        ListenerAndResult() {
+            // EMPTY constructor.
+        }
+
+        ListenerAndResult(Object result) {
+            resultHolder.set(result);
+        }
     }
 }

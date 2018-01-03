@@ -22,6 +22,7 @@ package com.paper
 
 import android.support.multidex.MultiDexApplication
 import com.paper.protocol.IRouterProvider
+import com.paper.router.MyRouter
 import ru.terrakok.cicerone.Cicerone
 import ru.terrakok.cicerone.NavigatorHolder
 

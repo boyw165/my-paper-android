@@ -9,6 +9,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.cicerone.view.CiceroneFragment1
 import com.paper.protocol.IRouterProvider
+import com.paper.router.MyRouter
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -18,8 +19,7 @@ import ru.terrakok.cicerone.Navigator
 import ru.terrakok.cicerone.NavigatorHolder
 import ru.terrakok.cicerone.android.SupportAppNavigator
 
-class ExampleOfCiceroneActivity2 : AppCompatActivity(),
-        CiceroneContract.CiceroneProvider {
+class ExampleOfCiceroneActivity2 : AppCompatActivity() {
 
     // Cicerone.
     private val mRouter: MyRouter by lazy { (application as IRouterProvider).router }
@@ -41,12 +41,11 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
         setContentView(R.layout.activity_cicerone2)
 
         mDisposablesOnCreate.add(
-                RxView.clicks(mBtnExit)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe({ _ ->
-                            mRouter.exit()
-                        })
-        );
+            RxView.clicks(mBtnExit)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    mRouter.exit()
+                })
 
         mDisposablesOnCreate.add(
             Observable
@@ -69,7 +68,6 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
 
         // Remove navigator.
         mNavigatorHolder.removeNavigator()
-
     }
 
     override fun onDestroy() {
@@ -82,16 +80,12 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
         mOnClickSystemBack.onNext(0)
     }
 
-    override fun getRouter(): MyRouter {
-        return mRouter
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private val mNavigator: Navigator by lazy {
         object : SupportAppNavigator(this@ExampleOfCiceroneActivity2,
-                R.id.frame_container) {
+                                     R.id.frame_container) {
 
             override fun createActivityIntent(screenKey: String,
                                               data: Any?): Intent? {
@@ -99,9 +93,9 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
                     CiceroneContract.SCREEN_NEW_ACTIVITY -> {
                         // TODO: set the data to intent.
                         Intent(this@ExampleOfCiceroneActivity2, ExampleOfCiceroneActivity2::class.java)
-                                .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
+                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
                     }
-//                    else -> throw IllegalArgumentException("Unknown screen key.")
+                //                    else -> throw IllegalArgumentException("Unknown screen key.")
                     else -> null
                 }
             }
@@ -112,7 +106,7 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity(),
                     CiceroneContract.SCREEN_NEW_FRAGMENT -> {
                         CiceroneFragment1.create(data as Int)
                     }
-//                    else -> throw IllegalArgumentException("Unknown screen key.")
+                //                    else -> throw IllegalArgumentException("Unknown screen key.")
                     else -> null
                 }
             }
