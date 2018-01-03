@@ -9,16 +9,16 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.ExampleOfCiceroneActivity
 import com.paper.R
 import com.paper.exp.cicerone.CiceroneContract
+import com.paper.protocol.IRouterProvider
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
 class CiceroneFragment1 : Fragment() {
 
     // Router.
-//    var mRouter: CiceroneContract.CiceroneProvider? = null
+    //    var mRouter: CiceroneContract.CiceroneProvider? = null
 
     // View.
     private lateinit var mTvFragmentNumber: TextView
@@ -33,34 +33,28 @@ class CiceroneFragment1 : Fragment() {
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
         val viewGroup: View = inflater.inflate(R.layout.fragment_cicerone_fragment1, container, false)
-        mTvFragmentNumber =  viewGroup.findViewById(R.id.tv_fragment_number)
+        mTvFragmentNumber = viewGroup.findViewById(R.id.tv_fragment_number)
         mBtnBack = viewGroup.findViewById(R.id.btn_back_prev_frag)
 
         mFragmentNum = arguments!!.getInt(CiceroneContract.FRAGMENT_NUMBER_FLAG)
-        mTvFragmentNumber.text = "Fragment " + mFragmentNum.toString()
+        mTvFragmentNumber.text = "Fragment ${mFragmentNum.toString()}"
 
         mDisposablesOnCreateView.add(
-                RxView.clicks(mBtnBack)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe { _ ->
-                            (activity as ExampleOfCiceroneActivity).getRouter().exit()
+            RxView.clicks(mBtnBack)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    (activity!!.application as IRouterProvider).router.exit()
                 })
         return viewGroup
     }
 
-    override fun onAttach(context: Context?) {
-        super.onAttach(context)
-//        mRouter = activity as CiceroneContract.CiceroneProvider
-    }
-
-    override fun onDetach() {
-        super.onDetach()
+    override fun onDestroyView() {
+        super.onDestroyView()
 
         mDisposablesOnCreateView.clear()
-//        mRouter = null
     }
 
-    fun getCurrentNumber(): Int{
+    fun getCurrentNumber(): Int {
         return mFragmentNum
     }
 
@@ -76,24 +70,24 @@ class CiceroneFragment1 : Fragment() {
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
-//
-//    // Navigator.
-//    var mInnerNavigator: Navigator? = null
-//
-//    private val mNavigator: Navigator = object :
-//        SupportFragmentNavigator(activity.supportFragmentManager,
-//                                 ) {
-//
-//        override fun createFragment(screenKey: String?, data: Any?): Fragment {
-//            TODO("not supported")
-//        }
-//
-//        override fun exit() {
-//            TODO("not supported")
-//        }
-//
-//        override fun showSystemMessage(message: String?) {
-//            TODO("not supported")
-//        }
-//    }
+    //
+    //    // Navigator.
+    //    var mInnerNavigator: Navigator? = null
+    //
+    //    private val mNavigator: Navigator = object :
+    //        SupportFragmentNavigator(activity.supportFragmentManager,
+    //                                 ) {
+    //
+    //        override fun createFragment(screenKey: String?, data: Any?): Fragment {
+    //            TODO("not supported")
+    //        }
+    //
+    //        override fun exit() {
+    //            TODO("not supported")
+    //        }
+    //
+    //        override fun showSystemMessage(message: String?) {
+    //            TODO("not supported")
+    //        }
+    //    }
 }

@@ -20,8 +20,7 @@
 
 package com.paper.exp.cicerone
 
-import ru.terrakok.cicerone.Cicerone
-import ru.terrakok.cicerone.Router
+import com.paper.router.MyRouter
 
 abstract class CiceroneContract private constructor() {
 
@@ -37,10 +36,5 @@ abstract class CiceroneContract private constructor() {
 
     interface View {
 
-    }
-
-    interface CiceroneProvider {
-
-        fun getRouter(): Router
     }
 }

@@ -1,4 +1,7 @@
-// Copyright (c) 2017-present WANG, TAI-CHUN
+// Copyright (c) 2017-present CardinalBlue
+//
+// Author: jack.huang@cardinalblue.com
+//         boy@cardinalblue.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,32 +32,28 @@ import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.cicerone.view.CiceroneFragment1
+import com.paper.observables.RouterResultSingle
+import com.paper.protocol.IRouterProvider
+import com.paper.router.MyRouter
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import ru.terrakok.cicerone.Cicerone
 import ru.terrakok.cicerone.Navigator
 import ru.terrakok.cicerone.NavigatorHolder
-import ru.terrakok.cicerone.Router
 import ru.terrakok.cicerone.android.SupportAppNavigator
 import java.util.concurrent.TimeUnit
 
-class ExampleOfCiceroneActivity : AppCompatActivity(),
-                                  CiceroneContract.CiceroneProvider {
+class ExampleOfCiceroneActivity1 : AppCompatActivity() {
 
     // Cicerone.
-    private val mCicerone: Cicerone<Router> by lazy { Cicerone.create() }
-    private val mRouter: Router by lazy { mCicerone.router }
-    private val mNavigatorHolder: NavigatorHolder by lazy { mCicerone.navigatorHolder }
+    private val mRouter: MyRouter by lazy { (application as IRouterProvider).router }
+    private val mNavigatorHolder: NavigatorHolder by lazy { (application as IRouterProvider).holder }
 
     // View.
     private val mBtnNewFrag: View by lazy { findViewById<View>(R.id.btn_back_prev_frag) }
     private val mBtnNewActivity: View by lazy { findViewById<View>(R.id.btn_new_activity) }
-    private val mTvActivityNumber: TextView by lazy { findViewById<TextView>(R.id.tv_activity_number) }
-    // TODO: test the result listener
-    private val mTvResult: TextView by lazy { findViewById<TextView>(R.id.tv_result) }
-//    private val mContainer: FrameLayout by lazy { findViewById<FrameLayout>(R.id.frame_container) }
+    private val mTxtResult: TextView by lazy { findViewById<TextView>(R.id.txt_result) }
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -62,50 +61,53 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
     // Subjects.
     private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
 
-    private var mActivityNumber = 0
-
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_cicerone)
-
-        if (intent.extras != null){
-            val newActivityNumber = intent.extras[CiceroneContract.ACTIVITY_NUMBER_FLAG]
-            mActivityNumber = newActivityNumber as Int
-        }
+        setContentView(R.layout.activity_cicerone1)
 
         if (savedState == null) {
-            // Ask router to go.
+            // Ask router to show the fragment.
             mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, 0)
         }
 
-        mTvActivityNumber.text = "Activity " + mActivityNumber.toString()
-
         // Exp new fragment button.
         mDisposablesOnCreate.add(
-                RxView.clicks(mBtnNewFrag)
-//                        .debounce(150, TimeUnit.MILLISECONDS)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe { _ ->
-                            var currentFragNum =
-                                    if (supportFragmentManager.fragments.isEmpty()) -1
-                                    else (supportFragmentManager.fragments[0] as CiceroneFragment1).getCurrentNumber()
-                            mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, currentFragNum + 1)
-                        })
+            RxView.clicks(mBtnNewFrag)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    val currentFragNum =
+                        if (supportFragmentManager.fragments.isEmpty()) -1
+                        else (supportFragmentManager.fragments[0] as CiceroneFragment1).getCurrentNumber()
+                    mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, currentFragNum + 1)
+                })
 
         // Exp new activity button.
         mDisposablesOnCreate.add(
-                RxView.clicks(mBtnNewActivity)
-                        .debounce(150, TimeUnit.MILLISECONDS)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe { _ ->
-                            mRouter.navigateTo(CiceroneContract.SCREEN_NEW_ACTIVITY, mActivityNumber + 1)
-                        })
+            RxView.clicks(mBtnNewActivity)
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    mTxtResult.text = ""
+                    mRouter.navigateTo(CiceroneContract.SCREEN_NEW_ACTIVITY, 1)
+                })
+
+        // Router result.
+        mDisposablesOnCreate.add(
+            RouterResultSingle(mRouter, CiceroneContract.ACTIVITY_RESULT_CODE)
+                .subscribe { result ->
+                    if (result !is String) return@subscribe
+
+                    val resultStr: String? = result.toString()
+                    if (resultStr != null) {
+                        mTxtResult.text = "Get Result: $resultStr"
+                    }
+                })
 
         mDisposablesOnCreate.add(
-                mOnClickSystemBack.subscribe{
-                    mRouter.exit()
-                })
+            mOnClickSystemBack.subscribe {
+                mRouter.exit()
+            })
     }
 
     override fun onResume() {
@@ -113,6 +115,9 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
 
         // Set navigator.
         mNavigatorHolder.setNavigator(mNavigator)
+
+        // Very important to get the buffered Activity result.
+        mRouter.dispatchResultOnResume()
     }
 
     override fun onPause() {
@@ -120,7 +125,6 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
 
         // Remove navigator.
         mNavigatorHolder.removeNavigator()
-
     }
 
     override fun onDestroy() {
@@ -133,26 +137,21 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
         mOnClickSystemBack.onNext(0)
     }
 
-    override fun getRouter(): Router {
-        return mRouter
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private val mNavigator: Navigator by lazy {
-        object : SupportAppNavigator(this@ExampleOfCiceroneActivity,
+        object : SupportAppNavigator(this@ExampleOfCiceroneActivity1,
                                      R.id.frame_container) {
 
             override fun createActivityIntent(screenKey: String,
                                               data: Any?): Intent? {
                 return when (screenKey) {
                     CiceroneContract.SCREEN_NEW_ACTIVITY -> {
-                        // TODO: set the data to intent.
-                        Intent(this@ExampleOfCiceroneActivity, ExampleOfCiceroneActivity::class.java)
-                                .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
+                        Intent(this@ExampleOfCiceroneActivity1,
+                               ExampleOfCiceroneActivity2::class.java)
+                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
                     }
-//                    else -> throw IllegalArgumentException("Unknown screen key.")
                     else -> null
                 }
             }
@@ -163,7 +162,7 @@ class ExampleOfCiceroneActivity : AppCompatActivity(),
                     CiceroneContract.SCREEN_NEW_FRAGMENT -> {
                         CiceroneFragment1.create(data as Int)
                     }
-//                    else -> throw IllegalArgumentException("Unknown screen key.")
+                //                    else -> throw IllegalArgumentException("Unknown screen key.")
                     else -> null
                 }
             }

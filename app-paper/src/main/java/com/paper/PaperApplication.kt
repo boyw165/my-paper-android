@@ -18,14 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper;
+package com.paper
 
-import android.support.multidex.MultiDexApplication;
+import android.support.multidex.MultiDexApplication
+import com.paper.protocol.IRouterProvider
+import com.paper.router.MyRouter
+import ru.terrakok.cicerone.Cicerone
+import ru.terrakok.cicerone.NavigatorHolder
 
-public class PaperApplication extends MultiDexApplication {
+class PaperApplication : MultiDexApplication(),
+                         IRouterProvider {
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+    // Cicerone.
+    private val mCicerone: Cicerone<MyRouter> by lazy { Cicerone.create(MyRouter()) }
+    private val mRouter: MyRouter by lazy { mCicerone.router }
+    private val mNavigatorHolder: NavigatorHolder by lazy { mCicerone.navigatorHolder }
+
+    override fun onCreate() {
+        super.onCreate()
     }
+
+    override val router: MyRouter
+        get() = mRouter
+
+    override val holder: NavigatorHolder
+        get() = mNavigatorHolder
 }
