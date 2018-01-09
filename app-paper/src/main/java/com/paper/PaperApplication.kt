@@ -20,27 +20,56 @@
 
 package com.paper
 
+import android.os.Handler
+import android.os.Looper
 import android.support.multidex.MultiDexApplication
-import com.paper.protocol.IRouterProvider
+import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.INavigator
 import com.paper.router.MyRouter
-import ru.terrakok.cicerone.Cicerone
-import ru.terrakok.cicerone.NavigatorHolder
+import com.paper.router.MyRouterHolder
+import ru.terrakok.cicerone.commands.Command
 
 class PaperApplication : MultiDexApplication(),
-                         IRouterProvider {
+                         IMyRouterHolderProvider {
 
-    // Cicerone.
-    private val mCicerone: Cicerone<MyRouter> by lazy { Cicerone.create(MyRouter()) }
-    private val mRouter: MyRouter by lazy { mCicerone.router }
-    private val mNavigatorHolder: NavigatorHolder by lazy { mCicerone.navigatorHolder }
+    // Router holder.
+    private val mRouterHolder: MyRouterHolder by lazy { MyRouterHolder() }
+
+    // Router.
+    private val mRouter: MyRouter by lazy {
+        val uiHandler = Handler(Looper.getMainLooper())
+        MyRouter(uiHandler)
+    }
 
     override fun onCreate() {
         super.onCreate()
+
+        mRouter.setNavigator(mNavigator)
+
+        // Inject the application level router.
+        mRouterHolder.push(mRouter)
     }
 
-    override val router: MyRouter
-        get() = mRouter
+    override fun getHolder(): MyRouterHolder? {
+        return mRouterHolder
+    }
 
-    override val holder: NavigatorHolder
-        get() = mNavigatorHolder
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private val mNavigator:INavigator by lazy {
+        object : INavigator {
+
+            override fun onEnter() {
+            }
+
+            override fun onExit() {
+            }
+
+            override fun applyCommand(command: Command,
+                                      future: INavigator.FutureResult): Boolean {
+                return true
+            }
+        }
+    }
 }

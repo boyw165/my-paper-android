@@ -1,7 +1,8 @@
 package com.paper.exp.cicerone.view
 
-import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -11,18 +12,23 @@ import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
 import com.paper.exp.cicerone.CiceroneContract
-import com.paper.protocol.IRouterProvider
+import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.MyRouter
+import com.paper.router.MyRouterHolder
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
 class CiceroneFragment1 : Fragment() {
 
-    // Router.
-    //    var mRouter: CiceroneContract.CiceroneProvider? = null
-
     // View.
     private lateinit var mTvFragmentNumber: TextView
     private lateinit var mBtnBack: Button
+
+    // Router and router holder.
+    private val mRouterHolder: MyRouterHolder
+        get() = (activity!!.application as IMyRouterHolderProvider).holder
+    private val mRouter: MyRouter
+        get() = mRouterHolder.peek()
 
     // Disposables.
     private val mDisposablesOnCreateView = CompositeDisposable()
@@ -43,7 +49,7 @@ class CiceroneFragment1 : Fragment() {
             RxView.clicks(mBtnBack)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { _ ->
-                    (activity!!.application as IRouterProvider).router.exit()
+                    mRouter.exit()
                 })
         return viewGroup
     }

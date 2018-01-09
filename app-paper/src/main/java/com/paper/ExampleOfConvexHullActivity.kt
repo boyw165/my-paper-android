@@ -23,34 +23,38 @@
 
 package com.paper
 
-import android.content.Intent
 import android.graphics.PointF
 import android.os.Bundle
-import android.support.v4.app.Fragment
+import android.os.Handler
+import android.os.Looper
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.convexHull.ConvexHullContract
 import com.paper.exp.convexHull.ConvexHullPresenter
-import com.paper.protocol.IRouterProvider
+import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.INavigator
 import com.paper.router.MyRouter
+import com.paper.router.MyRouterHolder
 import com.paper.view.DrawableView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import ru.terrakok.cicerone.Navigator
-import ru.terrakok.cicerone.NavigatorHolder
-import ru.terrakok.cicerone.android.SupportAppNavigator
+import ru.terrakok.cicerone.commands.Command
 
 class ExampleOfConvexHullActivity : AppCompatActivity(),
                                     ConvexHullContract.View {
 
-    // Cicerone.
-    private val mRouter: MyRouter by lazy { (application as IRouterProvider).router }
-    private val mNavigatorHolder: NavigatorHolder by lazy { (application as IRouterProvider).holder }
+    // Router and router holder.
+    private val mRouter: MyRouter by lazy {
+        MyRouter(Handler(Looper.getMainLooper()))
+    }
+    private val mRouterHolder: MyRouterHolder
+        get() = (application as IMyRouterHolderProvider).holder
 
     // View.
     private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_close) }
@@ -84,7 +88,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         super.onResume()
 
         // Set navigator.
-        mNavigatorHolder.setNavigator(mNavigator)
+        mRouter.setNavigator(mNavigator)
 
         // Resume presenter.
         mPresenter.onResume()
@@ -97,7 +101,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         super.onPause()
 
         // Remove navigator.
-        mNavigatorHolder.removeNavigator()
+        mRouter.unsetNavigator()
 
         // Pause presenter.
         mPresenter.onPause()
@@ -151,36 +155,22 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private val mNavigator: Navigator by lazy {
-        object : SupportAppNavigator(this@ExampleOfConvexHullActivity,
-                                     R.id.frame_container) {
+    ///////////////////////////////////////////////////////////////////////////
+    // INavigator /////////////////////////////////////////////////////////////
 
-            override fun createActivityIntent(screenKey: String,
-                                              data: Any?): Intent? {
-//                return when (screenKey) {
-//                    CiceroneContract.SCREEN_NEW_ACTIVITY -> {
-//                        Intent(this@ExampleOfConvexHullActivity,
-//                               ExampleOfCiceroneActivity2::class.java)
-//                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
-//                    }
-//                    else -> null
-//                }
-                return null
-            }
+    private val mNavigator: INavigator = object : INavigator {
 
-            override fun createFragment(screenKey: String,
-                                        data: Any?): Fragment? {
-//                return when (screenKey) {
-//                    CiceroneContract.SCREEN_NEW_FRAGMENT -> {
-//                        CiceroneFragment1.create(data as Int)
-//                    }
-//                    else -> null
-//                }
-                return null
-            }
+        override fun onEnter() {
+            Log.d("convex hull", "enter ---->")
+        }
+
+        override fun onExit() {
+            Log.d("convex hull", "exit <-----")
+        }
+
+        override fun applyCommand(command: Command,
+                                  future: INavigator.FutureResult): Boolean {
+            return true
         }
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // RxCancelContract.View //////////////////////////////////////////////////
 }
