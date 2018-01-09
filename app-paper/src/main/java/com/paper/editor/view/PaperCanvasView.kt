@@ -8,7 +8,6 @@ import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.editor.PaperCanvasContract
-import com.paper.editor.TwoDTransformUtils
 import com.paper.shared.model.TransformModel
 
 class PaperCanvasView : FrameLayout,

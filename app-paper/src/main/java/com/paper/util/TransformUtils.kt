@@ -20,9 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.util
 
 import android.graphics.Matrix
+import android.graphics.PointF
 
 /**
  * A convenient class for getting tx, ty, sx, sy and rotation given a
@@ -31,14 +32,14 @@ import android.graphics.Matrix
  * Usage:
  * <pre>
  * // Usage 1:
- * final TwoDTransformUtils util = new TwoDTransformUtils(matrix);
+ * final TransformUtils util = new TransformUtils(matrix);
  * util.getTranslationX();
  *
  * // Usage 2:
- * TwoDTransformUtils.getTranslationX(matrix);
+ * TransformUtils.getTranslationX(matrix);
  * </pre>
  */
-class TwoDTransformUtils {
+class TransformUtils {
 
     // Given...
     private val mValues: FloatArray
@@ -109,16 +110,16 @@ class TwoDTransformUtils {
         matrix.getValues(mValues)
     }
 
-    companion object {
+    ///////////////////////////////////////////////////////////////////////////
+    // Public Static Methods //////////////////////////////////////////////////
 
-        ///////////////////////////////////////////////////////////////////////////
-        // Public Static Methods //////////////////////////////////////////////////
+    companion object {
 
         fun getTranslationX(matrix: Matrix?): Float {
             return if (matrix == null) {
                 0f
             } else {
-                TwoDTransformUtils(matrix).translationX
+                TransformUtils(matrix).translationX
             }
         }
 
@@ -126,7 +127,7 @@ class TwoDTransformUtils {
             return if (matrix == null) {
                 0f
             } else {
-                TwoDTransformUtils(matrix).translationY
+                TransformUtils(matrix).translationY
             }
         }
 
@@ -139,7 +140,7 @@ class TwoDTransformUtils {
             return if (matrix == null) {
                 0f
             } else {
-                TwoDTransformUtils(matrix).scaleX
+                TransformUtils(matrix).scaleX
             }
         }
 
@@ -152,7 +153,7 @@ class TwoDTransformUtils {
             return if (matrix == null) {
                 0f
             } else {
-                TwoDTransformUtils(matrix).scaleY
+                TransformUtils(matrix).scaleY
             }
         }
 
@@ -160,7 +161,7 @@ class TwoDTransformUtils {
             return if (matrix == null) {
                 0f
             } else {
-                TwoDTransformUtils(matrix).rotationInRadians
+                TransformUtils(matrix).rotationInRadians
             }
         }
 
@@ -168,7 +169,114 @@ class TwoDTransformUtils {
             return if (matrix == null) {
                 0f
             } else {
-                TwoDTransformUtils(matrix).rotationInDegrees
+                TransformUtils(matrix).rotationInDegrees
+            }
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+
+        val DELTA_X = 0
+        val DELTA_Y = 1
+        val DELTA_SCALE_X = 2
+        val DELTA_SCALE_Y = 3
+        val DELTA_RADIANS = 4
+        val PIVOT_X = 5
+        val PIVOT_Y = 6
+
+        /**
+         * Get an array of [tx, ty, sx, sy, rotation] sequence representing
+         * the transformation from the given event.
+         */
+        fun getTransformFromPointers(startPointers: Array<PointF>,
+                                     stopPointers: Array<PointF>): FloatArray {
+            if (startPointers.size < 2 || stopPointers.size < 2) {
+                throw IllegalStateException(
+                    "The event must have at least two down pointers.")
+            }
+
+            val transform = floatArrayOf(
+                // delta x
+                0f,
+                // delta y
+                0f,
+                // delta scale x
+                1f,
+                // delta scale y
+                1f,
+                // delta rotation in radians
+                0f,
+                // pivot x.
+                0f,
+                // pivot y.
+                0f)
+
+            // Start pointer 1.
+            val startX1 = startPointers[0].x
+            val startY1 = startPointers[0].y
+            // Start pointer 2.
+            val startX2 = startPointers[1].x
+            val startY2 = startPointers[1].y
+
+            // Stop pointer 1.
+            val stopX1 = stopPointers[0].x
+            val stopY1 = stopPointers[0].y
+            // Stop pointer 2.
+            val stopX2 = stopPointers[1].x
+            val stopY2 = stopPointers[1].y
+
+            // Start vector.
+            val startVecX = startX2 - startX1
+            val startVecY = startY2 - startY1
+            // Stop vector.
+            val stopVecX = stopX2 - stopX1
+            val stopVecY = stopY2 - stopY1
+
+            // Start pivot.
+            val startPivotX = (startX1 + startX2) / 2f
+            val startPivotY = (startY1 + startY2) / 2f
+            // Stop pivot.
+            val stopPivotX = (stopX1 + stopX2) / 2f
+            val stopPivotY = (stopY1 + stopY2) / 2f
+
+            // Calculate the translation.
+            transform[DELTA_X] = stopPivotX - startPivotX
+            transform[DELTA_Y] = stopPivotY - startPivotY
+            // Calculate the rotation degree.
+            transform[DELTA_RADIANS] = (Math.atan2(stopVecY.toDouble(), stopVecX.toDouble()) - Math.atan2(startVecY.toDouble(), startVecX.toDouble())).toFloat()
+            // Calculate the scale change.
+            val dScale = (Math.hypot(stopVecX.toDouble(),
+                                     stopVecY.toDouble()) / Math.hypot(startVecX.toDouble(),
+                                                                       startVecY.toDouble())).toFloat()
+            transform[DELTA_SCALE_X] = dScale
+            transform[DELTA_SCALE_Y] = dScale
+            transform[PIVOT_X] = startPivotX
+            transform[PIVOT_Y] = startPivotY
+
+            return transform
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+
+        val ORIENTATION_CW = -1
+        val ORIENTATION_COLLINEAR = 0
+        val ORIENTATION_CCW = 1
+
+        fun getOrientation(p1: PointF, p2: PointF, p3: PointF): Int {
+            // Vector u: from p1 to p2.
+            val ux = p2.x - p1.x
+            val uy = p2.y - p1.y
+
+            // Vector u: from p1 to p3.
+            val vx = p3.x - p1.x
+            val vy = p3.y - p1.y
+
+            //      [ ux vx]
+            // det( [ uy vy] ) = ux * vy - vx * uy
+            val det = ux * vy - vx * uy
+            return when {
+                det > 0 -> ORIENTATION_CCW
+                det < 0 -> ORIENTATION_CW
+                else -> ORIENTATION_COLLINEAR
             }
         }
     }
