@@ -1,29 +1,30 @@
 package com.paper
 
-import android.content.Intent
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.cicerone.CiceroneContract
-import com.paper.exp.cicerone.view.CiceroneFragment1
-import com.paper.protocol.IRouterProvider
+import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.INavigator
 import com.paper.router.MyRouter
+import com.paper.router.MyRouterHolder
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import ru.terrakok.cicerone.Navigator
-import ru.terrakok.cicerone.NavigatorHolder
-import ru.terrakok.cicerone.android.SupportAppNavigator
+import ru.terrakok.cicerone.commands.Back
+import ru.terrakok.cicerone.commands.Command
 
 class ExampleOfCiceroneActivity2 : AppCompatActivity() {
 
-    // Cicerone.
-    private val mRouter: MyRouter by lazy { (application as IRouterProvider).router }
-    private val mNavigatorHolder: NavigatorHolder by lazy { (application as IRouterProvider).holder }
+    // Router and router holder.
+    private val mRouterHolder: MyRouterHolder
+        get() = (application as IMyRouterHolderProvider).holder
+    private val mRouter: MyRouter
+        get() = mRouterHolder.peek()
 
     // View.
     private val mBtnExit: View by lazy { findViewById<View>(R.id.btn_exit) }
@@ -56,24 +57,27 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity() {
                 })
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        mDisposablesOnCreate.clear()
+    }
+
     override fun onResume() {
         super.onResume()
 
         // Set navigator.
-        mNavigatorHolder.setNavigator(mNavigator)
+        mRouter.setNavigator(mNavigator)
+
+        // Get the buffered Activity result.
+        mRouter.dispatchResultOnResume()
     }
 
     override fun onPause() {
         super.onPause()
 
         // Remove navigator.
-        mNavigatorHolder.removeNavigator()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        mDisposablesOnCreate.clear()
+        mRouter.unsetNavigator()
     }
 
     override fun onBackPressed() {
@@ -83,36 +87,29 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity() {
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private val mNavigator: Navigator by lazy {
-        object : SupportAppNavigator(this@ExampleOfCiceroneActivity2,
-                                     R.id.frame_container) {
-
-            override fun createActivityIntent(screenKey: String,
-                                              data: Any?): Intent? {
-                return when (screenKey) {
-                    CiceroneContract.SCREEN_NEW_ACTIVITY -> {
-                        // TODO: set the data to intent.
-                        Intent(this@ExampleOfCiceroneActivity2, ExampleOfCiceroneActivity2::class.java)
-                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
-                    }
-                //                    else -> throw IllegalArgumentException("Unknown screen key.")
-                    else -> null
-                }
-            }
-
-            override fun createFragment(screenKey: String,
-                                        data: Any?): Fragment? {
-                return when (screenKey) {
-                    CiceroneContract.SCREEN_NEW_FRAGMENT -> {
-                        CiceroneFragment1.create(data as Int)
-                    }
-                //                    else -> throw IllegalArgumentException("Unknown screen key.")
-                    else -> null
-                }
-            }
-        }
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // RxCancelContract.View //////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    // INavigator /////////////////////////////////////////////////////////////
+
+    private val mNavigator: INavigator = object : INavigator {
+
+        override fun onEnter() {
+            Log.d("/routing#2", "enter ---->")
+        }
+
+        override fun onExit() {
+            Log.d("/routing#2", "exit <-----")
+        }
+
+        override fun applyCommand(command: Command,
+                                  future: INavigator.FutureResult): Boolean {
+            if (command is Back) {
+                finish()
+            }
+
+            return true
+        }
+    }
 }

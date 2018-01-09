@@ -23,27 +23,81 @@
 
 package com.paper.router;
 
+import android.os.Handler;
 import android.os.Looper;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-import ru.terrakok.cicerone.BaseRouter;
 import ru.terrakok.cicerone.Navigator;
 import ru.terrakok.cicerone.commands.Back;
-import ru.terrakok.cicerone.commands.BackTo;
+import ru.terrakok.cicerone.commands.Command;
 import ru.terrakok.cicerone.commands.Forward;
-import ru.terrakok.cicerone.commands.Replace;
-import ru.terrakok.cicerone.commands.SystemMessage;
 import ru.terrakok.cicerone.result.ResultListener;
 
-public class MyRouter extends BaseRouter {
+public class MyRouter {
 
+    // Command buffer.
+    private final Queue<Command> mCommandBuffer = new ArrayBlockingQueue<>(1 << 6);
+
+    // FutureResult pool.
     private Map<Integer, ListenerAndResult> mResultsBuffer = new HashMap<>();
 
-    public MyRouter() {
-        super();
+    // Navigator holder.
+    private INavigator mNavigator = null;
+
+    // The reference to parent router.
+    private MyRouter mParent = null;
+    private MyRouter mChild = null;
+
+    // The handler of main looper.
+    private final Handler mUiHandler;
+
+    public MyRouter(Handler uiHandler) {
+        if (uiHandler.getLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
+
+        mUiHandler = uiHandler;
+    }
+
+    /**
+     * Set an active Navigator for the Cicerone and start receive commands.
+     *
+     * @param navigator new active Navigator
+     */
+    public final void setNavigator(INavigator navigator) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
+
+        if (mNavigator != null) {
+            mNavigator.onExit();
+        }
+        mNavigator = navigator;
+        mNavigator.onEnter();
+
+        processPendingCommand();
+    }
+
+    /**
+     * Remove the current Navigator and stop receive commands.
+     */
+    public final void unsetNavigator() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
+
+        if (mNavigator != null) {
+            mNavigator.onExit();
+            mNavigator = null;
+        }
     }
 
     /**
@@ -52,9 +106,9 @@ public class MyRouter extends BaseRouter {
      * You must call a <b>removeResultListener()</b> to avoid a memory leak.
      *
      * @param requestCode key for filter results
-     * @param listener   resultHolder listenerHolder
+     * @param listener    resultHolder listenerHolder
      */
-    public void addResultListener(int requestCode, ResultListener listener) {
+    public final void addResultListener(int requestCode, ru.terrakok.cicerone.result.ResultListener listener) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
@@ -76,7 +130,7 @@ public class MyRouter extends BaseRouter {
      *
      * @param requestCode key for filter results
      */
-    public void removeResultListener(int requestCode) {
+    public final void removeResultListener(int requestCode) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
@@ -85,6 +139,14 @@ public class MyRouter extends BaseRouter {
         if (mResultsBuffer.containsKey(requestCode)) {
             mResultsBuffer.remove(requestCode);
         }
+    }
+
+    public final void setChild(MyRouter child) {
+        mChild = child;
+    }
+
+    public final void setParent(MyRouter parent) {
+        mParent = parent;
     }
 
     /**
@@ -99,7 +161,7 @@ public class MyRouter extends BaseRouter {
         for (Integer requestCode : mResultsBuffer.keySet()) {
             final ListenerAndResult buffer = mResultsBuffer.get(requestCode);
             final Object result = buffer.resultHolder.get();
-            final ResultListener listener = buffer.listenerHolder.get();
+            final ru.terrakok.cicerone.result.ResultListener listener = buffer.listenerHolder.get();
             if (result != null && listener != null) {
                 listener.onResult(result);
                 // Clear the cache.
@@ -124,94 +186,7 @@ public class MyRouter extends BaseRouter {
      * @param data      initialisation parameters for the new screen
      */
     public void navigateTo(String screenKey, Object data) {
-        executeCommand(new Forward(screenKey, data));
-    }
-
-    /**
-     * Clear the current screens chain and start new one
-     * by opening a new screen right after the root.
-     *
-     * @param screenKey screen key
-     */
-    public void newScreenChain(String screenKey) {
-        newScreenChain(screenKey, null);
-    }
-
-    /**
-     * Clear the current screens chain and start new one
-     * by opening a new screen right after the root.
-     *
-     * @param screenKey screen key
-     * @param data      initialisation parameters for the new screen
-     */
-    public void newScreenChain(String screenKey, Object data) {
-        executeCommand(new BackTo(null));
-        executeCommand(new Forward(screenKey, data));
-    }
-
-    /**
-     * Clear all screens and open new one as root.
-     *
-     * @param screenKey screen key
-     */
-    public void newRootScreen(String screenKey) {
-        newRootScreen(screenKey, null);
-    }
-
-    /**
-     * Clear all screens and open new one as root.
-     *
-     * @param screenKey screen key
-     * @param data      initialisation parameters for the root
-     */
-    public void newRootScreen(String screenKey, Object data) {
-        executeCommand(new BackTo(null));
-        executeCommand(new Replace(screenKey, data));
-    }
-
-    /**
-     * Replace current screen.
-     * By replacing the screen, you alters the backstack,
-     * so by going back you will return to the previous screen
-     * and not to the replaced one.
-     *
-     * @param screenKey screen key
-     */
-    public void replaceScreen(String screenKey) {
-        replaceScreen(screenKey, null);
-    }
-
-    /**
-     * Replace current screen.
-     * By replacing the screen, you alters the backstack,
-     * so by going back you will return to the previous screen
-     * and not to the replaced one.
-     *
-     * @param screenKey screen key
-     * @param data      initialisation parameters for the new screen
-     */
-    public void replaceScreen(String screenKey, Object data) {
-        executeCommand(new Replace(screenKey, data));
-    }
-
-    /**
-     * Return back to the needed screen from the chain.
-     * Behavior in the case when no needed screens found depends on
-     * the processing of the {@link BackTo} command in a {@link Navigator} implementation.
-     *
-     * @param screenKey screen key
-     */
-    public void backTo(String screenKey) {
-        executeCommand(new BackTo(screenKey));
-    }
-
-    /**
-     * Remove all screens from the chain and exit.
-     * It's mostly used to finish the application or close a supplementary navigation chain.
-     */
-    public void finishChain() {
-        executeCommand(new BackTo(null));
-        executeCommand(new Back());
+        addPendingCommand(new Forward(screenKey, data));
     }
 
     /**
@@ -220,54 +195,83 @@ public class MyRouter extends BaseRouter {
      * the processing of the {@link Back} command in a {@link Navigator} implementation.
      */
     public void exit() {
-        executeCommand(new Back());
+        addPendingCommand(new Back());
     }
 
     /**
      * Return to the previous screen in the chain and send resultHolder data.
      *
      * @param requestCode resultHolder data key
-     * @param result     resultHolder data
+     * @param result      resultHolder data
      */
     public void exitWithResult(int requestCode, Object result) {
         exit();
         sendDelayedResult(requestCode, result);
     }
 
-    /**
-     * Return to the previous screen in the chain and show system message.
-     *
-     * @param message message to show
-     */
-    public void exitWithMessage(String message) {
-        executeCommand(new Back());
-        executeCommand(new SystemMessage(message));
-    }
-
-    /**
-     * Show system message.
-     *
-     * @param message message to show
-     */
-    public void showSystemMessage(String message) {
-        executeCommand(new SystemMessage(message));
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    private void addPendingCommand(Command command) {
+        mCommandBuffer.offer(command);
+        processPendingCommand();
+    }
+
+    private void processPendingCommand() {
+        // Drop pending runnable.
+        mUiHandler.removeCallbacks(mProcessCommandRunnable);
+        // Send new runnable.
+        mUiHandler.post(mProcessCommandRunnable);
+    }
+
+    private Runnable mProcessCommandRunnable = new Runnable() {
+        @Override
+        public void run() {
+            boolean keepGoing = true;
+            while (!mCommandBuffer.isEmpty() &&
+                   mNavigator != null &&
+                   keepGoing) {
+                // If it returns true, process next command in the buffer;
+                // If it returns false, wait until finish() is called and then process
+                // next command in the buffer.
+                keepGoing = mNavigator.applyCommand(mCommandBuffer.peek(),
+                                                    mFutureResult);
+                if (keepGoing) {
+                    mCommandBuffer.poll();
+                }
+            }
+        }
+    };
+
+    private INavigator.FutureResult mFutureResult = new INavigator.FutureResult() {
+        @Override
+        public void finish(boolean isHandled) {
+            // Discard command if the navigator is done with the it.
+            final Command command = mCommandBuffer.poll();
+
+            // If the navigator cannot consume the command, bypass to parent
+            // router.
+            if (!isHandled && mParent != null) {
+                mParent.addPendingCommand(command);
+            }
+
+            // Keep processing the pending commands.
+            processPendingCommand();
+        }
+    };
 
     /**
      * Send a delayed resultHolder until the {@link #dispatchResultOnResume()} is
      * called.
      *
      * @param requestCode resultHolder data key
-     * @param result     resultHolder data
+     * @param result      resultHolder data
      */
-    private void  sendDelayedResult(int requestCode, Object result) {
+    private void sendDelayedResult(int requestCode, Object result) {
         if (mResultsBuffer.containsKey(requestCode)) {
             mResultsBuffer.get(requestCode)
-                          .resultHolder
-                          .set(result);
+                .resultHolder
+                .set(result);
         } else {
             mResultsBuffer.put(requestCode, new ListenerAndResult(result));
         }

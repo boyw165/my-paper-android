@@ -21,8 +21,8 @@
 package com.paper.exp.rxCancel
 
 import com.paper.model.ProgressState
-import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
+import com.paper.router.MyRouter
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
@@ -31,9 +31,9 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import java.util.concurrent.TimeUnit
 
-class RxCancelPresenter(navigator: INavigator,
-                        workerSchedulers: Scheduler,
-                        uiScheduler: Scheduler)
+class RxCancelPresenter(private val mRouter: MyRouter,
+                        private val mWorkerSchedulers: Scheduler,
+                        private val mUiSchedulers: Scheduler)
     : IPresenter<RxCancelContract.View> {
 
     // Intents.
@@ -42,15 +42,8 @@ class RxCancelPresenter(navigator: INavigator,
         val INTENT_OF_DO_SOMETHING = 0
     }
 
-    // Navigator.
-    private val mNavigator = navigator
-
     // View
     private lateinit var mView: RxCancelContract.View
-
-    // Schedulers.
-    private val mWorkerSchedulers = workerSchedulers
-    private val mUiSchedulers = uiScheduler
 
     // Progress.
     private val mOnUpdateProgress: Subject<ProgressState> = PublishSubject.create()
@@ -109,7 +102,7 @@ class RxCancelPresenter(navigator: INavigator,
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .observeOn(mUiSchedulers)
                 .subscribe { _ ->
-                    mNavigator.gotoBack()
+                    mRouter.exit()
                 })
 
         // Progress.
