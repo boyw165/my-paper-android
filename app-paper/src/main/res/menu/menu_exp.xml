@@ -4,4 +4,6 @@
           android:title="Rx Cancel Example" />
     <item android:id="@+id/ciceron_ex"
           android:title="Ciceron Example" />
+    <item android:id="@+id/convex_hull_ex"
+          android:title="Convex Hull Example" />
 </menu>
