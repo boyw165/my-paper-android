@@ -12,7 +12,7 @@ import android.widget.ImageView
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
 import com.paper.editor.PaperCanvasContract
-import com.paper.editor.TwoDTransformUtils
+import com.paper.util.TransformUtils
 import com.paper.shared.model.TransformModel
 
 class BaseScrapView : FrameLayout,
@@ -25,7 +25,7 @@ class BaseScrapView : FrameLayout,
     }
 
     // Gesture.
-    private val mTransformHelper: TwoDTransformUtils = TwoDTransformUtils()
+    private val mTransformHelper: TransformUtils = TransformUtils()
     private var mGestureDetector: GestureDetector? = null
 
     constructor(context: Context?) : super(context)

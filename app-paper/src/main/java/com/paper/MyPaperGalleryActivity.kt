@@ -140,6 +140,11 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                                 this@MyPaperGalleryActivity,
                                 ExampleOfCiceroneActivity1::class.java))
                         }
+                        R.id.convex_hull_ex -> {
+                            startActivity(Intent(
+                                this@MyPaperGalleryActivity,
+                                ExampleOfConvexHullActivity::class.java))
+                        }
                     }
                 })
 

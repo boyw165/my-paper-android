@@ -8,6 +8,7 @@ import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.protocol.IContextProvider
 import com.paper.protocol.IPresenter
 import com.paper.shared.model.TransformModel
+import com.paper.util.TransformUtils
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 
@@ -38,7 +39,7 @@ class PaperController(contextProvider: IContextProvider,
                         mConfig.getMinFlingVec(),
                         mConfig.getMaxFlingVec())
     }
-    private val mTransformHelper: TwoDTransformUtils = TwoDTransformUtils()
+    private val mTransformHelper: TransformUtils = TransformUtils()
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -118,11 +119,11 @@ class PaperController(contextProvider: IContextProvider,
         holdStartTransform()
 
 //        Log.d("xyz", "drag start: tx=%.3f, ty=%.3f, scaleX=%.3f, scaleY=%.3f, rotation in degrees=%.3f".format(
-//            TwoDTransformUtils.getTranslationX(mStartMatrixToParent),
-//            TwoDTransformUtils.getTranslationY(mStartMatrixToParent),
-//            TwoDTransformUtils.getScaleX(mStartMatrixToParent),
-//            TwoDTransformUtils.getScaleY(mStartMatrixToParent),
-//            TwoDTransformUtils.getRotationInDegrees(mStartMatrixToParent)))
+//            TransformUtils.getTranslationX(mStartMatrixToParent),
+//            TransformUtils.getTranslationY(mStartMatrixToParent),
+//            TransformUtils.getScaleX(mStartMatrixToParent),
+//            TransformUtils.getScaleY(mStartMatrixToParent),
+//            TransformUtils.getRotationInDegrees(mStartMatrixToParent)))
 
         // TODO: Create the temporary model for view to observe.
     }
@@ -184,11 +185,11 @@ class PaperController(contextProvider: IContextProvider,
         holdStartTransform()
 
 //        Log.d("xyz", "pinch start: tx=%.3f, ty=%.3f, scaleX=%.3f, scaleY=%.3f, rotation in degrees=%.3f".format(
-//            TwoDTransformUtils.getTranslationX(mStartMatrixToParent),
-//            TwoDTransformUtils.getTranslationY(mStartMatrixToParent),
-//            TwoDTransformUtils.getScaleX(mStartMatrixToParent),
-//            TwoDTransformUtils.getScaleY(mStartMatrixToParent),
-//            TwoDTransformUtils.getRotationInDegrees(mStartMatrixToParent)))
+//            TransformUtils.getTranslationX(mStartMatrixToParent),
+//            TransformUtils.getTranslationY(mStartMatrixToParent),
+//            TransformUtils.getScaleX(mStartMatrixToParent),
+//            TransformUtils.getScaleY(mStartMatrixToParent),
+//            TransformUtils.getRotationInDegrees(mStartMatrixToParent)))
     }
 
     override fun onPinch(event: MyMotionEvent,
@@ -205,15 +206,15 @@ class PaperController(contextProvider: IContextProvider,
         })
 
         // Calculate the transformation.
-        val transform = PointerUtils2.getTransformFromPointers(
+        val transform = TransformUtils.getTransformFromPointers(
             startPointersInParent, stopPointersInParent)
 
-        val dx = transform[PointerUtils2.DELTA_X]
-        val dy = transform[PointerUtils2.DELTA_Y]
-        val dScale = transform[PointerUtils2.DELTA_SCALE_X]
-        val dRadians = transform[PointerUtils2.DELTA_RADIANS]
-        val pivotX = transform[PointerUtils2.PIVOT_X]
-        val pivotY = transform[PointerUtils2.PIVOT_Y]
+        val dx = transform[TransformUtils.DELTA_X]
+        val dy = transform[TransformUtils.DELTA_Y]
+        val dScale = transform[TransformUtils.DELTA_SCALE_X]
+        val dRadians = transform[TransformUtils.DELTA_RADIANS]
+        val pivotX = transform[TransformUtils.PIVOT_X]
+        val pivotY = transform[TransformUtils.PIVOT_Y]
 
         // Update the RAW transform (without any modification).
         mStopMatrixToParent.postScale(dScale, dScale, pivotX, pivotY)
