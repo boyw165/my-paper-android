@@ -1,4 +1,4 @@
-package com.paper.exp.cicerone.view
+package com.paper.exp.navigation.view
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -9,10 +9,9 @@ import android.widget.Button
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
+import com.paper.router.IMyRouterProvider
 import com.paper.router.NavigationContract
-import com.paper.router.IMyRouterHolderProvider
-import com.paper.router.MyRouter
-import com.paper.router.MyRouterHolder
+import com.paper.router.Router
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
@@ -23,10 +22,8 @@ class CiceroneFragment1 : Fragment() {
     private lateinit var mBtnBack: Button
 
     // Router and router holder.
-    private val mRouterHolder: MyRouterHolder
-        get() = (activity!!.application as IMyRouterHolderProvider).holder
-    private val mRouter: MyRouter
-        get() = mRouterHolder.peek()
+    private val mRouter: Router
+        get() = (activity!!.application as IMyRouterProvider).router
 
     // Disposables.
     private val mDisposablesOnCreateView = CompositeDisposable()
@@ -74,24 +71,4 @@ class CiceroneFragment1 : Fragment() {
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
-    //
-    //    // Navigator.
-    //    var mInnerNavigator: Navigator? = null
-    //
-    //    private val mNavigator: Navigator = object :
-    //        SupportFragmentNavigator(activity.supportFragmentManager,
-    //                                 ) {
-    //
-    //        override fun createFragment(screenKey: String?, data: Any?): Fragment {
-    //            TODO("not supported")
-    //        }
-    //
-    //        override fun exit() {
-    //            TODO("not supported")
-    //        }
-    //
-    //        override fun showSystemMessage(message: String?) {
-    //            TODO("not supported")
-    //        }
-    //    }
 }

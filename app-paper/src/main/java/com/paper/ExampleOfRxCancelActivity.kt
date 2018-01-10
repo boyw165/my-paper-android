@@ -21,8 +21,6 @@
 package com.paper
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -34,10 +32,9 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.rxCancel.RxCancelContract
 import com.paper.exp.rxCancel.RxCancelPresenter
 import com.paper.observables.BooleanDialogSingle
-import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.IMyRouterProvider
 import com.paper.router.INavigator
-import com.paper.router.MyRouter
-import com.paper.router.MyRouterHolder
+import com.paper.router.Router
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -63,11 +60,8 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
     private val mLog: ArrayList<String> = arrayListOf()
 
     // Router and router holder.
-    private val mRouter: MyRouter by lazy {
-        MyRouter(Handler(Looper.getMainLooper()))
-    }
-    private val mRouterHolder: MyRouterHolder
-        get() = (application as IMyRouterHolderProvider).holder
+    private val mRouter: Router
+        get() = (application as IMyRouterProvider).router
 
     // Presenter.
     private val mPresenter: RxCancelPresenter by lazy {
@@ -84,9 +78,6 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_rx_cancel)
 
-        // Link router to the router holder.
-        mRouterHolder.pushAndBindParent(mRouter)
-
         // Presenter.
         mPresenter.bindViewOnCreate(this@ExampleOfRxCancelActivity)
     }
@@ -96,23 +87,20 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
 
         // Presenter.
         mPresenter.unBindViewOnDestroy()
-
-        // Unlink router to the router holder.
-        mRouterHolder.popAndUnbindParent()
     }
 
     override fun onResume() {
         super.onResume()
 
         // Navigator.
-        mRouter.setNavigator(mNavigator)
+        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
     }
 
     override fun onPause() {
         super.onPause()
 
         // Navigator.
-        mRouter.unsetNavigator()
+        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
     }
 
     override fun onBackPressed() {
@@ -206,15 +194,13 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
         }
 
         override fun applyCommandAndWait(command: Command,
-                                         future: INavigator.FutureResult):Boolean {
+                                         future: INavigator.FutureResult) {
             if (command is Back) {
                 finish()
             }
 
             // Indicate the router this command is finished.
             future.finish()
-
-            return true
         }
     }
 }

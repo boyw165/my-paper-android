@@ -22,7 +22,7 @@ package com.paper.exp.rxCancel
 
 import com.paper.model.ProgressState
 import com.paper.protocol.IPresenter
-import com.paper.router.MyRouter
+import com.paper.router.Router
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
@@ -31,7 +31,7 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import java.util.concurrent.TimeUnit
 
-class RxCancelPresenter(private val mRouter: MyRouter,
+class RxCancelPresenter(private val mRouter: Router,
                         private val mWorkerSchedulers: Scheduler,
                         private val mUiSchedulers: Scheduler)
     : IPresenter<RxCancelContract.View> {

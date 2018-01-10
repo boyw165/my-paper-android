@@ -22,17 +22,17 @@
 
 package com.paper.observables
 
-import com.paper.router.MyRouter
+import com.paper.router.Router
 import io.reactivex.Single
 import io.reactivex.SingleObserver
 import io.reactivex.android.MainThreadDisposable
 import ru.terrakok.cicerone.result.ResultListener
 
 /**
- * An observable encapsulate [MyRouter] and emit a boolean to downstream.
+ * An observable encapsulate [Router] and emit a boolean to downstream.
  */
 class RouterResultSingle(
-    private val mSource: MyRouter,
+    private val mSource: Router,
     private val mRequestCode: Int)
     : Single<Any>() {
 
@@ -49,7 +49,7 @@ class RouterResultSingle(
 
     private class Disposable internal constructor(
         private val observer: SingleObserver<in Any>,
-        private val actual: MyRouter,
+        private val actual: Router,
         private val requestCode: Int)
         : MainThreadDisposable(),
           ResultListener {

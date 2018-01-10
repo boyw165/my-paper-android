@@ -50,6 +50,7 @@
         <activity android:name=".ExampleOfFlow1Page2Activity" />
         <activity android:name=".ExampleOfFlow1Page3Activity"/>
         <activity android:name=".ExampleOfFlow2Page1Activity"/>
+        <activity android:name=".ExampleOfFlow2Page2Activity"/>
 
         <!-- ContentProvider ///////////////////////////////////////////////-->
 

@@ -25,18 +25,15 @@ package com.paper
 
 import android.graphics.PointF
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.convexHull.ConvexHullContract
 import com.paper.exp.convexHull.ConvexHullPresenter
-import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.IMyRouterProvider
 import com.paper.router.INavigator
-import com.paper.router.MyRouter
-import com.paper.router.MyRouterHolder
+import com.paper.router.Router
 import com.paper.view.DrawableView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -50,11 +47,8 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
                                     ConvexHullContract.View {
 
     // Router and router holder.
-    private val mRouter: MyRouter by lazy {
-        MyRouter(Handler(Looper.getMainLooper()))
-    }
-    private val mRouterHolder: MyRouterHolder
-        get() = (application as IMyRouterHolderProvider).holder
+    private val mRouter: Router
+        get() = (application as IMyRouterProvider).router
 
     // View.
     private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_close) }
@@ -83,7 +77,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         super.onResume()
 
         // Set navigator.
-        mRouter.setNavigator(mNavigator)
+        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
 
         // Resume presenter.
         mPresenter.onResume()
@@ -96,7 +90,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         super.onPause()
 
         // Remove navigator.
-        mRouter.unsetNavigator()
+        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
 
         // Pause presenter.
         mPresenter.onPause()
@@ -164,15 +158,13 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         }
 
         override fun applyCommandAndWait(command: Command,
-                                         future: INavigator.FutureResult): Boolean {
+                                         future: INavigator.FutureResult) {
             if (command is Back) {
                 finish()
             }
 
             // Indicate the router this command is finished.
             future.finish()
-
-            return true
         }
     }
 }

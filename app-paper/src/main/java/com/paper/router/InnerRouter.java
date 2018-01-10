@@ -38,7 +38,7 @@ import ru.terrakok.cicerone.commands.Command;
 import ru.terrakok.cicerone.commands.Forward;
 import ru.terrakok.cicerone.result.ResultListener;
 
-public class MyRouter {
+class InnerRouter {
 
     // Command buffer.
     private final Queue<Command> mCommandBuffer = new ArrayBlockingQueue<>(1 << 6);
@@ -49,19 +49,24 @@ public class MyRouter {
     // Navigator holder.
     private INavigator mNavigator = null;
 
-    // The reference to parent router.
-    MyRouter parent = null;
-
     // The handler of main looper.
     private final Handler mUiHandler;
+    private final String mName;
 
-    public MyRouter(Handler uiHandler) {
+    InnerRouter(String name,
+                Handler uiHandler) {
         if (uiHandler.getLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
         }
 
+        mName = name;
         mUiHandler = uiHandler;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
     }
 
     /**
@@ -203,18 +208,35 @@ public class MyRouter {
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private void addPendingCommand(Command command) {
+    /**
+     * Send a delayed resultHolder until the {@link #dispatchResultOnResume()} is
+     * called.
+     *
+     * @param requestCode resultHolder data key
+     * @param result      resultHolder data
+     */
+    void sendDelayedResult(int requestCode, Object result) {
+        if (mResultsBuffer.containsKey(requestCode)) {
+            mResultsBuffer.get(requestCode)
+                .resultHolder
+                .set(result);
+        } else {
+            mResultsBuffer.put(requestCode, new ListenerAndResult(result));
+        }
+    }
+
+    void addPendingCommand(Command command) {
         mCommandBuffer.offer(command);
         processPendingCommand();
     }
 
-    private void bubbleUpCommand(Command command) {
-        if (mNavigator != null) {
-            addPendingCommand(command);
-        } else {
-            parent.bubbleUpCommand(command);
-        }
-    }
+//    void bubbleUpCommand(Command command) {
+//        if (mNavigator != null) {
+//            addPendingCommand(command);
+//        } else if (parent != null) {
+//            parent.bubbleUpCommand(command);
+//        }
+//    }
 
     private void processPendingCommand() {
         // Drop pending runnable.
@@ -229,20 +251,7 @@ public class MyRouter {
             if (!mCommandBuffer.isEmpty() &&
                 mNavigator != null) {
                 final Command command = mCommandBuffer.poll();
-
-                // If it returns true, process next command in the buffer;
-                // If it returns false, wait until finish() is called and then process
-                // next command in the buffer.
-                boolean recognized = mNavigator.applyCommandAndWait(command, mFutureResult);
-                if (!recognized) {
-                    // If the navigator cannot consume the command, bypass to parent
-                    // router.
-                    if (parent != null) {
-                        // TODO: Do we need to wait for the parent successfully
-                        // TODO: consumes the command?
-                        parent.bubbleUpCommand(command);
-                    }
-                }
+                mNavigator.applyCommandAndWait(command, mFutureResult);
             }
         }
     };
@@ -254,23 +263,6 @@ public class MyRouter {
             processPendingCommand();
         }
     };
-
-    /**
-     * Send a delayed resultHolder until the {@link #dispatchResultOnResume()} is
-     * called.
-     *
-     * @param requestCode resultHolder data key
-     * @param result      resultHolder data
-     */
-    private void sendDelayedResult(int requestCode, Object result) {
-        if (mResultsBuffer.containsKey(requestCode)) {
-            mResultsBuffer.get(requestCode)
-                .resultHolder
-                .set(result);
-        } else {
-            mResultsBuffer.put(requestCode, new ListenerAndResult(result));
-        }
-    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////

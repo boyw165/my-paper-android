@@ -29,6 +29,7 @@ import ru.terrakok.cicerone.commands.Command;
 
 public interface INavigator {
 
+    // TODO: Do we need to inform the current screen key?
     void onEnter();
 
     void onExit();
@@ -39,10 +40,9 @@ public interface INavigator {
      * @param command the navigation command to apply
      * @param future  Future to let you indicate the router the command is
      *                consumed.
-     * @return If this navigator cab recognize the command (screen key).
      */
-    boolean applyCommandAndWait(@NonNull Command command,
-                                @NonNull FutureResult future);
+    void applyCommandAndWait(@NonNull Command command,
+                             @NonNull FutureResult future);
 
     interface FutureResult {
 

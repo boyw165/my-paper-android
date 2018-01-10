@@ -6,10 +6,9 @@ import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.router.NavigationContract
-import com.paper.router.IMyRouterHolderProvider
+import com.paper.router.IMyRouterProvider
 import com.paper.router.INavigator
-import com.paper.router.MyRouter
-import com.paper.router.MyRouterHolder
+import com.paper.router.Router
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -21,10 +20,8 @@ import ru.terrakok.cicerone.commands.Command
 class ExampleOfFlow2Page1Activity : AppCompatActivity() {
 
     // Router and router holder.
-    private val mRouterHolder: MyRouterHolder
-        get() = (application as IMyRouterHolderProvider).holder
-    private val mRouter: MyRouter
-        get() = mRouterHolder.peek()
+    private val mRouter: Router
+        get() = (application as IMyRouterProvider).router
 
     // View.
     private val mBtnExit: View by lazy { findViewById<View>(R.id.btn_exit) }
@@ -67,7 +64,7 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
         super.onResume()
 
         // Set navigator.
-        mRouter.setNavigator(mNavigator)
+        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
 
         // Get the buffered Activity result.
         mRouter.dispatchResultOnResume()
@@ -77,7 +74,7 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
         super.onPause()
 
         // Remove navigator.
-        mRouter.unsetNavigator()
+        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
     }
 
     override fun onBackPressed() {
@@ -104,15 +101,13 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
         }
 
         override fun applyCommandAndWait(command: Command,
-                                         future: INavigator.FutureResult): Boolean {
+                                         future: INavigator.FutureResult) {
             if (command is Back) {
                 finish()
             }
 
             // Indicate the router this command is finished.
             future.finish()
-
-            return true
         }
     }
 }

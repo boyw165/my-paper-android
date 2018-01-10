@@ -22,7 +22,7 @@ package com.paper.exp.convexHull
 
 import com.paper.model.ProgressState
 import com.paper.protocol.IPresenter
-import com.paper.router.MyRouter
+import com.paper.router.Router
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -30,9 +30,9 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import java.util.concurrent.TimeUnit
 
-class ConvexHullPresenter(val mRouter: MyRouter,
-                          val mWorkerSchedulers: Scheduler,
-                          val mUiSchedulers: Scheduler)
+class ConvexHullPresenter(private val mRouter: Router,
+                          private val mWorkerSchedulers: Scheduler,
+                          private val mUiSchedulers: Scheduler)
     : IPresenter<ConvexHullContract.View> {
 
     // View

@@ -23,45 +23,7 @@
 
 package com.paper.router;
 
-import android.os.Looper;
+public interface IMyRouterProvider {
 
-import java.util.Stack;
-
-public class MyRouterHolder {
-
-    private final Stack<MyRouter> mRouters = new Stack<>();
-
-    public void pushAndBindParent(MyRouter item) {
-        throwExceptionIfNotMainThread();
-
-        // Add the linkage.
-        if (!mRouters.isEmpty()) {
-            item.parent = mRouters.peek();
-        }
-
-        mRouters.push(item);
-    }
-
-    public synchronized MyRouter popAndUnbindParent() {
-        throwExceptionIfNotMainThread();
-
-        final MyRouter delete = mRouters.pop();
-        delete.parent = null;
-
-        return delete;
-    }
-
-    public synchronized MyRouter peek() {
-        throwExceptionIfNotMainThread();
-        return mRouters.peek();
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
-
-    private void throwExceptionIfNotMainThread() {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            throw new IllegalThreadStateException("Should be in the Main thread.");
-        }
-    }
+    Router getRouter();
 }
