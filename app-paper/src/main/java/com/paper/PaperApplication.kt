@@ -47,7 +47,13 @@ class PaperApplication : MultiDexApplication(),
         mRouter.setNavigator(mNavigator)
 
         // Inject the application level router.
-        mRouterHolder.push(mRouter)
+        mRouterHolder.pushAndBindParent(mRouter)
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+
+        mRouter.unsetNavigator()
     }
 
     override fun getHolder(): MyRouterHolder? {
@@ -57,6 +63,9 @@ class PaperApplication : MultiDexApplication(),
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
+    /**
+     * Used by deep-link.
+     */
     private val mNavigator:INavigator by lazy {
         object : INavigator {
 
@@ -66,8 +75,8 @@ class PaperApplication : MultiDexApplication(),
             override fun onExit() {
             }
 
-            override fun applyCommand(command: Command,
-                                      future: INavigator.FutureResult): Boolean {
+            override fun applyCommandAndWait(command: Command,
+                                             future: INavigator.FutureResult): Boolean {
                 return true
             }
         }

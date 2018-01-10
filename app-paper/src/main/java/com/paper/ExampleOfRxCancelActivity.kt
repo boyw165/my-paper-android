@@ -85,7 +85,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
         setContentView(R.layout.activity_rx_cancel)
 
         // Link router to the router holder.
-        mRouterHolder.push(mRouter)
+        mRouterHolder.pushAndBindParent(mRouter)
 
         // Presenter.
         mPresenter.bindViewOnCreate(this@ExampleOfRxCancelActivity)
@@ -98,7 +98,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
         mPresenter.unBindViewOnDestroy()
 
         // Unlink router to the router holder.
-        mRouterHolder.pop()
+        mRouterHolder.popAndUnbindParent()
     }
 
     override fun onResume() {
@@ -205,11 +205,14 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
             Log.d("rxCancel", "exit <-----")
         }
 
-        override fun applyCommand(command: Command,
-                                  future: INavigator.FutureResult): Boolean {
+        override fun applyCommandAndWait(command: Command,
+                                         future: INavigator.FutureResult):Boolean {
             if (command is Back) {
                 finish()
             }
+
+            // Indicate the router this command is finished.
+            future.finish()
 
             return true
         }

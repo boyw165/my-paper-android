@@ -50,8 +50,7 @@ public class MyRouter {
     private INavigator mNavigator = null;
 
     // The reference to parent router.
-    private MyRouter mParent = null;
-    private MyRouter mChild = null;
+    MyRouter parent = null;
 
     // The handler of main looper.
     private final Handler mUiHandler;
@@ -141,14 +140,6 @@ public class MyRouter {
         }
     }
 
-    public final void setChild(MyRouter child) {
-        mChild = child;
-    }
-
-    public final void setParent(MyRouter parent) {
-        mParent = parent;
-    }
-
     /**
      * Call this in onResume to get the buffer resultHolder by requestCode.
      */
@@ -217,6 +208,14 @@ public class MyRouter {
         processPendingCommand();
     }
 
+    private void bubbleUpCommand(Command command) {
+        if (mNavigator != null) {
+            addPendingCommand(command);
+        } else {
+            parent.bubbleUpCommand(command);
+        }
+    }
+
     private void processPendingCommand() {
         // Drop pending runnable.
         mUiHandler.removeCallbacks(mProcessCommandRunnable);
@@ -227,17 +226,22 @@ public class MyRouter {
     private Runnable mProcessCommandRunnable = new Runnable() {
         @Override
         public void run() {
-            boolean keepGoing = true;
-            while (!mCommandBuffer.isEmpty() &&
-                   mNavigator != null &&
-                   keepGoing) {
+            if (!mCommandBuffer.isEmpty() &&
+                mNavigator != null) {
+                final Command command = mCommandBuffer.poll();
+
                 // If it returns true, process next command in the buffer;
                 // If it returns false, wait until finish() is called and then process
                 // next command in the buffer.
-                keepGoing = mNavigator.applyCommand(mCommandBuffer.peek(),
-                                                    mFutureResult);
-                if (keepGoing) {
-                    mCommandBuffer.poll();
+                boolean recognized = mNavigator.applyCommandAndWait(command, mFutureResult);
+                if (!recognized) {
+                    // If the navigator cannot consume the command, bypass to parent
+                    // router.
+                    if (parent != null) {
+                        // TODO: Do we need to wait for the parent successfully
+                        // TODO: consumes the command?
+                        parent.bubbleUpCommand(command);
+                    }
                 }
             }
         }
@@ -245,16 +249,7 @@ public class MyRouter {
 
     private INavigator.FutureResult mFutureResult = new INavigator.FutureResult() {
         @Override
-        public void finish(boolean isHandled) {
-            // Discard command if the navigator is done with the it.
-            final Command command = mCommandBuffer.poll();
-
-            // If the navigator cannot consume the command, bypass to parent
-            // router.
-            if (!isHandled && mParent != null) {
-                mParent.addPendingCommand(command);
-            }
-
+        public void finish() {
             // Keep processing the pending commands.
             processPendingCommand();
         }

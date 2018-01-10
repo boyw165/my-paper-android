@@ -103,11 +103,14 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity() {
             Log.d("/routing#2", "exit <-----")
         }
 
-        override fun applyCommand(command: Command,
-                                  future: INavigator.FutureResult): Boolean {
+        override fun applyCommandAndWait(command: Command,
+                                         future: INavigator.FutureResult): Boolean {
             if (command is Back) {
                 finish()
             }
+
+            // Indicate the router this command is finished.
+            future.finish()
 
             return true
         }

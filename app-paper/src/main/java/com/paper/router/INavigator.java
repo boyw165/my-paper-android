@@ -33,19 +33,19 @@ public interface INavigator {
 
     void onExit();
 
-//    void applyCommand(@NonNull Command command,
-//                      @NonNull FutureResult callback);
-
     /**
      * Performs transition described by the navigation command
-     *  @param command the navigation command to apply
-     * @param future
+     *
+     * @param command the navigation command to apply
+     * @param future  Future to let you indicate the router the command is
+     *                consumed.
+     * @return If this navigator cab recognize the command (screen key).
      */
-    boolean applyCommand(@NonNull Command command,
-                         @NonNull FutureResult future);
+    boolean applyCommandAndWait(@NonNull Command command,
+                                @NonNull FutureResult future);
 
     interface FutureResult {
 
-        void finish(boolean isHandled);
+        void finish();
     }
 }

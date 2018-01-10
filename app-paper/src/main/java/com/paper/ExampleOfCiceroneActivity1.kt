@@ -74,7 +74,7 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
         setContentView(R.layout.activity_cicerone1)
 
         // Link router to the router holder.
-        mRouterHolder.push(mRouter)
+        mRouterHolder.pushAndBindParent(mRouter)
 
         // Exp new fragment button.
         mDisposablesOnCreate.add(
@@ -126,7 +126,7 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
         mDisposablesOnCreate.clear()
 
         // Unlink router to the router holder.
-        mRouterHolder.pop()
+        mRouterHolder.popAndUnbindParent()
     }
 
     override fun onResume() {
@@ -169,8 +169,8 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
             Log.d("/routing#1", "exit <-----")
         }
 
-        override fun applyCommand(command: Command,
-                                  future: INavigator.FutureResult): Boolean {
+        override fun applyCommandAndWait(command: Command,
+                                         future: INavigator.FutureResult): Boolean {
             if (command is Back) {
                 finish()
             } else if (command is Forward) {
@@ -191,6 +191,9 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
                     }
                 }
             }
+
+            // Indicate the router this command is finished.
+            future.finish()
 
             return true
         }

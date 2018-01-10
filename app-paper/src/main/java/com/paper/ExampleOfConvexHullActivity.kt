@@ -44,6 +44,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
+import ru.terrakok.cicerone.commands.Back
 import ru.terrakok.cicerone.commands.Command
 
 class ExampleOfConvexHullActivity : AppCompatActivity(),
@@ -168,8 +169,15 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
             Log.d("convex hull", "exit <-----")
         }
 
-        override fun applyCommand(command: Command,
-                                  future: INavigator.FutureResult): Boolean {
+        override fun applyCommandAndWait(command: Command,
+                                         future: INavigator.FutureResult): Boolean {
+            if (command is Back) {
+                finish()
+            }
+
+            // Indicate the router this command is finished.
+            future.finish()
+
             return true
         }
     }

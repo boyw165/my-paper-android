@@ -27,39 +27,33 @@ import android.os.Looper;
 
 import java.util.Stack;
 
-public class MyRouterHolder extends Stack<MyRouter> {
+public class MyRouterHolder {
 
-    @Override
-    public MyRouter push(MyRouter item) {
+    private final Stack<MyRouter> mRouters = new Stack<>();
+
+    public void pushAndBindParent(MyRouter item) {
         throwExceptionIfNotMainThread();
 
-        // TODO: Add the linkage.
+        // Add the linkage.
+        if (!mRouters.isEmpty()) {
+            item.parent = mRouters.peek();
+        }
 
-        return super.push(item);
+        mRouters.push(item);
     }
 
-    @Override
-    public synchronized MyRouter pop() {
+    public synchronized MyRouter popAndUnbindParent() {
         throwExceptionIfNotMainThread();
-        return super.pop();
+
+        final MyRouter delete = mRouters.pop();
+        delete.parent = null;
+
+        return delete;
     }
 
-    @Override
     public synchronized MyRouter peek() {
         throwExceptionIfNotMainThread();
-        return super.peek();
-    }
-
-    @Override
-    public boolean empty() {
-        throwExceptionIfNotMainThread();
-        return super.empty();
-    }
-
-    @Override
-    public synchronized int search(Object o) {
-        throwExceptionIfNotMainThread();
-        return super.search(o);
+        return mRouters.peek();
     }
 
     ///////////////////////////////////////////////////////////////////////////
