@@ -18,23 +18,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper.exp.cicerone
+package com.paper.router
 
-import com.paper.router.MyRouter
-
-abstract class CiceroneContract private constructor() {
+abstract class NavigationContract private constructor() {
 
     companion object {
-        const val SCREEN_NEW_FRAGMENT: String = "/cicerone/new_fragment"
-        const val SCREEN_NEW_ACTIVITY: String = "/cicerone/new_activity"
+        const val SCREEN_OF_HOME: String = "/home"
+
+        const val SCREEN_OF_FLOW1_PAGE1: String = "/flow1/#1"
+        const val SCREEN_OF_FLOW1_PAGE2: String = "/flow1/#2"
+        const val SCREEN_OF_FLOW1_PAGE3: String = "/flow1/#3"
+
+        const val SCREEN_OF_FLOW2_PAGE1: String = "/flow2/#1"
+        const val SCREEN_OF_FLOW2_PAGE2: String = "/flow2/#2"
 
         const val ACTIVITY_NUMBER_FLAG: String = "activity_number_flag"
         const val FRAGMENT_NUMBER_FLAG: String = "fragment_number_flag"
 
         const val ACTIVITY_RESULT_CODE: Int = 666
-    }
-
-    interface View {
-
     }
 }

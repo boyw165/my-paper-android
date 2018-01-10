@@ -1,8 +1,6 @@
 package com.paper.exp.cicerone.view
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +9,7 @@ import android.widget.Button
 import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
-import com.paper.exp.cicerone.CiceroneContract
+import com.paper.router.NavigationContract
 import com.paper.router.IMyRouterHolderProvider
 import com.paper.router.MyRouter
 import com.paper.router.MyRouterHolder
@@ -42,7 +40,7 @@ class CiceroneFragment1 : Fragment() {
         mTvFragmentNumber = viewGroup.findViewById(R.id.tv_fragment_number)
         mBtnBack = viewGroup.findViewById(R.id.btn_back_prev_frag)
 
-        mFragmentNum = arguments!!.getInt(CiceroneContract.FRAGMENT_NUMBER_FLAG)
+        mFragmentNum = arguments!!.getInt(NavigationContract.FRAGMENT_NUMBER_FLAG)
         mTvFragmentNumber.text = "Fragment ${mFragmentNum.toString()}"
 
         mDisposablesOnCreateView.add(
@@ -68,7 +66,7 @@ class CiceroneFragment1 : Fragment() {
         fun create(fragmentNumber: Int): CiceroneFragment1 {
             val fragment = CiceroneFragment1()
             val args = Bundle()
-            args.putInt(CiceroneContract.FRAGMENT_NUMBER_FLAG, fragmentNumber)
+            args.putInt(NavigationContract.FRAGMENT_NUMBER_FLAG, fragmentNumber)
             fragment.arguments = args
             return fragment
         }

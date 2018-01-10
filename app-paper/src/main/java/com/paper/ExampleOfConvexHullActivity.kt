@@ -31,7 +31,6 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.convexHull.ConvexHullContract
 import com.paper.exp.convexHull.ConvexHullPresenter
 import com.paper.router.IMyRouterHolderProvider
@@ -74,12 +73,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_cicerone1)
-
-        if (savedState == null) {
-            // Ask router to show the fragment.
-            mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, 0)
-        }
+        setContentView(R.layout.activity_flow1_page1)
 
         // Start presenter.
         mPresenter.bindViewOnCreate(this)

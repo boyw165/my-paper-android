@@ -135,10 +135,10 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                                 this@MyPaperGalleryActivity,
                                 ExampleOfRxCancelActivity::class.java))
                         }
-                        R.id.ciceron_ex -> {
+                        R.id.navigation_ex -> {
                             startActivity(Intent(
                                 this@MyPaperGalleryActivity,
-                                ExampleOfCiceroneActivity1::class.java))
+                                ExampleOfFlow1Page1Activity::class.java))
                         }
                         R.id.convex_hull_ex -> {
                             startActivity(Intent(

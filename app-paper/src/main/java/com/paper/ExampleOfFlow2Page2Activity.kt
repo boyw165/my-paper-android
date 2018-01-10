@@ -5,7 +5,7 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.exp.cicerone.CiceroneContract
+import com.paper.router.NavigationContract
 import com.paper.router.IMyRouterHolderProvider
 import com.paper.router.INavigator
 import com.paper.router.MyRouter
@@ -18,7 +18,7 @@ import io.reactivex.subjects.Subject
 import ru.terrakok.cicerone.commands.Back
 import ru.terrakok.cicerone.commands.Command
 
-class ExampleOfCiceroneActivity2 : AppCompatActivity() {
+class ExampleOfFlow2Page2Activity : AppCompatActivity() {
 
     // Router and router holder.
     private val mRouterHolder: MyRouterHolder
@@ -39,7 +39,7 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity() {
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_cicerone2)
+        setContentView(R.layout.activity_flow2_page2)
 
         mDisposablesOnCreate.add(
             RxView.clicks(mBtnExit)
@@ -53,7 +53,7 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity() {
                 .merge(RxView.clicks(mBtnExitWithResult),
                        mOnClickSystemBack)
                 .subscribe {
-                    mRouter.exitWithResult(CiceroneContract.ACTIVITY_RESULT_CODE, "From Act 2.")
+                    mRouter.exitWithResult(NavigationContract.ACTIVITY_RESULT_CODE, "From Act 2.")
                 })
     }
 

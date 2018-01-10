@@ -45,9 +45,11 @@
 
         <!-- Experiments -->
         <activity android:name=".ExampleOfRxCancelActivity"/>
-        <activity android:name=".ExampleOfCiceroneActivity1"/>
-        <activity android:name=".ExampleOfCiceroneActivity2" />
         <activity android:name=".ExampleOfConvexHullActivity"/>
+        <activity android:name=".ExampleOfFlow1Page1Activity"/>
+        <activity android:name=".ExampleOfFlow1Page2Activity" />
+        <activity android:name=".ExampleOfFlow1Page3Activity"/>
+        <activity android:name=".ExampleOfFlow2Page1Activity"/>
 
         <!-- ContentProvider ///////////////////////////////////////////////-->
 

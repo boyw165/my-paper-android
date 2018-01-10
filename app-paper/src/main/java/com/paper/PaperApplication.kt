@@ -20,14 +20,13 @@
 
 package com.paper
 
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.support.multidex.MultiDexApplication
-import com.paper.router.IMyRouterHolderProvider
-import com.paper.router.INavigator
-import com.paper.router.MyRouter
-import com.paper.router.MyRouterHolder
+import com.paper.router.*
 import ru.terrakok.cicerone.commands.Command
+import ru.terrakok.cicerone.commands.Forward
 
 class PaperApplication : MultiDexApplication(),
                          IMyRouterHolderProvider {
@@ -66,7 +65,7 @@ class PaperApplication : MultiDexApplication(),
     /**
      * Used by deep-link.
      */
-    private val mNavigator:INavigator by lazy {
+    private val mNavigator: INavigator by lazy {
         object : INavigator {
 
             override fun onEnter() {
@@ -77,6 +76,19 @@ class PaperApplication : MultiDexApplication(),
 
             override fun applyCommandAndWait(command: Command,
                                              future: INavigator.FutureResult): Boolean {
+                if (command is Forward) {
+                    when (command.screenKey) {
+                        NavigationContract.SCREEN_OF_HOME -> {
+                            startActivity(Intent(this@PaperApplication,
+                                                 MyPaperGalleryActivity::class.java)
+                                              .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                              .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                        }
+                    }
+                }
+
+                // This navigator belongs to the top most router and it always
+                // recognizes the given command.
                 return true
             }
         }

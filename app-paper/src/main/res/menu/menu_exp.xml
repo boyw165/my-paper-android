@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/rx_cancel_ex"
           android:title="Rx Cancel Example" />
-    <item android:id="@+id/ciceron_ex"
-          android:title="Ciceron Example" />
+    <item android:id="@+id/navigation_ex"
+          android:title="Navigation Example" />
     <item android:id="@+id/convex_hull_ex"
           android:title="Convex Hull Example" />
 </menu>

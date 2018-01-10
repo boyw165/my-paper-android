@@ -30,15 +30,13 @@ import android.os.Looper
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
-import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.exp.cicerone.CiceroneContract
-import com.paper.exp.cicerone.view.CiceroneFragment1
-import com.paper.observables.RouterResultSingle
+import com.paper.router.NavigationContract
 import com.paper.router.IMyRouterHolderProvider
 import com.paper.router.INavigator
 import com.paper.router.MyRouter
 import com.paper.router.MyRouterHolder
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -46,9 +44,8 @@ import io.reactivex.subjects.Subject
 import ru.terrakok.cicerone.commands.Back
 import ru.terrakok.cicerone.commands.Command
 import ru.terrakok.cicerone.commands.Forward
-import java.util.concurrent.TimeUnit
 
-class ExampleOfCiceroneActivity1 : AppCompatActivity() {
+class ExampleOfFlow1Page1Activity : AppCompatActivity() {
 
     // Router and router holder.
     private val mRouter: MyRouter by lazy {
@@ -58,9 +55,8 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
         get() = (application as IMyRouterHolderProvider).holder
 
     // View.
-    private val mBtnNewFrag: View by lazy { findViewById<View>(R.id.btn_back_prev_frag) }
-    private val mBtnNewActivity: View by lazy { findViewById<View>(R.id.btn_new_activity) }
-    private val mTxtResult: TextView by lazy { findViewById<TextView>(R.id.txt_result) }
+    private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_back) }
+    private val mBtnNext: View by lazy { findViewById<View>(R.id.btn_next) }
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -71,53 +67,28 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_cicerone1)
+        setContentView(R.layout.activity_flow1_page1)
 
         // Link router to the router holder.
         mRouterHolder.pushAndBindParent(mRouter)
 
-        // Exp new fragment button.
+        // Next.
         mDisposablesOnCreate.add(
-            RxView.clicks(mBtnNewFrag)
+            RxView.clicks(mBtnNext)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
-                    val currentFragNum =
-                        if (supportFragmentManager.fragments.isEmpty()) -1
-                        else (supportFragmentManager.fragments[0] as CiceroneFragment1).getCurrentNumber()
-                    mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, currentFragNum + 1)
+                .subscribe {
+                    mRouter.navigateTo(NavigationContract.SCREEN_OF_FLOW1_PAGE2)
                 })
 
-        // Exp new activity button.
+        // Back.
         mDisposablesOnCreate.add(
-            RxView.clicks(mBtnNewActivity)
-                .debounce(150, TimeUnit.MILLISECONDS)
+            Observable
+                .merge(mOnClickSystemBack,
+                       RxView.clicks(mBtnBack))
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
-                    mTxtResult.text = ""
-                    mRouter.navigateTo(CiceroneContract.SCREEN_NEW_ACTIVITY, 1)
+                .subscribe {
+                    mRouter.exit()
                 })
-
-        // Router result.
-        mDisposablesOnCreate.add(
-            RouterResultSingle(mRouter, CiceroneContract.ACTIVITY_RESULT_CODE)
-                .subscribe { result ->
-                    if (result !is String) return@subscribe
-
-                    val resultStr: String? = result.toString()
-                    if (resultStr != null) {
-                        mTxtResult.text = "Get FutureResult: $resultStr"
-                    }
-                })
-
-        mDisposablesOnCreate.add(
-            mOnClickSystemBack.subscribe {
-                mRouter.exit()
-            })
-
-        if (savedState == null) {
-            // Ask router to show the fragment.
-            mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, 0)
-        }
     }
 
     override fun onDestroy() {
@@ -162,11 +133,12 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
     private val mNavigator: INavigator = object : INavigator {
 
         override fun onEnter() {
-            Log.d("/routing#1", "enter ---->")
+//            Log.d("navigation", "enter ----> $screenKey")
+            Log.d("navigation", "enter ----> flow 1 - page 1")
         }
 
         override fun onExit() {
-            Log.d("/routing#1", "exit <-----")
+            Log.d("navigation", "exit <-----")
         }
 
         override fun applyCommandAndWait(command: Command,
@@ -175,19 +147,10 @@ class ExampleOfCiceroneActivity1 : AppCompatActivity() {
                 finish()
             } else if (command is Forward) {
                 when (command.screenKey) {
-                    CiceroneContract.SCREEN_NEW_ACTIVITY -> {
-                        val intent = Intent(this@ExampleOfCiceroneActivity1,
-                                            ExampleOfCiceroneActivity2::class.java)
-                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, command.transitionData as Int)
+                    NavigationContract.SCREEN_OF_FLOW1_PAGE2 -> {
+                        val intent = Intent(this@ExampleOfFlow1Page1Activity,
+                                            ExampleOfFlow1Page2Activity::class.java)
                         startActivity(intent)
-                    }
-                    CiceroneContract.SCREEN_NEW_FRAGMENT -> {
-                        val fragment = CiceroneFragment1.create(command.transitionData as Int)
-                        supportFragmentManager
-                            .beginTransaction()
-                            .replace(R.id.frame_container, fragment)
-                            .addToBackStack(null)
-                            .commit()
                     }
                 }
             }
