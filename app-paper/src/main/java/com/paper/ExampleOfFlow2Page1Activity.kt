@@ -2,20 +2,16 @@ package com.paper
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.router.NavigationContract
 import com.paper.router.IMyRouterProvider
-import com.paper.router.INavigator
+import com.paper.router.NavigationContract
 import com.paper.router.Router
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import ru.terrakok.cicerone.commands.Back
-import ru.terrakok.cicerone.commands.Command
 
 class ExampleOfFlow2Page1Activity : AppCompatActivity() {
 
@@ -24,8 +20,8 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
         get() = (application as IMyRouterProvider).router
 
     // View.
-    private val mBtnExit: View by lazy { findViewById<View>(R.id.btn_exit) }
-    private val mBtnExitWithResult: View by lazy { findViewById<View>(R.id.btn_exit_with_result) }
+    private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_back) }
+    private val mBtnNext: View by lazy { findViewById<View>(R.id.btn_next) }
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -38,19 +34,22 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
 
         setContentView(R.layout.activity_flow2_page1)
 
+        // Next.
         mDisposablesOnCreate.add(
-            RxView.clicks(mBtnExit)
+            RxView.clicks(mBtnNext)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
-                    mRouter.exit()
+                .subscribe {
+                    mRouter.navigateTo(NavigationContract.SCREEN_OF_FLOW2_PAGE2)
                 })
 
+        // Back.
         mDisposablesOnCreate.add(
             Observable
-                .merge(RxView.clicks(mBtnExitWithResult),
-                       mOnClickSystemBack)
+                .merge(mOnClickSystemBack,
+                       RxView.clicks(mBtnBack))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
-                    mRouter.exitWithResult(NavigationContract.ACTIVITY_RESULT_CODE, "From Act 2.")
+                    mRouter.exit()
                 })
     }
 
@@ -63,8 +62,9 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // Set navigator.
-        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
+        // Set context to navigator.
+        mRouter.bindContextToNavigator(Router.LEVEL_ACTIVITY,
+                                       this@ExampleOfFlow2Page1Activity)
 
         // Get the buffered Activity result.
         mRouter.dispatchResultOnResume()
@@ -73,8 +73,8 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
 
-        // Remove navigator.
-        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
+        // Remove navigator's context.
+        mRouter.unBindContextFromNavigator(Router.LEVEL_ACTIVITY)
     }
 
     override fun onBackPressed() {
@@ -87,27 +87,4 @@ class ExampleOfFlow2Page1Activity : AppCompatActivity() {
     ///////////////////////////////////////////////////////////////////////////
     // RxCancelContract.View //////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    // INavigator /////////////////////////////////////////////////////////////
-
-    private val mNavigator: INavigator = object : INavigator {
-
-        override fun onEnter() {
-            Log.d("/routing#2", "enter ---->")
-        }
-
-        override fun onExit() {
-            Log.d("/routing#2", "exit <-----")
-        }
-
-        override fun applyCommandAndWait(command: Command,
-                                         future: INavigator.FutureResult) {
-            if (command is Back) {
-                finish()
-            }
-
-            // Indicate the router this command is finished.
-            future.finish()
-        }
-    }
 }

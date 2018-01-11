@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Flow 1 - Page 2"
+        android:text="Common"
         android:textSize="32sp"/>
 
     <Button
@@ -28,12 +28,4 @@
         android:layout_marginTop="8dp"
         android:minWidth="200dp"
         android:text="Next"/>
-
-    <Button
-        android:id="@+id/btn_goto_flow2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:minWidth="200dp"
-        android:text="Goto Flow 2"/>
 </LinearLayout>

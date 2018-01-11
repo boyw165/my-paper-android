@@ -4,17 +4,14 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.navigation.Flow1Navigator
 import com.paper.router.IMyRouterProvider
-import com.paper.router.INavigator
-import com.paper.router.Router
 import com.paper.router.NavigationContract
+import com.paper.router.Router
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import java.lang.ref.WeakReference
 
 class ExampleOfFlow1Page3Activity : AppCompatActivity() {
 
@@ -25,10 +22,6 @@ class ExampleOfFlow1Page3Activity : AppCompatActivity() {
     // Router and router holder.
     private val mRouter: Router
         get() = (application as IMyRouterProvider).router
-    // Navigator.
-    private val mNavigator: INavigator by lazy {
-        Flow1Navigator(WeakReference(this@ExampleOfFlow1Page3Activity))
-    }
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -67,8 +60,9 @@ class ExampleOfFlow1Page3Activity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // Set navigator.
-        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
+        // Set context to navigator.
+        mRouter.bindContextToNavigator(Router.LEVEL_ACTIVITY,
+                                       this@ExampleOfFlow1Page3Activity)
 
         // Get the buffered Activity result.
         mRouter.dispatchResultOnResume()
@@ -77,8 +71,8 @@ class ExampleOfFlow1Page3Activity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
 
-        // Remove navigator.
-        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
+        // Remove navigator's context.
+        mRouter.unBindContextFromNavigator(Router.LEVEL_ACTIVITY)
     }
 
     override fun onBackPressed() {

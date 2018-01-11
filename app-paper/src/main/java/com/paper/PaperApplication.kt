@@ -23,11 +23,11 @@ package com.paper
 import android.os.Handler
 import android.os.Looper
 import android.support.multidex.MultiDexApplication
+import com.paper.navigation.ActivityNavigator
 import com.paper.navigation.ApplicationNavigator
 import com.paper.router.IMyRouterProvider
 import com.paper.router.INavigator
 import com.paper.router.Router
-import java.lang.ref.WeakReference
 
 class PaperApplication : MultiDexApplication(),
                          IMyRouterProvider {
@@ -37,20 +37,25 @@ class PaperApplication : MultiDexApplication(),
         Router(Handler(Looper.getMainLooper()))
     }
     // Navigator.
-    private val mNavigator: INavigator by lazy {
-        ApplicationNavigator(WeakReference(this@PaperApplication))
-    }
+    private val mAppNavigator: INavigator = ApplicationNavigator()
+    private val mActNavigator: INavigator = ActivityNavigator()
 
     override fun onCreate() {
         super.onCreate()
 
-        mRouter.setNavigator(Router.LEVEL_APPLICATION, mNavigator)
+        mRouter.setNavigator(Router.LEVEL_APPLICATION, mAppNavigator)
+        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mActNavigator)
+
+        mRouter.bindContextToNavigator(Router.LEVEL_APPLICATION, this@PaperApplication)
     }
 
     override fun onTerminate() {
         super.onTerminate()
 
         mRouter.unsetNavigator(Router.LEVEL_APPLICATION)
+        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
+
+        mRouter.unBindContextFromNavigator(Router.LEVEL_APPLICATION)
     }
 
     override fun getRouter(): Router {

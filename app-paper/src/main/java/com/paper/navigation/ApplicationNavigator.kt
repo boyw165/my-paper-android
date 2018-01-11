@@ -24,6 +24,7 @@
 package com.paper.navigation
 
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import com.paper.MyPaperGalleryActivity
 import com.paper.router.INavigator
@@ -32,9 +33,9 @@ import ru.terrakok.cicerone.commands.Command
 import ru.terrakok.cicerone.commands.Forward
 import java.lang.ref.WeakReference
 
-class ApplicationNavigator(
-    private val mApplication: WeakReference<Application>)
-    : INavigator {
+class ApplicationNavigator : INavigator {
+
+    private var mApplication: WeakReference<Application>? = null
 
     override fun onEnter() {
     }
@@ -44,7 +45,7 @@ class ApplicationNavigator(
 
     override fun applyCommandAndWait(command: Command,
                                      future: INavigator.FutureResult) {
-        val application: Application = mApplication.get() ?: return
+        val application = mApplication?.get() ?: return
 
         if (command is Forward) {
             when (command.screenKey) {
@@ -60,5 +61,13 @@ class ApplicationNavigator(
                 }
             }
         }
+    }
+
+    override fun bindContext(context: Context) {
+        mApplication = WeakReference(context as Application)
+    }
+
+    override fun unBindContext() {
+        mApplication = null
     }
 }

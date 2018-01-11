@@ -24,8 +24,10 @@
 package com.paper.navigation
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
-import com.paper.ExampleOfFlow1Page2Activity
+import com.paper.ExampleOfCommonPageActivity
+import com.paper.ExampleOfFlow1Page1Activity
 import com.paper.ExampleOfFlow1Page3Activity
 import com.paper.ExampleOfFlow2Page1Activity
 import com.paper.router.INavigator
@@ -35,9 +37,9 @@ import ru.terrakok.cicerone.commands.Command
 import ru.terrakok.cicerone.commands.Forward
 import java.lang.ref.WeakReference
 
-class Flow1Navigator(
-    private val mActivity: WeakReference<Activity>)
-    : INavigator {
+class ActivityNavigator : INavigator {
+
+    private var mActivity: WeakReference<Activity>? = null
 
     override fun onEnter() {
     }
@@ -47,14 +49,25 @@ class Flow1Navigator(
 
     override fun applyCommandAndWait(command: Command,
                                      future: INavigator.FutureResult) {
-        val activity: Activity = mActivity.get() ?: return
+        val activity = mActivity?.get() ?: return
 
         when (command) {
             is Back -> activity.finish()
             is Forward -> when (command.screenKey) {
+                NavigationContract.SCREEN_OF_RXCANCEL_PAGE1 -> {
+                    activity.startActivity(Intent(
+                        activity,
+                        ExampleOfFlow1Page1Activity::class.java))
+                }
+
+                NavigationContract.SCREEN_OF_FLOW1_PAGE1 -> {
+                    val intent = Intent(activity,
+                                        ExampleOfFlow1Page1Activity::class.java)
+                    activity.startActivity(intent)
+                }
                 NavigationContract.SCREEN_OF_FLOW1_PAGE2 -> {
                     val intent = Intent(activity,
-                                        ExampleOfFlow1Page2Activity::class.java)
+                                        ExampleOfCommonPageActivity::class.java)
                     activity.startActivity(intent)
                 }
                 NavigationContract.SCREEN_OF_FLOW1_PAGE3 -> {
@@ -62,9 +75,15 @@ class Flow1Navigator(
                                         ExampleOfFlow1Page3Activity::class.java)
                     activity.startActivity(intent)
                 }
-                NavigationContract.SCREEN_OF_FLOW1_PAGE4 -> {
+
+                NavigationContract.SCREEN_OF_FLOW2_PAGE1 -> {
                     val intent = Intent(activity,
                                         ExampleOfFlow2Page1Activity::class.java)
+                    activity.startActivity(intent)
+                }
+                NavigationContract.SCREEN_OF_FLOW2_PAGE2 -> {
+                    val intent = Intent(activity,
+                                        ExampleOfCommonPageActivity::class.java)
                     activity.startActivity(intent)
                 }
             }
@@ -72,5 +91,13 @@ class Flow1Navigator(
 
         // Indicate the router this command is finished.
         future.finish()
+    }
+
+    override fun bindContext(context: Context) {
+        mActivity = WeakReference(context as Activity)
+    }
+
+    override fun unBindContext() {
+        mActivity = null
     }
 }

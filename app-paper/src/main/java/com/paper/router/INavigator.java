@@ -23,6 +23,7 @@
 
 package com.paper.router;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 
 import ru.terrakok.cicerone.commands.Command;
@@ -43,6 +44,10 @@ public interface INavigator {
      */
     void applyCommandAndWait(@NonNull Command command,
                              @NonNull FutureResult future);
+
+    void bindContext(Context context);
+
+    void unBindContext();
 
     interface FutureResult {
 

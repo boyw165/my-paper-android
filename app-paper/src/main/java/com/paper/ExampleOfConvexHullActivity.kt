@@ -26,13 +26,11 @@ package com.paper
 import android.graphics.PointF
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.convexHull.ConvexHullContract
 import com.paper.exp.convexHull.ConvexHullPresenter
 import com.paper.router.IMyRouterProvider
-import com.paper.router.INavigator
 import com.paper.router.Router
 import com.paper.view.DrawableView
 import io.reactivex.Observable
@@ -40,8 +38,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import ru.terrakok.cicerone.commands.Back
-import ru.terrakok.cicerone.commands.Command
 
 class ExampleOfConvexHullActivity : AppCompatActivity(),
                                     ConvexHullContract.View {
@@ -76,8 +72,9 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-        // Set navigator.
-        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
+        // Set context to navigator.
+        mRouter.bindContextToNavigator(Router.LEVEL_ACTIVITY,
+                                       this@ExampleOfConvexHullActivity)
 
         // Resume presenter.
         mPresenter.onResume()
@@ -89,8 +86,8 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
     override fun onPause() {
         super.onPause()
 
-        // Remove navigator.
-        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
+        // Remove navigator's context.
+        mRouter.unBindContextFromNavigator(Router.LEVEL_ACTIVITY)
 
         // Pause presenter.
         mPresenter.onPause()
@@ -143,28 +140,4 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
-    // INavigator /////////////////////////////////////////////////////////////
-
-    private val mNavigator: INavigator = object : INavigator {
-
-        override fun onEnter() {
-            Log.d("convex hull", "enter ---->")
-        }
-
-        override fun onExit() {
-            Log.d("convex hull", "exit <-----")
-        }
-
-        override fun applyCommandAndWait(command: Command,
-                                         future: INavigator.FutureResult) {
-            if (command is Back) {
-                finish()
-            }
-
-            // Indicate the router this command is finished.
-            future.finish()
-        }
-    }
 }

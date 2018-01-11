@@ -32,6 +32,9 @@ import android.widget.Toast
 import com.cardinalblue.lib.doodle.model.UiModel
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
+import com.paper.router.IMyRouterProvider
+import com.paper.router.NavigationContract
+import com.paper.router.Router
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -56,6 +59,10 @@ class MyPaperGalleryActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
     }
+
+    // Router and router holder.
+    private val mRouter: Router
+        get() = (application as IMyRouterProvider).router
 
     // Permission.
     private val mRxPermissions: RxPermissions by lazy {
@@ -136,9 +143,7 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                                 ExampleOfRxCancelActivity::class.java))
                         }
                         R.id.navigation_ex -> {
-                            startActivity(Intent(
-                                this@MyPaperGalleryActivity,
-                                ExampleOfFlow1Page1Activity::class.java))
+                            mRouter.navigateTo(NavigationContract.SCREEN_OF_FLOW1_PAGE1)
                         }
                         R.id.convex_hull_ex -> {
                             startActivity(Intent(
@@ -202,6 +207,21 @@ class MyPaperGalleryActivity : AppCompatActivity() {
         hideProgressBar()
 
         mDisposablesOnCreate.clear()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Set context to navigator.
+        mRouter.bindContextToNavigator(Router.LEVEL_ACTIVITY,
+                                       this@MyPaperGalleryActivity)
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        // Remove navigator's context.
+        mRouter.unBindContextFromNavigator(Router.LEVEL_ACTIVITY)
     }
 
     fun showProgressBar() {

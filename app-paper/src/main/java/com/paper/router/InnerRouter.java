@@ -23,6 +23,7 @@
 
 package com.paper.router;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -38,7 +39,7 @@ import ru.terrakok.cicerone.commands.Command;
 import ru.terrakok.cicerone.commands.Forward;
 import ru.terrakok.cicerone.result.ResultListener;
 
-class InnerRouter {
+final class InnerRouter {
 
     // Command buffer.
     private final Queue<Command> mCommandBuffer = new ArrayBlockingQueue<>(1 << 6);
@@ -55,10 +56,7 @@ class InnerRouter {
 
     InnerRouter(String name,
                 Handler uiHandler) {
-        if (uiHandler.getLooper() != Looper.getMainLooper()) {
-            throw new IllegalThreadStateException(
-                "Should be called in the main thread.");
-        }
+        throwExceptionIfNotUiThread();
 
         mName = name;
         mUiHandler = uiHandler;
@@ -74,11 +72,8 @@ class InnerRouter {
      *
      * @param navigator new active Navigator
      */
-    public final void setNavigator(INavigator navigator) {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            throw new IllegalThreadStateException(
-                "Should be called in the main thread.");
-        }
+    void setNavigator(INavigator navigator) {
+        throwExceptionIfNotUiThread();
 
         if (mNavigator != null) {
             mNavigator.onExit();
@@ -92,16 +87,25 @@ class InnerRouter {
     /**
      * Remove the current Navigator and stop receive commands.
      */
-    public final void unsetNavigator() {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            throw new IllegalThreadStateException(
-                "Should be called in the main thread.");
-        }
+    void unsetNavigator() {
+        throwExceptionIfNotUiThread();
 
         if (mNavigator != null) {
             mNavigator.onExit();
             mNavigator = null;
         }
+    }
+
+    void bindContextToNavigator(final Context context) {
+        throwExceptionIfNotUiThread();
+
+        mNavigator.bindContext(context);
+    }
+
+    void unBindContextFromNavigator() {
+        throwExceptionIfNotUiThread();
+
+        mNavigator.unBindContext();
     }
 
     /**
@@ -112,7 +116,7 @@ class InnerRouter {
      * @param requestCode key for filter results
      * @param listener    resultHolder listenerHolder
      */
-    public final void addResultListener(int requestCode, ru.terrakok.cicerone.result.ResultListener listener) {
+    void addResultListener(int requestCode, ru.terrakok.cicerone.result.ResultListener listener) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
@@ -134,7 +138,7 @@ class InnerRouter {
      *
      * @param requestCode key for filter results
      */
-    public final void removeResultListener(int requestCode) {
+    void removeResultListener(int requestCode) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
@@ -148,7 +152,7 @@ class InnerRouter {
     /**
      * Call this in onResume to get the buffer resultHolder by requestCode.
      */
-    public void dispatchResultOnResume() {
+    void dispatchResultOnResume() {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
@@ -171,7 +175,7 @@ class InnerRouter {
      *
      * @param screenKey screen key
      */
-    public void navigateTo(String screenKey) {
+    void navigateTo(String screenKey) {
         navigateTo(screenKey, null);
     }
 
@@ -181,7 +185,7 @@ class InnerRouter {
      * @param screenKey screen key
      * @param data      initialisation parameters for the new screen
      */
-    public void navigateTo(String screenKey, Object data) {
+    void navigateTo(String screenKey, Object data) {
         addPendingCommand(new Forward(screenKey, data));
     }
 
@@ -190,7 +194,7 @@ class InnerRouter {
      * Behavior in the case when the current screen is the root depends on
      * the processing of the {@link Back} command in a {@link Navigator} implementation.
      */
-    public void exit() {
+    void exit() {
         addPendingCommand(new Back());
     }
 
@@ -200,13 +204,10 @@ class InnerRouter {
      * @param requestCode resultHolder data key
      * @param result      resultHolder data
      */
-    public void exitWithResult(int requestCode, Object result) {
+    void exitWithResult(int requestCode, Object result) {
         exit();
         sendDelayedResult(requestCode, result);
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
 
     /**
      * Send a delayed resultHolder until the {@link #dispatchResultOnResume()} is
@@ -230,13 +231,8 @@ class InnerRouter {
         processPendingCommand();
     }
 
-//    void bubbleUpCommand(Command command) {
-//        if (mNavigator != null) {
-//            addPendingCommand(command);
-//        } else if (parent != null) {
-//            parent.bubbleUpCommand(command);
-//        }
-//    }
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
 
     private void processPendingCommand() {
         // Drop pending runnable.
@@ -263,6 +259,13 @@ class InnerRouter {
             processPendingCommand();
         }
     };
+
+    private void throwExceptionIfNotUiThread() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw new IllegalThreadStateException(
+                "Should be called in the main thread.");
+        }
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////

@@ -23,6 +23,7 @@
 
 package com.paper.router;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -45,7 +46,7 @@ public final class Router {
         }
 
         // Fixed size of the routers.
-        this.mRouters = new InnerRouter[] {
+        this.mRouters = new InnerRouter[]{
             new InnerRouter("application", uiHandler),
             new InnerRouter("activity", uiHandler),
             new InnerRouter("view", uiHandler)
@@ -71,6 +72,19 @@ public final class Router {
         throwExceptionIfNotMainThread();
 
         mRouters[level].unsetNavigator();
+    }
+
+    public final void bindContextToNavigator(int level,
+                                             Context context) {
+        throwExceptionIfNotSupportedLevel(level);
+
+        mRouters[level].bindContextToNavigator(context);
+    }
+
+    public final void unBindContextFromNavigator(int level) {
+        throwExceptionIfNotSupportedLevel(level);
+
+        mRouters[level].unBindContextFromNavigator();
     }
 
     /**

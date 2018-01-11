@@ -28,4 +28,12 @@
         android:layout_marginTop="8dp"
         android:minWidth="200dp"
         android:text="next"/>
+
+    <Button
+        android:id="@+id/btn_goto_flow2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:minWidth="200dp"
+        android:text="Goto Flow 2"/>
 </LinearLayout>

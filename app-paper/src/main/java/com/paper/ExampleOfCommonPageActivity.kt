@@ -4,32 +4,24 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.navigation.Flow1Navigator
 import com.paper.router.IMyRouterProvider
-import com.paper.router.INavigator
-import com.paper.router.Router
 import com.paper.router.NavigationContract
+import com.paper.router.Router
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
-import java.lang.ref.WeakReference
 
-class ExampleOfFlow1Page2Activity : AppCompatActivity() {
+class ExampleOfCommonPageActivity : AppCompatActivity() {
 
     // View.
     private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_back) }
     private val mBtnNext: View by lazy { findViewById<View>(R.id.btn_next) }
-    private val mBtnGotoFlow2: View by lazy { findViewById<View>(R.id.btn_goto_flow2) }
 
     // Router and router holder.
     private val mRouter: Router
         get() = (application as IMyRouterProvider).router
-    // Navigator.
-    private val mNavigator: INavigator by lazy {
-        Flow1Navigator(WeakReference(this@ExampleOfFlow1Page2Activity))
-    }
 
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -40,20 +32,13 @@ class ExampleOfFlow1Page2Activity : AppCompatActivity() {
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_flow1_page2)
+        setContentView(R.layout.activity_common)
 
         mDisposablesOnCreate.add(
             RxView.clicks(mBtnNext)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { _ ->
                     mRouter.navigateTo(NavigationContract.SCREEN_OF_FLOW1_PAGE3)
-                })
-
-        mDisposablesOnCreate.add(
-            RxView.clicks(mBtnGotoFlow2)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
-                    mRouter.navigateTo(NavigationContract.SCREEN_OF_FLOW1_PAGE4)
                 })
 
         mDisposablesOnCreate.add(
@@ -75,8 +60,9 @@ class ExampleOfFlow1Page2Activity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // Set navigator.
-        mRouter.setNavigator(Router.LEVEL_ACTIVITY, mNavigator)
+        // Set context to navigator.
+        mRouter.bindContextToNavigator(Router.LEVEL_ACTIVITY,
+                                       this@ExampleOfCommonPageActivity)
 
         // Get the buffered Activity result.
         mRouter.dispatchResultOnResume()
@@ -85,8 +71,8 @@ class ExampleOfFlow1Page2Activity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
 
-        // Remove navigator.
-        mRouter.unsetNavigator(Router.LEVEL_ACTIVITY)
+        // Remove navigator's context.
+        mRouter.unBindContextFromNavigator(Router.LEVEL_ACTIVITY)
     }
 
     override fun onBackPressed() {
