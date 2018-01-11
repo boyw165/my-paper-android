@@ -29,8 +29,8 @@ import android.content.Intent
 import com.paper.MyPaperGalleryActivity
 import com.paper.router.INavigator
 import com.paper.router.NavigationContract
-import ru.terrakok.cicerone.commands.Command
-import ru.terrakok.cicerone.commands.Forward
+import com.paper.router.commands.Command
+import com.paper.router.commands.Forward
 import java.lang.ref.WeakReference
 
 class ApplicationNavigator : INavigator {

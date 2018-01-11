@@ -26,7 +26,7 @@ package com.paper.router;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import ru.terrakok.cicerone.commands.Command;
+import com.paper.router.commands.Command;
 
 public interface INavigator {
 

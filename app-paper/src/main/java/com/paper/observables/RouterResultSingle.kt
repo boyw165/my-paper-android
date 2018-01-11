@@ -22,11 +22,11 @@
 
 package com.paper.observables
 
+import com.paper.router.IResultListener
 import com.paper.router.Router
 import io.reactivex.Single
 import io.reactivex.SingleObserver
 import io.reactivex.android.MainThreadDisposable
-import ru.terrakok.cicerone.result.ResultListener
 
 /**
  * An observable encapsulate [Router] and emit a boolean to downstream.
@@ -52,7 +52,7 @@ class RouterResultSingle(
         private val actual: Router,
         private val requestCode: Int)
         : MainThreadDisposable(),
-          ResultListener {
+          IResultListener {
 
         override fun onDispose() {
             actual.removeResultListener(requestCode)

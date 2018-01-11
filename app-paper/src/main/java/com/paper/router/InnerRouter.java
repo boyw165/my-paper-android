@@ -27,17 +27,15 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.paper.router.commands.Back;
+import com.paper.router.commands.Command;
+import com.paper.router.commands.Forward;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
-
-import ru.terrakok.cicerone.Navigator;
-import ru.terrakok.cicerone.commands.Back;
-import ru.terrakok.cicerone.commands.Command;
-import ru.terrakok.cicerone.commands.Forward;
-import ru.terrakok.cicerone.result.ResultListener;
 
 final class InnerRouter {
 
@@ -116,7 +114,7 @@ final class InnerRouter {
      * @param requestCode key for filter results
      * @param listener    resultHolder listenerHolder
      */
-    void addResultListener(int requestCode, ru.terrakok.cicerone.result.ResultListener listener) {
+    void addResultListener(int requestCode, IResultListener listener) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalThreadStateException(
                 "Should be called in the main thread.");
@@ -161,7 +159,7 @@ final class InnerRouter {
         for (Integer requestCode : mResultsBuffer.keySet()) {
             final ListenerAndResult buffer = mResultsBuffer.get(requestCode);
             final Object result = buffer.resultHolder.get();
-            final ru.terrakok.cicerone.result.ResultListener listener = buffer.listenerHolder.get();
+            final IResultListener listener = buffer.listenerHolder.get();
             if (result != null && listener != null) {
                 listener.onResult(result);
                 // Clear the cache.
@@ -192,7 +190,7 @@ final class InnerRouter {
     /**
      * Return to the previous screen in the chain.
      * Behavior in the case when the current screen is the root depends on
-     * the processing of the {@link Back} command in a {@link Navigator} implementation.
+     * the processing of the {@link Back} command in a {@link INavigator} implementation.
      */
     void exit() {
         addPendingCommand(new Back());
@@ -272,7 +270,7 @@ final class InnerRouter {
 
     private static class ListenerAndResult {
 
-        final AtomicReference<ResultListener> listenerHolder = new AtomicReference<>();
+        final AtomicReference<IResultListener> listenerHolder = new AtomicReference<>();
         final AtomicReference<Object> resultHolder = new AtomicReference<>();
 
         ListenerAndResult() {

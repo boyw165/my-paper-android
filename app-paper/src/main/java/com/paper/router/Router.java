@@ -27,9 +27,8 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-import ru.terrakok.cicerone.Navigator;
-import ru.terrakok.cicerone.commands.Back;
-import ru.terrakok.cicerone.commands.Forward;
+import com.paper.router.commands.Back;
+import com.paper.router.commands.Forward;
 
 public final class Router {
 
@@ -120,7 +119,7 @@ public final class Router {
     /**
      * Return to the previous screen in the chain.
      * Behavior in the case when the current screen is the root depends on
-     * the processing of the {@link Back} command in a {@link Navigator} implementation.
+     * the processing of the {@link Back} command in a {@link INavigator} implementation.
      */
     public void exit() {
         throwExceptionIfNotMainThread();
@@ -150,7 +149,7 @@ public final class Router {
      * @param listener    resultHolder listenerHolder
      */
     public final void addResultListener(int requestCode,
-                                        ru.terrakok.cicerone.result.ResultListener listener) {
+                                        IResultListener listener) {
         throwExceptionIfNotMainThread();
 
         mRouters[LEVEL_ACTIVITY].addResultListener(requestCode, listener);

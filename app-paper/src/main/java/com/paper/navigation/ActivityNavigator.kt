@@ -32,9 +32,9 @@ import com.paper.ExampleOfFlow1Page3Activity
 import com.paper.ExampleOfFlow2Page1Activity
 import com.paper.router.INavigator
 import com.paper.router.NavigationContract
-import ru.terrakok.cicerone.commands.Back
-import ru.terrakok.cicerone.commands.Command
-import ru.terrakok.cicerone.commands.Forward
+import com.paper.router.commands.Back
+import com.paper.router.commands.Command
+import com.paper.router.commands.Forward
 import java.lang.ref.WeakReference
 
 class ActivityNavigator : INavigator {

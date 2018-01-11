@@ -68,8 +68,8 @@ dependencies {
     // JSON.
     implementation rootProject.ext.dep.gson
 
-    // Navigation.
-    implementation rootProject.ext.dep.cicerone
+//    // Navigation.
+//    implementation rootProject.ext.dep.cicerone
 
     // Image loader.
     implementation rootProject.ext.dep.glide
