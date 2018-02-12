@@ -130,20 +130,25 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { item ->
                     when (item.itemId) {
-                        R.id.rx_cancel_ex -> {
+                        R.id.exp_rx_cancel -> {
                             startActivity(Intent(
                                 this@MyPaperGalleryActivity,
                                 ExampleOfRxCancelActivity::class.java))
                         }
-                        R.id.ciceron_ex -> {
+                        R.id.exp_navigation_framework -> {
                             startActivity(Intent(
                                 this@MyPaperGalleryActivity,
                                 ExampleOfCiceroneActivity1::class.java))
                         }
-                        R.id.convex_hull_ex -> {
+                        R.id.exp_convex_hull -> {
                             startActivity(Intent(
                                 this@MyPaperGalleryActivity,
                                 ExampleOfConvexHullActivity::class.java))
+                        }
+                        R.id.exp_event_driven_simulation -> {
+                            startActivity(Intent(
+                                this@MyPaperGalleryActivity,
+                                ExampleOfEventDrivenSimulationActivity::class.java))
                         }
                     }
                 })

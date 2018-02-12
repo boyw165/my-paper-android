@@ -68,7 +68,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_rx_cancel)
+        setContentView(R.layout.activity_example_of_rx_cancel)
 
         mPresenter.bindViewOnCreate(this@ExampleOfRxCancelActivity)
     }

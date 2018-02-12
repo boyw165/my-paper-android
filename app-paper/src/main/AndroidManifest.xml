@@ -48,6 +48,7 @@
         <activity android:name=".ExampleOfCiceroneActivity1"/>
         <activity android:name=".ExampleOfCiceroneActivity2" />
         <activity android:name=".ExampleOfConvexHullActivity"/>
+        <activity android:name=".ExampleOfEventDrivenSimulationActivity"/>
 
         <!-- ContentProvider ///////////////////////////////////////////////-->
 
