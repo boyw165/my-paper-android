@@ -33,6 +33,10 @@ class CollisionSystem(particles: Array<Particle>) {
     // the array of particles
     private val mParticles: MutableList<Particle> = mutableListOf()
 
+    // Clock.
+    private var mClock: Long = 0
+
+    // Ready state.
     private val mIsReady = AtomicBoolean()
 
     init {
@@ -43,7 +47,7 @@ class CollisionSystem(particles: Array<Particle>) {
         mIsReady.set(false)
     }
 
-    fun init() {
+    fun start() {
         // TODO: Make it an interface.
         val currentMs = System.currentTimeMillis()
 
@@ -54,6 +58,9 @@ class CollisionSystem(particles: Array<Particle>) {
         for (particle in mParticles) {
             predict(particle, currentMs, mSimulationUpToMs.toDouble())
         }
+
+        // Hold clock.
+        mClock = System.currentTimeMillis()
 
         mIsReady.set(true)
     }
@@ -108,9 +115,12 @@ class CollisionSystem(particles: Array<Particle>) {
 
         // redraw event
         for (particle in mParticles) {
+            particle.move((currentMs - mClock).toDouble())
             // TODO: particle shouldn't aware of the rendering details.
             particle.draw(canvas, canvasWidth, canvasHeight, particlePaint)
         }
+
+        mClock = currentMs
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -123,12 +133,12 @@ class CollisionSystem(particles: Array<Particle>) {
         if (thiz == null) return
 
         // particle-particle collisions
-        for (that in mParticles) {
-            val dt = thiz.timeToHit(that)
-            if (currentMilliSeconds + dt <= upToMilliSeconds) {
-                mPQ.add(Event(currentMilliSeconds + dt, thiz, that))
-            }
-        }
+//        for (that in mParticles) {
+//            val dt = thiz.timeToHit(that)
+//            if (currentMilliSeconds + dt <= upToMilliSeconds) {
+//                mPQ.add(Event(currentMilliSeconds + dt, thiz, that))
+//            }
+//        }
 
         // particle-wall collisions
         val dtX = thiz.timeToHitVerticalWall()

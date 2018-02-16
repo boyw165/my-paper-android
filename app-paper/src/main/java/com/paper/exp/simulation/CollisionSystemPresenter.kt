@@ -68,7 +68,7 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
         Observable
             .fromCallable {
                 // Initialize in the background.
-                mCollisionSystem.init()
+                mCollisionSystem.start()
                 0
             }
             .subscribeOn(mWorkerSchedulers)
