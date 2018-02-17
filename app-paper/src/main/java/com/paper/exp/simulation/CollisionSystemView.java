@@ -68,6 +68,15 @@ public class CollisionSystemView
     // Protected / Private Methods ////////////////////////////////////////////
 
     @Override
+    protected void onMeasure(int widthSpec,
+                             int heightSpec) {
+        final int width = MeasureSpec.getSize(widthSpec);
+        final int height = width;
+
+        setMeasuredDimension(width, height);
+    }
+
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 

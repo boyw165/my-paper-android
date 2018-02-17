@@ -23,7 +23,6 @@ package com.paper.exp.simulation
 import android.graphics.Canvas
 import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
-import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -36,7 +35,7 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
     : IPresenter<CollisionSystemContract.View> {
 
     private val mCollisionSystem: CollisionSystem by lazy {
-        CollisionSystem(Array(10, { _ -> Particle() }))
+        CollisionSystem(Array(60, { _ -> Particle() }))
     }
 
     // View
@@ -65,18 +64,6 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
     }
 
     override fun onResume() {
-        Observable
-            .fromCallable {
-                // Initialize in the background.
-                mCollisionSystem.start()
-                0
-            }
-            .subscribeOn(mWorkerSchedulers)
-            .observeOn(mUiScheduler)
-            .subscribe { _ ->
-                mView.showToast("The collision system is ready!")
-            }
-
         mView.schedulePeriodicRendering(listener = object
             : CollisionSystemContract.SimulationListener {
             override fun onUpdateSimulation(canvas: Canvas) {

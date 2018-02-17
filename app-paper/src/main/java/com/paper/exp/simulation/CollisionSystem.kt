@@ -2,10 +2,7 @@ package com.paper.exp.simulation
 
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.util.Log
-
-import java.util.PriorityQueue
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.*
 
 /**
  * The `CollisionSystem` class represents a collection of particles
@@ -26,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @author Kevin Wayne
  */
 class CollisionSystem(particles: Array<Particle>) {
-    private var mSimulationUpToMs: Long = 0
+    private var mSimulationUpToMs: Long = 0L
 
     // the priority queue
     private val mPQ = PriorityQueue<Event>()
@@ -34,35 +31,32 @@ class CollisionSystem(particles: Array<Particle>) {
     private val mParticles: MutableList<Particle> = mutableListOf()
 
     // Clock.
-    private var mClock: Long = 0
-
-    // Ready state.
-    private val mIsReady = AtomicBoolean()
+    private var mClock: Long = 0L
 
     init {
         // defensive copy
         mParticles += particles
-
-        // Flag not ready.
-        mIsReady.set(false)
     }
 
     fun start() {
         // TODO: Make it an interface.
-        val currentMs = System.currentTimeMillis()
-
-        mSimulationUpToMs = currentMs + ONE_YEAR_MS
-
-        // Rebuild the event queue.
-        mPQ.clear()
-        for (particle in mParticles) {
-            predict(particle, currentMs, mSimulationUpToMs.toDouble())
-        }
-
         // Hold clock.
         mClock = System.currentTimeMillis()
 
-        mIsReady.set(true)
+        mSimulationUpToMs = mClock + ONE_YEAR_MS
+
+        // Rebuild the event queue.
+        mPQ.clear()
+        mParticles.forEachIndexed{i, particle ->
+            predict(particle, mClock, mSimulationUpToMs)
+        }
+
+        // Check if any pending event is invalid.
+        val event = mPQ.peek()
+        if (event.time < mClock) {
+            throw IllegalStateException(
+                "The event time (%d) is even less than clock (%d)".format(event.time, mClock))
+        }
     }
 
     /**
@@ -72,55 +66,65 @@ class CollisionSystem(particles: Array<Particle>) {
                  canvasWidth: Int,
                  canvasHeight: Int,
                  particlePaint: Paint) {
-        if (!mIsReady.get()) return
+        if (mPQ.isEmpty()) {
+            start()
+        } else {
+            // TODO: The particle system shouldn't aware of the rendering details.
 
-        Log.d("collision", "Simulation tick.")
+            // TODO: Make it an interface.
+            var lastClock = mClock
+            mClock = System.currentTimeMillis()
 
-        // TODO: The particle system shouldn't aware of the rendering details.
+            // The main event-driven simulation loop
+            while (!mPQ.isEmpty()) {
+                // Get impending event, discard if invalidated
+                val event = mPQ.remove()
 
-        // TODO: Make it an interface.
-        val currentMs = System.currentTimeMillis()
-
-        // the main event-driven simulation loop
-        while (!mPQ.isEmpty()) {
-            // get impending event, discard if invalidated
-            val event = mPQ.peek()
-
-            if (!event.isValid) {
                 // Lazily discard the invalid events.
-                mPQ.remove()
-            } else if (event.time <= currentMs) {
-                // Handle the particle-particle collision.
-                val a = event.a
-                val b = event.b
-
-                // Physical collision, so update positions
-                for (particle in mParticles) {
-                    particle.move(event.time - currentMs)
+                if (!event.isValid) {
+                    continue
                 }
 
-                // Process event
-                if (a != null && b != null) {
-                    // particle-particle collision
-                    a.bounceOff(b)
-                } else a?.bounceOffVerticalWall() ?: b?.bounceOffHorizontalWall()
+                if (event.time <= mClock) {
+                    // Handle the particle-particle collision.
+                    val a = event.a
+                    val b = event.b
 
-                // update the priority queue with new collisions involving a or b
-                predict(a, currentMs, mSimulationUpToMs.toDouble())
-                predict(b, currentMs, mSimulationUpToMs.toDouble())
-            } else if (event.time > currentMs) {
-                break
+                    val dt = event.time - lastClock
+                    if (dt < 0) {
+//                        throw IllegalStateException("negative dt=%d".format(dt))
+                        continue
+                    }
+
+                    // Physical collision, so update positions
+                    lastClock = event.time
+                    for (particle in mParticles) {
+                        particle.move(dt.toDouble())
+                    }
+
+                    // Process event
+                    if (a != null && b != null) {
+                        // particle-particle collision
+                        a.bounceOff(b)
+                    } else a?.bounceOffVerticalWall() ?: b?.bounceOffHorizontalWall()
+
+                    // update the priority queue with new collisions involving a or b
+                    predict(a, mClock, mSimulationUpToMs)
+                    predict(b, mClock, mSimulationUpToMs)
+                } else {
+                    mPQ.add(event)
+
+                    // Update position.
+                    for (particle in mParticles) {
+                        particle.move((mClock - lastClock).toDouble())
+                    }
+                    break
+                }
             }
         }
 
-        // redraw event
-        for (particle in mParticles) {
-            particle.move((currentMs - mClock).toDouble())
-            // TODO: particle shouldn't aware of the rendering details.
-            particle.draw(canvas, canvasWidth, canvasHeight, particlePaint)
-        }
-
-        mClock = currentMs
+        // Rendering.
+        draw(canvas, canvasWidth, canvasHeight, particlePaint)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -129,25 +133,46 @@ class CollisionSystem(particles: Array<Particle>) {
     // updates priority queue with all new events for particle a
     private fun predict(thiz: Particle?,
                         currentMilliSeconds: Long,
-                        upToMilliSeconds: Double) {
+                        upToMilliSeconds: Long) {
         if (thiz == null) return
 
         // particle-particle collisions
-//        for (that in mParticles) {
-//            val dt = thiz.timeToHit(that)
-//            if (currentMilliSeconds + dt <= upToMilliSeconds) {
-//                mPQ.add(Event(currentMilliSeconds + dt, thiz, that))
-//            }
-//        }
+        for (that in mParticles) {
+            val dt = thiz.timeToHit(that)
+            if (dt == Double.POSITIVE_INFINITY || dt < 0.0) continue
+
+            val t = currentMilliSeconds + dt
+            // Overflow protection.
+            if (t < 0) continue
+
+            if (t <= upToMilliSeconds) {
+                mPQ.add(Event(t.toLong(), thiz, that))
+            }
+        }
 
         // particle-wall collisions
         val dtX = thiz.timeToHitVerticalWall()
         val dtY = thiz.timeToHitHorizontalWall()
-        if (currentMilliSeconds + dtX > 0 && currentMilliSeconds + dtX <= upToMilliSeconds) {
-            mPQ.add(Event(currentMilliSeconds + dtX, thiz, null))
+        if (dtX >= 0.0 &&
+            currentMilliSeconds + dtX > 0 &&
+            currentMilliSeconds + dtX <= upToMilliSeconds) {
+            mPQ.add(Event((currentMilliSeconds + dtX).toLong(), thiz, null))
         }
-        if (currentMilliSeconds + dtX > 0 && currentMilliSeconds + dtY <= upToMilliSeconds) {
-            mPQ.add(Event(currentMilliSeconds + dtY, null, thiz))
+        if (dtY >= 0.0 &&
+            currentMilliSeconds + dtY > 0 &&
+            currentMilliSeconds + dtY <= upToMilliSeconds) {
+            mPQ.add(Event((currentMilliSeconds + dtY).toLong(), null, thiz))
+        }
+    }
+
+    private fun draw(canvas: Canvas,
+                     canvasWidth: Int,
+                     canvasHeight: Int,
+                     particlePaint: Paint) {
+        for (particle in mParticles) {
+            // TODO: particle shouldn't aware of the rendering details.
+            // Rendering.
+            particle.draw(canvas, canvasWidth, canvasHeight, particlePaint)
         }
     }
 
@@ -165,7 +190,7 @@ class CollisionSystem(particles: Array<Particle>) {
      * -  a and b both not null:  binary collision between a and b
      */
     private class Event internal constructor(
-        val time: Double,
+        val time: Long,
         // time that event is scheduled to occur
         val a: Particle?,
         // particles involved in event, possibly null
@@ -184,7 +209,11 @@ class CollisionSystem(particles: Array<Particle>) {
 
         // compare times when two events will occur
         override fun compareTo(other: Event): Int {
-            return java.lang.Double.compare(this.time, other.time)
+            return when {
+                this.time < other.time -> -1
+                this.time > other.time -> 1
+                else -> 0
+            }
         }
     }
 

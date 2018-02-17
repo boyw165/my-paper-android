@@ -67,8 +67,8 @@ public class Particle {
     public Particle() {
         this(Math.random(),
              Math.random(),
-             (1000f * Math.random() - 500f) / 2000000f,
-             (1000f * Math.random() - 500f) / 2000000f,
+             (1000f * Math.random() - 500f) / 900000f,
+             (1000f * Math.random() - 500f) / 900000f,
              0.01,
              0.5,
              Color.BLACK);
