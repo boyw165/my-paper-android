@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.paper.R;
 import com.paper.exp.simulation.CollisionSystemContract.SimulationListener;
 
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,8 @@ public class CollisionSystemView
 
     // Rendering.
     private final Paint mParticlePaint = new Paint();
+    private final Paint mTextPaint = new Paint();
+    private float mTextSize = 0f;
 
     private SimulationListener mListener;
 
@@ -39,6 +42,12 @@ public class CollisionSystemView
 
         mParticlePaint.setStyle(Paint.Style.FILL);
         mParticlePaint.setColor(Color.BLACK);
+
+        mTextSize = context.getResources().getDimension(R.dimen.debug_text_size_1);
+
+        mTextPaint.setColor(Color.GREEN);
+        mTextPaint.setTextSize(mTextSize);
+        mTextPaint.setTextAlign(Paint.Align.LEFT);
     }
 
     @Override
@@ -89,6 +98,17 @@ public class CollisionSystemView
     @Override
     public void showToast(@NotNull String text) {
         // DUMMY.
+    }
+
+    @Override
+    public void showText(@NotNull Canvas canvas,
+                         @NotNull String text) {
+        float x = mTextSize;
+        float y = mTextSize;
+        for (String line : text.split("\n")) {
+            canvas.drawText(line, x, y, mTextPaint);
+            y += mTextSize;
+        }
     }
 
     @Override
