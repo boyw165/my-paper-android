@@ -36,6 +36,7 @@ abstract class CollisionSystemContract private constructor() {
         fun getCanvasHeight(): Int
 
         fun showToast(text: String)
+        fun showText(canvas: Canvas, text: String)
 
         fun onClickBack(): Observable<Any>
     }

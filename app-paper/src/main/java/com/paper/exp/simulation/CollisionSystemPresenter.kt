@@ -23,6 +23,7 @@ package com.paper.exp.simulation
 import android.graphics.Canvas
 import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
+import com.paper.protocol.ISystemTime
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -30,6 +31,7 @@ import io.reactivex.subjects.Subject
 import java.util.concurrent.TimeUnit
 
 class CollisionSystemPresenter(private val mNavigator: INavigator,
+                               private val mSystemTime: ISystemTime,
                                private val mWorkerSchedulers: Scheduler,
                                private val mUiScheduler: Scheduler)
     : IPresenter<CollisionSystemContract.View> {
@@ -41,7 +43,10 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
     // View
     private lateinit var mView: CollisionSystemContract.View
 
-    // Progress.
+    // Clock.
+    private var mClock: Long = 0L
+
+    // Error.
     private val mOnThrowError: Subject<Throwable> = PublishSubject.create()
 
     // Disposables.
@@ -67,11 +72,32 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
         mView.schedulePeriodicRendering(listener = object
             : CollisionSystemContract.SimulationListener {
             override fun onUpdateSimulation(canvas: Canvas) {
-                mCollisionSystem.simulate(
-                    canvas,
-                    mView.getCanvasWidth(),
-                    mView.getCanvasHeight(),
-                    mView.getParticlePaint())
+                if (mCollisionSystem.isStarted()) {
+                    // Update system clock.
+                    val lastClock = mClock
+                    mClock = mSystemTime.getCurrentTimeMillis()
+
+                    // Collision system.
+                    mCollisionSystem.simulate(
+                        canvas,
+                        mView.getCanvasWidth(),
+                        mView.getCanvasHeight(),
+                        mView.getParticlePaint(),
+                        mClock - lastClock)
+
+                    mView.showText(
+                        canvas,
+                        ("particle number = %d\n" +
+                         "event number = %d").format(
+                            mCollisionSystem.particlesSize,
+                            mCollisionSystem.collisionEventsSize))
+                } else {
+                    // Collision system.
+                    mCollisionSystem.start()
+
+                    // Update system clock.
+                    mClock = mSystemTime.getCurrentTimeMillis()
+                }
             }
         })
     }

@@ -20,8 +20,10 @@
 
 package com.paper
 
+import android.graphics.Canvas
 import android.graphics.Paint
 import android.os.Bundle
+import android.os.SystemClock
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
@@ -30,6 +32,7 @@ import com.paper.exp.simulation.CollisionSystemContract
 import com.paper.exp.simulation.CollisionSystemPresenter
 import com.paper.exp.simulation.CollisionSystemView
 import com.paper.protocol.INavigator
+import com.paper.protocol.ISystemTime
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -49,9 +52,17 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
     // Log.
     private val mLog: ArrayList<String> = arrayListOf()
 
+    // System time.
+    private val mSystemTime: ISystemTime = object : ISystemTime {
+        override fun getCurrentTimeMillis(): Long {
+            return System.currentTimeMillis()
+        }
+    }
+
     // Presenter.
     private val mPresenter: CollisionSystemPresenter by lazy {
         CollisionSystemPresenter(this@ExampleOfEventDrivenSimulationActivity,
+                                 mSystemTime,
                                  Schedulers.io(),
                                  AndroidSchedulers.mainThread())
     }
@@ -120,6 +131,10 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
                            Toast.LENGTH_SHORT)
                 .show()
         }
+    }
+
+    override fun showText(canvas: Canvas, text: String) {
+        mCollisionSystemView.showText(canvas, text)
     }
 
     override fun getParticlePaint(): Paint {
