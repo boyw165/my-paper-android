@@ -21,21 +21,21 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @author Robert Sedgewick
  * @author Kevin Wayne
  */
-class CollisionSystem() {
-    private var mSimulationUpToMs: Double = 0.0
+class CollisionSystem {
+    protected var mSimulationUpToMs: Double = 0.0
 
     // The priority queue for collision event.
     val collisionEventsSize: Int get() = mPQ.size
-    private val mPQ = PriorityQueue<Event>()
+    protected val mPQ = PriorityQueue<Event>()
     // The array of particles
-    private val mParticles: MutableList<Particle> = mutableListOf()
+    protected val mParticles: MutableList<Particle> = mutableListOf()
     val particlesSize: Int get() = mParticles.size
 
     // Clock in seconds.
-    private var mClock: Double = 0.0
+    protected var mClock: Double = 0.0
 
     // State.
-    private val mIsStarted = AtomicBoolean(false)
+    protected val mIsStarted = AtomicBoolean(false)
 
     fun isStarted(): Boolean {
         return mIsStarted.get()
@@ -58,14 +58,6 @@ class CollisionSystem() {
             predict(particle, mClock, mSimulationUpToMs)
         }
 
-        // TODO: Make the following code part of the unit-test.
-//        // Check if any pending event is invalid.
-//        val event = mPQ.peek()
-//        if (event.time < mClock) {
-//            throw IllegalStateException(
-//                "The event time (%d) is even less than clock (%d)".format(event.time, mClock))
-//        }
-
         // Flag started.
         mIsStarted.set(true)
     }
@@ -83,8 +75,6 @@ class CollisionSystem() {
         if (dt < 0.0) {
             throw IllegalArgumentException("Given dt=%d is negative".format(dt))
         }
-
-        // TODO: The particle system shouldn't be aware of the rendering details.
 
         var lastClock = mClock
         mClock += dt
@@ -122,8 +112,6 @@ class CollisionSystem() {
                     a.bounceOff(b)
                 } else a?.bounceOffVerticalWall() ?: b?.bounceOffHorizontalWall()
 
-                // FIXME: Potential infinite loop caused by adding event with
-                // FIXME: negative hitting time.
                 // Update the priority queue with new collisions involving a or b
                 predict(a, event.time, mSimulationUpToMs)
                 predict(b, event.time, mSimulationUpToMs)
@@ -207,7 +195,7 @@ class CollisionSystem() {
      * -  a not null, b null:     collision with horizontal wall
      * -  a and b both not null:  binary collision between a and b
      */
-    private class Event internal constructor(
+    protected class Event internal constructor(
         val time: Double,
         // time that event is scheduled to occur
         val a: Particle?,

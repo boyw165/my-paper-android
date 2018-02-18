@@ -78,12 +78,14 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                     // Init the collision system.
                     mCollisionSystem.start(createParticles())
 
-                    // Update system clock.
-                    mClock = mSystemTime.getCurrentTimeMillis()
+                    // Init the clock.
+                    mClock = 0L
                 } else {
+                    val current = mSystemTime.getCurrentTimeMillis()
+
                     // Update system clock.
-                    val lastClock = mClock
-                    mClock = mSystemTime.getCurrentTimeMillis()
+                    val lastClock = if (mClock == 0L) current else mClock
+                    mClock = current
 
                     // Simulate the collision.
                     val particles = mCollisionSystem.simulate(
@@ -131,8 +133,8 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
             val x = pt.x.toDouble()
             val y = pt.y.toDouble()
 
-            val vecX = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
-            val vecY = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
+            val vecX = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
+            val vecY = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
             Particle(x, y, vecX, vecY, radius, mass)
         })
     }
