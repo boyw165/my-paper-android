@@ -29,6 +29,7 @@ public class CollisionSystemView
     private final RectF mBoundRect = new RectF();
     private final RectF mOval = new RectF();
     private float mTextSize = 0f;
+    private float mTextPadding = 0f;
 
     private SimulationListener mListener;
 
@@ -50,13 +51,24 @@ public class CollisionSystemView
         mParticlePaint.setColor(Color.BLACK);
 
         mTextSize = context.getResources().getDimension(R.dimen.debug_text_size_1);
+        mTextPadding = context.getResources().getDimension(R.dimen.debug_padding);
 
-        mTextPaint.setColor(Color.GREEN);
+        mTextPaint.setColor(Color.parseColor("#006400"));
         mTextPaint.setTextSize(mTextSize);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
 
         mBoundPaint.setColor(Color.LTGRAY);
         mBoundPaint.setStyle(Paint.Style.FILL);
+    }
+
+    @Override
+    public int getCanvasWidth() {
+        return getWidth();
+    }
+
+    @Override
+    public int getCanvasHeight() {
+        return getHeight();
     }
 
     @Override
@@ -111,8 +123,8 @@ public class CollisionSystemView
     @Override
     public void drawDebugText(@NotNull Canvas canvas,
                               @NotNull String text) {
-        float x = mTextSize;
-        float y = mTextSize;
+        float x = mTextPadding;
+        float y = mTextPadding + mTextSize / 2f;
         for (String line : text.split("\n")) {
             canvas.drawText(line, x, y, mTextPaint);
             y += mTextSize;
@@ -122,8 +134,8 @@ public class CollisionSystemView
     @Override
     public void drawParticles(@NotNull Canvas canvas,
                               @NotNull List<Particle> particles) {
-        final int canvasWidth = getWidth();
-        final int canvasHeight = getHeight();
+        final int canvasWidth = getCanvasWidth();
+        final int canvasHeight = getCanvasHeight();
 
         for (int i = 0; i < particles.size(); ++i) {
             final Particle particle = particles.get(i);

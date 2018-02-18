@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @author Robert Sedgewick
  * @author Kevin Wayne
  */
-class CollisionSystem(particles: Array<Particle>) {
+class CollisionSystem() {
     private var mSimulationUpToMs: Double = 0.0
 
     // The priority queue for collision event.
@@ -37,17 +37,16 @@ class CollisionSystem(particles: Array<Particle>) {
     // State.
     private val mIsStarted = AtomicBoolean(false)
 
-    init {
-        // defensive copy
-        mParticles += particles
-    }
-
     fun isStarted(): Boolean {
         return mIsStarted.get()
     }
 
-    fun start() {
+    fun start(particles: Array<Particle>) {
         mIsStarted.set(false)
+
+        // Defensive copy
+        mParticles.clear()
+        mParticles += particles
 
         // Init clock.
         mClock = 0.0
@@ -69,6 +68,10 @@ class CollisionSystem(particles: Array<Particle>) {
 
         // Flag started.
         mIsStarted.set(true)
+    }
+
+    fun stop() {
+        mIsStarted.set(false)
     }
 
     /**

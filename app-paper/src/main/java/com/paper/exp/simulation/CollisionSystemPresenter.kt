@@ -1,4 +1,4 @@
-// Copyright (c) 2017-present WANG, TAI-CHUN
+// Copyright (c) 2017-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,12 @@
 package com.paper.exp.simulation
 
 import android.graphics.Canvas
+import android.graphics.PointF
+import android.graphics.RectF
 import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
 import com.paper.protocol.ISystemTime
+import com.paper.util.UniformPoissonDiskSampler
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -36,22 +39,11 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                                private val mUiScheduler: Scheduler)
     : IPresenter<CollisionSystemContract.View> {
 
-    private val mCollisionSystem: CollisionSystem by lazy {
-        val radius = 0.01
-        val mass = 0.5
-        val centerRange = (1.0 - 4 * radius)
-
-        CollisionSystem(Array(30, { _ ->
-            val x = centerRange * Math.random()
-            val y = centerRange * Math.random()
-            val vecX = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
-            val vecY = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
-            Particle(x, y, vecX, vecY, radius, mass)
-        }))
-    }
-
     // View
     private lateinit var mView: CollisionSystemContract.View
+
+    // Collision system.
+    private val mCollisionSystem: CollisionSystem = CollisionSystem()
 
     // Clock.
     private var mClock: Long = 0L
@@ -82,7 +74,13 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
         mView.schedulePeriodicRendering(listener = object
             : CollisionSystemContract.SimulationListener {
             override fun onUpdateSimulation(canvas: Canvas) {
-                if (mCollisionSystem.isStarted()) {
+                if (!mCollisionSystem.isStarted()) {
+                    // Init the collision system.
+                    mCollisionSystem.start(createParticles())
+
+                    // Update system clock.
+                    mClock = mSystemTime.getCurrentTimeMillis()
+                } else {
                     // Update system clock.
                     val lastClock = mClock
                     mClock = mSystemTime.getCurrentTimeMillis()
@@ -101,12 +99,6 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                          "event number = %d").format(
                             mCollisionSystem.particlesSize,
                             mCollisionSystem.collisionEventsSize))
-                } else {
-                    // Init the collision system.
-                    mCollisionSystem.start()
-
-                    // Update system clock.
-                    mClock = mSystemTime.getCurrentTimeMillis()
                 }
             }
         })
@@ -114,10 +106,34 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
 
     override fun onPause() {
         mView.unScheduleAll()
+        mCollisionSystem.stop()
 
         mDisposablesOnResume.clear()
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun createParticles(): Array<Particle> {
+        val radius = 0.02
+        val mass = 0.5
+        val padding = 2.5 * radius
+        // Use uniform-Possion-sample to populate the particles.
+        val sampler = UniformPoissonDiskSampler(
+            RectF(padding.toFloat(), padding.toFloat(),
+                  (1.0 - padding).toFloat(), (1.0 - padding).toFloat()),
+            3f * radius,
+            PointF(0.5f, 0.5f))
+
+        return Array(25, { _ ->
+            val pt = sampler.sample() ?: throw IllegalStateException(
+                "Insufficient space to populate the particle.")
+            val x = pt.x.toDouble()
+            val y = pt.y.toDouble()
+
+            val vecX = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
+            val vecY = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
+            Particle(x, y, vecX, vecY, radius, mass)
+        })
+    }
 }

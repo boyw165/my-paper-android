@@ -10,5 +10,6 @@
     <dimen name="fling_max_vec">1000dp</dimen>
 
     <!-- DEBUG -->
-    <dimen name="debug_text_size_1">16sp</dimen>
+    <dimen name="debug_padding">16dp</dimen>
+    <dimen name="debug_text_size_1">18sp</dimen>
 </resources>

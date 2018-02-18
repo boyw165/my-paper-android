@@ -27,6 +27,9 @@ abstract class CollisionSystemContract private constructor() {
 
     interface View {
 
+        fun getCanvasWidth(): Int
+        fun getCanvasHeight(): Int
+
         fun schedulePeriodicRendering(listener: SimulationListener)
         fun unScheduleAll()
 

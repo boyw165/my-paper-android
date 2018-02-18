@@ -102,6 +102,14 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
     ///////////////////////////////////////////////////////////////////////////
     // *Contract.View /////////////////////////////////////////////////////////
 
+    override fun getCanvasWidth(): Int {
+        return mCollisionSystemView.getCanvasWidth()
+    }
+
+    override fun getCanvasHeight(): Int {
+        return mCollisionSystemView.getCanvasHeight()
+    }
+
     override fun onClickBack(): Observable<Any> {
         return Observable.merge(mOnClickSystemBack,
                                 RxView.clicks(mBtnClose))
