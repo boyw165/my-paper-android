@@ -125,10 +125,18 @@ public class CollisionSystemView
         final int canvasWidth = getWidth();
         final int canvasHeight = getHeight();
 
-        for (Particle particle : particles) {
+        for (int i = 0; i < particles.size(); ++i) {
+            final Particle particle = particles.get(i);
             final double x = particle.getCenterX();
             final double y = particle.getCenterY();
             final double r = particle.getRadius();
+
+            // Paint first one in red and the rest in black.
+            if (i == 0) {
+                mParticlePaint.setColor(Color.RED);
+            } else {
+                mParticlePaint.setColor(Color.BLACK);
+            }
 
             mOval.set((float) ((x - r) * canvasWidth),
                       (float) ((y - r) * canvasHeight),
