@@ -15,13 +15,12 @@ package com.paper.exp.simulation
  * @author Robert Sedgewick
  * @author Kevin Wayne
  */
-class Particle constructor(private var mCenterX: Double = Math.random(),
-                           private var mCenterY: Double = Math.random(),
-                           private var mVecX: Double = 0.5f * ((100f * Math.random() - 50f) / 100f),
-                           private var mVecY: Double = 0.5f * ((100f * Math.random() - 50f) / 100f),
-                           private val mRadius: Double = 1f * 0.01,
-                           private val mMass: Double = 1f * 0.5,
-                           private val mColor: Int = 0) {
+class Particle constructor(private var mCenterX: Double,
+                           private var mCenterY: Double,
+                           private var mVecX: Double,
+                           private var mVecY: Double,
+                           private val mRadius: Double,
+                           private val mMass: Double) {
     /**
      * Returns the number of collisions involving this particle with
      * vertical walls, horizontal walls, or other particles.
@@ -40,7 +39,6 @@ class Particle constructor(private var mCenterX: Double = Math.random(),
     val vecX: Double get() = mVecX
     val vecY: Double get() = mVecY
     val radius: Double get() = mRadius
-    val color: Int get() = mColor
 
     /**
      * Moves this particle in a straight line (based on its velocity)

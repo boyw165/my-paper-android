@@ -37,7 +37,17 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
     : IPresenter<CollisionSystemContract.View> {
 
     private val mCollisionSystem: CollisionSystem by lazy {
-        CollisionSystem(Array(60, { _ -> Particle() }))
+        val radius = 0.01
+        val mass = 0.5
+        val centerRange = (1.0 - 4 * radius)
+
+        CollisionSystem(Array(30, { _ ->
+            val x = centerRange * Math.random()
+            val y = centerRange * Math.random()
+            val vecX = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
+            val vecY = 1.0 * ((100.0 * Math.random() - 50.0) / 100.0)
+            Particle(x, y, vecX, vecY, radius, mass)
+        }))
     }
 
     // View
