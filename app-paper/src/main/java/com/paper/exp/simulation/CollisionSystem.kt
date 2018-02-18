@@ -128,8 +128,8 @@ class CollisionSystem(particles: Array<Particle>) {
                 // FIXME: Potential infinite loop caused by adding event with
                 // FIXME: negative hitting time.
                 // update the priority queue with new collisions involving a or b
-                predict(a, mClock, mSimulationUpToMs)
-                predict(b, mClock, mSimulationUpToMs)
+                predict(a, event.time, mSimulationUpToMs)
+                predict(b, event.time, mSimulationUpToMs)
 
                 // Advance the last clocking time.
                 lastClock = event.time
