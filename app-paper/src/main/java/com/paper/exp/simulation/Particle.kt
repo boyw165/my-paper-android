@@ -1,10 +1,5 @@
 package com.paper.exp.simulation
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
-
 /**
  * The `Particle` class represents a particle moving in the unit box,
  * with a given position, velocity, radius, and mass. Methods are provided
@@ -22,11 +17,11 @@ import android.graphics.RectF
  */
 class Particle constructor(private var mCenterX: Double = Math.random(),
                            private var mCenterY: Double = Math.random(),
-                           private var mVecX: Double = 1f * ((100f * Math.random() - 50f) / 100f),
-                           private var mVecY: Double = 1f * ((100f * Math.random() - 50f) / 100f),
+                           private var mVecX: Double = 0.5f * ((100f * Math.random() - 50f) / 100f),
+                           private var mVecY: Double = 0.5f * ((100f * Math.random() - 50f) / 100f),
                            private val mRadius: Double = 1f * 0.01,
                            private val mMass: Double = 1f * 0.5,
-                           private val mColor: Int = Color.BLACK) {
+                           private val mColor: Int = 0) {
     /**
      * Returns the number of collisions involving this particle with
      * vertical walls, horizontal walls, or other particles.
@@ -40,13 +35,12 @@ class Particle constructor(private var mCenterX: Double = Math.random(),
     var collisionCount: Int = 0
         private set
 
-    // For canvas rendering.
-    private val mOval = RectF()
-
     val centerX: Double get() = mCenterX
     val centerY: Double get() = mCenterY
     val vecX: Double get() = mVecX
     val vecY: Double get() = mVecY
+    val radius: Double get() = mRadius
+    val color: Int get() = mColor
 
     /**
      * Moves this particle in a straight line (based on its velocity)
@@ -57,23 +51,6 @@ class Particle constructor(private var mCenterX: Double = Math.random(),
     fun move(dt: Double) {
         mCenterX += mVecX * dt
         mCenterY += mVecY * dt
-    }
-
-    /**
-     * Draws this particle to standard draw.
-     */
-    fun draw(canvas: Canvas,
-             canvasWidth: Int,
-             canvasHeight: Int,
-             paint: Paint) {
-        paint.color = mColor
-
-        mOval.set((mCenterX - mRadius).toFloat() * canvasWidth,
-                  (mCenterY - mRadius).toFloat() * canvasHeight,
-                  (mCenterX + mRadius).toFloat() * canvasWidth,
-                  (mCenterY + mRadius).toFloat() * canvasHeight)
-        canvas.drawOval(mOval,
-                        paint)
     }
 
     /**

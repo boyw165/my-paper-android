@@ -77,22 +77,22 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                     val lastClock = mClock
                     mClock = mSystemTime.getCurrentTimeMillis()
 
-                    // Collision system.
-                    mCollisionSystem.simulate(
-                        canvas,
-                        mView.getCanvasWidth(),
-                        mView.getCanvasHeight(),
-                        mView.getParticlePaint(),
+                    // Simulate the collision.
+                    val particles = mCollisionSystem.simulate(
                         (mClock - lastClock).toDouble() / 1000.0)
 
-                    mView.showText(
+                    // Draw particles.
+                    mView.drawParticles(canvas, particles)
+
+                    // Debug info.
+                    mView.drawDebugText(
                         canvas,
                         ("particle number = %d\n" +
                          "event number = %d").format(
                             mCollisionSystem.particlesSize,
                             mCollisionSystem.collisionEventsSize))
                 } else {
-                    // Collision system.
+                    // Init the collision system.
                     mCollisionSystem.start()
 
                     // Update system clock.

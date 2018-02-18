@@ -21,9 +21,7 @@
 package com.paper
 
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.os.Bundle
-import android.os.SystemClock
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
@@ -31,6 +29,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.exp.simulation.CollisionSystemContract
 import com.paper.exp.simulation.CollisionSystemPresenter
 import com.paper.exp.simulation.CollisionSystemView
+import com.paper.exp.simulation.Particle
 import com.paper.protocol.INavigator
 import com.paper.protocol.ISystemTime
 import io.reactivex.Observable
@@ -112,14 +111,6 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
         mCollisionSystemView.schedulePeriodicRendering(listener)
     }
 
-    override fun getCanvasWidth(): Int {
-        return mCollisionSystemView.getCanvasWidth()
-    }
-
-    override fun getCanvasHeight(): Int {
-        return mCollisionSystemView.getCanvasHeight()
-    }
-
     override fun unScheduleAll() {
         mCollisionSystemView.unScheduleAll()
     }
@@ -133,12 +124,12 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
         }
     }
 
-    override fun showText(canvas: Canvas, text: String) {
-        mCollisionSystemView.showText(canvas, text)
+    override fun drawDebugText(canvas: Canvas, text: String) {
+        mCollisionSystemView.drawDebugText(canvas, text)
     }
 
-    override fun getParticlePaint(): Paint {
-        return mCollisionSystemView.getParticlePaint()
+    override fun drawParticles(canvas: Canvas, particles: List<Particle>) {
+        mCollisionSystemView.drawParticles(canvas, particles)
     }
 
     ///////////////////////////////////////////////////////////////////////////

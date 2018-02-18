@@ -1,7 +1,5 @@
 package com.paper.exp.simulation
 
-import android.graphics.Canvas
-import android.graphics.Paint
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -76,12 +74,8 @@ class CollisionSystem(particles: Array<Particle>) {
     /**
      * Simulates the system of particles for the specified amount of time.
      */
-    fun simulate(canvas: Canvas,
-                 canvasWidth: Int,
-                 canvasHeight: Int,
-                 particlePaint: Paint,
-                 dt: Double) {
-        if (!mIsStarted.get()) return
+    fun simulate(dt: Double): List<Particle> {
+        if (!mIsStarted.get()) return emptyList()
 
         if (dt < 0.0) {
             throw IllegalArgumentException("Given dt=%d is negative".format(dt))
@@ -156,8 +150,7 @@ class CollisionSystem(particles: Array<Particle>) {
             }
         }
 
-        // Rendering.
-        draw(canvas, canvasWidth, canvasHeight, particlePaint)
+        return mParticles
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -195,17 +188,6 @@ class CollisionSystem(particles: Array<Particle>) {
             currentMilliSeconds + dtY > 0 &&
             currentMilliSeconds + dtY <= upToMilliSeconds) {
             mPQ.add(Event((currentMilliSeconds + dtY), null, thiz))
-        }
-    }
-
-    private fun draw(canvas: Canvas,
-                     canvasWidth: Int,
-                     canvasHeight: Int,
-                     particlePaint: Paint) {
-        for (particle in mParticles) {
-            // TODO: particle shouldn't aware of the rendering details.
-            // Rendering.
-            particle.draw(canvas, canvasWidth, canvasHeight, particlePaint)
         }
     }
 

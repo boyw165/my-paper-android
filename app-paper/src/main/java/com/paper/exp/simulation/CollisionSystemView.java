@@ -14,6 +14,8 @@ import com.paper.exp.simulation.CollisionSystemContract.SimulationListener;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 import io.reactivex.Observable;
 
 public class CollisionSystemView
@@ -25,6 +27,7 @@ public class CollisionSystemView
     private final Paint mTextPaint = new Paint();
     private final Paint mBoundPaint = new Paint();
     private final RectF mBoundRect = new RectF();
+    private final RectF mOval = new RectF();
     private float mTextSize = 0f;
 
     private SimulationListener mListener;
@@ -69,12 +72,6 @@ public class CollisionSystemView
 
     @NotNull
     @Override
-    public Paint getParticlePaint() {
-        return mParticlePaint;
-    }
-
-    @NotNull
-    @Override
     public Observable<Object> onClickBack() {
         return Observable.just((Object) 0);
     }
@@ -112,8 +109,8 @@ public class CollisionSystemView
     }
 
     @Override
-    public void showText(@NotNull Canvas canvas,
-                         @NotNull String text) {
+    public void drawDebugText(@NotNull Canvas canvas,
+                              @NotNull String text) {
         float x = mTextSize;
         float y = mTextSize;
         for (String line : text.split("\n")) {
@@ -123,12 +120,22 @@ public class CollisionSystemView
     }
 
     @Override
-    public int getCanvasWidth() {
-        return getWidth();
-    }
+    public void drawParticles(@NotNull Canvas canvas,
+                              @NotNull List<Particle> particles) {
+        final int canvasWidth = getWidth();
+        final int canvasHeight = getHeight();
 
-    @Override
-    public int getCanvasHeight() {
-        return getHeight();
+        for (Particle particle : particles) {
+            final double x = particle.getCenterX();
+            final double y = particle.getCenterY();
+            final double r = particle.getRadius();
+
+            mOval.set((float) ((x - r) * canvasWidth),
+                      (float) ((y - r) * canvasHeight),
+                      (float) ((x + r) * canvasWidth),
+                      (float) ((y + r) * canvasHeight));
+
+            canvas.drawOval(mOval, mParticlePaint);
+        }
     }
 }

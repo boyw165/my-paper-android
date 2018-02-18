@@ -21,7 +21,6 @@
 package com.paper.exp.simulation
 
 import android.graphics.Canvas
-import android.graphics.Paint
 import io.reactivex.Observable
 
 abstract class CollisionSystemContract private constructor() {
@@ -31,12 +30,10 @@ abstract class CollisionSystemContract private constructor() {
         fun schedulePeriodicRendering(listener: SimulationListener)
         fun unScheduleAll()
 
-        fun getParticlePaint(): Paint
-        fun getCanvasWidth(): Int
-        fun getCanvasHeight(): Int
-
         fun showToast(text: String)
-        fun showText(canvas: Canvas, text: String)
+
+        fun drawDebugText(canvas: Canvas, text: String)
+        fun drawParticles(canvas: Canvas, particles: List<Particle>)
 
         fun onClickBack(): Observable<Any>
     }
