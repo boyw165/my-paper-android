@@ -93,7 +93,7 @@ class Particle constructor(private var mCenterX: Double = Math.random(),
         val dvx = that.mVecX - this.mVecX
         val dvy = that.mVecY - this.mVecY
         val dvdr = dx * dvx + dy * dvy
-        if (dvdr > 0) return INFINITY
+        if (dvdr >= 0) return INFINITY
 
         val dvdv = dvx * dvx + dvy * dvy
         val drdr = dx * dx + dy * dy
