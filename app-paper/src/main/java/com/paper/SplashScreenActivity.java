@@ -51,7 +51,7 @@ public class SplashScreenActivity extends AppCompatActivity {
         // Do nothing but wait few seconds and launch the start page.
         Observable
             .just(true)
-            .delay(750, TimeUnit.MILLISECONDS)
+            .delay(150, TimeUnit.MILLISECONDS)
             .subscribe(new Consumer<Boolean>() {
                 @Override
                 public void accept(Boolean ignored) throws Exception {
