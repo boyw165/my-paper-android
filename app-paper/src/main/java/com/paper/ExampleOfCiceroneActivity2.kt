@@ -38,7 +38,7 @@ class ExampleOfCiceroneActivity2 : AppCompatActivity() {
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_cicerone2)
+        setContentView(R.layout.activity_example_of_cicerone2)
 
         mDisposablesOnCreate.add(
             RxView.clicks(mBtnExit)

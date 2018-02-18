@@ -69,7 +69,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
-        setContentView(R.layout.activity_cicerone1)
+        setContentView(R.layout.activity_example_of_cicerone1)
 
         if (savedState == null) {
             // Ask router to show the fragment.
