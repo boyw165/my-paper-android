@@ -20,25 +20,13 @@ import android.graphics.RectF
  * @author Robert Sedgewick
  * @author Kevin Wayne
  */
-class Particle
-/**
- * Initializes a particle with the specified position, velocity, radius, mass, and color.
- *
- * @param rx     *x*-coordinate of position
- * @param ry     *y*-coordinate of position
- * @param vx     *x*-coordinate of velocity
- * @param vy     *y*-coordinate of velocity
- * @param radius the radius
- * @param mass   the mass
- * @param color  the color
- */
-@JvmOverloads constructor(private var mCenterX: Double = Math.random(),
-                          private var mCenterY: Double = Math.random(),
-                          private var mVecX: Double = (1000f * Math.random() - 500f) / 200000f,
-                          private var mVecY: Double = (1000f * Math.random() - 500f) / 200000f,
-                          private val mRadius: Double = 0.01,
-                          private val mMass: Double = 0.5,
-                          private val mColor: Int = Color.BLACK) {
+class Particle constructor(private var mCenterX: Double = Math.random(),
+                           private var mCenterY: Double = Math.random(),
+                           private var mVecX: Double = 1f * ((100f * Math.random() - 50f) / 100f),
+                           private var mVecY: Double = 1f * ((100f * Math.random() - 50f) / 100f),
+                           private val mRadius: Double = 1f * 0.01,
+                           private val mMass: Double = 1f * 0.5,
+                           private val mColor: Int = Color.BLACK) {
     /**
      * Returns the number of collisions involving this particle with
      * vertical walls, horizontal walls, or other particles.
@@ -54,6 +42,11 @@ class Particle
 
     // For canvas rendering.
     private val mOval = RectF()
+
+    val centerX: Double get() = mCenterX
+    val centerY: Double get() = mCenterY
+    val vecX: Double get() = mVecX
+    val vecY: Double get() = mVecY
 
     /**
      * Moves this particle in a straight line (based on its velocity)
@@ -108,7 +101,6 @@ class Particle
         val d = dvdr * dvdr - dvdv * (drdr - sigma * sigma)
         // if (drdr < sigma*sigma) StdOut.println("overlapping particles");
         return if (d < 0) INFINITY else -(dvdr + Math.sqrt(d)) / dvdv
-
     }
 
     /**
@@ -213,8 +205,10 @@ class Particle
         return 0.5 * mMass * (mVecX * mVecX + mVecY * mVecY)
     }
 
-    companion object {
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
 
+    companion object {
         private val INFINITY = java.lang.Double.POSITIVE_INFINITY
     }
 }

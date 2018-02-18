@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @author Kevin Wayne
  */
 class CollisionSystem(particles: Array<Particle>) {
-    private var mSimulationUpToMs: Long = 0L
+    private var mSimulationUpToMs: Double = 0.0
 
     // The priority queue for collision event.
     val collisionEventsSize: Int get() = mPQ.size
@@ -33,8 +33,8 @@ class CollisionSystem(particles: Array<Particle>) {
     private val mParticles: MutableList<Particle> = mutableListOf()
     val particlesSize: Int get() = mParticles.size
 
-    // Clock.
-    private var mClock: Long = 0L
+    // Clock in seconds.
+    private var mClock: Double = 0.0
 
     // State.
     private val mIsStarted = AtomicBoolean(false)
@@ -52,9 +52,8 @@ class CollisionSystem(particles: Array<Particle>) {
         mIsStarted.set(false)
 
         // Init clock.
-        mClock = 0L
-
-        mSimulationUpToMs = ONE_MINUTE_MS
+        mClock = 0.0
+        mSimulationUpToMs = TEN_MINUTES_MS.toDouble() / 1000.0
 
         // Rebuild the event queue.
         mPQ.clear()
@@ -81,10 +80,10 @@ class CollisionSystem(particles: Array<Particle>) {
                  canvasWidth: Int,
                  canvasHeight: Int,
                  particlePaint: Paint,
-                 dt: Long) {
+                 dt: Double) {
         if (!mIsStarted.get()) return
 
-        if (dt < 0) {
+        if (dt < 0.0) {
             throw IllegalArgumentException("Given dt=%d is negative".format(dt))
         }
 
@@ -111,15 +110,13 @@ class CollisionSystem(particles: Array<Particle>) {
                 val a = event.a
                 val b = event.b
 
-                val shifted = event.time - lastClock
-                if (shifted < 0) {
-                    throw IllegalStateException("negative dt=%d".format(dt))
-                }
-
                 // Physical collision, so update positions
-                lastClock = event.time
+                val shift = event.time - lastClock
+                if (shift <= 0.0) {
+                    throw IllegalStateException("negative shift time=%.3f".format(shift))
+                }
                 for (particle in mParticles) {
-                    particle.move(shifted.toDouble())
+                    particle.move(shift)
                 }
 
                 // Process event
@@ -128,14 +125,32 @@ class CollisionSystem(particles: Array<Particle>) {
                     a.bounceOff(b)
                 } else a?.bounceOffVerticalWall() ?: b?.bounceOffHorizontalWall()
 
+                // FIXME: Potential infinite loop caused by adding event with
+                // FIXME: negative hitting time.
                 // update the priority queue with new collisions involving a or b
                 predict(a, mClock, mSimulationUpToMs)
                 predict(b, mClock, mSimulationUpToMs)
 
+                // Advance the last clocking time.
+                lastClock = event.time
             } else {
                 // Update position.
+                val shift = mClock - lastClock
                 for (particle in mParticles) {
-                    particle.move((mClock - lastClock).toDouble())
+                    val lastX = particle.centerX
+                    val lastY = particle.centerY
+
+                    particle.move(shift)
+
+                    if (particle.centerX <= 0.0 || particle.centerX >= 1.0 ||
+                        particle.centerY <= 0.0 || particle.centerY >= 1.0) {
+                        throw IllegalStateException(
+                            "particle[vx=%.3f, vy=%.3f, dt=%.3f, shift=%.3f] runs off boundary: (x=%.3f, y=%.3f) => (x=%.3f, y=%.3f)"
+                                .format(particle.vecX, particle.vecY,
+                                        dt, shift,
+                                        lastX, lastY,
+                                        particle.centerX, particle.centerY))
+                    }
                 }
                 break
             }
@@ -150,8 +165,8 @@ class CollisionSystem(particles: Array<Particle>) {
 
     // updates priority queue with all new events for particle a
     private fun predict(thiz: Particle?,
-                        currentMilliSeconds: Long,
-                        upToMilliSeconds: Long) {
+                        currentMilliSeconds: Double,
+                        upToMilliSeconds: Double) {
         if (thiz == null) return
 
         // particle-particle collisions
@@ -161,10 +176,10 @@ class CollisionSystem(particles: Array<Particle>) {
 
             val t = currentMilliSeconds + dt
             // Overflow protection.
-            if (t < 0) continue
+            if (t < 0.0) continue
 
             if (t <= upToMilliSeconds) {
-                mPQ.add(Event(t.toLong(), thiz, that))
+                mPQ.add(Event(t, thiz, that))
             }
         }
 
@@ -174,12 +189,12 @@ class CollisionSystem(particles: Array<Particle>) {
         if (dtX >= 0.0 &&
             currentMilliSeconds + dtX > 0 &&
             currentMilliSeconds + dtX <= upToMilliSeconds) {
-            mPQ.add(Event((currentMilliSeconds + dtX).toLong(), thiz, null))
+            mPQ.add(Event((currentMilliSeconds + dtX), thiz, null))
         }
         if (dtY >= 0.0 &&
             currentMilliSeconds + dtY > 0 &&
             currentMilliSeconds + dtY <= upToMilliSeconds) {
-            mPQ.add(Event((currentMilliSeconds + dtY).toLong(), null, thiz))
+            mPQ.add(Event((currentMilliSeconds + dtY), null, thiz))
         }
     }
 
@@ -208,7 +223,7 @@ class CollisionSystem(particles: Array<Particle>) {
      * -  a and b both not null:  binary collision between a and b
      */
     private class Event internal constructor(
-        val time: Long,
+        val time: Double,
         // time that event is scheduled to occur
         val a: Particle?,
         // particles involved in event, possibly null
@@ -236,6 +251,7 @@ class CollisionSystem(particles: Array<Particle>) {
     }
 
     companion object {
-        private const val ONE_MINUTE_MS: Long = 60L * 1000
+        private const val ONE_MINUTE_MS: Long = 1L * 60L * 1000L
+        private const val TEN_MINUTES_MS: Long = 10L * 60L * 1000L
     }
 }

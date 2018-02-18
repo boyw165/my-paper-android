@@ -83,7 +83,7 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                         mView.getCanvasWidth(),
                         mView.getCanvasHeight(),
                         mView.getParticlePaint(),
-                        mClock - lastClock)
+                        (mClock - lastClock).toDouble() / 1000.0)
 
                     mView.showText(
                         canvas,
