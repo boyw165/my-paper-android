@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -22,6 +23,8 @@ public class CollisionSystemView
     // Rendering.
     private final Paint mParticlePaint = new Paint();
     private final Paint mTextPaint = new Paint();
+    private final Paint mBoundPaint = new Paint();
+    private final RectF mBoundRect = new RectF();
     private float mTextSize = 0f;
 
     private SimulationListener mListener;
@@ -48,6 +51,9 @@ public class CollisionSystemView
         mTextPaint.setColor(Color.GREEN);
         mTextPaint.setTextSize(mTextSize);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
+
+        mBoundPaint.setColor(Color.LTGRAY);
+        mBoundPaint.setStyle(Paint.Style.FILL);
     }
 
     @Override
@@ -82,12 +88,17 @@ public class CollisionSystemView
         final int width = MeasureSpec.getSize(widthSpec);
         final int height = width;
 
+        mBoundRect.set(0, 0, width, height);
+
         setMeasuredDimension(width, height);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+        // Boundary.
+        canvas.drawRect(mBoundRect, mBoundPaint);
 
         if (mListener != null) {
             mListener.onUpdateSimulation(canvas);
