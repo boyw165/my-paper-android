@@ -117,25 +117,39 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun createParticles(): Array<Particle> {
-        val radius = 0.02
         val mass = 0.5
+        val radius = 0.02
         val padding = 2.5 * radius
-        // Use uniform-Possion-sample to populate the particles.
+        // Use uniform-Possion-distribution to populate the particles.
         val sampler = UniformPoissonDiskSampler(
             RectF(padding.toFloat(), padding.toFloat(),
                   (1.0 - padding).toFloat(), (1.0 - padding).toFloat()),
             3f * radius,
-            PointF(0.5f, 0.5f))
+            PointF(padding.toFloat(), padding.toFloat()))
 
-        return Array(25, { _ ->
-            val pt = sampler.sample() ?: throw IllegalStateException(
-                "Insufficient space to populate the particle.")
-            val x = pt.x.toDouble()
-            val y = pt.y.toDouble()
+        return Array(25, { i ->
+            if (i == 0) {
+                val scale = 6.0
+                val scaledRadius = scale * radius
+                val vecX = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
 
-            val vecX = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
-            val vecY = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
-            Particle(x, y, vecX, vecY, radius, mass)
+                Particle(1.0 - scaledRadius - padding, 0.5,
+                         vecX, 0.0,
+                         scaledRadius,
+                         scale * mass)
+            } else {
+                val pt = sampler.sample() ?: throw IllegalStateException(
+                    "Insufficient space to populate the particle.")
+                val x = pt.x.toDouble()
+                val y = pt.y.toDouble()
+                val vecX = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
+                val vecY = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
+
+                Particle(x, y,
+                         vecX, vecY,
+                         radius,
+                         mass)
+            }
         })
     }
 }
