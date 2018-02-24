@@ -91,7 +91,7 @@ dependencies {
     implementation rootProject.ext.dep.collageGestureDetector
     implementation project(path: ":lib-shared-model")
     implementation project(path: ":lib-shared-model-repository")
-    implementation project(path: ":lib-doodle-editor")
+//    implementation project(path: ":lib-doodle-editor")
 
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit

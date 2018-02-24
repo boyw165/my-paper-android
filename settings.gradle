@@ -1,4 +1,4 @@
 include ':app-paper',
         ':lib-shared-model',
-        ':lib-shared-model-repository',
-        ':lib-doodle-editor'
+        ':lib-shared-model-repository'
+//        ':lib-doodle-editor'
