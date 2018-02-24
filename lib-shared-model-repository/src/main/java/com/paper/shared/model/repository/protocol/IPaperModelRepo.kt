@@ -16,6 +16,7 @@ package com.paper.shared.model.repository.protocol
 
 import com.paper.shared.model.PaperModel
 import io.reactivex.Observable
+import io.reactivex.Single
 
 interface IPaperModelRepo {
 
@@ -28,6 +29,10 @@ interface IPaperModelRepo {
     fun duplicatePaperById(id: Long): Observable<PaperModel>
 
     fun deletePaperById(id: Long): Observable<Boolean>
+
+    // For testing data.
+
+    fun getTestPaper(): Single<PaperModel>
 
     // For temporary store.
 

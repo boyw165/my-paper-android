@@ -28,8 +28,7 @@ object PaperTable {
     val COL_COUNT: String = BaseColumns._COUNT
     val COL_CREATED_AT: String = "create_time"
     val COL_MODIFIED_AT: String = "modify_time"
-    val COL_WIDTH: String = "width"
-    val COL_HEIGHT: String = "height"
+    val COL_WIDTH_OVER_HEIGHT: String = "width"
     val COL_CAPTION: String = "caption"
     val COL_THUMB_PATH: String = "thumb_path"
     val COL_THUMB_WIDTH: String = "thumb_width"

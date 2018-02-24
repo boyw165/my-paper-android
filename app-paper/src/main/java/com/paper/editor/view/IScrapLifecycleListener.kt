@@ -18,8 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view
 
-class PaperCanvasContract private constructor() {
+interface IScrapLifecycleListener {
 
+    fun onAttachToCanvas(view: IScrapView)
+
+    fun onDetachFromCanvas(view: IScrapView)
 }

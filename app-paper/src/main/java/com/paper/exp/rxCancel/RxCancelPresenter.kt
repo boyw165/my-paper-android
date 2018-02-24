@@ -20,7 +20,7 @@
 
 package com.paper.exp.rxCancel
 
-import com.paper.model.ProgressState
+import com.paper.event.ProgressEvent
 import com.paper.protocol.INavigator
 import com.paper.protocol.IPresenter
 import io.reactivex.Observable
@@ -53,7 +53,7 @@ class RxCancelPresenter(navigator: INavigator,
     private val mUiSchedulers = uiScheduler
 
     // Progress.
-    private val mOnUpdateProgress: Subject<ProgressState> = PublishSubject.create()
+    private val mOnUpdateProgress: Subject<ProgressEvent> = PublishSubject.create()
     private val mOnThrowError: Subject<Throwable> = PublishSubject.create()
 
     // Disposables.
@@ -156,7 +156,7 @@ class RxCancelPresenter(navigator: INavigator,
     private fun toShareAction(): Observable<Any> {
         // #1 observable simulating an arbitrary long-run process.
         return generateBmp()
-            .compose(handleError(ProgressState(justStop = true)))
+            .compose(handleError(ProgressEvent(justStop = true)))
             // #2 observable that shows a dialog.
             .switchMap { _ ->
                 mView.showConfirmDialog()
@@ -171,9 +171,9 @@ class RxCancelPresenter(navigator: INavigator,
             .switchMap { b: Boolean ->
                 if (b) {
                     shareToFacebook()
-                        .compose(handleError(ProgressState(justStop = true)))
+                        .compose(handleError(ProgressEvent(justStop = true)))
                 } else {
-                    Observable.just(ProgressState(justStop = true))
+                    Observable.just(ProgressEvent(justStop = true))
                 }
             }
     }
@@ -181,30 +181,30 @@ class RxCancelPresenter(navigator: INavigator,
     /**
      * An observable emitting the status of generating the Bitmap.
      */
-    private fun generateBmp(): Observable<ProgressState> {
+    private fun generateBmp(): Observable<ProgressEvent> {
         return getSimulatingLongRunProcess()
     }
 
     /**
      * An observable emitting the status of sharing.
      */
-    private fun shareToFacebook(): Observable<ProgressState> {
+    private fun shareToFacebook(): Observable<ProgressEvent> {
         return getSimulatingLongRunProcess()
     }
 
     /**
      * Returns a CANCEL action.
      */
-    private fun toCancelAction(): Observable<ProgressState> {
+    private fun toCancelAction(): Observable<ProgressEvent> {
         return Observable
-            .just(ProgressState(justStop = true))
+            .just(ProgressEvent(justStop = true))
             .doOnNext { state -> mOnUpdateProgress.onNext(state) }
     }
 
     /**
-     * Returns an Observable that emitting [ProgressState].
+     * Returns an Observable that emitting [ProgressEvent].
      */
-    private fun getSimulatingLongRunProcess(): Observable<ProgressState> {
+    private fun getSimulatingLongRunProcess(): Observable<ProgressEvent> {
         return Observable
             // The first simulated long-run process.
             .intervalRange(
@@ -217,7 +217,7 @@ class RxCancelPresenter(navigator: INavigator,
                 // Interval period.
                 25, TimeUnit.MILLISECONDS)
             .map { value ->
-                ProgressState(doing = true,
+                ProgressEvent(doing = true,
                               progress = value.toInt())
             }
             .compose(handleProgress())
@@ -225,14 +225,14 @@ class RxCancelPresenter(navigator: INavigator,
     }
 
     /**
-     * A transformer that massage [ProgressState] from upstream and bypass to
+     * A transformer that massage [ProgressEvent] from upstream and bypass to
      * [mOnUpdateProgress] channel.
      */
-    private fun handleProgress(): ObservableTransformer<ProgressState, ProgressState> {
+    private fun handleProgress(): ObservableTransformer<ProgressEvent, ProgressEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 // Create a "start" state.
-                .startWith(ProgressState(justStart = true))
+                .startWith(ProgressEvent(justStart = true))
                 .map { state ->
                     return@map if (state.doing && state.progress == 100) {
                         val stopState = state.copy(justStop = true)
@@ -253,9 +253,9 @@ class RxCancelPresenter(navigator: INavigator,
     }
 
     /**
-     * A transformer that filters START and DOING [ProgressState] state.
+     * A transformer that filters START and DOING [ProgressEvent] state.
      */
-    private fun goUntilPreviousTaskStops(): ObservableTransformer<ProgressState, ProgressState> {
+    private fun goUntilPreviousTaskStops(): ObservableTransformer<ProgressEvent, ProgressEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 .filter { state -> state.justStop }

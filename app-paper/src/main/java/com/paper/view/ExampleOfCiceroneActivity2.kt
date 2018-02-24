@@ -1,4 +1,4 @@
-package com.paper
+package com.paper.view
 
 import android.content.Intent
 import android.os.Bundle
@@ -6,6 +6,7 @@ import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.R
 import com.paper.exp.cicerone.CiceroneContract
 import com.paper.exp.cicerone.view.CiceroneFragment1
 import com.paper.protocol.IRouterProvider

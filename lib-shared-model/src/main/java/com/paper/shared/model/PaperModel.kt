@@ -20,8 +20,6 @@
 
 package com.paper.shared.model
 
-import java.util.*
-
 class PaperModel {
 
     var id: Long = 0L
@@ -29,8 +27,11 @@ class PaperModel {
     var createdAt: Long = 0L
     var modifiedAt: Long = 0L
 
-    var width: Int = 0
-    var height: Int = 0
+    var widthOverHeight: Float = 1f
+    var viewPortX: Float = 0f
+    var viewPortY: Float = 0f
+    var viewPortWidth: Float = widthOverHeight
+    var viewPortHeight: Float = 1f
 
     var thumbnailPath: String? = null
     var thumbnailWidth: Int = 0
@@ -38,5 +39,5 @@ class PaperModel {
 
     var caption: String = ""
 
-    val scraps: List<PaperScrapModel> = ArrayList()
+    val scraps: MutableList<ScrapModel> = mutableListOf()
 }

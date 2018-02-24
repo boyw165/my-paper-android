@@ -104,19 +104,19 @@ class Sketch constructor(id: Long) {
     val strokeSize: Int
         get() {
             synchronized(mMutex) {
-                return mStrokes!!.size
+                return mStrokes.size
             }
         }
 
     fun getStrokeAt(position: Int): SketchStroke {
         synchronized(mMutex) {
-            return mStrokes!![position]
+            return mStrokes[position]
         }
     }
 
     fun addStroke(stroke: SketchStroke) {
         synchronized(mMutex) {
-            mStrokes!!.add(stroke)
+            mStrokes.add(stroke)
             mStrokesBoundDirty = true
         }
     }
@@ -144,7 +144,7 @@ class Sketch constructor(id: Long) {
 
     fun clearStrokes() {
         synchronized(mMutex) {
-            mStrokes!!.clear()
+            mStrokes.clear()
         }
     }
 
@@ -162,7 +162,7 @@ class Sketch constructor(id: Long) {
                                      )
 
                     val aspectRatio = width.toFloat() / height
-                    for (stroke in mStrokes!!) {
+                    for (stroke in mStrokes) {
                         val strokeBound = stroke.bound
                         val halfStrokeWidth = stroke.getWidth() / 2
 

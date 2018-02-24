@@ -20,6 +20,13 @@
 
 package com.paper.editor
 
-class PaperCanvasContract private constructor() {
+interface ITouchConfig {
 
+    fun getTouchSlop(): Float
+
+    fun getTapSlop(): Float
+
+    fun getMinFlingVec(): Float
+
+    fun getMaxFlingVec(): Float
 }

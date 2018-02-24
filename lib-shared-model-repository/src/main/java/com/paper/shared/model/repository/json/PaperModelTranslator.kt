@@ -47,8 +47,7 @@ class PaperModelTranslator : JsonSerializer<PaperModel>,
         val root = JsonObject()
 
         // Serialize.
-        root.addProperty(PaperTable.COL_WIDTH, src.width)
-        root.addProperty(PaperTable.COL_HEIGHT, src.height)
+        root.addProperty(PaperTable.COL_WIDTH_OVER_HEIGHT, src.widthOverHeight)
 
         // TODO: Serialize the scraps.
 
@@ -63,13 +62,9 @@ class PaperModelTranslator : JsonSerializer<PaperModel>,
         // Deserialize.
         val root = json.asJsonObject
 
-        // width.
-        if (root.has(PaperTable.COL_WIDTH)) {
-            model.width = root.get(PaperTable.COL_WIDTH).asInt
-        }
-        // height.
-        if (root.has(PaperTable.COL_HEIGHT)) {
-            model.height = root.get(PaperTable.COL_HEIGHT).asInt
+        // width over height.
+        if (root.has(PaperTable.COL_WIDTH_OVER_HEIGHT)) {
+            model.widthOverHeight = root.get(PaperTable.COL_WIDTH_OVER_HEIGHT).asFloat
         }
 
         return model

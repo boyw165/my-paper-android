@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper
+package com.paper.view
 
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
@@ -28,6 +28,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.R
 import com.paper.exp.rxCancel.RxCancelContract
 import com.paper.exp.rxCancel.RxCancelPresenter
 import com.paper.observables.BooleanDialogSingle

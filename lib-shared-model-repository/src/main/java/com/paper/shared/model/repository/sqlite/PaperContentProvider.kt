@@ -65,8 +65,7 @@ class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
             "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA" +
             "${PaperTable.COL_CREATED_AT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_WIDTH} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_HEIGHT} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_WIDTH_OVER_HEIGHT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_CAPTION} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +

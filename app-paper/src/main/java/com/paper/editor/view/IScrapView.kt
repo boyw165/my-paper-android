@@ -18,8 +18,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view
 
-class PaperCanvasContract private constructor() {
+import android.graphics.Matrix
+import com.cardinalblue.gesture.GestureDetector
+import com.paper.editor.ITouchConfig
+import com.paper.shared.model.TransformModel
 
+interface IScrapView : ITouchConfig {
+
+    fun setScrapId(id: Long)
+
+    fun getScrapId(): Long
+
+    fun getTransform(): TransformModel
+
+    fun getTransformMatrix(): Matrix
+
+    fun getGestureDetector(): GestureDetector
+
+    fun setTransform(transform: TransformModel)
+
+    fun setTransformPivot(pivotX: Float, pivotY: Float)
+
+    fun convertPointToParentWorld(point: FloatArray)
 }

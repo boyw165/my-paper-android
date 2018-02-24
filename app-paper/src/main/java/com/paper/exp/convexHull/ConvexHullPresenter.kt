@@ -20,7 +20,7 @@
 
 package com.paper.exp.convexHull
 
-import com.paper.model.ProgressState
+import com.paper.event.ProgressEvent
 import com.paper.protocol.IPresenter
 import com.paper.router.MyRouter
 import io.reactivex.ObservableTransformer
@@ -39,7 +39,7 @@ class ConvexHullPresenter(val mRouter: MyRouter,
     private lateinit var mView: ConvexHullContract.View
 
     // Progress.
-    private val mOnUpdateProgress: Subject<ProgressState> = PublishSubject.create()
+    private val mOnUpdateProgress: Subject<ProgressEvent> = PublishSubject.create()
     private val mOnThrowError: Subject<Throwable> = PublishSubject.create()
 
     // Disposables.

@@ -21,11 +21,14 @@ import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.paper.shared.model.PaperModel
+import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.repository.json.PaperModelTranslator
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.paper.shared.model.repository.sqlite.PaperTable
+import com.paper.shared.model.sketch.Sketch
 import io.reactivex.Observable
 import io.reactivex.Scheduler
+import io.reactivex.Single
 import java.io.File
 
 class PaperRepo(authority: String,
@@ -63,8 +66,7 @@ class PaperRepo(authority: String,
                     arrayOf(PaperTable.COL_ID,
                             PaperTable.COL_CREATED_AT,
                             PaperTable.COL_MODIFIED_AT,
-                            PaperTable.COL_WIDTH,
-                            PaperTable.COL_HEIGHT,
+                            PaperTable.COL_WIDTH_OVER_HEIGHT,
                             PaperTable.COL_CAPTION,
                             PaperTable.COL_THUMB_PATH,
                             PaperTable.COL_THUMB_WIDTH,
@@ -106,6 +108,28 @@ class PaperRepo(authority: String,
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    override fun getTestPaper(): Single<PaperModel> {
+        return Single
+            .fromCallable {
+                val paper = PaperModel()
+
+                paper.widthOverHeight = 1f
+
+                // Add testing scraps.
+                val scrap1 = ScrapModel(0)
+                scrap1.sketch = Sketch()
+
+                val scrap2 = ScrapModel(1)
+                scrap2.sketch = Sketch()
+
+                paper.scraps.add(scrap1)
+                paper.scraps.add(scrap2)
+
+                return@fromCallable paper
+            }
+            .subscribeOn(mIoScheduler)
+    }
+
     override fun hasTempPaper(): Observable<Boolean> {
         return Observable
             .fromCallable {
@@ -134,10 +158,9 @@ class PaperRepo(authority: String,
                 val newPaper = PaperModel()
                 newPaper.createdAt = timestamp
                 newPaper.modifiedAt = timestamp
-//                newPaper.width = 210
-//                newPaper.height = 297
-                newPaper.width = 840
-                newPaper.height = 1188
+                //                newPaper.width = 210
+                //                newPaper.height = 297
+                newPaper.widthOverHeight = 840f / 1188f
                 newPaper.caption = caption
 
                 val json = mGson.toJson(newPaper)
@@ -183,8 +206,7 @@ class PaperRepo(authority: String,
 
         values.put(PaperTable.COL_CREATED_AT, paper.createdAt)
         values.put(PaperTable.COL_MODIFIED_AT, paper.modifiedAt)
-        values.put(PaperTable.COL_WIDTH, paper.width)
-        values.put(PaperTable.COL_HEIGHT, paper.height)
+        values.put(PaperTable.COL_WIDTH_OVER_HEIGHT, paper.widthOverHeight)
         values.put(PaperTable.COL_CAPTION, paper.caption)
 
         // FIXME:
@@ -209,11 +231,8 @@ class PaperRepo(authority: String,
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
         paper.modifiedAt = cursor.getLong(colOfModifiedAt)
 
-        val colOfWidth = cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH)
-        paper.width = cursor.getInt(colOfWidth)
-
-        val colOfHeight = cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT)
-        paper.height = cursor.getInt(colOfHeight)
+        val colOfWidthOverHeight = cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH_OVER_HEIGHT)
+        paper.widthOverHeight = cursor.getFloat(colOfWidthOverHeight)
 
         val colOfCaption = cursor.getColumnIndexOrThrow(PaperTable.COL_CAPTION)
         paper.caption = cursor.getString(colOfCaption)

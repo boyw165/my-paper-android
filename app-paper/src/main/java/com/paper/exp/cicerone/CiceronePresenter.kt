@@ -228,7 +228,7 @@
 //     * A transformer that massage [ProgressState] from upstream and bypass to
 //     * [mOnUpdateProgress] channel.
 //     */
-//    private fun handleProgress(): ObservableTransformer<ProgressState, ProgressState> {
+//    private fun handleProgress(): ObservableTransformer<ProgressEvent, ProgressEvent> {
 //        return ObservableTransformer { upstream ->
 //            upstream
 //                // Create a "start" state.
@@ -255,7 +255,7 @@
 //    /**
 //     * A transformer that filters START and DOING [ProgressState] state.
 //     */
-//    private fun goUntilPreviousTaskStops(): ObservableTransformer<ProgressState, ProgressState> {
+//    private fun goUntilPreviousTaskStops(): ObservableTransformer<ProgressEvent, ProgressEvent> {
 //        return ObservableTransformer { upstream ->
 //            upstream
 //                .filter { state -> state.justStop }

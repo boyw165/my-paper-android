@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper
+package com.paper.view
 
 import android.graphics.Canvas
 import android.os.Bundle
@@ -26,6 +26,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.R
 import com.paper.exp.simulation.CollisionSystemContract
 import com.paper.exp.simulation.CollisionSystemPresenter
 import com.paper.exp.simulation.CollisionSystemView

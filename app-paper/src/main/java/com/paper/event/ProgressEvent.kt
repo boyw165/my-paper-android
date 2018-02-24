@@ -18,8 +18,33 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.event
 
-class PaperCanvasContract private constructor() {
+data class ProgressEvent(val justStart: Boolean = false,
+                         val doing: Boolean = false,
+                         val justStop: Boolean = false,
+                         val progress: Int = 0) {
+    companion object {
 
+        fun start(): ProgressEvent {
+            return ProgressEvent(justStart = true,
+                                 doing = false,
+                                 justStop = false,
+                                 progress = 0)
+        }
+
+        fun doing(progress: Int): ProgressEvent {
+            return ProgressEvent(justStart = false,
+                                 doing = true,
+                                 justStop = false,
+                                 progress = progress)
+        }
+
+        fun stop(progress: Int): ProgressEvent {
+            return ProgressEvent(justStart = false,
+                                 doing = false,
+                                 justStop = true,
+                                 progress = progress)
+        }
+    }
 }

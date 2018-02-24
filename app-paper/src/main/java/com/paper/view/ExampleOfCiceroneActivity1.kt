@@ -21,50 +21,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper
+package com.paper.view
 
 import android.content.Intent
-import android.graphics.PointF
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.TextView
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.R
 import com.paper.exp.cicerone.CiceroneContract
-import com.paper.exp.convexHull.ConvexHullContract
-import com.paper.exp.convexHull.ConvexHullPresenter
+import com.paper.exp.cicerone.view.CiceroneFragment1
+import com.paper.observables.RouterResultSingle
 import com.paper.protocol.IRouterProvider
 import com.paper.router.MyRouter
-import com.paper.view.DrawableView
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import ru.terrakok.cicerone.Navigator
 import ru.terrakok.cicerone.NavigatorHolder
 import ru.terrakok.cicerone.android.SupportAppNavigator
+import java.util.concurrent.TimeUnit
 
-class ExampleOfConvexHullActivity : AppCompatActivity(),
-                                    ConvexHullContract.View {
+class ExampleOfCiceroneActivity1 : AppCompatActivity() {
 
     // Cicerone.
     private val mRouter: MyRouter by lazy { (application as IRouterProvider).router }
     private val mNavigatorHolder: NavigatorHolder by lazy { (application as IRouterProvider).holder }
 
     // View.
-    private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_close) }
-    private val mBtnRandom: View by lazy { findViewById<View>(R.id.btn_random) }
-    private val mDotCanvas: DrawableView by lazy { findViewById<View>(R.id.canvas) as DrawableView }
+    private val mBtnNewFrag: View by lazy { findViewById<View>(R.id.btn_back_prev_frag) }
+    private val mBtnNewActivity: View by lazy { findViewById<View>(R.id.btn_new_activity) }
+    private val mTxtResult: TextView by lazy { findViewById<TextView>(R.id.txt_result) }
+
+    // Disposables.
+    private val mDisposablesOnCreate = CompositeDisposable()
 
     // Subjects.
     private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
-
-    private val mPresenter: ConvexHullPresenter by lazy {
-        ConvexHullPresenter(mRouter,
-                            Schedulers.io(),
-                            AndroidSchedulers.mainThread())
-    }
 
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
@@ -76,8 +72,43 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
             mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, 0)
         }
 
-        // Start presenter.
-        mPresenter.bindViewOnCreate(this)
+        // Exp new fragment button.
+        mDisposablesOnCreate.add(
+            RxView.clicks(mBtnNewFrag)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    val currentFragNum =
+                        if (supportFragmentManager.fragments.isEmpty()) -1
+                        else (supportFragmentManager.fragments[0] as CiceroneFragment1).getCurrentNumber()
+                    mRouter.navigateTo(CiceroneContract.SCREEN_NEW_FRAGMENT, currentFragNum + 1)
+                })
+
+        // Exp new activity button.
+        mDisposablesOnCreate.add(
+            RxView.clicks(mBtnNewActivity)
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { _ ->
+                    mTxtResult.text = ""
+                    mRouter.navigateTo(CiceroneContract.SCREEN_NEW_ACTIVITY, 1)
+                })
+
+        // Router result.
+        mDisposablesOnCreate.add(
+            RouterResultSingle(mRouter, CiceroneContract.ACTIVITY_RESULT_CODE)
+                .subscribe { result ->
+                    if (result !is String) return@subscribe
+
+                    val resultStr: String? = result.toString()
+                    if (resultStr != null) {
+                        mTxtResult.text = "Get Result: $resultStr"
+                    }
+                })
+
+        mDisposablesOnCreate.add(
+            mOnClickSystemBack.subscribe {
+                mRouter.exit()
+            })
     }
 
     override fun onResume() {
@@ -85,9 +116,6 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
 
         // Set navigator.
         mNavigatorHolder.setNavigator(mNavigator)
-
-        // Resume presenter.
-        mPresenter.onResume()
 
         // Very important to get the buffered Activity result.
         mRouter.dispatchResultOnResume()
@@ -98,85 +126,46 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
 
         // Remove navigator.
         mNavigatorHolder.removeNavigator()
-
-        // Pause presenter.
-        mPresenter.onPause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        // Stop presenter.
-        mPresenter.unBindViewOnDestroy()
+        mDisposablesOnCreate.clear()
     }
 
     override fun onBackPressed() {
         mOnClickSystemBack.onNext(0)
     }
 
-    override fun getCanvasWidth(): Int {
-        return 0
-    }
-
-    override fun getCanvasHeight(): Int {
-        return 0
-    }
-
-    override fun showError(error: Throwable) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun addDot(x: Float, y: Float) {
-        mDotCanvas.addDot(PointF(x, y))
-    }
-
-    override fun removeDot(x: Float, y: Float) {
-        mDotCanvas.removeDot(PointF(x, y))
-    }
-
-    override fun clearAllDots() {
-        mDotCanvas.clearAllDots()
-    }
-
-    override fun onClickBack(): Observable<Any> {
-        return Observable.merge(
-            mOnClickSystemBack,
-            RxView.clicks(mBtnBack))
-    }
-
-    override fun onClickRandom(): Observable<Any> {
-        return RxView.clicks(mBtnRandom)
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private val mNavigator: Navigator by lazy {
-        object : SupportAppNavigator(this@ExampleOfConvexHullActivity,
+        object : SupportAppNavigator(this@ExampleOfCiceroneActivity1,
                                      R.id.frame_container) {
 
             override fun createActivityIntent(screenKey: String,
                                               data: Any?): Intent? {
-//                return when (screenKey) {
-//                    CiceroneContract.SCREEN_NEW_ACTIVITY -> {
-//                        Intent(this@ExampleOfConvexHullActivity,
-//                               ExampleOfCiceroneActivity2::class.java)
-//                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
-//                    }
-//                    else -> null
-//                }
-                return null
+                return when (screenKey) {
+                    CiceroneContract.SCREEN_NEW_ACTIVITY -> {
+                        Intent(this@ExampleOfCiceroneActivity1,
+                               ExampleOfCiceroneActivity2::class.java)
+                            .putExtra(CiceroneContract.ACTIVITY_NUMBER_FLAG, data as Int)
+                    }
+                    else -> null
+                }
             }
 
             override fun createFragment(screenKey: String,
                                         data: Any?): Fragment? {
-//                return when (screenKey) {
-//                    CiceroneContract.SCREEN_NEW_FRAGMENT -> {
-//                        CiceroneFragment1.create(data as Int)
-//                    }
-//                    else -> null
-//                }
-                return null
+                return when (screenKey) {
+                    CiceroneContract.SCREEN_NEW_FRAGMENT -> {
+                        CiceroneFragment1.create(data as Int)
+                    }
+                //                    else -> throw IllegalArgumentException("Unknown screen key.")
+                    else -> null
+                }
             }
         }
     }

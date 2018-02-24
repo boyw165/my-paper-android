@@ -20,6 +20,14 @@
 
 package com.paper.editor
 
-class PaperCanvasContract private constructor() {
+import com.paper.editor.view.IScrapView
+import com.paper.shared.model.ScrapModel
 
+interface IScrapController {
+
+    fun loadModel(model: ScrapModel)
+
+    fun bindView(view: IScrapView)
+
+    fun unbindView()
 }
