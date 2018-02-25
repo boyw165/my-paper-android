@@ -57,26 +57,16 @@ class Sketch constructor(id: Long) {
     private val mMutex = Any()
 
     val id: Long = id
-    var width: Int = 0
-    var height: Int = 0
     val mStrokes: MutableList<SketchStroke> = ArrayList()
     var mStrokesBoundDirty = true
     var mStrokesBound = RectF()
 
     constructor()
-        : this(0, 0, 0, emptyList())
-
-    constructor(width: Int,
-                height: Int)
-        : this(0, width, height, emptyList())
+        : this(0, emptyList())
 
     constructor(id: Long,
-                width: Int,
-                height: Int,
                 strokes: List<SketchStroke> = emptyList())
         : this(id) {
-        this.width = width
-        this.height = height
 
         if (!strokes.isEmpty()) {
             mStrokes.addAll(strokes)
@@ -85,20 +75,9 @@ class Sketch constructor(id: Long) {
 
     constructor(other: Sketch)
         : this(other.id,
-               other.width,
-               other.height,
                other.allStrokes) {
         mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
         mStrokesBoundDirty = false
-    }
-
-    fun setSize(width: Int, height: Int) {
-        synchronized(mMutex) {
-            this.width = width
-            this.height = height
-
-            mStrokesBoundDirty = true
-        }
     }
 
     val strokeSize: Int
@@ -158,19 +137,19 @@ class Sketch constructor(id: Long) {
                         java.lang.Float.MAX_VALUE,
                         java.lang.Float.MAX_VALUE,
                         java.lang.Float.MIN_VALUE,
-                        java.lang.Float.MIN_VALUE
-                                     )
+                        java.lang.Float.MIN_VALUE)
 
-                    val aspectRatio = width.toFloat() / height
-                    for (stroke in mStrokes) {
-                        val strokeBound = stroke.bound
-                        val halfStrokeWidth = stroke.getWidth() / 2
-
-                        mStrokesBound.left = Math.min(mStrokesBound.left, strokeBound.left - halfStrokeWidth)
-                        mStrokesBound.top = Math.min(mStrokesBound.top, strokeBound.top - halfStrokeWidth * aspectRatio)
-                        mStrokesBound.right = Math.max(mStrokesBound.right, strokeBound.right + halfStrokeWidth)
-                        mStrokesBound.bottom = Math.max(mStrokesBound.bottom, strokeBound.bottom + halfStrokeWidth * aspectRatio)
-                    }
+                    // TODO: Fix it, and the following code might not be somewhere else.
+//                    val aspectRatio = width.toFloat() / height
+//                    for (stroke in mStrokes) {
+//                        val strokeBound = stroke.bound
+//                        val halfStrokeWidth = stroke.getWidth() / 2
+//
+//                        mStrokesBound.left = Math.min(mStrokesBound.left, strokeBound.left - halfStrokeWidth)
+//                        mStrokesBound.top = Math.min(mStrokesBound.top, strokeBound.top - halfStrokeWidth * aspectRatio)
+//                        mStrokesBound.right = Math.max(mStrokesBound.right, strokeBound.right + halfStrokeWidth)
+//                        mStrokesBound.bottom = Math.max(mStrokesBound.bottom, strokeBound.bottom + halfStrokeWidth * aspectRatio)
+//                    }
 
                     // Clamp the bound within a 1x1 square.
                     mStrokesBound.left = Math.max(mStrokesBound.left, 0f)
@@ -203,8 +182,6 @@ class Sketch constructor(id: Long) {
 
     override fun toString(): String {
         return "Sketch{" +
-               ", width=" + width +
-               ", height=" + height +
                ", strokes=[" + mStrokes + "]" +
                '}'
     }

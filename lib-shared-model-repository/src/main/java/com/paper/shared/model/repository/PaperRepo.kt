@@ -25,7 +25,9 @@ import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.repository.json.PaperModelTranslator
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.paper.shared.model.repository.sqlite.PaperTable
+import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.Sketch
+import com.paper.shared.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
@@ -115,12 +117,34 @@ class PaperRepo(authority: String,
 
                 paper.widthOverHeight = 1f
 
+                val stroke1 = SketchStroke()
+                stroke1.setWidth(0.2f)
+                stroke1.add(PathTuple(0f, 0f))
+                stroke1.add(PathTuple(1f, 0.2f))
+                stroke1.add(PathTuple(0.2f, 0.6f))
+
+                val stroke2 = SketchStroke()
+                stroke2.setWidth(0.2f)
+                stroke2.add(PathTuple(0.2f, 0.6f))
+                stroke2.add(PathTuple(1f, 0.2f))
+                stroke2.add(PathTuple(0f, 0f))
+
                 // Add testing scraps.
                 val scrap1 = ScrapModel(0)
+                scrap1.x = 0f
+                scrap1.y = 0f
+                scrap1.width = 0.25f
+                scrap1.height = 0.5f
                 scrap1.sketch = Sketch()
+                scrap1.sketch?.addStroke(stroke1)
 
                 val scrap2 = ScrapModel(1)
+                scrap2.x = 0.2f
+                scrap2.y = 0.3f
+                scrap2.width = 0.6f
+                scrap2.height = 0.4f
                 scrap2.sketch = Sketch()
+                scrap2.sketch?.addStroke(stroke2)
 
                 paper.scraps.add(scrap1)
                 paper.scraps.add(scrap2)

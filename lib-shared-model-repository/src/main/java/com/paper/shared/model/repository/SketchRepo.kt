@@ -79,7 +79,7 @@ class SketchRepo(authority: String,
                                height: Int): Observable<Sketch> {
         return Observable
             .fromCallable {
-                val newSketch = Sketch(width, height)
+                val newSketch = Sketch()
                 val json = mGson.toJson(newSketch)
 
                 mTempFile
@@ -137,7 +137,7 @@ class SketchRepo(authority: String,
     }
 
     private fun convertCursorToSketch(cursor: Cursor): Sketch {
-        val paper = Sketch(0, 0)
+        val paper = Sketch()
 
 //        val colOfId = cursor.getColumnIndexOrThrow(PaperTable.COL_ID)
 //        paper.id = cursor.getLong(colOfId)
