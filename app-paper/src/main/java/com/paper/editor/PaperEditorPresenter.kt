@@ -88,6 +88,9 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
         mDisposablesOnCreate.clear()
 
         mView = null
+
+        // Paper controller.
+        mPaperController.unbindView()
     }
 
     override fun onResume() {

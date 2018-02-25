@@ -22,14 +22,23 @@ package com.paper.editor.view
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Matrix
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
-import com.paper.shared.model.PaperModel
+import android.widget.FrameLayout
+import com.cardinalblue.gesture.GestureDetector
+import com.paper.R
+import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.TransformModel
+import java.util.*
 
-class PaperCanvasView : SketchView,
+class PaperCanvasView : FrameLayout,
                         ICanvasView {
 
+    private val mViewLookupTable = hashMapOf<Long, View>()
+
+    // Listeners.
     private var mListener: IScrapLifecycleListener? = null
 
     constructor(context: Context?) : super(context)
@@ -59,70 +68,105 @@ class PaperCanvasView : SketchView,
         setBackgroundColor(Color.LTGRAY)
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
+    ///////////////////////////////////////////////////////////////////////////
+    // Touch config ///////////////////////////////////////////////////////////
+
+    override fun getTouchSlop(): Float {
+        return resources.getDimension(R.dimen.touch_slop)
+    }
+
+    override fun getTapSlop(): Float {
+        return resources.getDimension(R.dimen.tap_slop)
+    }
+
+    override fun getMinFlingVec(): Float {
+        return resources.getDimension(R.dimen.fling_min_vec)
+    }
+
+    override fun getMaxFlingVec(): Float {
+        return resources.getDimension(R.dimen.fling_max_vec)
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // ICanvasView ////////////////////////////////////////////////////////////
 
-    override fun getScrapId(): Long {
+    override fun getTransform(): TransformModel {
         TODO("not implemented")
     }
 
-    override fun setScrapId(id: Long) {
+    override fun getTransformMatrix(): Matrix {
         TODO("not implemented")
+    }
+
+    override fun getGestureDetector(): GestureDetector {
+        TODO("not implemented")
+    }
+
+    override fun setTransform(transform: TransformModel) {
+        TODO("not implemented")
+    }
+
+    override fun setTransformPivot(pivotX: Float, pivotY: Float) {
+        TODO("not implemented")
+    }
+
+    override fun convertPointToParentWorld(point: FloatArray) {
+        TODO("not implemented")
+    }
+
+    override fun getScrapId(): Long {
+        throw IllegalAccessException("Canvas view doesn't have scrap ID")
+    }
+
+    override fun setScrapId(id: Long) {
+        throw IllegalAccessException("Canvas view doesn't have scrap ID")
     }
 
     override fun setScrapLifecycleListener(listener: IScrapLifecycleListener?) {
         mListener = listener
     }
 
-    override fun inflateViewBy(model: PaperModel) {
-        // Inflate scraps.
-        model.scraps.forEach { scrap ->
-            when {
-                scrap.sketch != null -> {
-                    val scrapView = SketchView(context)
-                    scrapView.layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT)
+    override fun addViewBy(scrap: ScrapModel) {
+        val id = scrap.id
+        when {
+            scrap.sketch != null -> {
+                val scrapView = ScrapView(context)
+                scrapView.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT)
 
-                    addScrapView(scrapView)
-                }
-                else -> {
-                    // TODO: Support more types of scrap
-                    throw IllegalStateException("Unsupported action")
-                }
+                // Add view.
+                addView(scrapView)
+                onAttachToCanvas(scrapView)
+
+                // Add to lookup table.
+                mViewLookupTable[id] = scrapView
+            }
+            else -> {
+                // TODO: Support more types of scrap
+                throw IllegalStateException("Unsupported action")
             }
         }
     }
 
-    override fun deflateView() {
-        while (childCount > 0) {
-            removeScrapView(getChildAt(0) as IScrapView)
-        }
+    override fun removeViewBy(id: Long) {
+        val view = (mViewLookupTable[id] ?:
+                         throw NoSuchElementException(
+                             "No view with ID=%d".format(id)))
+        val scrapView = view as IScrapView
+
+        // Remove view.
+        removeView(view)
+        onDetachFromCanvas(scrapView)
+
+        // Remove view from the lookup table.
+        mViewLookupTable.remove(view.getScrapId())
     }
 
-    override fun addScrapView(view: IScrapView) {
-        when (view) {
-            is View -> {
-                addView(view)
-                onAttachToCanvas(view)
-            }
-            else -> throw IllegalArgumentException(
-                "Given scrap-view isn't an Android View")
-        }
-    }
-
-    override fun removeScrapView(view: IScrapView) {
-        when (view) {
-            is View -> {
-                removeView(view)
-                onDetachFromCanvas(view)
-            }
-            else -> throw IllegalArgumentException(
-                "Given scrap-view isn't an Android View")
+    override fun removeAllViews() {
+        mViewLookupTable.values.forEach {
+            val scrapView = it as IScrapView
+            removeViewBy(scrapView.getScrapId())
         }
     }
 
@@ -133,4 +177,7 @@ class PaperCanvasView : SketchView,
     override fun onDetachFromCanvas(view: IScrapView) {
         mListener?.onDetachFromCanvas(view)
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
 }

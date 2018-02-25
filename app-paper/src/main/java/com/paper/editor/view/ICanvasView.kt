@@ -20,14 +20,16 @@
 
 package com.paper.editor.view
 
-import com.paper.shared.model.PaperModel
+import com.paper.shared.model.ScrapModel
 
-interface ICanvasView : IScrapViewGroup,
+interface ICanvasView : IScrapView,
                         IScrapLifecycleListener {
 
-    fun inflateViewBy(model: PaperModel)
+    fun addViewBy(scrap: ScrapModel)
 
-    fun deflateView()
+    fun removeViewBy(id: Long)
+
+    fun removeAllViews()
 
     fun setScrapLifecycleListener(listener: IScrapLifecycleListener?)
 }

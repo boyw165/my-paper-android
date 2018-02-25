@@ -75,7 +75,12 @@ class PaperController(private val mUiScheduler: Scheduler,
 
         // TODO: Encapsulate the inflation with a custom Observable.
         mCanvasView?.setScrapLifecycleListener(this@PaperController)
-        mCanvasView?.inflateViewBy(model)
+        mCanvasView?.let {
+            // Inflate scraps.
+            model.scraps.forEach { scrap ->
+                it.addViewBy(scrap)
+            }
+        }
     }
 
     fun unbindView() {
@@ -83,6 +88,12 @@ class PaperController(private val mUiScheduler: Scheduler,
 
         mCanvasView?.setScrapLifecycleListener(null)
         mCanvasView = null
+
+        // Unbind views from sub-controllers
+        mControllers.values.forEach {
+            it.unbindView()
+        }
+        mControllers.clear()
     }
 
     ///////////////////////////////////////////////////////////////////////////

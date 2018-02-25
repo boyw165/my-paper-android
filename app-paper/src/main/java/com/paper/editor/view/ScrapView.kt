@@ -30,8 +30,8 @@ import com.paper.R
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
 
-open class SketchView : FrameLayout,
-                        IScrapView {
+open class ScrapView : FrameLayout,
+                       IScrapView {
 
     private var mScrapId: Long = 0L
 
@@ -62,10 +62,6 @@ open class SketchView : FrameLayout,
         // is like making the parent see the child in a different angles.
         pivotX = 0f
         pivotY = 0f
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
