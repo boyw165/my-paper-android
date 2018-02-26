@@ -23,6 +23,7 @@ package com.paper.editor
 import android.graphics.Matrix
 import android.graphics.PointF
 import com.cardinalblue.gesture.IDragGestureListener
+import com.cardinalblue.gesture.IPinchGestureListener
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.editor.view.IScrapView
 import com.paper.shared.model.ScrapModel
@@ -34,7 +35,8 @@ import io.reactivex.disposables.CompositeDisposable
 class ScrapController(private val mUiScheduler: Scheduler,
                       private val mWorkerScheduler: Scheduler)
     : IScrapController,
-      IDragGestureListener {
+      IDragGestureListener,
+      IPinchGestureListener {
 
     // Model.
     private var mModel: ScrapModel? = null
@@ -143,7 +145,76 @@ class ScrapController(private val mUiScheduler: Scheduler,
         // DO NOTHING.
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    override fun onPinchBegin(event: MyMotionEvent,
+                              target: Any?,
+                              context: Any?,
+                              startPointers: Array<PointF>) {
+        // Get the current transform from the view.
+        holdStartTransform()
+    }
+
+    override fun onPinch(event: MyMotionEvent,
+                         target: Any?,
+                         context: Any?,
+                         startPointers: Array<PointF>,
+                         stopPointers: Array<PointF>) {
+        // Map the coordinates from child world to the parent world.
+        val startPointersInParent = Array(startPointers.size, { i ->
+            convertPointToParentWorld(startPointers[i])
+        })
+        val stopPointersInParent = Array(stopPointers.size, { i ->
+            convertPointToParentWorld(stopPointers[i])
+        })
+
+        // Calculate the transformation.
+        val transform = TransformUtils.getTransformFromPointers(
+            startPointersInParent, stopPointersInParent)
+
+        val dx = transform[TransformUtils.DELTA_X]
+        val dy = transform[TransformUtils.DELTA_Y]
+        val dScale = transform[TransformUtils.DELTA_SCALE_X]
+        val dRadians = transform[TransformUtils.DELTA_RADIANS]
+        val pivotX = transform[TransformUtils.PIVOT_X]
+        val pivotY = transform[TransformUtils.PIVOT_Y]
+
+        // Update the RAW transform (without any modification).
+        mStopMatrixToParent.postScale(dScale, dScale, pivotX, pivotY)
+        mStopMatrixToParent.postRotate(Math.toDegrees(dRadians.toDouble()).toFloat(), pivotX, pivotY)
+        mStopMatrixToParent.postTranslate(dx, dy)
+
+        // Prepare the transform for the view (might be modified).
+        mTransformHelper.getValues(mStopMatrixToParent)
+        mStopTransformToParent.translationX = mTransformHelper.translationX
+        mStopTransformToParent.translationY = mTransformHelper.translationY
+        mStopTransformToParent.scaleX = mTransformHelper.scaleX
+        mStopTransformToParent.scaleY = mTransformHelper.scaleY
+        mStopTransformToParent.rotationInRadians = mTransformHelper.rotationInRadians
+
+//        Log.d("xyz", "------------------------")
+//        Log.d("xyz", "pinch: dx=%.3f, dy=%.3f; dScale=%.3f, delta degrees=%.3f".format(
+//            dx, dy, dScale, Math.toDegrees(dRadians.toDouble())))
+//        Log.d("xyz", "pinch: x=%.3f, y=%.3f; scale=%.3f, degrees=%.3f".format(
+//            mStopTransformToParent.translationX,
+//            mStopTransformToParent.translationY,
+//            mStopTransformToParent.scaleX,
+//            Math.toDegrees(mStopTransformToParent.rotationInRadians.toDouble())))
+
+        mView!!.setTransform(mStopTransformToParent.copy())
+    }
+
+    override fun onPinchFling(event: MyMotionEvent,
+                              target: Any?,
+                              context: Any?) {
+        TODO("not implemented")
+    }
+
+    override fun onPinchEnd(event: MyMotionEvent,
+                            target: Any?,
+                            context: Any?,
+                            startPointers: Array<PointF>,
+                            stopPointers: Array<PointF>) {
+        TODO("not implemented")
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
