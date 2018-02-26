@@ -20,10 +20,12 @@
 
 package com.paper.editor.view
 
+import android.graphics.Matrix
+import com.cardinalblue.gesture.GestureDetector
 import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.TransformModel
 
-interface ICanvasView : IScrapView,
-                        IScrapLifecycleListener {
+interface ICanvasView : IScrapLifecycleListener {
 
     fun addViewBy(scrap: ScrapModel)
 
@@ -32,4 +34,16 @@ interface ICanvasView : IScrapView,
     fun removeAllViews()
 
     fun setScrapLifecycleListener(listener: IScrapLifecycleListener?)
+
+    fun getTransform(): TransformModel
+
+    fun getTransformMatrix(): Matrix
+
+    fun getGestureDetector(): GestureDetector
+
+    fun setTransform(transform: TransformModel)
+
+    fun setTransformPivot(px: Float, py: Float)
+
+    fun convertPointToParentWorld(point: FloatArray)
 }

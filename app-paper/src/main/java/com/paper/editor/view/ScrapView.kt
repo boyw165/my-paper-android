@@ -21,23 +21,29 @@
 package com.paper.editor.view
 
 import android.content.Context
-import android.graphics.Matrix
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
+import com.cardinalblue.gesture.GesturePolicy
 import com.paper.R
+import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
 
 open class ScrapView : FrameLayout,
                        IScrapView {
 
-    private var mScrapId: Long = 0L
+    private lateinit var mModel: ScrapModel
+
+    // Rendering properties.
+    private var mIsCacheDirty: Boolean = false
+    private val mScrapBound = RectF()
 
     // Gesture.
-    protected val mTransformHelper: TransformUtils = TransformUtils()
-    protected val mGestureDetector: GestureDetector by lazy {
+    private val mTransformHelper: TransformUtils = TransformUtils()
+    private val mGestureDetector: GestureDetector by lazy {
         GestureDetector(context,
                         getTouchSlop(),
                         getTapSlop(),
@@ -62,15 +68,38 @@ open class ScrapView : FrameLayout,
         // is like making the parent see the child in a different angles.
         pivotX = 0f
         pivotY = 0f
+
+        // Giving a background would make onDraw() able to be called.
+        setBackgroundColor(Color.TRANSPARENT)
+
+        // TEST: Set DRAG_ONLY policy.
+        mGestureDetector.setPolicy(GesturePolicy.DRAG_ONLY)
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        // TODO: Solve the hitting problem.
+    private val mTestPaint = Paint()
 
-        // If the canvas don't handle the touch, bubble up the event.
-//        return (mGestureDetector?.onTouchEvent(event, this, 0) ?: false) ||
-//               super.onTouchEvent(event)
-        return false
+    override fun onDraw(canvas: Canvas) {
+        mTestPaint.style = Paint.Style.FILL
+        mTestPaint.color = Color.BLUE
+
+        validateRenderingCache()
+
+        canvas.drawRect(mScrapBound, mTestPaint)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        // Validate the hitting boundary.
+        validateRenderingCache()
+
+        val x = event.getX(0)
+        val y = event.getY(0)
+
+        // If the canvas doesn't handle the touch, bubble up the event.
+        return if (mScrapBound.contains(x, y)) {
+            mGestureDetector.onTouchEvent(event, this, null)
+        } else {
+            false
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -95,12 +124,16 @@ open class ScrapView : FrameLayout,
     ///////////////////////////////////////////////////////////////////////////
     // IScrapView /////////////////////////////////////////////////////////////
 
-    override fun getScrapId(): Long {
-        return mScrapId
+    override fun setModel(model: ScrapModel) {
+        mModel = model
+
+        // Mark the rendering cache is dirty and later validateRenderingCache()
+        // would update the necessary properties for rendering and touching.
+        mIsCacheDirty = true
     }
 
-    override fun setScrapId(id: Long) {
-        mScrapId = id
+    override fun getScrapId(): Long {
+        return mModel.id
     }
 
     override fun getTransform(): TransformModel {
@@ -120,25 +153,41 @@ open class ScrapView : FrameLayout,
         translationY = transform.translationY
     }
 
-    override fun setTransformPivot(pivotX: Float,
-                                   pivotY: Float) {
-        TODO("not implemented")
+    override fun getTransformMatrix(): Matrix {
+        return matrix
     }
 
-    override fun getTransformMatrix(): Matrix {
-        TODO("not implemented")
+    override fun setTransformPivot(px: Float,
+                                   py: Float) {
+        pivotX = px
+        pivotY = py
     }
 
     override fun convertPointToParentWorld(point: FloatArray) {
-        TODO("not implemented")
+        matrix.mapPoints(point)
     }
 
     override fun getGestureDetector(): GestureDetector {
-        TODO("not implemented")
-//        return mGestureDetector
+        return mGestureDetector
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Gesture handling ///////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun validateRenderingCache() {
+        if (mIsCacheDirty) {
+            translationX = mModel.x * width
+            translationY = mModel.y * height
+
+            mScrapBound.set(0f, 0f,
+                            mModel.width * width,
+                            mModel.height * height)
+
+            mIsCacheDirty = false
+        }
+    }
 }
 

@@ -23,23 +23,39 @@ package com.paper.editor.view
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Matrix
+import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
+import com.paper.editor.ITouchConfig
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
+import com.paper.util.TransformUtils
+import java.lang.UnsupportedOperationException
 import java.util.*
 
 class PaperCanvasView : FrameLayout,
+                        ITouchConfig,
                         ICanvasView {
 
+    // Views.
     private val mViewLookupTable = hashMapOf<Long, View>()
 
     // Listeners.
     private var mListener: IScrapLifecycleListener? = null
+
+    // Gesture.
+    private val mTransformHelper: TransformUtils = TransformUtils()
+    private val mGestureDetector: GestureDetector by lazy {
+        GestureDetector(context,
+                        getTouchSlop(),
+                        getTapSlop(),
+                        getMinFlingVec(),
+                        getMaxFlingVec())
+    }
 
     constructor(context: Context?) : super(context)
 
@@ -59,13 +75,11 @@ class PaperCanvasView : FrameLayout,
         pivotX = 0f
         pivotY = 0f
 
+        // Giving a background would make onDraw() able to be called.
+        setBackgroundColor(Color.TRANSPARENT)
+
         // TEST
-        //        translationX = -360f
-        //        translationY = -360f
-        //        scaleX = 1.5f
-        //        scaleY = 1.5f
-        //        rotation = -50f
-        setBackgroundColor(Color.LTGRAY)
+        ViewCompat.setElevation(this, 12f)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -91,41 +105,40 @@ class PaperCanvasView : FrameLayout,
     // ICanvasView ////////////////////////////////////////////////////////////
 
     override fun getTransform(): TransformModel {
-        TODO("not implemented")
+        return TransformModel(translationX = translationX,
+                              translationY = translationY,
+                              scaleX = scaleX,
+                              scaleY = scaleY,
+                              rotationInRadians = Math.toRadians(
+                                  rotation.toDouble()).toFloat())
     }
 
     override fun getTransformMatrix(): Matrix {
-        TODO("not implemented")
+        return matrix
     }
 
     override fun getGestureDetector(): GestureDetector {
-        TODO("not implemented")
+        return mGestureDetector
     }
 
     override fun setTransform(transform: TransformModel) {
         TODO("not implemented")
     }
 
-    override fun setTransformPivot(pivotX: Float, pivotY: Float) {
-        TODO("not implemented")
+    override fun setTransformPivot(px: Float, py: Float) {
+        pivotX = px
+        pivotY = py
     }
 
     override fun convertPointToParentWorld(point: FloatArray) {
         TODO("not implemented")
     }
 
-    override fun getScrapId(): Long {
-        throw IllegalAccessException("Canvas view doesn't have scrap ID")
-    }
-
-    override fun setScrapId(id: Long) {
-        throw IllegalAccessException("Canvas view doesn't have scrap ID")
-    }
-
     override fun setScrapLifecycleListener(listener: IScrapLifecycleListener?) {
         mListener = listener
     }
 
+    // TODO: Separate the application domain and business domain model.
     override fun addViewBy(scrap: ScrapModel) {
         val id = scrap.id
         when {
@@ -135,28 +148,37 @@ class PaperCanvasView : FrameLayout,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT)
 
+                // TODO: Initialize the view by model?
+                // TODO: Separate the application domain and business domain model.
+                scrapView.setModel(scrap)
+
                 // Add view.
                 addView(scrapView)
+                // Dispatch the adding event so that the scrap-controller is
+                // aware of the scrap-view.
                 onAttachToCanvas(scrapView)
 
                 // Add to lookup table.
                 mViewLookupTable[id] = scrapView
+
+                postInvalidate()
             }
             else -> {
                 // TODO: Support more types of scrap
-                throw IllegalStateException("Unsupported action")
+                throw UnsupportedOperationException("Unrecognized scrap model")
             }
         }
     }
 
     override fun removeViewBy(id: Long) {
-        val view = (mViewLookupTable[id] ?:
-                         throw NoSuchElementException(
-                             "No view with ID=%d".format(id)))
+        val view = (mViewLookupTable[id] ?: throw NoSuchElementException(
+            "No view with ID=%d".format(id)))
         val scrapView = view as IScrapView
 
         // Remove view.
         removeView(view)
+        // Dispatch the removing event so that the scrap-controller becomes
+        // unaware of the scrap-view.
         onDetachFromCanvas(scrapView)
 
         // Remove view from the lookup table.

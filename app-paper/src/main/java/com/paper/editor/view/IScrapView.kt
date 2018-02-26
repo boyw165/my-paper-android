@@ -23,13 +23,14 @@ package com.paper.editor.view
 import android.graphics.Matrix
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.editor.ITouchConfig
+import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 
 interface IScrapView : ITouchConfig {
 
-    fun setScrapId(id: Long)
-
     fun getScrapId(): Long
+
+    fun setModel(model: ScrapModel)
 
     fun getTransform(): TransformModel
 
@@ -39,7 +40,7 @@ interface IScrapView : ITouchConfig {
 
     fun setTransform(transform: TransformModel)
 
-    fun setTransformPivot(pivotX: Float, pivotY: Float)
+    fun setTransformPivot(px: Float, py: Float)
 
     fun convertPointToParentWorld(point: FloatArray)
 }

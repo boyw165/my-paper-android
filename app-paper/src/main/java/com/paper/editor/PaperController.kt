@@ -61,9 +61,13 @@ class PaperController(private val mUiScheduler: Scheduler,
         mModel = model
         // Create the scrap controller.
         mModel!!.scraps.forEach { scrap ->
-            val controller = SketchController(mUiScheduler,
-                                              mWorkerScheduler)
+            val controller = ScrapController(mUiScheduler,
+                                             mWorkerScheduler)
 
+            // Pass model reference to the controller.
+            controller.loadModel(scrap)
+
+            // Add controller to the lookup table.
             mControllers[scrap.id] = controller
         }
     }
