@@ -9,6 +9,9 @@
     <dimen name="fling_min_vec">400dp</dimen>
     <dimen name="fling_max_vec">1000dp</dimen>
 
+    <dimen name="sketch_min_stroke_width">1dp</dimen>
+    <dimen name="sketch_max_stroke_width">128dp</dimen>
+
     <!-- DEBUG -->
     <dimen name="debug_padding">16dp</dimen>
     <dimen name="debug_text_size_1">18sp</dimen>

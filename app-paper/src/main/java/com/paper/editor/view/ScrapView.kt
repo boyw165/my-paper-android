@@ -40,6 +40,10 @@ open class ScrapView : FrameLayout,
     // Rendering properties.
     private var mIsCacheDirty: Boolean = false
     private val mScrapBound = RectF()
+    private val mSketchPath = Path()
+    private val mSketchPaint = Paint()
+    private val mSketchMinWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
+    private val mSketchMaxWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
 
     // Gesture.
     private val mTransformHelper: TransformUtils = TransformUtils()
@@ -76,15 +80,17 @@ open class ScrapView : FrameLayout,
         mGestureDetector.setPolicy(GesturePolicy.DRAG_ONLY)
     }
 
-    private val mTestPaint = Paint()
-
     override fun onDraw(canvas: Canvas) {
-        mTestPaint.style = Paint.Style.FILL
-        mTestPaint.color = Color.BLUE
+        mSketchPaint.style = Paint.Style.STROKE
+        mSketchPaint.color = Color.BLUE
+        mSketchPaint.strokeWidth = mSketchMinWidth * 3
 
         validateRenderingCache()
 
-        canvas.drawRect(mScrapBound, mTestPaint)
+        // Boundary.
+        canvas.drawRect(mScrapBound, mSketchPaint)
+        // Sketch.
+        canvas.drawPath(mSketchPath, mSketchPaint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -127,9 +133,7 @@ open class ScrapView : FrameLayout,
     override fun setModel(model: ScrapModel) {
         mModel = model
 
-        // Mark the rendering cache is dirty and later validateRenderingCache()
-        // would update the necessary properties for rendering and touching.
-        mIsCacheDirty = true
+        invalidateRenderingCache()
     }
 
     override fun getScrapId(): Long {
@@ -172,21 +176,50 @@ open class ScrapView : FrameLayout,
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // Gesture handling ///////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
+    private fun invalidateRenderingCache() {
+        // Mark the rendering cache is dirty and later validateRenderingCache()
+        // would update the necessary properties for rendering and touching.
+        mIsCacheDirty = true
+    }
+
     private fun validateRenderingCache() {
-        if (mIsCacheDirty) {
-            translationX = mModel.x * width
-            translationY = mModel.y * height
+        if (!mIsCacheDirty) return
 
-            mScrapBound.set(0f, 0f,
-                            mModel.width * width,
-                            mModel.height * height)
+        // Translation.
+        translationX = mModel.x * width
+        translationY = mModel.y * height
 
-            mIsCacheDirty = false
+        // Boundary.
+        mScrapBound.set(0f, 0f,
+                        mModel.width * width,
+                        mModel.height * height)
+
+        rebuildSketchPath()
+
+        mIsCacheDirty = false
+    }
+
+    private fun rebuildSketchPath() {
+        mModel.sketch?.let { sketch ->
+            mSketchPath.reset()
+
+            sketch.allStrokes.forEach { stroke ->
+                stroke.allPathTuple.forEachIndexed { i, tuple ->
+                    val x = tuple.firstPoint.x * mScrapBound.width()
+                    val y = tuple.firstPoint.y * mScrapBound.height()
+
+                    when (i) {
+                        0 -> {
+                            mSketchPath.moveTo(x, y)
+                        }
+                        else -> {
+                            mSketchPath.lineTo(x, y)
+                        }
+                    }
+                }
+            }
         }
     }
 }
