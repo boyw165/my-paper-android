@@ -23,7 +23,6 @@ package com.paper.editor.view
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
@@ -36,7 +35,6 @@ import com.paper.R
 import com.paper.editor.ITouchConfig
 import com.paper.protocol.ICanvasDelegate
 import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
 import java.lang.UnsupportedOperationException
 import java.util.*
@@ -142,26 +140,6 @@ class PaperCanvasView : FrameLayout,
     ///////////////////////////////////////////////////////////////////////////
     // ICanvasView ////////////////////////////////////////////////////////////
 
-    override fun getTransform(): TransformModel {
-        return TransformModel(translationX = translationX,
-                              translationY = translationY,
-                              scaleX = scaleX,
-                              scaleY = scaleY,
-                              rotationInRadians = Math.toRadians(
-                                  rotation.toDouble()).toFloat())
-    }
-
-    override fun getTransformMatrix(): Matrix {
-        return matrix
-    }
-
-    override fun getGestureDetector(): GestureDetector {
-        return mGestureDetector
-    }
-
-    override fun setTransform(transform: TransformModel) {
-        TODO("not implemented")
-    }
     override fun setCanvasWidthOverHeightRatio(ratio: Float) {
         val oneDp = context.resources.getDimension(R.dimen.one_dp)
 
