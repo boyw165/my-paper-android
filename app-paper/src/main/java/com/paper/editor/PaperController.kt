@@ -39,7 +39,7 @@ class PaperController(private val mUiScheduler: Scheduler,
     private var mCanvasView: ICanvasView? = null
 
     // Model.
-    private var mModel: PaperModel? = null
+    private lateinit var mModel: PaperModel
 
     // Sub controllers.
     private val mControllers: HashMap<Long, IScrapController> = hashMapOf()
@@ -55,17 +55,17 @@ class PaperController(private val mUiScheduler: Scheduler,
     private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposablesOnResume = CompositeDisposable()
 
-    fun inflateModel(model: PaperModel) {
+    fun loadPaper(model: PaperModel) {
         mControllers.clear()
 
         mModel = model
         // Create the scrap controller.
-        mModel!!.scraps.forEach { scrap ->
+        mModel.scraps.forEach { scrap ->
             val controller = ScrapController(mUiScheduler,
                                              mWorkerScheduler)
 
             // Pass model reference to the controller.
-            controller.loadModel(scrap)
+            controller.loadScrap(scrap)
 
             // Add controller to the lookup table.
             mControllers[scrap.id] = controller
@@ -73,16 +73,15 @@ class PaperController(private val mUiScheduler: Scheduler,
     }
 
     fun bindView(view: ICanvasView) {
-        val model = mModel ?: throw IllegalStateException("No model.")
-
         mCanvasView = view
 
         // TODO: Encapsulate the inflation with a custom Observable.
         mCanvasView?.setScrapLifecycleListener(this@PaperController)
-        mCanvasView?.let {
+        mCanvasView?.setCanvasWidthOverHeightRatio(mModel.widthOverHeight)
+        mCanvasView?.let { canvasView ->
             // Inflate scraps.
-            model.scraps.forEach { scrap ->
-                it.addViewBy(scrap)
+            mModel.scraps.forEach { scrap ->
+                canvasView.addViewBy(scrap)
             }
         }
     }
@@ -94,8 +93,8 @@ class PaperController(private val mUiScheduler: Scheduler,
         mCanvasView = null
 
         // Unbind views from sub-controllers
-        mControllers.values.forEach {
-            it.unbindView()
+        mControllers.values.forEach { controller ->
+            controller.unbindView()
         }
         mControllers.clear()
     }

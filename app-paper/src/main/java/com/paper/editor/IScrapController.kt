@@ -25,7 +25,7 @@ import com.paper.shared.model.ScrapModel
 
 interface IScrapController {
 
-    fun loadModel(model: ScrapModel)
+    fun loadScrap(model: ScrapModel)
 
     fun bindView(view: IScrapView)
 

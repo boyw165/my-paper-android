@@ -39,7 +39,7 @@ class ScrapController(private val mUiScheduler: Scheduler,
       IPinchGestureListener {
 
     // Model.
-    private var mModel: ScrapModel? = null
+    private lateinit var mModel: ScrapModel
 
     // View.
     private var mView: IScrapView? = null
