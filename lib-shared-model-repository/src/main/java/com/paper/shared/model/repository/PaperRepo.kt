@@ -133,16 +133,12 @@ class PaperRepo(authority: String,
                 val scrap1 = ScrapModel(0)
                 scrap1.x = 0f
                 scrap1.y = 0f
-                scrap1.width = 0.25f
-                scrap1.height = 0.5f
                 scrap1.sketch = Sketch()
                 scrap1.sketch?.addStroke(stroke1)
 
                 val scrap2 = ScrapModel(1)
                 scrap2.x = 0.2f
                 scrap2.y = 0.3f
-                scrap2.width = 0.6f
-                scrap2.height = 0.4f
                 scrap2.sketch = Sketch()
                 scrap2.sketch?.addStroke(stroke2)
 

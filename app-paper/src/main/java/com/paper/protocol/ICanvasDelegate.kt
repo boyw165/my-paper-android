@@ -18,33 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.protocol
 
-import android.graphics.Matrix
-import com.cardinalblue.gesture.GestureDetector
-import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.TransformModel
+import android.graphics.Canvas
 
-interface ICanvasView : IScrapLifecycleListener {
+interface ICanvasDelegate {
 
-    fun addViewBy(scrap: ScrapModel)
-
-    fun removeViewBy(id: Long)
-
-    fun removeAllViews()
-
-    fun setScrapLifecycleListener(listener: IScrapLifecycleListener?)
-
-    fun getTransform(): TransformModel
-
-    fun getTransformMatrix(): Matrix
-
-    fun getGestureDetector(): GestureDetector
-    fun setCanvasWidthOverHeightRatio(ratio: Float)
-
-    fun setTransform(transform: TransformModel)
-
-    fun setTransformPivot(px: Float, py: Float)
-
-    fun convertPointToParentWorld(point: FloatArray)
+    fun onDelegateDraw(canvas: Canvas)
 }

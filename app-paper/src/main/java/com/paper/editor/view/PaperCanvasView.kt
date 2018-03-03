@@ -21,16 +21,20 @@
 package com.paper.editor.view
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
 import com.paper.editor.ITouchConfig
+import com.paper.protocol.ICanvasDelegate
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
@@ -39,9 +43,11 @@ import java.util.*
 
 class PaperCanvasView : FrameLayout,
                         ITouchConfig,
-                        ICanvasView {
+                        ICanvasView,
+                        ICanvasDelegate {
 
     // Views.
+    private val mScrapContainer by lazy { FixedAspectRatioView(context, null) }
     private val mViewLookupTable = hashMapOf<Long, View>()
 
     // Listeners.
@@ -57,29 +63,61 @@ class PaperCanvasView : FrameLayout,
                         getMaxFlingVec())
     }
 
-    constructor(context: Context?) : super(context)
+    // Rendering resource.
+    private val mGridPaint = Paint()
 
-    constructor(context: Context?,
-                attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context) : this(context, null)
 
-    constructor(context: Context?,
+    constructor(context: Context,
+                attrs: AttributeSet?) : this(context, attrs, 0)
+
+    constructor(context: Context,
                 attrs: AttributeSet?,
-                defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+                defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        val oneDp = context.resources.getDimension(R.dimen.one_dp)
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
+        mGridPaint.color = Color.LTGRAY
+        mGridPaint.style = Paint.Style.STROKE
+        mGridPaint.strokeWidth = oneDp
 
         // Changing the pivot to left-top at the beginning.
         // Note: Changing the pivot will update the rendering matrix, where it
         // is like making the parent see the child in a different angles.
-        pivotX = 0f
-        pivotY = 0f
-
+        mScrapContainer.pivotX = 0f
+        mScrapContainer.pivotY = 0f
         // Giving a background would make onDraw() able to be called.
-        setBackgroundColor(Color.TRANSPARENT)
-
+        mScrapContainer.setBackgroundColor(Color.WHITE)
+        // For drawing grid background.
+        mScrapContainer.setCanvasDelegate(this)
         // TEST
-        ViewCompat.setElevation(this, 12f)
+//        mScrapContainer.scaleX = 0.9f
+//        mScrapContainer.scaleY = 0.9f
+//        mScrapContainer.translationX = 16 * oneDp
+//        mScrapContainer.translationY = 16 * oneDp
+        ViewCompat.setElevation(mScrapContainer, 8 * oneDp)
+        addView(mScrapContainer)
+    }
+
+    override fun onDelegateDraw(canvas: Canvas) {
+        val canvasWidth = mScrapContainer.width.toFloat()
+        val canvasHeight = mScrapContainer.height.toFloat()
+        val cell = Math.min(canvasWidth, canvasHeight) / 10
+
+        canvas.drawLine(0f, 0f, canvasWidth, 0f, mGridPaint)
+        canvas.drawLine(canvasWidth, 0f, canvasWidth, canvasHeight, mGridPaint)
+        canvas.drawLine(canvasWidth, canvasHeight, 0f, canvasHeight, mGridPaint)
+        canvas.drawLine(0f, canvasHeight, 0f, 0f, mGridPaint)
+
+        var x = 0f
+        while (x < width) {
+            canvas.drawLine(x, 0f, x, canvasHeight, mGridPaint)
+            x += cell
+        }
+        var y = 0f
+        while (y < height) {
+            canvas.drawLine(0f, y, canvasWidth, y, mGridPaint)
+            y += cell
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -124,14 +162,12 @@ class PaperCanvasView : FrameLayout,
     override fun setTransform(transform: TransformModel) {
         TODO("not implemented")
     }
+    override fun setCanvasWidthOverHeightRatio(ratio: Float) {
+        val oneDp = context.resources.getDimension(R.dimen.one_dp)
 
-    override fun setTransformPivot(px: Float, py: Float) {
-        pivotX = px
-        pivotY = py
-    }
+        mScrapContainer.setWidthOverHeightRatio(ratio)
 
-    override fun convertPointToParentWorld(point: FloatArray) {
-        TODO("not implemented")
+        Log.d("xyz", "scrap-container is present!")
     }
 
     override fun setScrapLifecycleListener(listener: IScrapLifecycleListener?) {
@@ -153,7 +189,7 @@ class PaperCanvasView : FrameLayout,
                 scrapView.setModel(scrap)
 
                 // Add view.
-                addView(scrapView)
+                mScrapContainer.addView(scrapView)
                 // Dispatch the adding event so that the scrap-controller is
                 // aware of the scrap-view.
                 onAttachToCanvas(scrapView)
@@ -176,7 +212,7 @@ class PaperCanvasView : FrameLayout,
         val scrapView = view as IScrapView
 
         // Remove view.
-        removeView(view)
+        mScrapContainer.removeView(view)
         // Dispatch the removing event so that the scrap-controller becomes
         // unaware of the scrap-view.
         onDetachFromCanvas(scrapView)
@@ -202,4 +238,12 @@ class PaperCanvasView : FrameLayout,
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun getCanvasWidth(): Float {
+        return mScrapContainer.width.toFloat()
+    }
+
+    private fun getCanvasHeight(): Float {
+        return mScrapContainer.height.toFloat()
+    }
 }
