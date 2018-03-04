@@ -40,7 +40,7 @@ interface ICanvasView : IScrapLifecycleListener {
 
     // Gesture
 
-    fun setGestureListener(listener: SimpleGestureListener)
+    fun setGestureListener(listener: SimpleGestureListener?)
 
     fun normalizePointer(p: PointF): PointF
 

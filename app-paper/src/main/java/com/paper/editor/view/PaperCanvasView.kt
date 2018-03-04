@@ -192,7 +192,7 @@ class PaperCanvasView : FrameLayout,
         mListener = listener
     }
 
-    override fun setGestureListener(listener: SimpleGestureListener) {
+    override fun setGestureListener(listener: SimpleGestureListener?) {
         mGestureDetector.tapGestureListener = listener
         mGestureDetector.dragGestureListener = listener
         mGestureDetector.pinchGestureListener = listener

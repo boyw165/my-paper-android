@@ -100,6 +100,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         mDisposablesOnCreate.clear()
 
         mCanvasView?.setScrapLifecycleListener(null)
+        mCanvasView?.setGestureListener(null)
         mCanvasView = null
 
         // Unbind views from sub-controllers

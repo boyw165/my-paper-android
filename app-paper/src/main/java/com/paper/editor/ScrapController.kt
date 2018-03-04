@@ -22,10 +22,9 @@ package com.paper.editor
 
 import android.graphics.Matrix
 import android.graphics.PointF
-import com.cardinalblue.gesture.IDragGestureListener
-import com.cardinalblue.gesture.IPinchGestureListener
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.editor.view.IScrapView
+import com.paper.editor.view.SimpleGestureListener
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import com.paper.shared.model.sketch.PathTuple
@@ -37,8 +36,7 @@ import io.reactivex.disposables.CompositeDisposable
 class ScrapController(private val mUiScheduler: Scheduler,
                       private val mWorkerScheduler: Scheduler)
     : IScrapController,
-      IDragGestureListener,
-      IPinchGestureListener {
+      SimpleGestureListener() {
 
     // Model.
     private lateinit var mModel: ScrapModel
@@ -71,11 +69,11 @@ class ScrapController(private val mUiScheduler: Scheduler,
 
     override fun bindView(view: IScrapView) {
         mView = view
-        mView!!.getGestureDetector().dragGestureListener = this
+        mView?.setGestureListener(this)
     }
 
     override fun unbindView() {
-        mView?.getGestureDetector()?.dragGestureListener = null
+        mView?.setGestureListener(null)
     }
 
     ///////////////////////////////////////////////////////////////////////////

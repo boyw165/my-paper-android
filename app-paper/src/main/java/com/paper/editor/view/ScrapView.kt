@@ -81,7 +81,7 @@ open class ScrapView : FrameLayout,
         invalidateRenderingCache()
 
         // TEST: Set DRAG_ONLY policy.
-        mGestureDetector.setPolicy(GesturePolicy.DRAG_ONLY)
+        mGestureDetector.setPolicy(GesturePolicy.ALL)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -191,8 +191,10 @@ open class ScrapView : FrameLayout,
         matrix.mapPoints(point)
     }
 
-    override fun getGestureDetector(): GestureDetector {
-        return mGestureDetector
+    override fun setGestureListener(listener: SimpleGestureListener?) {
+        mGestureDetector.tapGestureListener = listener
+        mGestureDetector.dragGestureListener = listener
+        mGestureDetector.pinchGestureListener = listener
     }
 
     override fun invalidateRenderingCache() {

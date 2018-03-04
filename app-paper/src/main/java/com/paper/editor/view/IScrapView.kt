@@ -21,7 +21,6 @@
 package com.paper.editor.view
 
 import android.graphics.Matrix
-import com.cardinalblue.gesture.GestureDetector
 import com.paper.editor.ITouchConfig
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
@@ -37,7 +36,7 @@ interface IScrapView : ITouchConfig {
 
     fun getCanvasHeight(): Int
 
-    fun getGestureDetector(): GestureDetector
+    fun setGestureListener(listener: SimpleGestureListener?)
 
     fun getTransform(): TransformModel
 
