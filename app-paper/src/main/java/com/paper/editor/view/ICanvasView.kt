@@ -20,17 +20,33 @@
 
 package com.paper.editor.view
 
+import android.graphics.PointF
 import com.paper.shared.model.ScrapModel
+import java.util.*
 
 interface ICanvasView : IScrapLifecycleListener {
 
+    // Scrap manipulation.
+
     fun addViewBy(scrap: ScrapModel)
 
-    fun removeViewBy(id: Long)
+    fun removeViewBy(id: UUID)
 
     fun removeAllViews()
 
     fun setCanvasWidthOverHeightRatio(ratio: Float)
 
     fun setScrapLifecycleListener(listener: IScrapLifecycleListener?)
+
+    // Gesture
+
+    fun setGestureListener(listener: SimpleGestureListener)
+
+    fun normalizePointer(p: PointF): PointF
+
+    fun startDrawSketch(x: Float, y: Float)
+
+    fun onDrawSketch(x: Float, y: Float)
+
+    fun stopDrawSketch()
 }

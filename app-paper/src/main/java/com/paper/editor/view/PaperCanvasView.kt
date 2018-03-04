@@ -21,15 +21,14 @@
 package com.paper.editor.view
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
-import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
 import com.paper.editor.ITouchConfig
@@ -42,16 +41,19 @@ import java.util.*
 class PaperCanvasView : FrameLayout,
                         ITouchConfig,
                         ICanvasView,
-                        ICanvasDelegate {
+                        ICanvasDelegate,
+                        View.OnLayoutChangeListener {
 
     // Views.
     private val mScrapContainer by lazy { FixedAspectRatioView(context, null) }
-    private val mViewLookupTable = hashMapOf<Long, View>()
+    private val mViewLookupTable = hashMapOf<UUID, View>()
 
     // Listeners.
     private var mListener: IScrapLifecycleListener? = null
 
     // Gesture.
+    private val mNormalizationTransform = Matrix()
+    private var mNormalizedEvent: MotionEvent? = null
     private val mTransformHelper: TransformUtils = TransformUtils()
     private val mGestureDetector: GestureDetector by lazy {
         GestureDetector(context,
@@ -63,6 +65,8 @@ class PaperCanvasView : FrameLayout,
 
     // Rendering resource.
     private val mGridPaint = Paint()
+    private val mSketchPaint = Paint()
+    private val mSketchPath = Path()
 
     constructor(context: Context) : this(context, null)
 
@@ -78,6 +82,10 @@ class PaperCanvasView : FrameLayout,
         mGridPaint.style = Paint.Style.STROKE
         mGridPaint.strokeWidth = oneDp
 
+        mSketchPaint.strokeWidth = oneDp
+        mSketchPaint.color = Color.BLACK
+        mSketchPaint.style = Paint.Style.STROKE
+
         // Changing the pivot to left-top at the beginning.
         // Note: Changing the pivot will update the rendering matrix, where it
         // is like making the parent see the child in a different angles.
@@ -88,12 +96,21 @@ class PaperCanvasView : FrameLayout,
         // For drawing grid background.
         mScrapContainer.setCanvasDelegate(this)
         // TEST
-//        mScrapContainer.scaleX = 0.9f
-//        mScrapContainer.scaleY = 0.9f
-//        mScrapContainer.translationX = 16 * oneDp
-//        mScrapContainer.translationY = 16 * oneDp
-        ViewCompat.setElevation(mScrapContainer, 8 * oneDp)
+        //        mScrapContainer.scaleX = 0.9f
+        //        mScrapContainer.scaleY = 0.9f
+        //        mScrapContainer.translationX = 16 * oneDp
+        //        mScrapContainer.translationY = 16 * oneDp
+        ViewCompat.setElevation(mScrapContainer, 20 * oneDp)
+        mScrapContainer.addOnLayoutChangeListener(this@PaperCanvasView)
         addView(mScrapContainer)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        mScrapContainer.removeOnLayoutChangeListener(this@PaperCanvasView)
+
+        mNormalizedEvent?.recycle()
     }
 
     override fun onDelegateDraw(canvas: Canvas) {
@@ -101,11 +118,13 @@ class PaperCanvasView : FrameLayout,
         val canvasHeight = mScrapContainer.height.toFloat()
         val cell = Math.min(canvasWidth, canvasHeight) / 10
 
+        // Boundary.
         canvas.drawLine(0f, 0f, canvasWidth, 0f, mGridPaint)
         canvas.drawLine(canvasWidth, 0f, canvasWidth, canvasHeight, mGridPaint)
         canvas.drawLine(canvasWidth, canvasHeight, 0f, canvasHeight, mGridPaint)
         canvas.drawLine(0f, canvasHeight, 0f, 0f, mGridPaint)
 
+        // Grid.
         var x = 0f
         while (x < width) {
             canvas.drawLine(x, 0f, x, canvasHeight, mGridPaint)
@@ -116,6 +135,31 @@ class PaperCanvasView : FrameLayout,
             canvas.drawLine(0f, y, canvasWidth, y, mGridPaint)
             y += cell
         }
+
+        // Sketch.
+        canvas.drawPath(mSketchPath, mSketchPaint)
+    }
+
+    override fun onLayoutChange(v: View,
+                                left: Int,
+                                top: Int,
+                                right: Int,
+                                bottom: Int,
+                                oldLeft: Int,
+                                oldTop: Int,
+                                oldRight: Int,
+                                oldBottom: Int) {
+        mNormalizationTransform.postScale(1f / mScrapContainer.width,
+                                          1f / mScrapContainer.height)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+//        mNormalizedEvent?.recycle()
+//        mNormalizedEvent = MotionEvent.obtain(event)
+//        mNormalizedEvent?.transform(mNormalizationTransform)
+//        return mGestureDetector.onTouchEvent(mNormalizedEvent!!, null, null)
+
+        return mGestureDetector.onTouchEvent(event, null, null)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -141,15 +185,17 @@ class PaperCanvasView : FrameLayout,
     // ICanvasView ////////////////////////////////////////////////////////////
 
     override fun setCanvasWidthOverHeightRatio(ratio: Float) {
-        val oneDp = context.resources.getDimension(R.dimen.one_dp)
-
         mScrapContainer.setWidthOverHeightRatio(ratio)
-
-        Log.d("xyz", "scrap-container is present!")
     }
 
     override fun setScrapLifecycleListener(listener: IScrapLifecycleListener?) {
         mListener = listener
+    }
+
+    override fun setGestureListener(listener: SimpleGestureListener) {
+        mGestureDetector.tapGestureListener = listener
+        mGestureDetector.dragGestureListener = listener
+        mGestureDetector.pinchGestureListener = listener
     }
 
     // TODO: Separate the application domain and business domain model.
@@ -168,14 +214,13 @@ class PaperCanvasView : FrameLayout,
 
                 // Add view.
                 mScrapContainer.addView(scrapView)
-                // Dispatch the adding event so that the scrap-controller is
-                // aware of the scrap-view.
-                onAttachToCanvas(scrapView)
 
                 // Add to lookup table.
                 mViewLookupTable[id] = scrapView
 
-                postInvalidate()
+                // Dispatch the adding event so that the scrap-controller is
+                // aware of the scrap-view.
+                onAttachToCanvas(scrapView)
             }
             else -> {
                 // TODO: Support more types of scrap
@@ -184,19 +229,20 @@ class PaperCanvasView : FrameLayout,
         }
     }
 
-    override fun removeViewBy(id: Long) {
+    override fun removeViewBy(id: UUID) {
         val view = (mViewLookupTable[id] ?: throw NoSuchElementException(
             "No view with ID=%d".format(id)))
         val scrapView = view as IScrapView
 
         // Remove view.
         mScrapContainer.removeView(view)
-        // Dispatch the removing event so that the scrap-controller becomes
-        // unaware of the scrap-view.
-        onDetachFromCanvas(scrapView)
 
         // Remove view from the lookup table.
         mViewLookupTable.remove(view.getScrapId())
+
+        // Dispatch the removing event so that the scrap-controller becomes
+        // unaware of the scrap-view.
+        onDetachFromCanvas(scrapView)
     }
 
     override fun removeAllViews() {
@@ -208,10 +254,50 @@ class PaperCanvasView : FrameLayout,
 
     override fun onAttachToCanvas(view: IScrapView) {
         mListener?.onAttachToCanvas(view)
+
+        Toast.makeText(
+            context, "scrap added, now there are %d scraps"
+            .format(mViewLookupTable.size),
+            Toast.LENGTH_SHORT)
+            .show()
     }
 
     override fun onDetachFromCanvas(view: IScrapView) {
         mListener?.onDetachFromCanvas(view)
+
+        Toast.makeText(
+            context, "scrap removed, now there are %d scraps"
+            .format(mViewLookupTable.size),
+            Toast.LENGTH_SHORT)
+            .show()
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Drawing ////////////////////////////////////////////////////////////////
+
+    override fun normalizePointer(p: PointF): PointF {
+        return PointF(p.x / mScrapContainer.width,
+                      p.y / mScrapContainer.height)
+    }
+
+    override fun startDrawSketch(x: Float, y: Float) {
+        mSketchPath.reset()
+        mSketchPath.moveTo(x, y)
+        mSketchPath.lineTo(x, y)
+
+        mScrapContainer.invalidate()
+    }
+
+    override fun onDrawSketch(x: Float, y: Float) {
+        mSketchPath.lineTo(x, y)
+
+        mScrapContainer.invalidate()
+    }
+
+    override fun stopDrawSketch() {
+        mSketchPath.reset()
+
+        mScrapContainer.invalidate()
     }
 
     ///////////////////////////////////////////////////////////////////////////

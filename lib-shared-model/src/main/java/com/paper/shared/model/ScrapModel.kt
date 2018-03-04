@@ -21,15 +21,19 @@
 package com.paper.shared.model
 
 import com.paper.shared.model.sketch.Sketch
+import java.util.*
 
-open class ScrapModel constructor(id: Long) {
+open class ScrapModel {
 
-    val id: Long = id
+    val id: UUID = UUID.randomUUID()
 
     var x: Float = 0f
     var y: Float = 0f
     var width: Float = 1f
     var height: Float = 1f
+
+    var scale: Float = 1f
+    var rotationInRadians: Float = 0f
 
     var sketch: Sketch? = null
 }

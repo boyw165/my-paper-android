@@ -125,18 +125,19 @@ class PaperRepo(authority: String,
 
                 val stroke2 = SketchStroke()
                 stroke2.setWidth(0.2f)
+                stroke2.add(PathTuple(1f, 0.1f))
+                stroke2.add(PathTuple(0.8f, 0.3f))
                 stroke2.add(PathTuple(0.2f, 0.6f))
-                stroke2.add(PathTuple(1f, 0.2f))
-                stroke2.add(PathTuple(0f, 0f))
+                stroke2.add(PathTuple(0f, 0.9f))
 
                 // Add testing scraps.
-                val scrap1 = ScrapModel(0)
+                val scrap1 = ScrapModel()
                 scrap1.x = 0f
                 scrap1.y = 0f
                 scrap1.sketch = Sketch()
                 scrap1.sketch?.addStroke(stroke1)
 
-                val scrap2 = ScrapModel(1)
+                val scrap2 = ScrapModel()
                 scrap2.x = 0.2f
                 scrap2.y = 0.3f
                 scrap2.sketch = Sketch()

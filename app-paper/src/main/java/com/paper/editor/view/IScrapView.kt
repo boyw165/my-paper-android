@@ -25,22 +25,29 @@ import com.cardinalblue.gesture.GestureDetector
 import com.paper.editor.ITouchConfig
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
+import java.util.*
 
 interface IScrapView : ITouchConfig {
 
-    fun getScrapId(): Long
-
     fun setModel(model: ScrapModel)
+
+    fun getScrapId(): UUID
+
+    fun getCanvasWidth(): Int
+
+    fun getCanvasHeight(): Int
+
+    fun getGestureDetector(): GestureDetector
 
     fun getTransform(): TransformModel
 
     fun getTransformMatrix(): Matrix
-
-    fun getGestureDetector(): GestureDetector
 
     fun setTransform(transform: TransformModel)
 
     fun setTransformPivot(px: Float, py: Float)
 
     fun convertPointToParentWorld(point: FloatArray)
+
+    fun invalidateRenderingCache()
 }

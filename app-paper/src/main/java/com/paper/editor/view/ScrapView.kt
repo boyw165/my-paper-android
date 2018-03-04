@@ -23,6 +23,7 @@ package com.paper.editor.view
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
@@ -31,6 +32,7 @@ import com.paper.R
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
+import java.util.*
 
 open class ScrapView : FrameLayout,
                        IScrapView {
@@ -38,7 +40,7 @@ open class ScrapView : FrameLayout,
     private lateinit var mModel: ScrapModel
 
     // Rendering properties.
-    private var mIsCacheDirty: Boolean = false
+    private var mIsCacheDirty: Boolean = true
     private val mScrapBound = RectF()
     private val mSketchPath = Path()
     private val mSketchPaint = Paint()
@@ -55,10 +57,10 @@ open class ScrapView : FrameLayout,
                         getMaxFlingVec())
     }
 
-    constructor(context: Context?) : super(context)
+    constructor(context: Context?) : this(context, null)
 
     constructor(context: Context?,
-                attrs: AttributeSet?) : super(context, attrs)
+                attrs: AttributeSet?) : this(context, attrs, 0)
 
     constructor(context: Context?,
                 attrs: AttributeSet?,
@@ -75,6 +77,8 @@ open class ScrapView : FrameLayout,
 
         // Giving a background would make onDraw() able to be called.
         setBackgroundColor(Color.TRANSPARENT)
+
+        invalidateRenderingCache()
 
         // TEST: Set DRAG_ONLY policy.
         mGestureDetector.setPolicy(GesturePolicy.DRAG_ONLY)
@@ -94,6 +98,14 @@ open class ScrapView : FrameLayout,
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> Log.d("xyz", "ACTION_DOWN, count=%d".format(event.pointerCount))
+            MotionEvent.ACTION_MOVE -> Log.d("xyz", "ACTION_MOVE, count=%d".format(event.pointerCount))
+            MotionEvent.ACTION_UP -> Log.d("xyz", "ACTION_UP, count=%d".format(event.pointerCount))
+            MotionEvent.ACTION_CANCEL -> Log.d("xyz", "ACTION_CANCEL, count=%d".format(event.pointerCount))
+            MotionEvent.ACTION_OUTSIDE -> Log.d("xyz", "ACTION_OUTSIDE, count=%d".format(event.pointerCount))
+        }
+
         // Validate the hitting boundary.
         validateRenderingCache()
 
@@ -136,8 +148,16 @@ open class ScrapView : FrameLayout,
         invalidateRenderingCache()
     }
 
-    override fun getScrapId(): Long {
+    override fun getScrapId(): UUID {
         return mModel.id
+    }
+
+    override fun getCanvasWidth(): Int {
+        return width
+    }
+
+    override fun getCanvasHeight(): Int {
+        return height
     }
 
     override fun getTransform(): TransformModel {
@@ -175,14 +195,14 @@ open class ScrapView : FrameLayout,
         return mGestureDetector
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
-
-    private fun invalidateRenderingCache() {
+    override fun invalidateRenderingCache() {
         // Mark the rendering cache is dirty and later validateRenderingCache()
         // would update the necessary properties for rendering and touching.
         mIsCacheDirty = true
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
 
     private fun validateRenderingCache() {
         if (!mIsCacheDirty) return
@@ -192,10 +212,24 @@ open class ScrapView : FrameLayout,
         translationY = mModel.y * height
 
         // Boundary.
-        mScrapBound.set(0f, 0f,
-                        mModel.width * width,
-                        mModel.height * height)
+        var left = Float.MAX_VALUE
+        var top = Float.MAX_VALUE
+        var right = Float.MIN_VALUE
+        var bottom = Float.MIN_VALUE
+        mModel.sketch?.allStrokes?.forEach { stroke ->
+            stroke.allPathTuple.forEach { tuple ->
+                left = Math.min(left, tuple.firstPoint.x)
+                top = Math.min(top, tuple.firstPoint.y)
+                right = Math.max(right, tuple.firstPoint.x)
+                bottom = Math.max(bottom, tuple.firstPoint.y)
+            }
+        }
+        mScrapBound.set(left * width,
+                        top * height,
+                        right * width,
+                        bottom * height)
 
+        // Path for sketch.
         rebuildSketchPath()
 
         mIsCacheDirty = false
@@ -207,8 +241,8 @@ open class ScrapView : FrameLayout,
 
             sketch.allStrokes.forEach { stroke ->
                 stroke.allPathTuple.forEachIndexed { i, tuple ->
-                    val x = tuple.firstPoint.x * mScrapBound.width()
-                    val y = tuple.firstPoint.y * mScrapBound.height()
+                    val x = tuple.firstPoint.x * width
+                    val y = tuple.firstPoint.y * height
 
                     when (i) {
                         0 -> {
