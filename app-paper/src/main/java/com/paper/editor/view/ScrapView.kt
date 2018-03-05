@@ -23,11 +23,9 @@ package com.paper.editor.view
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
-import com.cardinalblue.gesture.GesturePolicy
 import com.paper.R
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
@@ -80,9 +78,6 @@ open class ScrapView : FrameLayout,
         setBackgroundColor(Color.TRANSPARENT)
 
         invalidateRenderingCache()
-
-        // TEST: Set DRAG_ONLY policy.
-        mGestureDetector.setPolicy(GesturePolicy.ALL)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -99,14 +94,6 @@ open class ScrapView : FrameLayout,
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> Log.d("xyz", "ACTION_DOWN, count=%d".format(event.pointerCount))
-            MotionEvent.ACTION_MOVE -> Log.d("xyz", "ACTION_MOVE, count=%d".format(event.pointerCount))
-            MotionEvent.ACTION_UP -> Log.d("xyz", "ACTION_UP, count=%d".format(event.pointerCount))
-            MotionEvent.ACTION_CANCEL -> Log.d("xyz", "ACTION_CANCEL, count=%d".format(event.pointerCount))
-            MotionEvent.ACTION_OUTSIDE -> Log.d("xyz", "ACTION_OUTSIDE, count=%d".format(event.pointerCount))
-        }
-
         val x = event.getX(0)
         val y = event.getY(0)
 
