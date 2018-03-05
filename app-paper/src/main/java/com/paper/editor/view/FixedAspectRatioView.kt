@@ -23,13 +23,16 @@ package com.paper.editor.view
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import com.paper.protocol.ICanvasDelegate
+import com.paper.protocol.ITouchDelegate
 
 open class FixedAspectRatioView : FrameLayout {
 
-    // Listener.
+    // Delegate.
     private var mCanvasDelegate: ICanvasDelegate? = null
+    private var mTouchDelegate: ITouchDelegate? = null
 
     private var mWidthOverHeight: Float = 0f
 
@@ -63,6 +66,14 @@ open class FixedAspectRatioView : FrameLayout {
         mCanvasDelegate?.onDelegateDraw(canvas)
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        return if (mTouchDelegate == null) {
+            super.onTouchEvent(event)
+        } else {
+            mTouchDelegate!!.onDelegateTouchEvent(event)
+        }
+    }
+
     fun setWidthOverHeightRatio(ratio: Float) {
         mWidthOverHeight = ratio
 
@@ -72,5 +83,9 @@ open class FixedAspectRatioView : FrameLayout {
 
     fun setCanvasDelegate(delegate: ICanvasDelegate) {
         mCanvasDelegate = delegate
+    }
+
+    fun setTouchEventDelegate(delegate: ITouchDelegate) {
+        mTouchDelegate = delegate
     }
 }

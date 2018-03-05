@@ -33,6 +33,7 @@ import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
 import com.paper.editor.ITouchConfig
 import com.paper.protocol.ICanvasDelegate
+import com.paper.protocol.ITouchDelegate
 import com.paper.shared.model.ScrapModel
 import com.paper.util.TransformUtils
 import java.lang.UnsupportedOperationException
@@ -42,6 +43,7 @@ class PaperCanvasView : FrameLayout,
                         ITouchConfig,
                         ICanvasView,
                         ICanvasDelegate,
+                        ITouchDelegate,
                         View.OnLayoutChangeListener {
 
     // Views.
@@ -95,6 +97,8 @@ class PaperCanvasView : FrameLayout,
         mScrapContainer.setBackgroundColor(Color.WHITE)
         // For drawing grid background.
         mScrapContainer.setCanvasDelegate(this)
+        // For padding/margin insensitive touch.
+        mScrapContainer.setTouchEventDelegate(this)
         // TEST
         //        mScrapContainer.scaleX = 0.9f
         //        mScrapContainer.scaleY = 0.9f
@@ -111,6 +115,19 @@ class PaperCanvasView : FrameLayout,
         mScrapContainer.removeOnLayoutChangeListener(this@PaperCanvasView)
 
         mNormalizedEvent?.recycle()
+    }
+
+    override fun onLayoutChange(v: View,
+                                left: Int,
+                                top: Int,
+                                right: Int,
+                                bottom: Int,
+                                oldLeft: Int,
+                                oldTop: Int,
+                                oldRight: Int,
+                                oldBottom: Int) {
+        mNormalizationTransform.postScale(1f / mScrapContainer.width,
+                                          1f / mScrapContainer.height)
     }
 
     override fun onDelegateDraw(canvas: Canvas) {
@@ -140,25 +157,7 @@ class PaperCanvasView : FrameLayout,
         canvas.drawPath(mSketchPath, mSketchPaint)
     }
 
-    override fun onLayoutChange(v: View,
-                                left: Int,
-                                top: Int,
-                                right: Int,
-                                bottom: Int,
-                                oldLeft: Int,
-                                oldTop: Int,
-                                oldRight: Int,
-                                oldBottom: Int) {
-        mNormalizationTransform.postScale(1f / mScrapContainer.width,
-                                          1f / mScrapContainer.height)
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-//        mNormalizedEvent?.recycle()
-//        mNormalizedEvent = MotionEvent.obtain(event)
-//        mNormalizedEvent?.transform(mNormalizationTransform)
-//        return mGestureDetector.onTouchEvent(mNormalizedEvent!!, null, null)
-
+    override fun onDelegateTouchEvent(event: MotionEvent): Boolean {
         return mGestureDetector.onTouchEvent(event, null, null)
     }
 
