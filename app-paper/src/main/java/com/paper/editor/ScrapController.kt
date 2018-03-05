@@ -27,8 +27,6 @@ import com.paper.editor.view.IScrapView
 import com.paper.editor.view.SimpleGestureListener
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
-import com.paper.shared.model.sketch.PathTuple
-import com.paper.shared.model.sketch.SketchStroke
 import com.paper.util.TransformUtils
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -50,12 +48,6 @@ class ScrapController(private val mUiScheduler: Scheduler,
     private val mStopMatrixToParent: Matrix = Matrix()
     private val mStopTransformToParent: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
     private val mTransformHelper: TransformUtils = TransformUtils()
-
-    // TODO: Use sealed-class instead.
-    // Behavior.
-    private val GESTURE_MOVE = 0
-    private val GESTURE_DRAWING = 1
-    private var mGestureMode: Int = GESTURE_MOVE
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -79,51 +71,10 @@ class ScrapController(private val mUiScheduler: Scheduler,
     ///////////////////////////////////////////////////////////////////////////
     // Gesture handling ///////////////////////////////////////////////////////
 
-    override fun onActionBegin(event: MyMotionEvent,
-                               target: Any?,
-                               context: Any?) {
-        // Reset gesture-mode.
-        mGestureMode = GESTURE_MOVE
-    }
-
-    override fun onActionEnd(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        // DO NOTHING.
-    }
-
     override fun onDragBegin(event: MyMotionEvent,
                              target: Any?,
                              context: Any?) {
-        val np = getNormalizedFocusPointer(event)
-
-        // Change to DRAWING mode if the focus pointer is close enough to the
-        // existing stroke.
-//        val strokes = mModel.sketch!!.allStrokes
-//        for (stroke in strokes) {
-//            for (tuple in stroke.allPathTuple) {
-//                val dx = np.x - tuple.firstPoint.x
-//                val dy = np.y - tuple.firstPoint.y
-//
-//                if ((dx * dx + dy * dy) < 0.05) {
-//                    mGestureMode = GESTURE_DRAWING
-//                    break
-//                }
-//            }
-//
-//            if (mGestureMode == GESTURE_DRAWING) break
-//        }
-
-        // Process mode.
-        when (mGestureMode) {
-            GESTURE_MOVE -> holdStartTransform()
-            GESTURE_DRAWING -> {
-                mModel.sketch!!.addStroke(SketchStroke())
-                mModel.sketch!!.lastStroke.add(PathTuple(np.x, np.y))
-
-                mView!!.invalidateRenderingCache()
-            }
-        }
+        holdStartTransform()
     }
 
     override fun onDrag(event: MyMotionEvent,
@@ -131,55 +82,24 @@ class ScrapController(private val mUiScheduler: Scheduler,
                         context: Any?,
                         startPointer: PointF,
                         stopPointer: PointF) {
-        // Process mode.
-        when (mGestureMode) {
-            GESTURE_MOVE -> {
-                // Map the coordinates from child world to the parent world.
-                val startPointerInParent: PointF = convertPointToParentWorld(startPointer)
-                val stopPointerInParent: PointF = convertPointToParentWorld(stopPointer)
-                val delta = PointF(stopPointerInParent.x - startPointerInParent.x,
-                                   stopPointerInParent.y - startPointerInParent.y)
+        // Map the coordinates from child world to the parent world.
+        val startPointerInParent: PointF = convertPointToParentWorld(startPointer)
+        val stopPointerInParent: PointF = convertPointToParentWorld(stopPointer)
+        val delta = PointF(stopPointerInParent.x - startPointerInParent.x,
+                           stopPointerInParent.y - startPointerInParent.y)
 
-                // Update the RAW transform (without any modification).
-                mStopMatrixToParent.postTranslate(delta.x, delta.y)
+        // Update the RAW transform (without any modification).
+        mStopMatrixToParent.postTranslate(delta.x, delta.y)
 
-                // Prepare the transform for the view (might be modified).
-                mTransformHelper.getValues(mStopMatrixToParent)
-                mStopTransformToParent.translationX = mTransformHelper.translationX
-                mStopTransformToParent.translationY = mTransformHelper.translationY
-                mStopTransformToParent.scaleX = mTransformHelper.scaleX
-                mStopTransformToParent.scaleY = mTransformHelper.scaleY
-                mStopTransformToParent.rotationInRadians = mTransformHelper.rotationInRadians
+        // Prepare the transform for the view (might be modified).
+        mTransformHelper.getValues(mStopMatrixToParent)
+        mStopTransformToParent.translationX = mTransformHelper.translationX
+        mStopTransformToParent.translationY = mTransformHelper.translationY
+        mStopTransformToParent.scaleX = mTransformHelper.scaleX
+        mStopTransformToParent.scaleY = mTransformHelper.scaleY
+        mStopTransformToParent.rotationInRadians = mTransformHelper.rotationInRadians
 
-//                Log.d("xyz", "------------------------")
-//                Log.d("xyz", "start=%s, stop=%s".format(startPointer, stopPointer))
-//                Log.d("xyz", "drag: child(dx=%.3f, dy=%.3f), parent(dx=%.3f, dy=%.3f)".format(
-//                    stopPointer.x - startPointer.x, stopPointer.y - startPointer.y,
-//                    delta.x, delta.y))
-//                Log.d("xyz", "drag: x=%.3f, y=%.3f".format(
-//                    mStopTransformToParent.translationX, mStopTransformToParent.translationY))
-
-                mView!!.setTransform(mStopTransformToParent.copy())
-            }
-            GESTURE_DRAWING -> {
-                val stroke = mModel.sketch!!.lastStroke
-                val p = getNormalizedFocusPointer(event)
-
-                stroke.add(PathTuple(p.x, p.y))
-
-                mView!!.invalidateRenderingCache()
-            }
-        }
-    }
-
-    override fun onDragFling(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?,
-                             startPointer: PointF,
-                             stopPointer: PointF,
-                             velocityX: Float,
-                             velocityY: Float) {
-        // DO NOTHING.
+        mView!!.setTransform(mStopTransformToParent.copy())
     }
 
     override fun onDragEnd(event: MyMotionEvent,
@@ -187,9 +107,7 @@ class ScrapController(private val mUiScheduler: Scheduler,
                            context: Any?,
                            startPointer: PointF,
                            stopPointer: PointF) {
-        // DO NOTHING.
-
-        // Commit the transform to the model.
+        // Commit the transform to the model (in memory).
         mModel.x = mStopTransformToParent.translationX
         mModel.y = mStopTransformToParent.translationY
     }
@@ -239,22 +157,7 @@ class ScrapController(private val mUiScheduler: Scheduler,
         mStopTransformToParent.scaleY = mTransformHelper.scaleY
         mStopTransformToParent.rotationInRadians = mTransformHelper.rotationInRadians
 
-//        Log.d("xyz", "------------------------")
-//        Log.d("xyz", "pinch: dx=%.3f, dy=%.3f; dScale=%.3f, delta degrees=%.3f".format(
-//            dx, dy, dScale, Math.toDegrees(dRadians.toDouble())))
-//        Log.d("xyz", "pinch: x=%.3f, y=%.3f; scale=%.3f, degrees=%.3f".format(
-//            mStopTransformToParent.translationX,
-//            mStopTransformToParent.translationY,
-//            mStopTransformToParent.scaleX,
-//            Math.toDegrees(mStopTransformToParent.rotationInRadians.toDouble())))
-
         mView!!.setTransform(mStopTransformToParent.copy())
-    }
-
-    override fun onPinchFling(event: MyMotionEvent,
-                              target: Any?,
-                              context: Any?) {
-        // DO NOTHING.
     }
 
     override fun onPinchEnd(event: MyMotionEvent,
@@ -262,7 +165,7 @@ class ScrapController(private val mUiScheduler: Scheduler,
                             context: Any?,
                             startPointers: Array<PointF>,
                             stopPointers: Array<PointF>) {
-        // TODO: Commit to model.
+        // Commit the transform to the model (in memory).
         mModel.x = mStopTransformToParent.translationX
         mModel.y = mStopTransformToParent.translationY
     }
@@ -284,10 +187,5 @@ class ScrapController(private val mUiScheduler: Scheduler,
         mView!!.convertPointToParentWorld(mPointerMap)
 
         return PointF(mPointerMap[0], mPointerMap[1])
-    }
-
-    private fun getNormalizedFocusPointer(event: MyMotionEvent): PointF {
-        return PointF(event.downFocusX / mView!!.getCanvasWidth(),
-                      event.downFocusY / mView!!.getCanvasHeight())
     }
 }

@@ -21,6 +21,7 @@
 package com.paper.editor.view
 
 import android.graphics.Matrix
+import android.graphics.PointF
 import com.paper.editor.ITouchConfig
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
@@ -32,9 +33,7 @@ interface IScrapView : ITouchConfig {
 
     fun getScrapId(): UUID
 
-    fun getCanvasWidth(): Int
-
-    fun getCanvasHeight(): Int
+    fun normalizePointer(p: PointF): PointF
 
     fun setGestureListener(listener: SimpleGestureListener?)
 

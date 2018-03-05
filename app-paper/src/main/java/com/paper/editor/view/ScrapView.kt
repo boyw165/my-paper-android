@@ -144,12 +144,8 @@ open class ScrapView : FrameLayout,
         return mModel.id
     }
 
-    override fun getCanvasWidth(): Int {
-        return width
-    }
-
-    override fun getCanvasHeight(): Int {
-        return height
+    override fun normalizePointer(p: PointF): PointF {
+        return PointF(p.x / width, p.y / height)
     }
 
     override fun getTransform(): TransformModel {
