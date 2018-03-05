@@ -48,6 +48,7 @@ open class ScrapView : FrameLayout,
     private val mSketchMaxWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
 
     // Gesture.
+    private var mIfHandleEvent = false
     private val mTransformHelper: TransformUtils = TransformUtils()
     private val mGestureDetector: GestureDetector by lazy {
         GestureDetector(context,
@@ -106,15 +107,19 @@ open class ScrapView : FrameLayout,
             MotionEvent.ACTION_OUTSIDE -> Log.d("xyz", "ACTION_OUTSIDE, count=%d".format(event.pointerCount))
         }
 
-        // Validate the hitting boundary.
-        validateRenderingCache()
-
         val x = event.getX(0)
         val y = event.getY(0)
 
         // If the canvas doesn't handle the touch, bubble up the event.
-        return if (mScrapBound.contains(x, y)) {
-            mGestureDetector.onTouchEvent(event, this, null)
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                mIfHandleEvent = mScrapBound.contains(x, y)
+            }
+        }
+
+        return if (mIfHandleEvent) {
+            mGestureDetector.onTouchEvent(event, null, null)
+            true
         } else {
             false
         }
