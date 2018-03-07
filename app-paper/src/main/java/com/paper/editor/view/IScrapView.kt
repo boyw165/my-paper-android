@@ -27,15 +27,17 @@ import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import java.util.*
 
-interface IScrapView : ITouchConfig {
+interface IScrapView {
 
     fun setModel(model: ScrapModel)
 
     fun getScrapId(): UUID
 
-    fun normalizePointer(p: PointF): PointF
+    // Gesture ////////////////////////////////////////////////////////////////
 
     fun setGestureListener(listener: SimpleGestureListener?)
+
+    // Transform //////////////////////////////////////////////////////////////
 
     fun getTransform(): TransformModel
 
@@ -45,7 +47,11 @@ interface IScrapView : ITouchConfig {
 
     fun setTransformPivot(px: Float, py: Float)
 
+    fun normalizePointer(p: PointF): PointF
+
     fun convertPointToParentWorld(point: FloatArray)
+
+    // Rendering //////////////////////////////////////////////////////////////
 
     fun invalidateRenderingCache()
 }

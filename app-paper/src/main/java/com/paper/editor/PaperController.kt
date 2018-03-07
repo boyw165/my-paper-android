@@ -23,6 +23,7 @@ package com.paper.editor
 import android.graphics.Matrix
 import android.graphics.PointF
 import com.cardinalblue.gesture.MyMotionEvent
+import com.paper.editor.data.GestureRecord
 import com.paper.editor.view.ICanvasView
 import com.paper.editor.view.IScrapLifecycleListener
 import com.paper.editor.view.IScrapView
@@ -54,11 +55,7 @@ class PaperController(private val mUiScheduler: Scheduler,
     private val mControllers: HashMap<UUID, IScrapController> = hashMapOf()
 
     // Gesture detector.
-    private val mPointerMap: FloatArray = floatArrayOf(0f, 0f)
-    private val mStartMatrixToParent: Matrix = Matrix()
-    private val mStopMatrixToParent: Matrix = Matrix()
-    private val mStopTransformToParent: TransformModel = TransformModel(0f, 0f, 1f, 1f, 0f)
-    private val mTransformHelper: TransformUtils = TransformUtils()
+    private val mGestureHistory = mutableListOf<GestureRecord>()
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -87,7 +84,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         // TODO: Encapsulate the inflation with a custom Observable.
         mCanvasView?.setScrapLifecycleListener(this@PaperController)
         mCanvasView?.setGestureListener(this@PaperController)
-        mCanvasView?.setCanvasWidthOverHeightRatio(mModel.widthOverHeight)
+        mCanvasView?.setCanvasSize(mModel.width, mModel.height)
         mCanvasView?.let { canvasView ->
             // Inflate scraps.
             mModel.scraps.forEach { scrap ->
@@ -128,9 +125,28 @@ class PaperController(private val mUiScheduler: Scheduler,
     ///////////////////////////////////////////////////////////////////////////
     // Gesture handling ///////////////////////////////////////////////////////
 
+    override fun onActionBegin(event: MyMotionEvent,
+                               target: Any?,
+                               context: Any?) {
+        // Clear the gesture history.
+        mGestureHistory.clear()
+    }
+
+    override fun onActionEnd(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        // DO NOTHING.
+    }
+
     override fun onDragBegin(event: MyMotionEvent,
                              target: Any?,
                              context: Any?) {
+        // Document gesture.
+        mGestureHistory.add(GestureRecord.DRAG)
+
+        // If PINCH is ever present, skip drawing sketch.
+        if (mGestureHistory.contains(GestureRecord.PINCH)) return
+
         val x = event.downFocusX
         val y = event.downFocusY
         val np = mCanvasView!!.normalizePointer(PointF(x, y))
@@ -149,6 +165,9 @@ class PaperController(private val mUiScheduler: Scheduler,
                         context: Any?,
                         startPointer: PointF,
                         stopPointer: PointF) {
+        // If PINCH is ever present, skip drawing sketch.
+        if (mGestureHistory.contains(GestureRecord.PINCH)) return
+
         val x = event.downFocusX
         val y = event.downFocusY
         val np = mCanvasView!!.normalizePointer(PointF(x, y))
@@ -164,6 +183,9 @@ class PaperController(private val mUiScheduler: Scheduler,
                            context: Any?,
                            startPointer: PointF,
                            stopPointer: PointF) {
+        // If PINCH is ever present, skip drawing sketch.
+        if (mGestureHistory.contains(GestureRecord.PINCH)) return
+
         val x = event.downFocusX
         val y = event.downFocusY
         val np = mCanvasView!!.normalizePointer(PointF(x, y))
@@ -189,23 +211,34 @@ class PaperController(private val mUiScheduler: Scheduler,
         mCanvasView?.addViewBy(scrap)
     }
 
+    override fun onPinchBegin(event: MyMotionEvent,
+                              target: Any?,
+                              context: Any?,
+                              startPointers: Array<PointF>) {
+        // Document gesture.
+        mGestureHistory.add(GestureRecord.PINCH)
+
+        mCanvasView?.startTransformViewport()
+    }
+
+    override fun onPinch(event: MyMotionEvent,
+                         target: Any?,
+                         context: Any?,
+                         startPointers: Array<PointF>,
+                         stopPointers: Array<PointF>) {
+        mCanvasView?.onTransformViewport(startPointers, stopPointers)
+    }
+
+    override fun onPinchEnd(event: MyMotionEvent,
+                            target: Any?,
+                            context: Any?,
+                            startPointers: Array<PointF>,
+                            stopPointers: Array<PointF>) {
+        mCanvasView?.stopTransformViewport()
+    }
+
     ///////////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
-
-//    private fun holdStartTransform() {
-//        mStartMatrixToParent.reset()
-//        mStartMatrixToParent.set(mCanvasView!!.getTransformMatrix())
-//        mStopMatrixToParent.reset()
-//        mStopMatrixToParent.set(mStartMatrixToParent)
-//    }
-
-//    private fun convertPointToParentWorld(point: PointF): PointF {
-//        mPointerMap[0] = point.x
-//        mPointerMap[1] = point.y
-//        mCanvasView!!.convertPointToParentWorld(mPointerMap)
-//
-//        return PointF(mPointerMap[0], mPointerMap[1])
-//    }
 }

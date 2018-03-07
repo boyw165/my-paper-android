@@ -50,10 +50,10 @@ open class ScrapView : FrameLayout,
     private val mTransformHelper: TransformUtils = TransformUtils()
     private val mGestureDetector: GestureDetector by lazy {
         GestureDetector(context,
-                        getTouchSlop(),
-                        getTapSlop(),
-                        getMinFlingVec(),
-                        getMaxFlingVec())
+                        resources.getDimension(R.dimen.touch_slop),
+                        resources.getDimension(R.dimen.tap_slop),
+                        resources.getDimension(R.dimen.fling_min_vec),
+                        resources.getDimension(R.dimen.fling_max_vec))
     }
 
     constructor(context: Context?) : this(context, null)
@@ -87,6 +87,9 @@ open class ScrapView : FrameLayout,
 
         validateRenderingCache()
 
+        // TEST: Improve performance.
+        canvas.clipRect(mScrapBound)
+
         // Boundary.
         canvas.drawRect(mScrapBound, mSketchPaint)
         // Sketch.
@@ -113,40 +116,30 @@ open class ScrapView : FrameLayout,
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // Touch config ///////////////////////////////////////////////////////////
-
-    override fun getTouchSlop(): Float {
-        return resources.getDimension(R.dimen.touch_slop)
-    }
-
-    override fun getTapSlop(): Float {
-        return resources.getDimension(R.dimen.tap_slop)
-    }
-
-    override fun getMinFlingVec(): Float {
-        return resources.getDimension(R.dimen.fling_min_vec)
-    }
-
-    override fun getMaxFlingVec(): Float {
-        return resources.getDimension(R.dimen.fling_max_vec)
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
     // IScrapView /////////////////////////////////////////////////////////////
 
     override fun setModel(model: ScrapModel) {
         mModel = model
 
         invalidateRenderingCache()
+
+        invalidate()
+        requestLayout()
     }
 
     override fun getScrapId(): UUID {
         return mModel.id
     }
 
-    override fun normalizePointer(p: PointF): PointF {
-        return PointF(p.x / width, p.y / height)
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    override fun setGestureListener(listener: SimpleGestureListener?) {
+        mGestureDetector.tapGestureListener = listener
+        mGestureDetector.dragGestureListener = listener
+        mGestureDetector.pinchGestureListener = listener
     }
+
+    // Transform //////////////////////////////////////////////////////////////
 
     override fun getTransform(): TransformModel {
         return TransformModel(
@@ -179,11 +172,11 @@ open class ScrapView : FrameLayout,
         matrix.mapPoints(point)
     }
 
-    override fun setGestureListener(listener: SimpleGestureListener?) {
-        mGestureDetector.tapGestureListener = listener
-        mGestureDetector.dragGestureListener = listener
-        mGestureDetector.pinchGestureListener = listener
+    override fun normalizePointer(p: PointF): PointF {
+        return PointF(p.x / width, p.y / height)
     }
+
+    // Rendering //////////////////////////////////////////////////////////////
 
     override fun invalidateRenderingCache() {
         // Mark the rendering cache is dirty and later validateRenderingCache()

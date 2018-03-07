@@ -68,7 +68,7 @@ class PaperRepo(authority: String,
                     arrayOf(PaperTable.COL_ID,
                             PaperTable.COL_CREATED_AT,
                             PaperTable.COL_MODIFIED_AT,
-                            PaperTable.COL_WIDTH_OVER_HEIGHT,
+                            PaperTable.COL_WIDTH,
                             PaperTable.COL_CAPTION,
                             PaperTable.COL_THUMB_PATH,
                             PaperTable.COL_THUMB_WIDTH,
@@ -115,36 +115,37 @@ class PaperRepo(authority: String,
             .fromCallable {
                 val paper = PaperModel()
 
-                paper.widthOverHeight = 1f
-
-                val stroke1 = SketchStroke()
-                stroke1.setWidth(0.2f)
-                stroke1.add(PathTuple(0f, 0f))
-                stroke1.add(PathTuple(1f, 0.2f))
-                stroke1.add(PathTuple(0.2f, 0.6f))
-
-                val stroke2 = SketchStroke()
-                stroke2.setWidth(0.2f)
-                stroke2.add(PathTuple(1f, 0.1f))
-                stroke2.add(PathTuple(0.8f, 0.3f))
-                stroke2.add(PathTuple(0.2f, 0.6f))
-                stroke2.add(PathTuple(0f, 0.9f))
-
-                // Add testing scraps.
-                val scrap1 = ScrapModel()
-                scrap1.x = 0f
-                scrap1.y = 0f
-                scrap1.sketch = Sketch()
-                scrap1.sketch?.addStroke(stroke1)
-
-                val scrap2 = ScrapModel()
-                scrap2.x = 0.2f
-                scrap2.y = 0.3f
-                scrap2.sketch = Sketch()
-                scrap2.sketch?.addStroke(stroke2)
-
-                paper.scraps.add(scrap1)
-                paper.scraps.add(scrap2)
+//                val stroke1 = SketchStroke()
+//                stroke1.setWidth(0.2f)
+//                stroke1.add(PathTuple(0f, 0f))
+//                stroke1.add(PathTuple(1f, 0.2f))
+//                stroke1.add(PathTuple(0.2f, 0.6f))
+//
+//                val stroke2 = SketchStroke()
+//                stroke2.setWidth(0.2f)
+//                stroke1.add(PathTuple(0f, 0f))
+//                stroke2.add(PathTuple(1f, 0.1f))
+//                stroke2.add(PathTuple(0.8f, 0.3f))
+//                stroke2.add(PathTuple(0.2f, 0.6f))
+//                stroke2.add(PathTuple(0f, 0.9f))
+//
+//                // Add testing scraps.
+//                val scrap1 = ScrapModel()
+//                scrap1.x = 0f
+//                scrap1.y = 0f
+//                scrap1.width = 0.5f
+//                scrap1.height = 0.5f
+//                scrap1.sketch = Sketch()
+//                scrap1.sketch?.addStroke(stroke1)
+//
+//                val scrap2 = ScrapModel()
+//                scrap2.x = 0.2f
+//                scrap2.y = 0.3f
+//                scrap2.sketch = Sketch()
+//                scrap2.sketch?.addStroke(stroke2)
+//
+//                paper.scraps.add(scrap1)
+//                paper.scraps.add(scrap2)
 
                 return@fromCallable paper
             }
@@ -179,9 +180,6 @@ class PaperRepo(authority: String,
                 val newPaper = PaperModel()
                 newPaper.createdAt = timestamp
                 newPaper.modifiedAt = timestamp
-                //                newPaper.width = 210
-                //                newPaper.height = 297
-                newPaper.widthOverHeight = 840f / 1188f
                 newPaper.caption = caption
 
                 val json = mGson.toJson(newPaper)
@@ -227,7 +225,8 @@ class PaperRepo(authority: String,
 
         values.put(PaperTable.COL_CREATED_AT, paper.createdAt)
         values.put(PaperTable.COL_MODIFIED_AT, paper.modifiedAt)
-        values.put(PaperTable.COL_WIDTH_OVER_HEIGHT, paper.widthOverHeight)
+        values.put(PaperTable.COL_WIDTH, paper.width)
+        values.put(PaperTable.COL_HEIGHT, paper.height)
         values.put(PaperTable.COL_CAPTION, paper.caption)
 
         // FIXME:
@@ -252,8 +251,8 @@ class PaperRepo(authority: String,
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
         paper.modifiedAt = cursor.getLong(colOfModifiedAt)
 
-        val colOfWidthOverHeight = cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH_OVER_HEIGHT)
-        paper.widthOverHeight = cursor.getFloat(colOfWidthOverHeight)
+        paper.width = cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH))
+        paper.height = cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT))
 
         val colOfCaption = cursor.getColumnIndexOrThrow(PaperTable.COL_CAPTION)
         paper.caption = cursor.getString(colOfCaption)

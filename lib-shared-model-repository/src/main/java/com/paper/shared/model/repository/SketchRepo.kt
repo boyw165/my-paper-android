@@ -123,7 +123,7 @@ class SketchRepo(authority: String,
     private fun convertSketchToValues(sketch: Sketch): ContentValues {
         val values = ContentValues()
 
-//        values.put(SketchTable.COL_WIDTH_OVER_HEIGHT, sketch.width)
+//        values.put(SketchTable.COL_WIDTH, sketch.width)
 //        values.put(SketchTable.COL_HEIGHT, sketch.height)
 
         // FIXME:
@@ -148,7 +148,7 @@ class SketchRepo(authority: String,
 //        val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
 //        paper.modifiedAt = cursor.getLong(colOfModifiedAt)
 //
-//        val colOfWidth = cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH_OVER_HEIGHT)
+//        val colOfWidth = cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH)
 //        paper.width = cursor.getInt(colOfWidth)
 //
 //        val colOfHeight = cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT)

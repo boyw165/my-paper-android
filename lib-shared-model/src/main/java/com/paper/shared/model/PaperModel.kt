@@ -27,11 +27,9 @@ class PaperModel {
     var createdAt: Long = 0L
     var modifiedAt: Long = 0L
 
-    var widthOverHeight: Float = 1f
-    var viewPortX: Float = 0f
-    var viewPortY: Float = 0f
-    var viewPortWidth: Float = widthOverHeight
-    var viewPortHeight: Float = 1f
+    // By default is landscape A4, 210 x 297 units.
+    var width: Float = 297f
+    var height: Float = 210f
 
     var thumbnailPath: String? = null
     var thumbnailWidth: Int = 0

@@ -31,39 +31,38 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
-import com.paper.editor.ITouchConfig
-import com.paper.protocol.ICanvasDelegate
-import com.paper.protocol.ITouchDelegate
 import com.paper.shared.model.ScrapModel
 import com.paper.util.TransformUtils
 import java.lang.UnsupportedOperationException
 import java.util.*
 
 class PaperCanvasView : FrameLayout,
-                        ITouchConfig,
-                        ICanvasView,
-                        ICanvasDelegate,
-                        ITouchDelegate,
-                        View.OnLayoutChangeListener {
+                        ICanvasView {
 
     // Views.
-    private val mScrapContainer by lazy { FixedAspectRatioView(context, null) }
     private val mViewLookupTable = hashMapOf<UUID, View>()
+    private val mRootContainer by lazy { FrameLayout(context, null) }
+
+    // View-Models.
+    private var mCanvasWidth: Float = 0f
+    private var mCanvasHeight: Float = 0f
 
     // Listeners.
     private var mListener: IScrapLifecycleListener? = null
 
     // Gesture.
-    private val mNormalizationTransform = Matrix()
-    private var mNormalizedEvent: MotionEvent? = null
-    private val mTransformHelper: TransformUtils = TransformUtils()
-    private val mGestureDetector: GestureDetector by lazy {
+    private val mGestureDetector by lazy {
         GestureDetector(context,
-                        getTouchSlop(),
-                        getTapSlop(),
-                        getMinFlingVec(),
-                        getMaxFlingVec())
+                        resources.getDimension(R.dimen.touch_slop),
+                        resources.getDimension(R.dimen.tap_slop),
+                        resources.getDimension(R.dimen.fling_min_vec),
+                        resources.getDimension(R.dimen.fling_max_vec))
     }
+    private val mPointerMap = floatArrayOf(0f, 0f)
+    private val mStartMatrix = Matrix()
+    private val mStopMatrix = Matrix()
+    private val mTmpMatrix = Matrix()
+    private val mTransformHelper = TransformUtils()
 
     // Rendering resource.
     private val mGridPaint = Paint()
@@ -91,110 +90,62 @@ class PaperCanvasView : FrameLayout,
         // Changing the pivot to left-top at the beginning.
         // Note: Changing the pivot will update the rendering matrix, where it
         // is like making the parent see the child in a different angles.
-        mScrapContainer.pivotX = 0f
-        mScrapContainer.pivotY = 0f
+        pivotX = 0f
+        pivotY = 0f
         // Giving a background would make onDraw() able to be called.
-        mScrapContainer.setBackgroundColor(Color.WHITE)
-        // For drawing grid background.
-        mScrapContainer.setCanvasDelegate(this)
-        // For padding/margin insensitive touch.
-        mScrapContainer.setTouchEventDelegate(this)
-        // TEST
-        //        mScrapContainer.scaleX = 0.9f
-        //        mScrapContainer.scaleY = 0.9f
-        //        mScrapContainer.translationX = 16 * oneDp
-        //        mScrapContainer.translationY = 16 * oneDp
-        ViewCompat.setElevation(mScrapContainer, 20 * oneDp)
-        mScrapContainer.addOnLayoutChangeListener(this@PaperCanvasView)
-        addView(mScrapContainer)
+        setBackgroundColor(Color.WHITE)
+        ViewCompat.setElevation(this, 12f * oneDp)
+
+        addView(mRootContainer)
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
+    override fun onMeasure(widthSpec: Int,
+                           heightSpec: Int) {
+        if (mCanvasWidth == 0f || mCanvasHeight == 0f) {
+            super.onMeasure(widthSpec, heightSpec)
+        } else {
+            val measureWidth = MeasureSpec.getSize(widthSpec)
+            val measureHeight = MeasureSpec.getSize(heightSpec)
 
-        mScrapContainer.removeOnLayoutChangeListener(this@PaperCanvasView)
+            val widthScale = measureWidth / mCanvasWidth
+            val heightScale = measureHeight / mCanvasHeight
+            val minScale = Math.min(widthScale, heightScale)
+            val width = minScale * mCanvasWidth
+            val height = minScale * mCanvasHeight
 
-        mNormalizedEvent?.recycle()
-    }
-
-    override fun onLayoutChange(v: View,
-                                left: Int,
-                                top: Int,
-                                right: Int,
-                                bottom: Int,
-                                oldLeft: Int,
-                                oldTop: Int,
-                                oldRight: Int,
-                                oldBottom: Int) {
-        mNormalizationTransform.postScale(1f / mScrapContainer.width,
-                                          1f / mScrapContainer.height)
-    }
-
-    override fun onDelegateDraw(canvas: Canvas) {
-        val canvasWidth = mScrapContainer.width.toFloat()
-        val canvasHeight = mScrapContainer.height.toFloat()
-        val cell = Math.min(canvasWidth, canvasHeight) / 10
-
-        // Boundary.
-        canvas.drawLine(0f, 0f, canvasWidth, 0f, mGridPaint)
-        canvas.drawLine(canvasWidth, 0f, canvasWidth, canvasHeight, mGridPaint)
-        canvas.drawLine(canvasWidth, canvasHeight, 0f, canvasHeight, mGridPaint)
-        canvas.drawLine(0f, canvasHeight, 0f, 0f, mGridPaint)
-
-        // Grid.
-        var x = 0f
-        while (x < width) {
-            canvas.drawLine(x, 0f, x, canvasHeight, mGridPaint)
-            x += cell
+            super.onMeasure(MeasureSpec.makeMeasureSpec(width.toInt(), MeasureSpec.EXACTLY),
+                            MeasureSpec.makeMeasureSpec(height.toInt(), MeasureSpec.EXACTLY))
         }
-        var y = 0f
-        while (y < height) {
-            canvas.drawLine(0f, y, canvasWidth, y, mGridPaint)
-            y += cell
-        }
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        if (mCanvasWidth == 0f || mCanvasHeight == 0f) return
+
+        drawBoundAndGrid(canvas)
 
         // Sketch.
         canvas.drawPath(mSketchPath, mSketchPaint)
     }
 
-    override fun onDelegateTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
         return mGestureDetector.onTouchEvent(event, null, null)
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Touch config ///////////////////////////////////////////////////////////
-
-    override fun getTouchSlop(): Float {
-        return resources.getDimension(R.dimen.touch_slop)
-    }
-
-    override fun getTapSlop(): Float {
-        return resources.getDimension(R.dimen.tap_slop)
-    }
-
-    override fun getMinFlingVec(): Float {
-        return resources.getDimension(R.dimen.fling_min_vec)
-    }
-
-    override fun getMaxFlingVec(): Float {
-        return resources.getDimension(R.dimen.fling_max_vec)
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // ICanvasView ////////////////////////////////////////////////////////////
 
-    override fun setCanvasWidthOverHeightRatio(ratio: Float) {
-        mScrapContainer.setWidthOverHeightRatio(ratio)
+    override fun setCanvasSize(width: Float,
+                               height: Float) {
+        mCanvasWidth = width
+        mCanvasHeight = height
+
+        // Trigger onDraw() and onMeasure()
+        invalidate()
+        requestLayout()
     }
 
     override fun setScrapLifecycleListener(listener: IScrapLifecycleListener?) {
         mListener = listener
-    }
-
-    override fun setGestureListener(listener: SimpleGestureListener?) {
-        mGestureDetector.tapGestureListener = listener
-        mGestureDetector.dragGestureListener = listener
-        mGestureDetector.pinchGestureListener = listener
     }
 
     // TODO: Separate the application domain and business domain model.
@@ -212,7 +163,7 @@ class PaperCanvasView : FrameLayout,
                 scrapView.setModel(scrap)
 
                 // Add view.
-                mScrapContainer.addView(scrapView)
+                mRootContainer.addView(scrapView)
 
                 // Add to lookup table.
                 mViewLookupTable[id] = scrapView
@@ -234,7 +185,7 @@ class PaperCanvasView : FrameLayout,
         val scrapView = view as IScrapView
 
         // Remove view.
-        mScrapContainer.removeView(view)
+        mRootContainer.removeView(view)
 
         // Remove view from the lookup table.
         mViewLookupTable.remove(view.getScrapId())
@@ -271,12 +222,105 @@ class PaperCanvasView : FrameLayout,
             .show()
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Drawing ////////////////////////////////////////////////////////////////
+    // Transform //////////////////////////////////////////////////////////////
+
+    override fun setGestureListener(listener: SimpleGestureListener?) {
+        mGestureDetector.tapGestureListener = listener
+        mGestureDetector.dragGestureListener = listener
+        mGestureDetector.pinchGestureListener = listener
+    }
+
+    override fun startTransformViewport() {
+        // Hold start transform
+        mStartMatrix.reset()
+        mStartMatrix.set(mRootContainer.matrix)
+        mStopMatrix.reset()
+        mStopMatrix.set(mStartMatrix)
+    }
+
+    override fun onTransformViewport(startPointers: Array<PointF>,
+                                     stopPointers: Array<PointF>) {
+        // Map the coordinates from child world to the parent world.
+        val startPointersInParent = Array(startPointers.size, { i ->
+            convertPointToParentWorld(startPointers[i])
+        })
+        val stopPointersInParent = Array(stopPointers.size, { i ->
+            convertPointToParentWorld(stopPointers[i])
+        })
+
+        // Calculate the transformation.
+        val transform = TransformUtils.getTransformFromPointers(
+            startPointers, stopPointers)
+
+        val dx = transform[TransformUtils.DELTA_X]
+        val dy = transform[TransformUtils.DELTA_Y]
+        val dScale = transform[TransformUtils.DELTA_SCALE_X]
+        val dRadians = transform[TransformUtils.DELTA_RADIANS]
+        val pivotX = transform[TransformUtils.PIVOT_X]
+        val pivotY = transform[TransformUtils.PIVOT_Y]
+
+        // Update the RAW transform (without any modification).
+        mStopMatrix.reset()
+        mStopMatrix.set(mStartMatrix)
+        mStopMatrix.postScale(dScale, dScale, pivotX, pivotY)
+//        mStopMatrix.postRotate(Math.toDegrees(dRadians.toDouble()).toFloat(), pivotX, pivotY)
+        mStopMatrix.postTranslate(dx, dy)
+
+        // Prepare the transform for the view (might be modified).
+        mTransformHelper.getValues(mStopMatrix)
+
+        mRootContainer.scaleX = mTransformHelper.scaleX
+        mRootContainer.scaleY = mTransformHelper.scaleY
+//        mRootContainer.rotation = Math.toDegrees(mTransformHelper.rotationInRadians.toDouble()).toFloat()
+//        mRootContainer.translationX = mTransformHelper.translationX
+//        mRootContainer.translationY = mTransformHelper.translationY
+
+        invalidate()
+    }
+
+    override fun stopTransformViewport() {
+        // DO NOTHING.
+    }
+
+    private fun convertPointToParentWorld(point: PointF): PointF {
+        mPointerMap[0] = point.x
+        mPointerMap[1] = point.y
+        mRootContainer.matrix.mapPoints(mPointerMap)
+
+        return PointF(mPointerMap[0], mPointerMap[1])
+    }
 
     override fun normalizePointer(p: PointF): PointF {
-        return PointF(p.x / mScrapContainer.width,
-                      p.y / mScrapContainer.height)
+        return PointF(p.x / width, p.y / height)
+    }
+
+    // Drawing ////////////////////////////////////////////////////////////////
+
+    private fun drawBoundAndGrid(canvas: Canvas) {
+        canvas.save()
+        canvas.concat(mRootContainer.matrix)
+
+        val cell = Math.min(width.toFloat(), height.toFloat()) / 10
+
+        // Boundary.
+        canvas.drawLine(0f, 0f, width.toFloat(), 0f, mGridPaint)
+        canvas.drawLine(width.toFloat(), 0f, width.toFloat(), height.toFloat(), mGridPaint)
+        canvas.drawLine(width.toFloat(), height.toFloat(), 0f, height.toFloat(), mGridPaint)
+        canvas.drawLine(0f, height.toFloat(), 0f, 0f, mGridPaint)
+
+        // Grid.
+        var x = 0f
+        while (x < width) {
+            canvas.drawLine(x, 0f, x, height.toFloat(), mGridPaint)
+            x += cell
+        }
+        var y = 0f
+        while (y < height) {
+            canvas.drawLine(0f, y, width.toFloat(), y, mGridPaint)
+            y += cell
+        }
+
+        canvas.restore()
     }
 
     override fun startDrawSketch(x: Float, y: Float) {
@@ -284,29 +328,28 @@ class PaperCanvasView : FrameLayout,
         mSketchPath.moveTo(x, y)
         mSketchPath.lineTo(x, y)
 
-        mScrapContainer.invalidate()
+//        mRootContainer.invalidate()
+        invalidate()
     }
 
     override fun onDrawSketch(x: Float, y: Float) {
         mSketchPath.lineTo(x, y)
 
-        mScrapContainer.invalidate()
+//        mRootContainer.invalidate()
+        invalidate()
     }
 
     override fun stopDrawSketch() {
         mSketchPath.reset()
 
-        mScrapContainer.invalidate()
+//        mRootContainer.invalidate()
+        invalidate()
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun getCanvasWidth(): Float {
-        return mScrapContainer.width.toFloat()
-    }
-
-    private fun getCanvasHeight(): Float {
-        return mScrapContainer.height.toFloat()
+    private fun scaleFromModelToView(): Float {
+        return width.toFloat() / mCanvasWidth
     }
 }

@@ -168,6 +168,8 @@ class ScrapController(private val mUiScheduler: Scheduler,
         // Commit the transform to the model (in memory).
         mModel.x = mStopTransformToParent.translationX
         mModel.y = mStopTransformToParent.translationY
+        mModel.scale = mStopTransformToParent.scaleX
+        mModel.rotationInRadians = mStopTransformToParent.rotationInRadians
     }
 
     ///////////////////////////////////////////////////////////////////////////

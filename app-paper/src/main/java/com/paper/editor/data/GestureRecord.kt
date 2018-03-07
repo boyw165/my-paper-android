@@ -18,46 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.data
 
-import android.graphics.PointF
-import com.paper.shared.model.ScrapModel
-import java.util.*
-
-interface ICanvasView : IScrapLifecycleListener {
-
-    // Scrap manipulation /////////////////////////////////////////////////////
-
-    fun addViewBy(scrap: ScrapModel)
-
-    fun removeViewBy(id: UUID)
-
-    fun removeAllViews()
-
-    fun setScrapLifecycleListener(listener: IScrapLifecycleListener?)
-
-    // Transform //////////////////////////////////////////////////////////////
-
-    fun setCanvasSize(width: Float, height: Float)
-
-    fun setGestureListener(listener: SimpleGestureListener?)
-
-    fun startTransformViewport()
-
-    fun onTransformViewport(startPointers: Array<PointF>,
-                            stopPointers: Array<PointF>)
-
-    fun stopTransformViewport()
-
-    fun normalizePointer(p: PointF): PointF
-
-//    fun convertPointToParentWorld(point: FloatArray)
-
-    // Sketch /////////////////////////////////////////////////////////////////
-
-    fun startDrawSketch(x: Float, y: Float)
-
-    fun onDrawSketch(x: Float, y: Float)
-
-    fun stopDrawSketch()
+enum class GestureRecord {
+    TAP,
+    DRAG,
+    PINCH
 }
