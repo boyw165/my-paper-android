@@ -86,16 +86,15 @@ class PaperCanvasView : FrameLayout,
         mSketchPaint.strokeWidth = oneDp
         mSketchPaint.color = Color.BLACK
         mSketchPaint.style = Paint.Style.STROKE
-
-        // Changing the pivot to left-top at the beginning.
-        // Note: Changing the pivot will update the rendering matrix, where it
-        // is like making the parent see the child in a different angles.
-        pivotX = 0f
-        pivotY = 0f
         // Giving a background would make onDraw() able to be called.
         setBackgroundColor(Color.WHITE)
         ViewCompat.setElevation(this, 12f * oneDp)
 
+        // Changing the pivot to left-top at the beginning.
+        // Note: Changing the pivot will update the rendering matrix, where it
+        // is like making the parent see the child in a different angles.
+        mRootContainer.pivotX = 0f
+        mRootContainer.pivotY = 0f
         addView(mRootContainer)
     }
 
@@ -240,30 +239,38 @@ class PaperCanvasView : FrameLayout,
 
     override fun onTransformViewport(startPointers: Array<PointF>,
                                      stopPointers: Array<PointF>) {
-        // Map the coordinates from child world to the parent world.
-        val startPointersInParent = Array(startPointers.size, { i ->
-            convertPointToParentWorld(startPointers[i])
+        // Get the matrix that converts coordinates from this to the container.
+        mRootContainer.matrix.invert(mTmpMatrix)
+
+        // Map the coordinates from this world to the container world.
+        val startPointersInContainer = Array(startPointers.size, { i ->
+            mPointerMap[0] = startPointers[i].x
+            mPointerMap[1] = startPointers[i].y
+            mTmpMatrix.mapPoints(mPointerMap)
+
+            return@Array PointF(mPointerMap[0], mPointerMap[1])
         })
-        val stopPointersInParent = Array(stopPointers.size, { i ->
-            convertPointToParentWorld(stopPointers[i])
+        val stopPointersInContainer = Array(stopPointers.size, { i ->
+            mPointerMap[0] = stopPointers[i].x
+            mPointerMap[1] = stopPointers[i].y
+            mTmpMatrix.mapPoints(mPointerMap)
+
+            return@Array PointF(mPointerMap[0], mPointerMap[1])
         })
 
         // Calculate the transformation.
         val transform = TransformUtils.getTransformFromPointers(
-            startPointers, stopPointers)
+            startPointersInContainer, stopPointersInContainer)
 
         val dx = transform[TransformUtils.DELTA_X]
         val dy = transform[TransformUtils.DELTA_Y]
         val dScale = transform[TransformUtils.DELTA_SCALE_X]
-        val dRadians = transform[TransformUtils.DELTA_RADIANS]
         val pivotX = transform[TransformUtils.PIVOT_X]
         val pivotY = transform[TransformUtils.PIVOT_Y]
 
         // Update the RAW transform (without any modification).
-        mStopMatrix.reset()
         mStopMatrix.set(mStartMatrix)
         mStopMatrix.postScale(dScale, dScale, pivotX, pivotY)
-//        mStopMatrix.postRotate(Math.toDegrees(dRadians.toDouble()).toFloat(), pivotX, pivotY)
         mStopMatrix.postTranslate(dx, dy)
 
         // Prepare the transform for the view (might be modified).
@@ -271,9 +278,8 @@ class PaperCanvasView : FrameLayout,
 
         mRootContainer.scaleX = mTransformHelper.scaleX
         mRootContainer.scaleY = mTransformHelper.scaleY
-//        mRootContainer.rotation = Math.toDegrees(mTransformHelper.rotationInRadians.toDouble()).toFloat()
-//        mRootContainer.translationX = mTransformHelper.translationX
-//        mRootContainer.translationY = mTransformHelper.translationY
+        mRootContainer.translationX = mTransformHelper.translationX
+        mRootContainer.translationY = mTransformHelper.translationY
 
         invalidate()
     }
