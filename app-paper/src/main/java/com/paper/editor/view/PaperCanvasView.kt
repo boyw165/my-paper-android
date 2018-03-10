@@ -334,7 +334,7 @@ class PaperCanvasView : FrameLayout,
         canvas.save()
         canvas.concat(mRootContainer.matrix)
 
-        val cell = Math.min(width.toFloat(), height.toFloat()) / 10
+        val cell = Math.min(width.toFloat(), height.toFloat()) / 20
 
         // Boundary.
         canvas.drawLine(0f, 0f, width.toFloat(), 0f, mGridPaint)
