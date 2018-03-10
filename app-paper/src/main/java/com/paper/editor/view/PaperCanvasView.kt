@@ -330,8 +330,24 @@ class PaperCanvasView : FrameLayout,
         // DO NOTHING.
     }
 
+    // TODO: This is not even an abstraction of the view.
     override fun normalizePointer(p: PointF): PointF {
-        return PointF(p.x / width, p.y / height)
+        // Calculate the canvas transform in terms of the view-port
+        val viewPortScale = mModelWidth / mViewPort.width()
+        val viewPortTx = -mViewPort.left
+        val viewPortTy = -mViewPort.top
+        mTmpMatrix.reset()
+        mTmpMatrix.postScale(1f / mScaleFromModelToView,
+                             1f /mScaleFromModelToView)
+        mTmpMatrix.postScale(1f / viewPortScale, 1f / viewPortScale)
+        mTmpMatrix.postTranslate(-viewPortTx, -viewPortTy)
+
+        mPointerMap[0] = p.x
+        mPointerMap[1] = p.y
+        mTmpMatrix.mapPoints(mPointerMap)
+
+        return PointF(mPointerMap[0] / mModelWidth,
+                      mPointerMap[1] / mModelHeight)
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
