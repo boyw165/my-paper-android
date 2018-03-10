@@ -123,8 +123,25 @@ class PaperCanvasView : FrameLayout,
             val viewWidth = minScale * mModelWidth
             val viewHeight = minScale * mModelHeight
 
+            super.onMeasure(MeasureSpec.makeMeasureSpec(viewWidth.toInt(), MeasureSpec.EXACTLY),
+                            MeasureSpec.makeMeasureSpec(viewHeight.toInt(), MeasureSpec.EXACTLY))
+        }
+    }
+
+    override fun onLayout(changed: Boolean,
+                          left: Int,
+                          top: Int,
+                          right: Int,
+                          bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+
+        if (changed) {
+            val viewWidth = right - left
+            val viewHeight = bottom - top
+
             // Hold the scale factor.
-            mScaleFromModelToView = minScale
+            mScaleFromModelToView = Math.min(viewWidth / mModelWidth,
+                                             viewHeight / mModelHeight)
 
             // Reset container's transform.
             mRootContainer.scaleX = 1f
@@ -136,9 +153,6 @@ class PaperCanvasView : FrameLayout,
             mViewPort.set(0f, 0f,
                           viewWidth / mScaleFromModelToView,
                           viewHeight / mScaleFromModelToView)
-
-            super.onMeasure(MeasureSpec.makeMeasureSpec(viewWidth.toInt(), MeasureSpec.EXACTLY),
-                            MeasureSpec.makeMeasureSpec(viewHeight.toInt(), MeasureSpec.EXACTLY))
         }
     }
 
