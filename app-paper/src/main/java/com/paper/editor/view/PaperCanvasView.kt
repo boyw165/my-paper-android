@@ -320,8 +320,8 @@ class PaperCanvasView : FrameLayout,
         val viewPortTy = mViewPort.top
         mRootContainer.scaleX = 1f / viewPortScale
         mRootContainer.scaleY = 1f / viewPortScale
-        mRootContainer.translationX = mScaleFromModelToView * -viewPortTx
-        mRootContainer.translationY = mScaleFromModelToView * -viewPortTy
+        mRootContainer.translationX = mRootContainer.scaleX * mScaleFromModelToView * -viewPortTx
+        mRootContainer.translationY = mRootContainer.scaleX * mScaleFromModelToView * -viewPortTy
 
         invalidate()
     }
@@ -350,8 +350,8 @@ class PaperCanvasView : FrameLayout,
         val viewPortTy = mViewPort.top
         mTmpMatrix.postScale(1f / viewPortScale,
                              1f / viewPortScale)
-        mTmpMatrix.postTranslate(mScaleFromModelToView * -viewPortTx,
-                                 mScaleFromModelToView * -viewPortTy)
+        mTmpMatrix.postTranslate(1f / viewPortScale * mScaleFromModelToView * -viewPortTx,
+                                 1f / viewPortScale * mScaleFromModelToView * -viewPortTy)
         canvas.concat(mTmpMatrix)
 
         val cell = Math.min(mModelWidth, mModelHeight) / 20
