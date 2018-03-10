@@ -126,6 +126,12 @@ class PaperCanvasView : FrameLayout,
             // Hold the scale factor.
             mScaleFromModelToView = minScale
 
+            // Reset container's transform.
+            mRootContainer.scaleX = 1f
+            mRootContainer.scaleY = 1f
+            mRootContainer.translationX = 0f
+            mRootContainer.translationY = 0f
+
             // View port (in the model coordinate).
             mViewPort.set(0f, 0f,
                           viewWidth / mScaleFromModelToView,
