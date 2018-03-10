@@ -44,8 +44,9 @@ class PaperCanvasView : FrameLayout,
     private val mRootContainer by lazy { FrameLayout(context, null) }
 
     // View-Models.
-    private var mCanvasWidth: Float = 0f
-    private var mCanvasHeight: Float = 0f
+    private var mModelWidth: Float = 0f
+    private var mModelHeight: Float = 0f
+    private var mScaleFromModelToView: Float = 0f
 
     // Listeners.
     private var mListener: IScrapLifecycleListener? = null
@@ -59,10 +60,14 @@ class PaperCanvasView : FrameLayout,
                         resources.getDimension(R.dimen.fling_max_vec))
     }
     private val mPointerMap = floatArrayOf(0f, 0f)
-    private val mStartMatrix = Matrix()
-    private val mStopMatrix = Matrix()
     private val mTmpMatrix = Matrix()
     private val mTransformHelper = TransformUtils()
+
+    // View port.
+    private val mViewPort = RectF()
+    private val mViewPortStart = RectF()
+    private val mViewPortPaint = Paint()
+    private val mModelBoundPaint = Paint()
 
     // Rendering resource.
     private val mGridPaint = Paint()
@@ -70,10 +75,8 @@ class PaperCanvasView : FrameLayout,
     private val mSketchPath = Path()
 
     constructor(context: Context) : this(context, null)
-
     constructor(context: Context,
                 attrs: AttributeSet?) : this(context, attrs, 0)
-
     constructor(context: Context,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
@@ -86,6 +89,14 @@ class PaperCanvasView : FrameLayout,
         mSketchPaint.strokeWidth = oneDp
         mSketchPaint.color = Color.BLACK
         mSketchPaint.style = Paint.Style.STROKE
+
+        // For showing the relative boundary of view-port and model.
+        mModelBoundPaint.color = Color.RED
+        mModelBoundPaint.style = Paint.Style.FILL
+        mViewPortPaint.color = Color.GREEN
+        mViewPortPaint.style = Paint.Style.STROKE
+        mViewPortPaint.strokeWidth = 2f * oneDp
+
         // Giving a background would make onDraw() able to be called.
         setBackgroundColor(Color.WHITE)
         ViewCompat.setElevation(this, 12f * oneDp)
@@ -100,30 +111,41 @@ class PaperCanvasView : FrameLayout,
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
-        if (mCanvasWidth == 0f || mCanvasHeight == 0f) {
+        if (mModelWidth == 0f || mModelHeight == 0f) {
             super.onMeasure(widthSpec, heightSpec)
         } else {
             val measureWidth = MeasureSpec.getSize(widthSpec)
             val measureHeight = MeasureSpec.getSize(heightSpec)
 
-            val widthScale = measureWidth / mCanvasWidth
-            val heightScale = measureHeight / mCanvasHeight
+            val widthScale = measureWidth / mModelWidth
+            val heightScale = measureHeight / mModelHeight
             val minScale = Math.min(widthScale, heightScale)
-            val width = minScale * mCanvasWidth
-            val height = minScale * mCanvasHeight
+            val viewWidth = minScale * mModelWidth
+            val viewHeight = minScale * mModelHeight
 
-            super.onMeasure(MeasureSpec.makeMeasureSpec(width.toInt(), MeasureSpec.EXACTLY),
-                            MeasureSpec.makeMeasureSpec(height.toInt(), MeasureSpec.EXACTLY))
+            // Hold the scale factor.
+            mScaleFromModelToView = minScale
+
+            // View port (in the model coordinate).
+            mViewPort.set(0f, 0f,
+                          viewWidth / mScaleFromModelToView,
+                          viewHeight / mScaleFromModelToView)
+
+            super.onMeasure(MeasureSpec.makeMeasureSpec(viewWidth.toInt(), MeasureSpec.EXACTLY),
+                            MeasureSpec.makeMeasureSpec(viewHeight.toInt(), MeasureSpec.EXACTLY))
         }
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (mCanvasWidth == 0f || mCanvasHeight == 0f) return
+        if (mModelWidth == 0f || mModelHeight == 0f) return
 
         drawBoundAndGrid(canvas)
 
         // Sketch.
         canvas.drawPath(mSketchPath, mSketchPaint)
+
+        // Display the view-port relative boundary to the model.
+        drawMeter(canvas)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -135,8 +157,8 @@ class PaperCanvasView : FrameLayout,
 
     override fun setCanvasSize(width: Float,
                                height: Float) {
-        mCanvasWidth = width
-        mCanvasHeight = height
+        mModelWidth = width
+        mModelHeight = height
 
         // Trigger onDraw() and onMeasure()
         invalidate()
@@ -230,70 +252,64 @@ class PaperCanvasView : FrameLayout,
     }
 
     override fun startTransformViewport() {
-        // Hold start transform
-        mStartMatrix.reset()
-        mStartMatrix.set(mRootContainer.matrix)
-        mStopMatrix.reset()
-        mStopMatrix.set(mStartMatrix)
+        // Hold view port starting state.
+        mViewPortStart.set(mViewPort)
     }
 
     override fun onTransformViewport(startPointers: Array<PointF>,
                                      stopPointers: Array<PointF>) {
-        // Get the matrix that converts coordinates from this to the container.
-        mRootContainer.matrix.invert(mTmpMatrix)
-
-        // Map the coordinates from this world to the container world.
-        val startPointersInContainer = Array(startPointers.size, { i ->
-            mPointerMap[0] = startPointers[i].x
-            mPointerMap[1] = startPointers[i].y
-            mTmpMatrix.mapPoints(mPointerMap)
-
-            return@Array PointF(mPointerMap[0], mPointerMap[1])
-        })
-        val stopPointersInContainer = Array(stopPointers.size, { i ->
-            mPointerMap[0] = stopPointers[i].x
-            mPointerMap[1] = stopPointers[i].y
-            mTmpMatrix.mapPoints(mPointerMap)
-
-            return@Array PointF(mPointerMap[0], mPointerMap[1])
-        })
-
-        // Calculate the transformation.
+        // Calculate the view port according to the pointers change.
         val transform = TransformUtils.getTransformFromPointers(
-            startPointersInContainer, stopPointersInContainer)
-
+            startPointers, stopPointers)
         val dx = transform[TransformUtils.DELTA_X]
         val dy = transform[TransformUtils.DELTA_Y]
         val dScale = transform[TransformUtils.DELTA_SCALE_X]
-        val pivotX = transform[TransformUtils.PIVOT_X]
-        val pivotY = transform[TransformUtils.PIVOT_Y]
+        val pivotX = transform[TransformUtils.PIVOT_X] / width * mViewPortStart.width()
+        val pivotY = transform[TransformUtils.PIVOT_Y] / height * mViewPortStart.height()
+        mViewPort.set(mViewPortStart)
+        mTmpMatrix.reset()
+        mTmpMatrix.postScale(1f / dScale, 1f / dScale, pivotX, pivotY)
+        mTmpMatrix.postTranslate(-dx, -dy)
+        mTmpMatrix.mapRect(mViewPort)
+        // Constraint view port.
+        val maxWidth = mModelWidth
+        val maxHeight = mModelHeight
+        val minWidth = maxWidth / 4
+        val minHeight = maxHeight / 4
+        if (mViewPort.width() < minWidth) {
+            mViewPort.right = mViewPort.left + minWidth
+        } else if (mViewPort.width() > maxWidth) {
+            mViewPort.right = mViewPort.left + maxWidth
+        }
+        if (mViewPort.height() < minHeight) {
+            mViewPort.bottom = mViewPort.top + minHeight
+        } else if (mViewPort.height() > maxHeight) {
+            mViewPort.bottom = mViewPort.top + maxHeight
+        }
+        val viewPortWidth = mViewPort.width()
+        if (mViewPort.left < 0f) {
+            mViewPort.left = 0f
+            mViewPort.right = mViewPort.left + viewPortWidth
+        } else if (mViewPort.right > maxWidth) {
+            mViewPort.right = maxWidth
+            mViewPort.left = mViewPort.right - viewPortWidth
+        }
+        val viewPortHeight = mViewPort.height()
+        if (mViewPort.top < 0f) {
+            mViewPort.top = 0f
+            mViewPort.bottom = mViewPort.top + viewPortHeight
+        } else if (mViewPort.bottom > maxHeight) {
+            mViewPort.bottom = maxHeight
+            mViewPort.top = mViewPort.bottom - viewPortHeight
+        }
 
-        // Update the RAW transform (without any modification).
-        mStopMatrix.set(mStartMatrix)
-        mStopMatrix.postScale(dScale, dScale, pivotX, pivotY)
-        mStopMatrix.postTranslate(dx, dy)
-
-        // Prepare the transform for the view (might be modified).
-        mTransformHelper.getValues(mStopMatrix)
-
-        mRootContainer.scaleX = mTransformHelper.scaleX
-        mRootContainer.scaleY = mTransformHelper.scaleY
-        mRootContainer.translationX = mTransformHelper.translationX
-        mRootContainer.translationY = mTransformHelper.translationY
+        // Calculate the canvas transform in terms of the view-port
 
         invalidate()
     }
 
     override fun stopTransformViewport() {
         // DO NOTHING.
-    }
-
-    private fun convertPointToParentWorld(point: PointF): PointF {
-        mPointerMap[0] = point.x
-        mPointerMap[1] = point.y
-        mRootContainer.matrix.mapPoints(mPointerMap)
-
-        return PointF(mPointerMap[0], mPointerMap[1])
     }
 
     override fun normalizePointer(p: PointF): PointF {
@@ -329,6 +345,25 @@ class PaperCanvasView : FrameLayout,
         canvas.restore()
     }
 
+    private fun drawMeter(canvas: Canvas) {
+        val count = canvas.saveCount
+
+        val scale = 1f / 6
+        mTmpMatrix.reset()
+        mTmpMatrix.postScale(scale, scale)
+        mTmpMatrix.postScale(mScaleFromModelToView, mScaleFromModelToView)
+        canvas.concat(mTmpMatrix)
+
+        canvas.drawRect(0f, 0f, mModelWidth, mModelHeight, mModelBoundPaint)
+        canvas.drawRect(mViewPort.left,
+                        mViewPort.top,
+                        mViewPort.right,
+                        mViewPort.bottom,
+                        mViewPortPaint)
+
+        canvas.restoreToCount(count)
+    }
+
     override fun startDrawSketch(x: Float, y: Float) {
         mSketchPath.reset()
         mSketchPath.moveTo(x, y)
@@ -352,10 +387,18 @@ class PaperCanvasView : FrameLayout,
         invalidate()
     }
 
+    private fun convertPointToParentWorld(point: PointF): PointF {
+        mPointerMap[0] = point.x
+        mPointerMap[1] = point.y
+        mRootContainer.matrix.mapPoints(mPointerMap)
+
+        return PointF(mPointerMap[0], mPointerMap[1])
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun scaleFromModelToView(): Float {
-        return width.toFloat() / mCanvasWidth
+        return width.toFloat() / mModelWidth
     }
 }
