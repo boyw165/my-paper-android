@@ -42,12 +42,12 @@ interface ICanvasView : IScrapLifecycleListener {
 
     fun setGestureListener(listener: SimpleGestureListener?)
 
-    fun startTransformViewport()
+    fun startUpdateViewport()
 
-    fun onTransformViewport(startPointers: Array<PointF>,
-                            stopPointers: Array<PointF>)
+    fun onUpdateViewport(startPointers: Array<PointF>,
+                         stopPointers: Array<PointF>)
 
-    fun stopTransformViewport()
+    fun stopUpdateViewport()
 
     fun normalizePointer(p: PointF): PointF
 

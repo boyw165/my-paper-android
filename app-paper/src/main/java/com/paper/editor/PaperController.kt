@@ -215,7 +215,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         // Document gesture.
         mGestureHistory.add(GestureRecord.PINCH)
 
-        mCanvasView?.startTransformViewport()
+        mCanvasView?.startUpdateViewport()
     }
 
     override fun onPinch(event: MyMotionEvent,
@@ -223,7 +223,7 @@ class PaperController(private val mUiScheduler: Scheduler,
                          context: Any?,
                          startPointers: Array<PointF>,
                          stopPointers: Array<PointF>) {
-        mCanvasView?.onTransformViewport(startPointers, stopPointers)
+        mCanvasView?.onUpdateViewport(startPointers, stopPointers)
     }
 
     override fun onPinchEnd(event: MyMotionEvent,
@@ -231,7 +231,7 @@ class PaperController(private val mUiScheduler: Scheduler,
                             context: Any?,
                             startPointers: Array<PointF>,
                             stopPointers: Array<PointF>) {
-        mCanvasView?.stopTransformViewport()
+        mCanvasView?.stopUpdateViewport()
     }
 
     ///////////////////////////////////////////////////////////////////////////

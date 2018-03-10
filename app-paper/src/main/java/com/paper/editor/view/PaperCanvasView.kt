@@ -257,13 +257,13 @@ class PaperCanvasView : FrameLayout,
         mGestureDetector.pinchGestureListener = listener
     }
 
-    override fun startTransformViewport() {
+    override fun startUpdateViewport() {
         // Hold view port starting state.
         mViewPortStart.set(mViewPort)
     }
 
-    override fun onTransformViewport(startPointers: Array<PointF>,
-                                     stopPointers: Array<PointF>) {
+    override fun onUpdateViewport(startPointers: Array<PointF>,
+                                  stopPointers: Array<PointF>) {
         // Calculate the view port according to the pointers change.
         val transform = TransformUtils.getTransformFromPointers(
             startPointers, stopPointers)
@@ -326,7 +326,7 @@ class PaperCanvasView : FrameLayout,
         invalidate()
     }
 
-    override fun stopTransformViewport() {
+    override fun stopUpdateViewport() {
         // DO NOTHING.
     }
 
