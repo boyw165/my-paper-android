@@ -331,34 +331,48 @@ class PaperCanvasView : FrameLayout,
     // Drawing ////////////////////////////////////////////////////////////////
 
     private fun drawBoundAndGrid(canvas: Canvas) {
-        canvas.save()
-        canvas.concat(mRootContainer.matrix)
+        val count = canvas.save()
 
-        val cell = Math.min(width.toFloat(), height.toFloat()) / 20
+        // From model to view coordinate.
+        mTmpMatrix.reset()
+        mTmpMatrix.postScale(mScaleFromModelToView,
+                             mScaleFromModelToView)
+
+        // Transform contributed by view-port.
+        val viewPortScale = mViewPort.width() / mModelWidth
+        val viewPortTx = mViewPort.left
+        val viewPortTy = mViewPort.top
+        mTmpMatrix.postScale(1f / viewPortScale,
+                             1f / viewPortScale)
+        mTmpMatrix.postTranslate(mScaleFromModelToView * -viewPortTx,
+                                 mScaleFromModelToView * -viewPortTy)
+        canvas.concat(mTmpMatrix)
+
+        val cell = Math.min(mModelWidth, mModelHeight) / 20
 
         // Boundary.
-        canvas.drawLine(0f, 0f, width.toFloat(), 0f, mGridPaint)
-        canvas.drawLine(width.toFloat(), 0f, width.toFloat(), height.toFloat(), mGridPaint)
-        canvas.drawLine(width.toFloat(), height.toFloat(), 0f, height.toFloat(), mGridPaint)
-        canvas.drawLine(0f, height.toFloat(), 0f, 0f, mGridPaint)
+        canvas.drawLine(0f, 0f, mModelWidth, 0f, mGridPaint)
+        canvas.drawLine(mModelWidth, 0f, mModelWidth, mModelHeight, mGridPaint)
+        canvas.drawLine(mModelWidth, mModelHeight, 0f, mModelHeight, mGridPaint)
+        canvas.drawLine(0f, mModelHeight, 0f, 0f, mGridPaint)
 
         // Grid.
         var x = 0f
-        while (x < width) {
-            canvas.drawLine(x, 0f, x, height.toFloat(), mGridPaint)
+        while (x < mModelWidth) {
+            canvas.drawLine(x, 0f, x, mModelHeight, mGridPaint)
             x += cell
         }
         var y = 0f
-        while (y < height) {
-            canvas.drawLine(0f, y, width.toFloat(), y, mGridPaint)
+        while (y < mModelHeight) {
+            canvas.drawLine(0f, y, mModelWidth, y, mGridPaint)
             y += cell
         }
 
-        canvas.restore()
+        canvas.restoreToCount(count)
     }
 
     private fun drawMeter(canvas: Canvas) {
-        val count = canvas.saveCount
+        val count = canvas.save()
 
         val scale = 1f / 6
         mTmpMatrix.reset()

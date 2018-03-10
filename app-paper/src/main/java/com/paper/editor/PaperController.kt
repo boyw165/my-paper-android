@@ -20,7 +20,6 @@
 
 package com.paper.editor
 
-import android.graphics.Matrix
 import android.graphics.PointF
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.editor.data.GestureRecord
@@ -30,11 +29,9 @@ import com.paper.editor.view.IScrapView
 import com.paper.editor.view.SimpleGestureListener
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.TransformModel
 import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.Sketch
 import com.paper.shared.model.sketch.SketchStroke
-import com.paper.util.TransformUtils
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import java.util.*
