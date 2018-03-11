@@ -63,6 +63,9 @@ class PaperCanvasView : FrameLayout,
     private val mTmpMatrix = Matrix()
     private val mTransformHelper = TransformUtils()
 
+    // Common transform.
+    private val mMatrixFromViewToModel = Matrix()
+
     // View port.
     private val mViewPort = RectF()
     private val mViewPortStart = RectF()
@@ -173,6 +176,13 @@ class PaperCanvasView : FrameLayout,
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return mGestureDetector.onTouchEvent(event, null, null)
+    }
+
+    override fun invalidate() {
+        super.invalidate()
+
+        // Invalidate internal matrix.
+        mMatrixFromViewToModel.reset()
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -344,25 +354,101 @@ class PaperCanvasView : FrameLayout,
 
     // TODO: This is not even an abstraction of the view.
     override fun normalizePointer(p: PointF): PointF {
-        // Calculate the canvas transform in terms of the view-port
-        val viewPortScale = mModelWidth / mViewPort.width()
-        val viewPortTx = -mViewPort.left
-        val viewPortTy = -mViewPort.top
-        mTmpMatrix.reset()
-        mTmpMatrix.postScale(1f / mScaleFromModelToView,
-                             1f / mScaleFromModelToView)
-        mTmpMatrix.postScale(1f / viewPortScale, 1f / viewPortScale)
-        mTmpMatrix.postTranslate(-viewPortTx, -viewPortTy)
+        validateViewPortMatrix()
 
+        // Calculate the canvas transform in terms of the view-port
         mPointerMap[0] = p.x
         mPointerMap[1] = p.y
-        mTmpMatrix.mapPoints(mPointerMap)
+        mMatrixFromViewToModel.mapPoints(mPointerMap)
 
         return PointF(mPointerMap[0] / mModelWidth,
                       mPointerMap[1] / mModelHeight)
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
+
+    override fun startDrawSketch(x: Float, y: Float) {
+        mSketchPath.reset()
+        mSketchPath.moveTo(x, y)
+        mSketchPath.lineTo(x, y)
+
+        invalidate()
+    }
+
+    override fun onDrawSketch(x: Float, y: Float) {
+        mSketchPath.lineTo(x, y)
+
+        invalidate()
+    }
+
+    override fun stopDrawSketch() {
+        mSketchPath.reset()
+
+        invalidate()
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun validateViewPortMatrix() {
+        if (mMatrixFromViewToModel.isIdentity) {
+            // Calculate the canvas transform in terms of the view-port
+            val scaleFromViewToModel = 1f / mScaleFromModelToView
+            val viewPortScale = mViewPort.width() / mModelWidth
+            val viewPortTx = mViewPort.left
+            val viewPortTy = mViewPort.top
+            mMatrixFromViewToModel.postScale(scaleFromViewToModel,
+                                             scaleFromViewToModel)
+            mMatrixFromViewToModel.postScale(viewPortScale, viewPortScale)
+            mMatrixFromViewToModel.postTranslate(viewPortTx, viewPortTy)
+        }
+    }
+
+    private fun mapPoint(matrix: Matrix, point: PointF): PointF {
+        mPointerMap[0] = point.x
+        mPointerMap[1] = point.y
+
+        matrix.mapPoints(mPointerMap)
+
+        return PointF(mPointerMap[0], mPointerMap[1])
+    }
+
+    private fun constraintViewPort(viewPort: RectF,
+                                   minWidth: Float,
+                                   minHeight: Float,
+                                   maxWidth: Float,
+                                   maxHeight: Float) {
+        // In width...
+        if (viewPort.width() < minWidth) {
+            viewPort.right = viewPort.left + minWidth
+        } else if (viewPort.width() > maxWidth) {
+            viewPort.right = viewPort.left + maxWidth
+        }
+        // In height...
+        if (viewPort.height() < minHeight) {
+            viewPort.bottom = viewPort.top + minHeight
+        } else if (viewPort.height() > maxHeight) {
+            viewPort.bottom = viewPort.top + maxHeight
+        }
+        // In x...
+        val viewPortWidth = viewPort.width()
+        if (viewPort.left < 0f) {
+            viewPort.left = 0f
+            viewPort.right = viewPort.left + viewPortWidth
+        } else if (viewPort.right > maxWidth) {
+            viewPort.right = maxWidth
+            viewPort.left = viewPort.right - viewPortWidth
+        }
+        // In y...
+        val viewPortHeight = viewPort.height()
+        if (viewPort.top < 0f) {
+            viewPort.top = 0f
+            viewPort.bottom = viewPort.top + viewPortHeight
+        } else if (viewPort.bottom > maxHeight) {
+            viewPort.bottom = maxHeight
+            viewPort.top = viewPort.bottom - viewPortHeight
+        }
+    }
 
     private fun drawBoundAndGrid(canvas: Canvas) {
         val count = canvas.save()
@@ -422,74 +508,5 @@ class PaperCanvasView : FrameLayout,
                         mViewPortPaint)
 
         canvas.restoreToCount(count)
-    }
-
-    override fun startDrawSketch(x: Float, y: Float) {
-        mSketchPath.reset()
-        mSketchPath.moveTo(x, y)
-        mSketchPath.lineTo(x, y)
-
-        invalidate()
-    }
-
-    override fun onDrawSketch(x: Float, y: Float) {
-        mSketchPath.lineTo(x, y)
-
-        invalidate()
-    }
-
-    override fun stopDrawSketch() {
-        mSketchPath.reset()
-
-        invalidate()
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
-
-    private fun mapPoint(matrix: Matrix, point: PointF): PointF {
-        mPointerMap[0] = point.x
-        mPointerMap[1] = point.y
-
-        matrix.mapPoints(mPointerMap)
-
-        return PointF(mPointerMap[0], mPointerMap[1])
-    }
-
-    private fun constraintViewPort(viewPort: RectF,
-                                   minWidth: Float,
-                                   minHeight: Float,
-                                   maxWidth: Float,
-                                   maxHeight: Float) {
-        // In width...
-        if (viewPort.width() < minWidth) {
-            viewPort.right = viewPort.left + minWidth
-        } else if (viewPort.width() > maxWidth) {
-            viewPort.right = viewPort.left + maxWidth
-        }
-        // In height...
-        if (viewPort.height() < minHeight) {
-            viewPort.bottom = viewPort.top + minHeight
-        } else if (viewPort.height() > maxHeight) {
-            viewPort.bottom = viewPort.top + maxHeight
-        }
-        // In x...
-        val viewPortWidth = viewPort.width()
-        if (viewPort.left < 0f) {
-            viewPort.left = 0f
-            viewPort.right = viewPort.left + viewPortWidth
-        } else if (viewPort.right > maxWidth) {
-            viewPort.right = maxWidth
-            viewPort.left = viewPort.right - viewPortWidth
-        }
-        // In y...
-        val viewPortHeight = viewPort.height()
-        if (viewPort.top < 0f) {
-            viewPort.top = 0f
-            viewPort.bottom = viewPort.top + viewPortHeight
-        } else if (viewPort.bottom > maxHeight) {
-            viewPort.bottom = maxHeight
-            viewPort.top = viewPort.bottom - viewPortHeight
-        }
     }
 }
