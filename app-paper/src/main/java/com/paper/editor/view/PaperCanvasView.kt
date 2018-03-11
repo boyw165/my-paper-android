@@ -68,6 +68,7 @@ class PaperCanvasView : FrameLayout,
     private val mViewPortStart = RectF()
     private val mViewPortPaint = Paint()
     private val mModelBoundPaint = Paint()
+    private val mStartMatrixFromContainerToThis = Matrix()
 
     // Rendering resource.
     private val mGridPaint = Paint()
@@ -77,6 +78,7 @@ class PaperCanvasView : FrameLayout,
     constructor(context: Context) : this(context, null)
     constructor(context: Context,
                 attrs: AttributeSet?) : this(context, attrs, 0)
+
     constructor(context: Context,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
@@ -159,6 +161,7 @@ class PaperCanvasView : FrameLayout,
     override fun onDraw(canvas: Canvas) {
         if (mModelWidth == 0f || mModelHeight == 0f) return
 
+        // Grid.
         drawBoundAndGrid(canvas)
 
         // Sketch.
@@ -272,24 +275,47 @@ class PaperCanvasView : FrameLayout,
     }
 
     override fun startUpdateViewport() {
+        // Hold container matrix starting value.
+        mStartMatrixFromContainerToThis.set(mRootContainer.matrix)
+
         // Hold view port starting state.
         mViewPortStart.set(mViewPort)
     }
 
     override fun onUpdateViewport(startPointers: Array<PointF>,
                                   stopPointers: Array<PointF>) {
-        // Calculate the view port according to the pointers change.
+        // TODO: Make the view-port code a component.
+
+        // Calculate the container matrix.
         val transform = TransformUtils.getTransformFromPointers(
             startPointers, stopPointers)
         val dx = transform[TransformUtils.DELTA_X]
         val dy = transform[TransformUtils.DELTA_Y]
         val dScale = transform[TransformUtils.DELTA_SCALE_X]
-        val pivotX = transform[TransformUtils.PIVOT_X] / width * mViewPortStart.width()
-        val pivotY = transform[TransformUtils.PIVOT_Y] / height * mViewPortStart.height()
-        mViewPort.set(mViewPortStart)
+        val pivotX = transform[TransformUtils.PIVOT_X]
+        val pivotY = transform[TransformUtils.PIVOT_Y]
+        mTmpMatrix.set(mStartMatrixFromContainerToThis)
+        mTmpMatrix.postScale(dScale, dScale, pivotX, pivotY)
+        mTmpMatrix.postTranslate(dx, dy)
+
+        // Use the matrix to get the container boundary.
+        mPointerMap[0] = 0f
+        mPointerMap[1] = 0f
+        mTmpMatrix.mapPoints(mPointerMap)
+        val containerLeftTop = PointF(mPointerMap[0], mPointerMap[1])
+        mPointerMap[0] = width.toFloat()
+        mPointerMap[1] = height.toFloat()
+        mTmpMatrix.mapPoints(mPointerMap)
+        val containerRightBottom = PointF(mPointerMap[0], mPointerMap[1])
+
+        // Infer the view-port by above container boundary.
+        mViewPort.set(0f, 0f, mModelWidth, mModelHeight)
+        val viewPortScale = width.toFloat() / (containerRightBottom.x - containerLeftTop.x)
+        val viewPortTx = -containerLeftTop.x / mScaleFromModelToView
+        val viewPortTy = -containerLeftTop.y / mScaleFromModelToView
         mTmpMatrix.reset()
-        mTmpMatrix.postScale(1f / dScale, 1f / dScale, pivotX, pivotY)
-        mTmpMatrix.postTranslate(-dx, -dy)
+        mTmpMatrix.postTranslate(viewPortTx, viewPortTy)
+        mTmpMatrix.postScale(viewPortScale, viewPortScale, 0f, 0f)
         mTmpMatrix.mapRect(mViewPort)
 
         // Constraint view port.
@@ -297,45 +323,17 @@ class PaperCanvasView : FrameLayout,
         val maxHeight = mModelHeight
         val minWidth = maxWidth / 4
         val minHeight = maxHeight / 4
-        // In width...
-        if (mViewPort.width() < minWidth) {
-            mViewPort.right = mViewPort.left + minWidth
-        } else if (mViewPort.width() > maxWidth) {
-            mViewPort.right = mViewPort.left + maxWidth
-        }
-        // In height...
-        if (mViewPort.height() < minHeight) {
-            mViewPort.bottom = mViewPort.top + minHeight
-        } else if (mViewPort.height() > maxHeight) {
-            mViewPort.bottom = mViewPort.top + maxHeight
-        }
-        // In x...
-        val viewPortWidth = mViewPort.width()
-        if (mViewPort.left < 0f) {
-            mViewPort.left = 0f
-            mViewPort.right = mViewPort.left + viewPortWidth
-        } else if (mViewPort.right > maxWidth) {
-            mViewPort.right = maxWidth
-            mViewPort.left = mViewPort.right - viewPortWidth
-        }
-        // In y...
-        val viewPortHeight = mViewPort.height()
-        if (mViewPort.top < 0f) {
-            mViewPort.top = 0f
-            mViewPort.bottom = mViewPort.top + viewPortHeight
-        } else if (mViewPort.bottom > maxHeight) {
-            mViewPort.bottom = maxHeight
-            mViewPort.top = mViewPort.bottom - viewPortHeight
-        }
+        constraintViewPort(mViewPort, minWidth, minHeight, maxWidth, maxHeight)
 
-        // Calculate the canvas transform in terms of the view-port
-        val viewPortScale = mViewPort.width() / mModelWidth
-        val viewPortTx = mViewPort.left
-        val viewPortTy = mViewPort.top
-        mRootContainer.scaleX = 1f / viewPortScale
-        mRootContainer.scaleY = 1f / viewPortScale
-        mRootContainer.translationX = mRootContainer.scaleX * mScaleFromModelToView * -viewPortTx
-        mRootContainer.translationY = mRootContainer.scaleX * mScaleFromModelToView * -viewPortTy
+        // TODO: Make the following code a function.
+        // Convert view-port to container transform.
+        val finalScale = mModelWidth / mViewPort.width()
+        val finalTx = -mViewPort.left
+        val finalTy = -mViewPort.top
+        mRootContainer.scaleX = finalScale
+        mRootContainer.scaleY = finalScale
+        mRootContainer.translationX = mRootContainer.scaleX * mScaleFromModelToView * finalTx
+        mRootContainer.translationY = mRootContainer.scaleX * mScaleFromModelToView * finalTy
 
         invalidate()
     }
@@ -352,7 +350,7 @@ class PaperCanvasView : FrameLayout,
         val viewPortTy = -mViewPort.top
         mTmpMatrix.reset()
         mTmpMatrix.postScale(1f / mScaleFromModelToView,
-                             1f /mScaleFromModelToView)
+                             1f / mScaleFromModelToView)
         mTmpMatrix.postScale(1f / viewPortScale, 1f / viewPortScale)
         mTmpMatrix.postTranslate(-viewPortTx, -viewPortTy)
 
@@ -431,36 +429,67 @@ class PaperCanvasView : FrameLayout,
         mSketchPath.moveTo(x, y)
         mSketchPath.lineTo(x, y)
 
-//        mRootContainer.invalidate()
         invalidate()
     }
 
     override fun onDrawSketch(x: Float, y: Float) {
         mSketchPath.lineTo(x, y)
 
-//        mRootContainer.invalidate()
         invalidate()
     }
 
     override fun stopDrawSketch() {
         mSketchPath.reset()
 
-//        mRootContainer.invalidate()
         invalidate()
-    }
-
-    private fun convertPointToParentWorld(point: PointF): PointF {
-        mPointerMap[0] = point.x
-        mPointerMap[1] = point.y
-        mRootContainer.matrix.mapPoints(mPointerMap)
-
-        return PointF(mPointerMap[0], mPointerMap[1])
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun scaleFromModelToView(): Float {
-        return width.toFloat() / mModelWidth
+    private fun mapPoint(matrix: Matrix, point: PointF): PointF {
+        mPointerMap[0] = point.x
+        mPointerMap[1] = point.y
+
+        matrix.mapPoints(mPointerMap)
+
+        return PointF(mPointerMap[0], mPointerMap[1])
+    }
+
+    private fun constraintViewPort(viewPort: RectF,
+                                   minWidth: Float,
+                                   minHeight: Float,
+                                   maxWidth: Float,
+                                   maxHeight: Float) {
+        // In width...
+        if (viewPort.width() < minWidth) {
+            viewPort.right = viewPort.left + minWidth
+        } else if (viewPort.width() > maxWidth) {
+            viewPort.right = viewPort.left + maxWidth
+        }
+        // In height...
+        if (viewPort.height() < minHeight) {
+            viewPort.bottom = viewPort.top + minHeight
+        } else if (viewPort.height() > maxHeight) {
+            viewPort.bottom = viewPort.top + maxHeight
+        }
+        // In x...
+        val viewPortWidth = viewPort.width()
+        if (viewPort.left < 0f) {
+            viewPort.left = 0f
+            viewPort.right = viewPort.left + viewPortWidth
+        } else if (viewPort.right > maxWidth) {
+            viewPort.right = maxWidth
+            viewPort.left = viewPort.right - viewPortWidth
+        }
+        // In y...
+        val viewPortHeight = viewPort.height()
+        if (viewPort.top < 0f) {
+            viewPort.top = 0f
+            viewPort.bottom = viewPort.top + viewPortHeight
+        } else if (viewPort.bottom > maxHeight) {
+            viewPort.bottom = maxHeight
+            viewPort.top = viewPort.bottom - viewPortHeight
+        }
     }
 }
