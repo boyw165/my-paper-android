@@ -28,19 +28,14 @@
             </intent-filter>
         </activity>
 
-        <!-- Start Page -->
+        <!-- Paper Gallery -->
         <activity
-            android:name=".view.MyPaperGalleryActivity">
+            android:name=".view.PaperGalleryActivity">
         </activity>
 
-        <!-- Main Editor -->
+        <!-- Paper Editor -->
         <activity
             android:name=".view.PaperEditorActivity">
-        </activity>
-
-        <!-- Sketch Editor -->
-        <activity
-            android:name="com.cardinalblue.lib.doodle.view.SketchEditorActivity">
         </activity>
 
         <!-- Experiments -->

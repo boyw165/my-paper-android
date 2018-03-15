@@ -38,12 +38,12 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 
-class MyPaperGalleryActivity : AppCompatActivity() {
+class PaperGalleryActivity : AppCompatActivity() {
 
     // View.
     private val mBtnExp: View by lazy { findViewById<View>(R.id.btn_other_exp) }
     private val mBtnExpMenu: PopupMenu by lazy {
-        val m = PopupMenu(this@MyPaperGalleryActivity, mBtnExp)
+        val m = PopupMenu(this@PaperGalleryActivity, mBtnExp)
         m.inflate(R.menu.menu_exp)
         m
     }
@@ -51,14 +51,14 @@ class MyPaperGalleryActivity : AppCompatActivity() {
 //    private val mBtnList: TextView by lazy { findViewById<TextView>(R.id.btn_list) }
 //    private val mText: TextView by lazy { findViewById<TextView>(R.id.text_message) }
     private val mProgressBar: AlertDialog by lazy {
-        AlertDialog.Builder(this@MyPaperGalleryActivity)
+        AlertDialog.Builder(this@PaperGalleryActivity)
             .setCancelable(false)
             .create()
     }
 
     // Permission.
     private val mRxPermissions: RxPermissions by lazy {
-        RxPermissions(this@MyPaperGalleryActivity)
+        RxPermissions(this@PaperGalleryActivity)
     }
 
     // Repo.
@@ -94,22 +94,22 @@ class MyPaperGalleryActivity : AppCompatActivity() {
                     when (item.itemId) {
                         R.id.exp_rx_cancel -> {
                             startActivity(Intent(
-                                this@MyPaperGalleryActivity,
+                                this@PaperGalleryActivity,
                                 ExampleOfRxCancelActivity::class.java))
                         }
                         R.id.exp_navigation_framework -> {
                             startActivity(Intent(
-                                this@MyPaperGalleryActivity,
+                                this@PaperGalleryActivity,
                                 ExampleOfCiceroneActivity1::class.java))
                         }
                         R.id.exp_convex_hull -> {
                             startActivity(Intent(
-                                this@MyPaperGalleryActivity,
+                                this@PaperGalleryActivity,
                                 ExampleOfConvexHullActivity::class.java))
                         }
                         R.id.exp_event_driven_simulation -> {
                             startActivity(Intent(
-                                this@MyPaperGalleryActivity,
+                                this@PaperGalleryActivity,
                                 ExampleOfEventDrivenSimulationActivity::class.java))
                         }
                     }
@@ -193,7 +193,7 @@ class MyPaperGalleryActivity : AppCompatActivity() {
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun showError(err: Throwable) {
-        Toast.makeText(this@MyPaperGalleryActivity,
+        Toast.makeText(this@PaperGalleryActivity,
                        err.toString(),
                        Toast.LENGTH_SHORT).show()
     }

@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.MyPaperGalleryActivity">
+    tools:context=".view.PaperGalleryActivity">
 
     <!-- Toolbar bottom -->
     <android.support.constraint.Guideline
