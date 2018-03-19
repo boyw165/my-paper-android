@@ -77,7 +77,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity(),
     override fun onDestroy() {
         super.onDestroy()
 
-        mPresenter.unBindViewOnDestroy()
+        mPresenter.unbindViewOnDestroy()
     }
 
     override fun onBackPressed() {

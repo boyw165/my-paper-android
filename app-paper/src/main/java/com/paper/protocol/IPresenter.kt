@@ -26,7 +26,7 @@ package com.paper.protocol
 interface IPresenter<V> {
 
     fun bindViewOnCreate(view: V)
-    fun unBindViewOnDestroy()
+    fun unbindViewOnDestroy()
 
     fun onResume()
     fun onPause()

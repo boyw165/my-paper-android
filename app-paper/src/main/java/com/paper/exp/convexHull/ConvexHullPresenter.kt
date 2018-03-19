@@ -77,7 +77,7 @@ class ConvexHullPresenter(val mRouter: MyRouter,
                 })
     }
 
-    override fun unBindViewOnDestroy() {
+    override fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
     }
 

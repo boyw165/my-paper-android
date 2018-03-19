@@ -135,7 +135,7 @@
 //                })
 //    }
 //
-//    override fun unBindViewOnDestroy() {
+//    override fun unbindViewOnDestroy() {
 //        mDisposablesOnCreate.clear()
 //    }
 //

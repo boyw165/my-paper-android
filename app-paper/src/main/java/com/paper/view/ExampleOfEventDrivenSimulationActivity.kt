@@ -81,7 +81,7 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
     override fun onDestroy() {
         super.onDestroy()
 
-        mPresenter.unBindViewOnDestroy()
+        mPresenter.unbindViewOnDestroy()
     }
 
     override fun onResume() {

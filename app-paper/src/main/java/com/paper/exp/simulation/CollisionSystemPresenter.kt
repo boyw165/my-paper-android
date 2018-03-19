@@ -66,7 +66,7 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                 })
     }
 
-    override fun unBindViewOnDestroy() {
+    override fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
     }
 

@@ -84,7 +84,7 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                 })
     }
 
-    override fun unBindViewOnDestroy() {
+    override fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
 
         mView = null

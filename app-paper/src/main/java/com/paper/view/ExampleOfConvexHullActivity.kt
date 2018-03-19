@@ -107,7 +107,7 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         super.onDestroy()
 
         // Stop presenter.
-        mPresenter.unBindViewOnDestroy()
+        mPresenter.unbindViewOnDestroy()
     }
 
     override fun onBackPressed() {

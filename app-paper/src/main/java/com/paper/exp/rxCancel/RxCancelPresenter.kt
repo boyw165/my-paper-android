@@ -135,7 +135,7 @@ class RxCancelPresenter(navigator: INavigator,
                 })
     }
 
-    override fun unBindViewOnDestroy() {
+    override fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
     }
 
