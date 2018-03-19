@@ -58,23 +58,6 @@ class PaperController(private val mUiScheduler: Scheduler,
     private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposablesOnResume = CompositeDisposable()
 
-    fun loadPaper(model: PaperModel) {
-        mControllers.clear()
-
-        mModel = model
-        // Create the scrap controller.
-        mModel.scraps.forEach { scrap ->
-            val controller = ScrapController(mUiScheduler,
-                                             mWorkerScheduler)
-
-            // Pass model reference to the controller.
-            controller.loadScrap(scrap)
-
-            // Add controller to the lookup table.
-            mControllers[scrap.id] = controller
-        }
-    }
-
     fun bindView(view: ICanvasView) {
         mCanvasView = view
 
@@ -102,6 +85,30 @@ class PaperController(private val mUiScheduler: Scheduler,
             controller.unbindView()
         }
         mControllers.clear()
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Paper things ///////////////////////////////////////////////////////////
+
+    fun loadPaper(model: PaperModel) {
+        mControllers.clear()
+
+        mModel = model
+        // Create the scrap controller.
+        mModel.scraps.forEach { scrap ->
+            val controller = ScrapController(mUiScheduler,
+                                             mWorkerScheduler)
+
+            // Pass model reference to the controller.
+            controller.loadScrap(scrap)
+
+            // Add controller to the lookup table.
+            mControllers[scrap.id] = controller
+        }
+    }
+
+    fun getPaper(): PaperModel {
+        return mModel
     }
 
     ///////////////////////////////////////////////////////////////////////////

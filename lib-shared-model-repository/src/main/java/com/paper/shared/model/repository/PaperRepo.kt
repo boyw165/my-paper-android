@@ -1,16 +1,22 @@
-//  Copyright Aug 2017-present boyw165@gmail.com
+// Copyright Mar 2017-present boyw165@gmail.com
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
 //
-//  http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 
 package com.paper.shared.model.repository
 
@@ -20,30 +26,22 @@ import android.database.Cursor
 import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.PaperModel
-import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.repository.json.PaperModelTranslator
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.paper.shared.model.repository.sqlite.PaperTable
-import com.paper.shared.model.sketch.PathTuple
-import com.paper.shared.model.sketch.Sketch
-import com.paper.shared.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import java.io.File
 
-class PaperRepo(authority: String,
-                resolver: ContentResolver,
-                cacheDirFile: File,
-                ioScheduler: Scheduler) : IPaperModelRepo {
+class PaperRepo(private val mAuthority: String,
+                private val mResolver: ContentResolver,
+                private val mCacheDirFile: File,
+                private val mIoScheduler: Scheduler) : IPaperModelRepo {
 
-    // Given...
-    private val mAuthority = authority
-    private val mResolver = resolver
-    private val mCacheDirFile = cacheDirFile
-    private val mTempFile = File(cacheDirFile, authority + ".temp_paper")
-    private val mIoScheduler = ioScheduler
+    private val mTempFile by lazy { File(mCacheDirFile, "$mAuthority.temp_paper") }
 
     // JSON translator.
     private val mGson: Gson by lazy {
@@ -98,16 +96,38 @@ class PaperRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getPaperById(id: Long): Observable<PaperModel> {
-        TODO("not implemented")
+    override fun getPaperById(id: Long): Single<PaperModel> {
+        // FIXME: Workaround.
+        return if (id == PaperConsts.INVALID_ID) {
+            getTempPaper()
+        } else {
+            TODO()
+        }
+    }
+
+    override fun putPaperById(id: Long,
+                              paper: PaperModel) {
+        Observable
+            .fromCallable {
+                val uri = Uri.Builder()
+                    .scheme("content")
+                    .authority(mAuthority)
+                    .path("paper/$id")
+                    .build()
+
+                mResolver.insert(uri, convertPaperToValues(paper))
+
+                return@fromCallable 100
+            }
+            .subscribeOn(mIoScheduler)
     }
 
     override fun duplicatePaperById(id: Long): Observable<PaperModel> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("not implemented")
     }
 
     override fun deletePaperById(id: Long): Observable<Boolean> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("not implemented")
     }
 
     override fun getTestPaper(): Single<PaperModel> {
@@ -160,8 +180,8 @@ class PaperRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun getTempPaper(): Observable<PaperModel> {
-        return Observable
+    override fun getTempPaper(): Single<PaperModel> {
+        return Single
             .fromCallable {
                 mTempFile
                     .bufferedReader()
@@ -172,12 +192,13 @@ class PaperRepo(authority: String,
             .subscribeOn(mIoScheduler)
     }
 
-    override fun newTempPaper(caption: String): Observable<PaperModel> {
-        return Observable
+    override fun newTempPaper(caption: String): Single<PaperModel> {
+        return Single
             .fromCallable {
                 // TODO: Assign default portrait size.
                 val timestamp = getCurrentTime()
                 val newPaper = PaperModel()
+                newPaper.id = PaperConsts.INVALID_ID
                 newPaper.createdAt = timestamp
                 newPaper.modifiedAt = timestamp
                 newPaper.caption = caption
@@ -221,7 +242,7 @@ class PaperRepo(authority: String,
     private fun getCurrentTime(): Long = System.currentTimeMillis() / 1000
 
     private fun convertPaperToValues(paper: PaperModel): ContentValues {
-        val values: ContentValues = ContentValues()
+        val values = ContentValues()
 
         values.put(PaperTable.COL_CREATED_AT, paper.createdAt)
         values.put(PaperTable.COL_MODIFIED_AT, paper.modifiedAt)
@@ -229,12 +250,12 @@ class PaperRepo(authority: String,
         values.put(PaperTable.COL_HEIGHT, paper.height)
         values.put(PaperTable.COL_CAPTION, paper.caption)
 
-        // FIXME:
-        values.put(PaperTable.COL_THUMB_PATH, "")
+        values.put(PaperTable.COL_THUMB_PATH, paper.thumbnailPath)
         values.put(PaperTable.COL_THUMB_WIDTH, paper.thumbnailWidth)
         values.put(PaperTable.COL_THUMB_HEIGHT, paper.thumbnailHeight)
-        // FIXME:
-        values.put(PaperTable.COL_DATA_BLOB, "")
+
+        val json = mGson.toJson(paper)
+        values.put(PaperTable.COL_DATA_BLOB, json)
 
         return values
     }

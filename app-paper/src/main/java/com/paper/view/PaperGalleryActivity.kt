@@ -24,21 +24,27 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.RecyclerView
 import android.view.View
+import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.*
+import com.paper.gallery.PaperGalleryContract
+import com.paper.gallery.PaperGalleryPresenter
+import com.paper.gallery.PapersEpoxyController
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import java.util.concurrent.TimeUnit
 
-class PaperGalleryActivity : AppCompatActivity() {
+class PaperGalleryActivity : AppCompatActivity(),
+                             PaperGalleryContract.View,
+                             PaperGalleryContract.Navigator {
 
     // View.
     private val mBtnExp: View by lazy { findViewById<View>(R.id.btn_other_exp) }
@@ -47,13 +53,23 @@ class PaperGalleryActivity : AppCompatActivity() {
         m.inflate(R.menu.menu_exp)
         m
     }
-    private val mBtnNewPaper: TextView by lazy { findViewById<TextView>(R.id.btn_new) }
-//    private val mBtnList: TextView by lazy { findViewById<TextView>(R.id.btn_list) }
-//    private val mText: TextView by lazy { findViewById<TextView>(R.id.text_message) }
+    private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
+
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
             .setCancelable(false)
             .create()
+    }
+
+    private val mPapersView by lazy { findViewById<RecyclerView>(R.id.paper_list) }
+    private val mPapersController by lazy { PapersEpoxyController() }
+
+    private val mPresenter by lazy {
+        PaperGalleryPresenter(
+            mRxPermissions,
+            mPaperRepo,
+            AndroidSchedulers.mainThread(),
+            Schedulers.io())
     }
 
     // Permission.
@@ -70,96 +86,13 @@ class PaperGalleryActivity : AppCompatActivity() {
                   Schedulers.io())
     }
 
-    private val mDisposablesOnCreate: CompositeDisposable = CompositeDisposable()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_my_paper_gallery)
+        setContentView(R.layout.activity_paper_gallery)
 
-        // Exp menu button.
-        mDisposablesOnCreate.add(
-            RxView.clicks(mBtnExp)
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
-                    mBtnExpMenu.show()
-                })
-
-        // Exp menu.
-        mDisposablesOnCreate.add(
-            RxPopupMenu.itemClicks(mBtnExpMenu)
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { item ->
-                    when (item.itemId) {
-                        R.id.exp_rx_cancel -> {
-                            startActivity(Intent(
-                                this@PaperGalleryActivity,
-                                ExampleOfRxCancelActivity::class.java))
-                        }
-                        R.id.exp_navigation_framework -> {
-                            startActivity(Intent(
-                                this@PaperGalleryActivity,
-                                ExampleOfCiceroneActivity1::class.java))
-                        }
-                        R.id.exp_convex_hull -> {
-                            startActivity(Intent(
-                                this@PaperGalleryActivity,
-                                ExampleOfConvexHullActivity::class.java))
-                        }
-                        R.id.exp_event_driven_simulation -> {
-                            startActivity(Intent(
-                                this@PaperGalleryActivity,
-                                ExampleOfEventDrivenSimulationActivity::class.java))
-                        }
-                    }
-                })
-
-//        // Create a new paper...
-//        mDisposablesOnCreate.add(
-//            RxView.clicks(mBtnNewPaper)
-//                .debounce(150, TimeUnit.MILLISECONDS)
-//                // Grant permissions.
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .flatMap {
-//                    mRxPermissions
-//                        .request(Manifest.permission.READ_EXTERNAL_STORAGE,
-//                                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
-//                }
-//                // TODO: MVP's Presenter's transformer.
-//                // Insert a temp paper to the repository.
-//                .flatMap { granted ->
-//                    if (granted) {
-//                        mPaperRepo
-//                            // TODO: Presenter's responsibility to assign the caption.
-//                            .newTempPaper("New Paper")
-//                            // TODO: Refactoring.
-//                            .compose { upstream ->
-//                                upstream
-//                                    .map { anything -> UiModel.succeed(anything) }
-//                                    .startWithArray(UiModel.inProgress(null))
-//                            }
-//                    } else {
-//                        throw RuntimeException("Permissions are not granted.")
-//                    }
-//                }
-//                .onErrorReturn { err -> UiModel.failed(err) }
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe { vm ->
-//                    when {
-//                        vm.isInProgress -> {
-//                            showProgressBar()
-//                        }
-//                        vm.isSuccessful -> {
-//                            hideProgressBar()
-//                            navigateToPaperEditor()
-//                        }
-//                        else -> {
-//                            hideProgressBar()
-//                            showError(vm.error)
-//                        }
-//                    }
-//                })
+        mPresenter.bindViewOnCreate(
+            view = this,
+            navigator = this)
     }
 
     override fun onDestroy() {
@@ -167,26 +100,79 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Force to hide the progress-bar.
         hideProgressBar()
-
-        mDisposablesOnCreate.clear()
     }
 
-    fun showProgressBar() {
+    override fun showExpMenu() {
+        mBtnExpMenu.show()
+    }
+
+    override fun showProgressBar() {
         mProgressBar.setMessage(getString(R.string.loading))
         mProgressBar.show()
     }
 
-    fun showProgressBar(msg: String) {
-        mProgressBar.setMessage(msg)
-        mProgressBar.show()
+    override fun hideProgressBar() {
+        mProgressBar.dismiss()
     }
 
-    fun hideProgressBar() {
-        mProgressBar.hide()
-    }
-
-    fun updateProgress(progress: Int) {
+    override fun showErrorAlert(error: Throwable) {
         TODO("not implemented")
+    }
+
+    override fun onClickPaper(): Observable<Long> {
+        TODO("not implemented")
+    }
+
+    override fun onClickNewPaper(): Observable<Any> {
+        return RxView.clicks(mBtnNewPaper)
+    }
+
+    override fun onClickShowExpMenu(): Observable<Any> {
+        return RxView.clicks(mBtnExp)
+    }
+
+    override fun onClickExpMenu(): Observable<Int> {
+        return RxPopupMenu.itemClicks(mBtnExpMenu)
+            .map {
+                return@map when (it.itemId) {
+                    R.id.exp_rx_cancel -> 0
+                    R.id.exp_navigation_framework -> 1
+                    R.id.exp_convex_hull -> 2
+                    R.id.exp_event_driven_simulation -> 3
+                    else -> -1
+                }
+            }
+    }
+
+    override fun navigateToExpById(id: Int) {
+        when (id) {
+            0 -> {
+                startActivity(Intent(
+                    this@PaperGalleryActivity,
+                    ExampleOfRxCancelActivity::class.java))
+            }
+            1 -> {
+                startActivity(Intent(
+                    this@PaperGalleryActivity,
+                    ExampleOfCiceroneActivity1::class.java))
+            }
+            2 -> {
+                startActivity(Intent(
+                    this@PaperGalleryActivity,
+                    ExampleOfConvexHullActivity::class.java))
+            }
+            3 -> {
+                startActivity(Intent(
+                    this@PaperGalleryActivity,
+                    ExampleOfEventDrivenSimulationActivity::class.java))
+            }
+        }
+    }
+
+    override fun navigateToPaperEditor(id: Long) {
+        startActivity(Intent(this@PaperGalleryActivity,
+                             PaperEditorActivity::class.java)
+                          .putExtra(AppConsts.PARAMS_PAPER_ID, id))
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -196,10 +182,5 @@ class PaperGalleryActivity : AppCompatActivity() {
         Toast.makeText(this@PaperGalleryActivity,
                        err.toString(),
                        Toast.LENGTH_SHORT).show()
-    }
-
-    // TODO: MVP's View method.
-    private fun navigateToPaperEditor() {
-        startActivity(Intent(this, PaperEditorActivity::class.java))
     }
 }

@@ -24,7 +24,9 @@ interface IPaperModelRepo {
 
     fun getPaperSnapshotList(): Observable<List<PaperModel>>
 
-    fun getPaperById(id: Long): Observable<PaperModel>
+    fun getPaperById(id: Long): Single<PaperModel>
+
+    fun putPaperById(id: Long, paper: PaperModel)
 
     fun duplicatePaperById(id: Long): Observable<PaperModel>
 
@@ -38,12 +40,12 @@ interface IPaperModelRepo {
 
     fun hasTempPaper(): Observable<Boolean>
 
-    fun getTempPaper(): Observable<PaperModel>
+    fun getTempPaper(): Single<PaperModel>
 
     /**
      * There is only one inventory for the temporary paper.
      */
-    fun newTempPaper(caption: String): Observable<PaperModel>
+    fun newTempPaper(caption: String): Single<PaperModel>
 
     /**
      * There is only one inventory for the temporary paper.

@@ -29,6 +29,7 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxCompoundButton
+import com.paper.AppConsts
 import com.paper.R
 import com.paper.editor.ITouchConfig
 import com.paper.editor.PaperController
@@ -37,6 +38,7 @@ import com.paper.editor.PaperEditorPresenter
 import com.paper.editor.view.ICanvasView
 import com.paper.editor.view.PaperCanvasView
 import com.paper.protocol.IContextProvider
+import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.SketchRepo
 import io.reactivex.Observable
@@ -91,8 +93,13 @@ class PaperEditorActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_paper_editor)
 
+        val paperId = intent.getLongExtra(AppConsts.PARAMS_PAPER_ID, PaperConsts.INVALID_ID)
+
         // Presenter.
         mEditorPresenter.bindViewOnCreate(this)
+
+        // Load paper.
+        mEditorPresenter.loadPaperById(paperId)
 
         //        mDisposables1.add(
         //            mPaperRepo

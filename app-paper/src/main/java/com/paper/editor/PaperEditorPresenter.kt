@@ -22,6 +22,7 @@ package com.paper.editor
 
 import com.paper.event.ProgressEvent
 import com.paper.protocol.IPresenter
+import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -34,7 +35,9 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                            private val mWorkerScheduler: Scheduler)
     : IPresenter<PaperEditorContract.View> {
 
-    // Given.
+    private var mPaperId = PaperConsts.INVALID_ID
+
+    // Editor view.
     private var mView: PaperEditorContract.View? = null
 
     // Progress signal.
@@ -42,28 +45,10 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
-    private val mDisposablesOnResume = CompositeDisposable()
+    private val mDisposables = CompositeDisposable()
 
     override fun bindViewOnCreate(view: PaperEditorContract.View) {
         mView = view
-
-        // Inflate paper model.
-        mDisposablesOnCreate.add(
-            mPaperRepo
-                .getTestPaper()
-                .toObservable()
-                // TODO: Support progress event.
-                .observeOn(mUiScheduler)
-                .subscribe { paper ->
-                    // Inflate model where it would create the corresponding
-                    // scrap-controllers.
-                    mPaperController.loadPaper(paper)
-
-                    // Bind view.
-                    mView?.getCanvasView()?.let { canvas ->
-                        mPaperController.bindView(canvas)
-                    }
-                })
 
         // Close button.
         mDisposablesOnCreate.add(
@@ -71,6 +56,8 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .observeOn(mUiScheduler)
                 .subscribe {
+                    commitPaperById(mPaperId)
+
                     mView?.close()
                 })
 
@@ -85,19 +72,49 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
     }
 
     override fun unbindViewOnDestroy() {
-        mDisposablesOnCreate.clear()
-
-        mView = null
-
         // Paper controller.
         mPaperController.unbindView()
+
+        mDisposablesOnCreate.clear()
+        mDisposables.clear()
+
+        mView = null
     }
 
     override fun onResume() {
-//        mDisposablesOnResume.add()
+        // DO NOTHING
     }
 
     override fun onPause() {
-        mDisposablesOnResume.clear()
+        // DO NOTHING
+    }
+
+    fun loadPaperById(id: Long) {
+        mPaperId = id
+
+        // Inflate paper model.
+        mDisposables.add(
+            mPaperRepo
+                .getPaperById(id)
+                .toObservable()
+                // TODO: Support progress event.
+                .observeOn(mUiScheduler)
+                .subscribe { paper ->
+                    // Inflate model where it would create the corresponding
+                    // scrap-controllers.
+                    mPaperController.loadPaper(paper)
+
+                    // Bind view.
+                    mView?.getCanvasView()?.let { canvas ->
+                        mPaperController.bindView(canvas)
+                    }
+                })
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun commitPaperById(id: Long) {
+        mPaperRepo.putPaperById(id, mPaperController.getPaper())
     }
 }

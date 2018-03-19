@@ -22,7 +22,7 @@ package com.paper.shared.model
 
 class PaperModel {
 
-    var id: Long = 0L
+    var id: Long = PaperConsts.INVALID_ID
 
     var createdAt: Long = 0L
     var modifiedAt: Long = 0L

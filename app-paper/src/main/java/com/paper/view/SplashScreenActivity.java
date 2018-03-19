@@ -58,7 +58,7 @@ public class SplashScreenActivity extends AppCompatActivity {
                 @Override
                 public void accept(Boolean ignored) throws Exception {
                     startActivity(new Intent(SplashScreenActivity.this,
-                                             PaperEditorActivity.class));
+                                             PaperGalleryActivity.class));
                     finish();
                 }
             });
