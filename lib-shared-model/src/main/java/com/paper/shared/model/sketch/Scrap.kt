@@ -13,7 +13,7 @@ class Scrap constructor(id: Long,
     var height: Int = height
         get() = field
 
-    var sketch: Sketch? = null
+    var sketch: SketchModel? = null
 
     constructor() : this(0, 0, 0)
 
@@ -25,7 +25,7 @@ class Scrap constructor(id: Long,
     }
 
     override fun toString(): String {
-        return "Sketch{" +
+        return "SketchModel{" +
                ", width=" + width +
                ", height=" + height +
                '}'

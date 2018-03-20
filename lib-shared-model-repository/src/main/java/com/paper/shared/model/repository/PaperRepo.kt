@@ -33,8 +33,10 @@ import com.paper.shared.model.PaperModel
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.repository.json.PaperModelTranslator
 import com.paper.shared.model.repository.json.ScrapModelTranslator
+import com.paper.shared.model.repository.json.SketchModelTranslator
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.paper.shared.model.repository.sqlite.PaperTable
+import com.paper.shared.model.sketch.SketchModel
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
@@ -55,6 +57,8 @@ class PaperRepo(private val mAuthority: String,
                                  PaperModelTranslator())
             .registerTypeAdapter(ScrapModel::class.java,
                                  ScrapModelTranslator())
+            .registerTypeAdapter(SketchModel::class.java,
+                                 SketchModelTranslator())
             .create()
     }
 
@@ -169,13 +173,13 @@ class PaperRepo(private val mAuthority: String,
 //                scrap1.y = 0f
 //                scrap1.width = 0.5f
 //                scrap1.height = 0.5f
-//                scrap1.sketch = Sketch()
+//                scrap1.sketch = SketchModel()
 //                scrap1.sketch?.addStroke(stroke1)
 //
 //                val scrap2 = ScrapModel()
 //                scrap2.x = 0.2f
 //                scrap2.y = 0.3f
-//                scrap2.sketch = Sketch()
+//                scrap2.sketch = SketchModel()
 //                scrap2.sketch?.addStroke(stroke2)
 //
 //                paper.scraps.add(scrap1)
@@ -284,8 +288,8 @@ class PaperRepo(private val mAuthority: String,
             val jsonScraps = JsonArray()
 
             json.add(PaperTable.COL_DATA, jsonScraps)
-            scraps.forEach {
-                jsonScraps.add(mGson.toJson(it))
+            scraps.forEach { scrap ->
+                jsonScraps.add(mGson.toJson(scrap))
             }
 
             values.put(PaperTable.COL_SCRAPS, json.toString())

@@ -52,32 +52,24 @@ import kotlin.collections.ArrayList
  * '-------------------'
  * </pre>
  */
-class Sketch constructor(id: Long) {
+class SketchModel {
 
     private val mMutex = Any()
 
-    val id: Long = id
     val mStrokes: MutableList<SketchStroke> = ArrayList()
     var mStrokesBoundDirty = true
     var mStrokesBound = RectF()
 
-    constructor()
-        : this(0, emptyList())
-
-    constructor(id: Long,
-                strokes: List<SketchStroke> = emptyList())
-        : this(id) {
+    constructor() : this(emptyList())
+    constructor(other: SketchModel) : this(other.allStrokes) {
+        mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
+        mStrokesBoundDirty = false
+    }
+    constructor(strokes: List<SketchStroke> = emptyList()) {
 
         if (!strokes.isEmpty()) {
             mStrokes.addAll(strokes)
         }
-    }
-
-    constructor(other: Sketch)
-        : this(other.id,
-               other.allStrokes) {
-        mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
-        mStrokesBoundDirty = false
     }
 
     val strokeSize: Int
@@ -176,12 +168,12 @@ class Sketch constructor(id: Long) {
         }
     }
 
-    fun clone(): Sketch {
-        return Sketch(this)
+    fun clone(): SketchModel {
+        return SketchModel(this)
     }
 
     override fun toString(): String {
-        return "Sketch{" +
+        return "SketchModel{" +
                ", strokes=[" + mStrokes + "]" +
                '}'
     }

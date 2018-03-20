@@ -30,7 +30,7 @@ import com.paper.editor.view.SimpleGestureListener
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.sketch.PathTuple
-import com.paper.shared.model.sketch.Sketch
+import com.paper.shared.model.sketch.SketchModel
 import com.paper.shared.model.sketch.SketchStroke
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -46,7 +46,7 @@ class PaperController(private val mUiScheduler: Scheduler,
 
     // Model.
     private lateinit var mModel: PaperModel
-    private var mTmpSketch: Sketch? = null
+    private var mTmpSketch: SketchModel? = null
 
     // Sub controllers.
     private val mControllers: HashMap<UUID, IScrapController> = hashMapOf()
@@ -155,7 +155,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         val y = event.downFocusY
         val np = mCanvasView!!.normalizePointer(PointF(x, y))
 
-        mTmpSketch = Sketch()
+        mTmpSketch = SketchModel()
         mTmpSketch!!.addStroke(SketchStroke())
         mTmpSketch!!.lastStroke.setWidth(0.2f)
         mTmpSketch!!.lastStroke.add(PathTuple(np.x, np.y))

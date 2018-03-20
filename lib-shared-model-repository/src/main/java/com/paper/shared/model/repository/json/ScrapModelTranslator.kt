@@ -39,7 +39,7 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
     //    var scale: Float = 1f
     //    var rotationInRadians: Float = 0f
     //
-    //    var sketch: Sketch? = null
+    //    var sketch: SketchModel? = null
     //}
 
     override fun serialize(src: ScrapModel,
@@ -48,6 +48,17 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
         val root = JsonObject()
 
         // e.g.: root.addProperty(PaperTable.COL_WIDTH, src.widthOverHeight)
+        root.addProperty("uuid", src.uuid.toString())
+
+        root.addProperty("x", src.x)
+        root.addProperty("y", src.y)
+        root.addProperty("width", src.width)
+        root.addProperty("height", src.height)
+
+        root.addProperty("scale", src.scale)
+        root.addProperty("rotationInRadians", src.rotationInRadians)
+
+        root.add("sketch", context.serialize(src.sketch))
 
         // Serialize the scraps.
 

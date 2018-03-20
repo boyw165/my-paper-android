@@ -16,14 +16,14 @@ package com.paper.shared.model.repository.json
 
 import com.google.gson.*
 import com.paper.shared.model.sketch.PathTuple
-import com.paper.shared.model.sketch.Sketch
+import com.paper.shared.model.sketch.SketchModel
 import com.paper.shared.model.sketch.SketchStroke
 import java.lang.reflect.Type
 
-class SketchTranslator : JsonSerializer<Sketch>,
-                         JsonDeserializer<Sketch> {
+class SketchModelTranslator : JsonSerializer<SketchModel>,
+                              JsonDeserializer<SketchModel> {
 
-    override fun serialize(src: Sketch,
+    override fun serialize(src: SketchModel,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -74,8 +74,8 @@ class SketchTranslator : JsonSerializer<Sketch>,
 
     override fun deserialize(src: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): Sketch {
-        val model = Sketch()
+                             context: JsonDeserializationContext): SketchModel {
+        val model = SketchModel()
         val rootJson = src.asJsonObject
 
         // Get "strokes" attribute.

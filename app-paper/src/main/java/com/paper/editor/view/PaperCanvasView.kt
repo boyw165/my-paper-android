@@ -167,7 +167,7 @@ class PaperCanvasView : FrameLayout,
         // Grid.
         drawBoundAndGrid(canvas)
 
-        // Sketch.
+        // SketchModel.
         canvas.drawPath(mSketchPath, mSketchPaint)
 
         // Display the view-port relative boundary to the model.

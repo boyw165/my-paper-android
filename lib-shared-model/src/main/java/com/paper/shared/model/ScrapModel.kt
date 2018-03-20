@@ -20,12 +20,11 @@
 
 package com.paper.shared.model
 
-import com.paper.shared.model.sketch.Sketch
+import com.paper.shared.model.sketch.SketchModel
 import java.util.*
 
-open class ScrapModel {
-
-    val uuid: UUID = UUID.randomUUID()
+open class ScrapModel(
+    val uuid: UUID = UUID.randomUUID()) {
 
     var x: Float = 0f
     var y: Float = 0f
@@ -35,5 +34,5 @@ open class ScrapModel {
     var scale: Float = 1f
     var rotationInRadians: Float = 0f
 
-    var sketch: Sketch? = null
+    var sketch: SketchModel? = null
 }
