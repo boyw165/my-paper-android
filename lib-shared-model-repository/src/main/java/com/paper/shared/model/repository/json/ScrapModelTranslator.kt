@@ -22,32 +22,18 @@ package com.paper.shared.model.repository.json
 
 import com.google.gson.*
 import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.sketch.SketchModel
 import java.lang.reflect.Type
+import java.util.*
 
 class ScrapModelTranslator : JsonSerializer<ScrapModel>,
                              JsonDeserializer<ScrapModel> {
-
-    //open class ScrapModel {
-    //
-    //    val uuid: UUID = UUID.randomUUID()
-    //
-    //    var x: Float = 0f
-    //    var y: Float = 0f
-    //    var width: Float = 1f
-    //    var height: Float = 1f
-    //
-    //    var scale: Float = 1f
-    //    var rotationInRadians: Float = 0f
-    //
-    //    var sketch: SketchModel? = null
-    //}
 
     override fun serialize(src: ScrapModel,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
-        // e.g.: root.addProperty(PaperTable.COL_WIDTH, src.widthOverHeight)
         root.addProperty("uuid", src.uuid.toString())
 
         root.addProperty("x", src.x)
@@ -58,11 +44,8 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
         root.addProperty("scale", src.scale)
         root.addProperty("rotationInRadians", src.rotationInRadians)
 
+        // See SketchModelTranslator.kt
         root.add("sketch", context.serialize(src.sketch))
-
-        // Serialize the scraps.
-
-        // TODO: Meta-data?
 
         return root
     }
@@ -70,15 +53,21 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
                              context: JsonDeserializationContext): ScrapModel {
-        val model = ScrapModel()
-
-        // Deserialize.
         val root = json.asJsonObject
 
-        // width over height.
-        //        if (root.has(PaperTable.COL_WIDTH)) {
-        //            model.widthOverHeight = root.get(PaperTable.COL_WIDTH).asFloat
-        //        }
+        val model = ScrapModel(
+            uuid = UUID.fromString(root.get("uuid").asString))
+
+        model.x = root.get("x").asFloat
+        model.y = root.get("y").asFloat
+        model.width = root.get("width").asFloat
+        model.height = root.get("height").asFloat
+
+        model.scale = root.get("scale").asFloat
+        model.rotationInRadians = root.get("rotationInRadians").asFloat
+
+        // See SketchModelTranslator.kt
+        model.sketch = context.deserialize(root.get("sketch"), SketchModel::class.java)
 
         return model
     }
