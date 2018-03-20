@@ -20,14 +20,12 @@
 
 package com.paper.shared.model.repository.sqlite
 
-import android.content.ContentProvider
-import android.content.ContentResolver
-import android.content.ContentValues
-import android.content.UriMatcher
+import android.content.*
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.net.Uri
+import io.reactivex.internal.schedulers.NewThreadScheduler
 
 class PaperContentProvider : ContentProvider(),
                              SQLiteHelper.DbHelperListener {
@@ -128,7 +126,14 @@ class PaperContentProvider : ContentProvider(),
 
         when (mUriMatcher!!.match(uri)) {
             MATCHER_CODE_PAPER_ID -> {
-                throw RuntimeException("Yet implemented!")
+                val paperId = ContentUris.parseId(uri)
+
+                return db!!.query(PaperTable.TABLE_NAME,
+                                  Array(0, {""}),
+                                  "${PaperTable.COL_ID}=$paperId",
+                                  null,
+                                  null, null,
+                                  sortOrder)
             }
             MATCHER_CODE_PAPER_ALL -> {
                 return db!!.query(PaperTable.TABLE_NAME,
@@ -149,13 +154,13 @@ class PaperContentProvider : ContentProvider(),
                         values: ContentValues?,
                         whereClause: String?,
                         whereArgs: Array<out String>?): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("not implemented")
     }
 
     override fun delete(uri: Uri,
                         selection: String?,
                         selectionArgs: Array<out String>?): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        TODO("not implemented")
     }
 
     override fun getType(uri: Uri): String? = null

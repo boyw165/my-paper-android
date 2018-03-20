@@ -41,6 +41,8 @@ class PaperGalleryContract private constructor() {
 
         fun onClickNewPaper(): Observable<Any>
 
+        fun onClickDeleteAllPapers(): Observable<Any>
+
         fun onClickShowExpMenu(): Observable<Any>
 
         fun onClickExpMenu(): Observable<Int>

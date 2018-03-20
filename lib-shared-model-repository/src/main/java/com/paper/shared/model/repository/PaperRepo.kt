@@ -97,7 +97,7 @@ class PaperRepo(private val mAuthority: String,
                 // Translate cursor.
                 cursor.moveToFirst()
                 val papers = (1..cursor.count).map {
-                    val paper = convertCursorToPaper(cursor)
+                    val paper = convertCursorToPaper(cursor, false)
                     cursor.moveToNext()
                     paper
                 }
@@ -114,7 +114,44 @@ class PaperRepo(private val mAuthority: String,
         return if (id == PaperConsts.TEMP_ID) {
             getTempPaper()
         } else {
-            TODO()
+            Single.fromCallable {
+                val uri = Uri.Builder()
+                    .scheme("content")
+                    .authority(mAuthority)
+                    .path("paper/$id")
+                    .build()
+
+                // Query content provider.
+                val cursor = mResolver.query(
+                    uri,
+                    // projection:
+                    arrayOf(PaperTable.COL_ID,
+                            PaperTable.COL_UUID,
+                            PaperTable.COL_CREATED_AT,
+                            PaperTable.COL_MODIFIED_AT,
+                            PaperTable.COL_WIDTH,
+                            PaperTable.COL_HEIGHT,
+                            PaperTable.COL_CAPTION,
+                            PaperTable.COL_THUMB_PATH,
+                            PaperTable.COL_THUMB_WIDTH,
+                            PaperTable.COL_THUMB_HEIGHT,
+                            PaperTable.COL_SCRAPS),
+                    // selection:
+                    null,
+                    // selection args:
+                    null,
+                    // sort order:
+                    null)
+                if (cursor.count == 0) throw IllegalArgumentException("Cannot find paper, id=$id")
+                if (cursor.count > 1) throw IllegalStateException("Multiple paper id=%id conflict")
+
+                // Translate cursor.
+                cursor.moveToFirst()
+                val paper = convertCursorToPaper(cursor, true)
+                cursor.close()
+
+                return@fromCallable paper
+            }
         }
     }
 
@@ -124,13 +161,23 @@ class PaperRepo(private val mAuthority: String,
         // TODO: I/O is atomic.
         Observable
             .fromCallable {
-                val uri = Uri.Builder()
-                    .scheme("content")
-                    .authority(mAuthority)
-                    .path("paper")
-                    .build()
+                if (id == PaperConsts.TEMP_ID) {
+                    val uri = Uri.Builder()
+                        .scheme("content")
+                        .authority(mAuthority)
+                        .path("paper")
+                        .build()
 
-                mResolver.insert(uri, convertPaperToValues(paper))
+                    mResolver.insert(uri, convertPaperToValues(paper))
+                } else {
+                    val uri = Uri.Builder()
+                        .scheme("content")
+                        .authority(mAuthority)
+                        .path("paper/$id")
+                        .build()
+
+                    mResolver.update(uri, convertPaperToValues(paper), null, null)
+                }
 
                 return@fromCallable 100
             }
@@ -144,6 +191,15 @@ class PaperRepo(private val mAuthority: String,
         TODO("not implemented")
     }
 
+    override fun deleteAllPapers(): Observable<Boolean> {
+        return Observable
+            .fromCallable {
+                // TODO: Implement it.
+                return@fromCallable true
+            }
+            .subscribeOn(mIoScheduler)
+    }
+
     override fun deletePaperById(id: Long): Observable<Boolean> {
         TODO("not implemented")
     }
@@ -153,37 +209,37 @@ class PaperRepo(private val mAuthority: String,
             .fromCallable {
                 val paper = PaperModel()
 
-//                val stroke1 = SketchStroke()
-//                stroke1.setWidth(0.2f)
-//                stroke1.add(PathTuple(0f, 0f))
-//                stroke1.add(PathTuple(1f, 0.2f))
-//                stroke1.add(PathTuple(0.2f, 0.6f))
-//
-//                val stroke2 = SketchStroke()
-//                stroke2.setWidth(0.2f)
-//                stroke1.add(PathTuple(0f, 0f))
-//                stroke2.add(PathTuple(1f, 0.1f))
-//                stroke2.add(PathTuple(0.8f, 0.3f))
-//                stroke2.add(PathTuple(0.2f, 0.6f))
-//                stroke2.add(PathTuple(0f, 0.9f))
-//
-//                // Add testing scraps.
-//                val scrap1 = ScrapModel()
-//                scrap1.x = 0f
-//                scrap1.y = 0f
-//                scrap1.width = 0.5f
-//                scrap1.height = 0.5f
-//                scrap1.sketch = SketchModel()
-//                scrap1.sketch?.addStroke(stroke1)
-//
-//                val scrap2 = ScrapModel()
-//                scrap2.x = 0.2f
-//                scrap2.y = 0.3f
-//                scrap2.sketch = SketchModel()
-//                scrap2.sketch?.addStroke(stroke2)
-//
-//                paper.scraps.add(scrap1)
-//                paper.scraps.add(scrap2)
+                //                val stroke1 = SketchStroke()
+                //                stroke1.setWidth(0.2f)
+                //                stroke1.add(PathTuple(0f, 0f))
+                //                stroke1.add(PathTuple(1f, 0.2f))
+                //                stroke1.add(PathTuple(0.2f, 0.6f))
+                //
+                //                val stroke2 = SketchStroke()
+                //                stroke2.setWidth(0.2f)
+                //                stroke1.add(PathTuple(0f, 0f))
+                //                stroke2.add(PathTuple(1f, 0.1f))
+                //                stroke2.add(PathTuple(0.8f, 0.3f))
+                //                stroke2.add(PathTuple(0.2f, 0.6f))
+                //                stroke2.add(PathTuple(0f, 0.9f))
+                //
+                //                // Add testing scraps.
+                //                val scrap1 = ScrapModel()
+                //                scrap1.x = 0f
+                //                scrap1.y = 0f
+                //                scrap1.width = 0.5f
+                //                scrap1.height = 0.5f
+                //                scrap1.sketch = SketchModel()
+                //                scrap1.sketch?.addStroke(stroke1)
+                //
+                //                val scrap2 = ScrapModel()
+                //                scrap2.x = 0.2f
+                //                scrap2.y = 0.3f
+                //                scrap2.sketch = SketchModel()
+                //                scrap2.sketch?.addStroke(stroke2)
+                //
+                //                paper.scraps.add(scrap1)
+                //                paper.scraps.add(scrap2)
 
                 return@fromCallable paper
             }
@@ -202,11 +258,11 @@ class PaperRepo(private val mAuthority: String,
         return Single
             .fromCallable {
                 // Sol#1
-//                mTempFile
-//                    .bufferedReader()
-//                    .use { reader ->
-//                        mGson.fromJson(reader, PaperModel::class.java)
-//                    }
+                //                mTempFile
+                //                    .bufferedReader()
+                //                    .use { reader ->
+                //                        mGson.fromJson(reader, PaperModel::class.java)
+                //                    }
 
                 // Sol#2
                 // TODO: Assign default portrait size.
@@ -289,7 +345,7 @@ class PaperRepo(private val mAuthority: String,
 
             json.add(PaperTable.COL_DATA, jsonScraps)
             scraps.forEach { scrap ->
-                jsonScraps.add(mGson.toJson(scrap))
+                jsonScraps.add(mGson.toJsonTree(scrap))
             }
 
             values.put(PaperTable.COL_SCRAPS, json.toString())
@@ -298,7 +354,8 @@ class PaperRepo(private val mAuthority: String,
         return values
     }
 
-    private fun convertCursorToPaper(cursor: Cursor): PaperModel {
+    private fun convertCursorToPaper(cursor: Cursor,
+                                     fullyRead: Boolean): PaperModel {
         val paper = PaperModel(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
             uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
@@ -315,6 +372,15 @@ class PaperRepo(private val mAuthority: String,
         paper.thumbnailPath = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))
         paper.thumbnailWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH))
         paper.thumbnailHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
+
+        if (fullyRead) {
+            // Scraps
+            val jsonString = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_SCRAPS))
+            val json = mGson.fromJson(jsonString, JsonObject::class.java)
+            json.get(PaperTable.COL_DATA).asJsonArray.forEach { element ->
+                paper.scraps.add(mGson.fromJson(element, ScrapModel::class.java))
+            }
+        }
 
         return paper
     }

@@ -24,7 +24,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.StaggeredGridLayoutManager
 import android.view.View
@@ -33,16 +32,19 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.*
+import com.paper.AppConsts
+import com.paper.R
 import com.paper.gallery.PaperGalleryContract
 import com.paper.gallery.PaperGalleryPresenter
 import com.paper.gallery.PaperThumbnailEpoxyController
+import com.paper.gallery.PaperThumbnailEpoxyModel
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 
 class PaperGalleryActivity : AppCompatActivity(),
                              PaperGalleryContract.View,
@@ -56,6 +58,8 @@ class PaperGalleryActivity : AppCompatActivity(),
         m
     }
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
+    private val mBtnDelAllPapers by lazy { findViewById<ImageView>(R.id.btn_delete_all) }
+    private val mClickPaperSignal = PublishSubject.create<Long>()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -63,6 +67,7 @@ class PaperGalleryActivity : AppCompatActivity(),
             .create()
     }
 
+    // Paper thumbnail list view and controller.
     private val mPapersView by lazy { findViewById<RecyclerView>(R.id.paper_list) }
     private val mPapersController by lazy { PaperThumbnailEpoxyController() }
 
@@ -92,31 +97,26 @@ class PaperGalleryActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_paper_gallery)
 
-        // Paper thumbnails.
+        // Paper thumbnail list view.
         mPapersView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-        mPapersView.adapter = mPapersController.adapter
-
-        mPresenter.bindViewOnCreate(
-            view = this,
-            navigator = this)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        mPresenter.unbindViewOnDestroy()
-
-        // Force to hide the progress-bar.
-        hideProgressBar()
-
-        // Break the reference to the Epoxy controller's adapter so that the
-        // context reference would be recycled.
-        mPapersView.adapter = null
     }
 
     override fun onResume() {
         super.onResume()
 
+        // Paper thumbnail list view.
+        mPapersView.adapter = mPapersController.adapter
+        // Paper thumbnail list view controller.
+        mPapersController.setOnClickPaperThumbnailListener(
+            object : PaperThumbnailEpoxyModel.OnClickPaperThumbnailListener {
+                override fun onClickPaperThumbnail(id: Long) {
+                    mClickPaperSignal.onNext(id)
+                }
+            })
+
+        mPresenter.bindViewOnCreate(
+            view = this,
+            navigator = this)
         mPresenter.onResume()
     }
 
@@ -124,6 +124,17 @@ class PaperGalleryActivity : AppCompatActivity(),
         super.onPause()
 
         mPresenter.onPause()
+        mPresenter.unbindViewOnDestroy()
+
+        // Force to hide the progress-bar.
+        hideProgressBar()
+
+        // Paper thumbnail list view.
+        // Break the reference to the Epoxy controller's adapter so that the
+        // context reference would be recycled.
+        mPapersView.adapter = null
+        // Paper thumbnail list view controller.
+        mPapersController.setOnClickPaperThumbnailListener(null)
     }
 
     override fun showPaperThumbnails(papers: List<PaperModel>) {
@@ -149,11 +160,15 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun onClickPaper(): Observable<Long> {
-        TODO("not implemented")
+        return mClickPaperSignal
     }
 
     override fun onClickNewPaper(): Observable<Any> {
         return RxView.clicks(mBtnNewPaper)
+    }
+
+    override fun onClickDeleteAllPapers(): Observable<Any> {
+        return RxView.clicks(mBtnDelAllPapers)
     }
 
     override fun onClickShowExpMenu(): Observable<Any> {

@@ -86,6 +86,33 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     navigator.navigateToPaperEditor(PaperConsts.TEMP_ID)
                     view.hideProgressBar()
                 })
+        // Button of existing paper.
+        mDisposablesOnCreate.add(
+            view.onClickPaper()
+                .observeOn(mUiScheduler)
+                .subscribe { id ->
+                    navigator.navigateToPaperEditor(id)
+                    view.hideProgressBar()
+                })
+        // Button of delete all papers.
+        mDisposablesOnCreate.add(
+            view.onClickDeleteAllPapers()
+                .switchMap {
+                    requestPermissions()
+                        .switchMap {
+                            mRepo.deleteAllPapers()
+                        }
+//                        .switchMap {
+//                            mRepo.newTempPaper("")
+//                                .toObservable()
+//                                .map { Pair(it.id, ProgressEvent.stop(100)) }
+//                                .startWith(Pair(PaperConsts.TEMP_ID, ProgressEvent.start()))
+//                        }
+                }
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    view.hideProgressBar()
+                })
     }
 
     fun unbindViewOnDestroy() {

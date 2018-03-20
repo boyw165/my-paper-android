@@ -30,6 +30,8 @@ interface IPaperModelRepo {
 
     fun duplicatePaperById(id: Long): Observable<PaperModel>
 
+    fun deleteAllPapers(): Observable<Boolean>
+
     fun deletePaperById(id: Long): Observable<Boolean>
 
     // For testing data.
