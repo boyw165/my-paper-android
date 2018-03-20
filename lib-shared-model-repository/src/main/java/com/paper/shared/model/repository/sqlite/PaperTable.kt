@@ -22,9 +22,13 @@ object PaperTable {
     const val TABLE_NAME: String = "paper"
     const val TABLE_NAME_TEMP: String = "paper_temp"
 
+    // Common.
+    const val COL_DATA: String = "data"
+
     // Table columns.
     // TODO: How to handle tags, location, or more?
     const val COL_ID: String = BaseColumns._ID
+    const val COL_UUID: String = "uuid"
     const val COL_COUNT: String = BaseColumns._COUNT
     const val COL_CREATED_AT: String = "create_time"
     const val COL_MODIFIED_AT: String = "modify_time"
@@ -34,5 +38,5 @@ object PaperTable {
     const val COL_THUMB_PATH: String = "thumb_path"
     const val COL_THUMB_WIDTH: String = "thumb_width"
     const val COL_THUMB_HEIGHT: String = "thumb_height"
-    const val COL_DATA_BLOB: String = "data"
+    const val COL_SCRAPS: String = "scraps"
 }

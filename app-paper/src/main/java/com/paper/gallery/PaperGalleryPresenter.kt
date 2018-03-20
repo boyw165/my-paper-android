@@ -25,6 +25,7 @@ import com.paper.event.ProgressEvent
 import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
+import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -43,7 +44,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
-    private val mDisposables = CompositeDisposable()
+    private val mDisposablesOnResume = CompositeDisposable()
 
     fun bindViewOnCreate(view: PaperGalleryContract.View,
                          navigator: PaperGalleryContract.Navigator) {
@@ -72,83 +73,53 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         mDisposablesOnCreate.add(
             view.onClickNewPaper()
                 .switchMap {
-                    mPermission
-                        .request(Manifest.permission.READ_EXTERNAL_STORAGE,
-                                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        .filter { it }
-                        .switchMap {
-                            mRepo.newTempPaper("")
-                                .toObservable()
-                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-                                .startWith(Pair(PaperConsts.INVALID_ID, ProgressEvent.start()))
-                        }
+                    requestPermissions()
+//                        .switchMap {
+//                            mRepo.newTempPaper("")
+//                                .toObservable()
+//                                .map { Pair(it.id, ProgressEvent.stop(100)) }
+//                                .startWith(Pair(PaperConsts.TEMP_ID, ProgressEvent.start()))
+//                        }
                 }
                 .observeOn(mUiScheduler)
-                .subscribe { (id, event) ->
-                    when {
-                        event.justStart -> view.showProgressBar()
-                        event.justStop -> {
-                            navigator.navigateToPaperEditor(id)
-                            view.hideProgressBar()
-                        }
-                    }
+                .subscribe {
+                    navigator.navigateToPaperEditor(PaperConsts.TEMP_ID)
+                    view.hideProgressBar()
                 })
-
-        //        // Create a new paper...
-        //        mDisposablesOnCreate.add(
-        //            RxView.clicks(mBtnNewPaper)
-        //                .debounce(150, TimeUnit.MILLISECONDS)
-        //                // Grant permissions.
-        //                .observeOn(mUiScheduler)
-        //                .flatMap {
-        //                    mRxPermissions
-        //                        .request(Manifest.permission.READ_EXTERNAL_STORAGE,
-        //                                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        //                }
-        //                // TODO: MVP's Presenter's transformer.
-        //                // Insert a temp paper to the repository.
-        //                .flatMap { granted ->
-        //                    if (granted) {
-        //                        mPaperRepo
-        //                            // TODO: Presenter's responsibility to assign the caption.
-        //                            .newTempPaper("New Paper")
-        //                            // TODO: Refactoring.
-        //                            .compose { upstream ->
-        //                                upstream
-        //                                    .map { anything -> UiModel.succeed(anything) }
-        //                                    .startWithArray(UiModel.inProgress(null))
-        //                            }
-        //                    } else {
-        //                        throw RuntimeException("Permissions are not granted.")
-        //                    }
-        //                }
-        //                .onErrorReturn { err -> UiModel.failed(err) }
-        //                .observeOn(mUiScheduler)
-        //                .subscribe { vm ->
-        //                    when {
-        //                        vm.isInProgress -> {
-        //                            showProgressBar()
-        //                        }
-        //                        vm.isSuccessful -> {
-        //                            hideProgressBar()
-        //                            navigateToPaperEditor()
-        //                        }
-        //                        else -> {
-        //                            hideProgressBar()
-        //                            showError(vm.error)
-        //                        }
-        //                    }
-        //                })
     }
 
     fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
-        mDisposables.clear()
 
         mView = null
         mNavigator = null
     }
 
+    fun onResume() {
+        mDisposablesOnResume.add(
+            requestPermissions()
+                .switchMap {
+                    mRepo.getPaperSnapshotList()
+                }
+                .observeOn(mUiScheduler)
+                .subscribe { papers ->
+                    mView?.showPaperThumbnails(papers)
+                })
+    }
+
+    fun onPause() {
+        mDisposablesOnResume.clear()
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun requestPermissions(): Observable<Boolean> {
+        return mPermission
+            .request(Manifest.permission.READ_EXTERNAL_STORAGE,
+                     Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            // TODO: Properly handle it, like showing permission explanation
+            // TODO: page if it is denied.
+            .filter { it }
+    }
 }

@@ -22,5 +22,5 @@ package com.paper.shared.model
 
 object PaperConsts {
 
-    const val INVALID_ID = -1L
+    const val TEMP_ID = -1L
 }

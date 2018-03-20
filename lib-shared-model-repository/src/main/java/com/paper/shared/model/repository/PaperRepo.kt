@@ -26,15 +26,20 @@ import android.database.Cursor
 import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.PaperModel
+import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.repository.json.PaperModelTranslator
+import com.paper.shared.model.repository.json.ScrapModelTranslator
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.paper.shared.model.repository.sqlite.PaperTable
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import java.io.File
+import java.util.*
 
 class PaperRepo(private val mAuthority: String,
                 private val mResolver: ContentResolver,
@@ -48,6 +53,8 @@ class PaperRepo(private val mAuthority: String,
         GsonBuilder()
             .registerTypeAdapter(PaperModel::class.java,
                                  PaperModelTranslator())
+            .registerTypeAdapter(ScrapModel::class.java,
+                                 ScrapModelTranslator())
             .create()
     }
 
@@ -64,9 +71,11 @@ class PaperRepo(private val mAuthority: String,
                     uri,
                     // project:
                     arrayOf(PaperTable.COL_ID,
+                            PaperTable.COL_UUID,
                             PaperTable.COL_CREATED_AT,
                             PaperTable.COL_MODIFIED_AT,
                             PaperTable.COL_WIDTH,
+                            PaperTable.COL_HEIGHT,
                             PaperTable.COL_CAPTION,
                             PaperTable.COL_THUMB_PATH,
                             PaperTable.COL_THUMB_WIDTH,
@@ -98,7 +107,7 @@ class PaperRepo(private val mAuthority: String,
 
     override fun getPaperById(id: Long): Single<PaperModel> {
         // FIXME: Workaround.
-        return if (id == PaperConsts.INVALID_ID) {
+        return if (id == PaperConsts.TEMP_ID) {
             getTempPaper()
         } else {
             TODO()
@@ -107,12 +116,14 @@ class PaperRepo(private val mAuthority: String,
 
     override fun putPaperById(id: Long,
                               paper: PaperModel) {
+        // TODO: Delegate to a Service or some component that guarantees the
+        // TODO: I/O is atomic.
         Observable
             .fromCallable {
                 val uri = Uri.Builder()
                     .scheme("content")
                     .authority(mAuthority)
-                    .path("paper/$id")
+                    .path("paper")
                     .build()
 
                 mResolver.insert(uri, convertPaperToValues(paper))
@@ -120,6 +131,9 @@ class PaperRepo(private val mAuthority: String,
                 return@fromCallable 100
             }
             .subscribeOn(mIoScheduler)
+            // FIXME: The insertion might happen after refreshing the list.
+            // FIXME: Solution could be using a single thread scheduler.
+            .subscribe()
     }
 
     override fun duplicatePaperById(id: Long): Observable<PaperModel> {
@@ -183,11 +197,22 @@ class PaperRepo(private val mAuthority: String,
     override fun getTempPaper(): Single<PaperModel> {
         return Single
             .fromCallable {
-                mTempFile
-                    .bufferedReader()
-                    .use { reader ->
-                        mGson.fromJson(reader, PaperModel::class.java)
-                    }
+                // Sol#1
+//                mTempFile
+//                    .bufferedReader()
+//                    .use { reader ->
+//                        mGson.fromJson(reader, PaperModel::class.java)
+//                    }
+
+                // Sol#2
+                // TODO: Assign default portrait size.
+                val timestamp = getCurrentTime()
+                val newPaper = PaperModel(
+                    createdAt = timestamp)
+                newPaper.modifiedAt = timestamp
+
+                // Return..
+                newPaper
             }
             .subscribeOn(mIoScheduler)
     }
@@ -198,8 +223,6 @@ class PaperRepo(private val mAuthority: String,
                 // TODO: Assign default portrait size.
                 val timestamp = getCurrentTime()
                 val newPaper = PaperModel()
-                newPaper.id = PaperConsts.INVALID_ID
-                newPaper.createdAt = timestamp
                 newPaper.modifiedAt = timestamp
                 newPaper.caption = caption
 
@@ -244,6 +267,7 @@ class PaperRepo(private val mAuthority: String,
     private fun convertPaperToValues(paper: PaperModel): ContentValues {
         val values = ContentValues()
 
+        values.put(PaperTable.COL_UUID, paper.uuid.toString())
         values.put(PaperTable.COL_CREATED_AT, paper.createdAt)
         values.put(PaperTable.COL_MODIFIED_AT, paper.modifiedAt)
         values.put(PaperTable.COL_WIDTH, paper.width)
@@ -254,20 +278,27 @@ class PaperRepo(private val mAuthority: String,
         values.put(PaperTable.COL_THUMB_WIDTH, paper.thumbnailWidth)
         values.put(PaperTable.COL_THUMB_HEIGHT, paper.thumbnailHeight)
 
-        val json = mGson.toJson(paper)
-        values.put(PaperTable.COL_DATA_BLOB, json)
+        // Scraps.
+        paper.scraps.let { scraps ->
+            val json = JsonObject()
+            val jsonScraps = JsonArray()
+
+            json.add(PaperTable.COL_DATA, jsonScraps)
+            scraps.forEach {
+                jsonScraps.add(mGson.toJson(it))
+            }
+
+            values.put(PaperTable.COL_SCRAPS, json.toString())
+        }
 
         return values
     }
 
     private fun convertCursorToPaper(cursor: Cursor): PaperModel {
-        val paper = PaperModel()
-
-        val colOfId = cursor.getColumnIndexOrThrow(PaperTable.COL_ID)
-        paper.id = cursor.getLong(colOfId)
-
-        val colOfCreatedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)
-        paper.createdAt = cursor.getLong(colOfCreatedAt)
+        val paper = PaperModel(
+            id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
+            uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
+            createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)))
 
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
         paper.modifiedAt = cursor.getLong(colOfModifiedAt)
@@ -275,17 +306,11 @@ class PaperRepo(private val mAuthority: String,
         paper.width = cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH))
         paper.height = cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT))
 
-        val colOfCaption = cursor.getColumnIndexOrThrow(PaperTable.COL_CAPTION)
-        paper.caption = cursor.getString(colOfCaption)
+        paper.caption = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_CAPTION))
 
-        val colOfThumb = cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH)
-        paper.thumbnailPath = cursor.getString(colOfThumb)
-
-        val colOfThumbWidth = cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH)
-        paper.thumbnailWidth = cursor.getInt(colOfThumbWidth)
-
-        val colOfThumbHeight = cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT)
-        paper.thumbnailHeight = cursor.getInt(colOfThumbHeight)
+        paper.thumbnailPath = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))
+        paper.thumbnailWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH))
+        paper.thumbnailHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
 
         return paper
     }

@@ -25,7 +25,7 @@ import java.util.*
 
 open class ScrapModel {
 
-    val id: UUID = UUID.randomUUID()
+    val uuid: UUID = UUID.randomUUID()
 
     var x: Float = 0f
     var y: Float = 0f

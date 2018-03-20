@@ -35,7 +35,7 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                            private val mWorkerScheduler: Scheduler)
     : IPresenter<PaperEditorContract.View> {
 
-    private var mPaperId = PaperConsts.INVALID_ID
+    private var mPaperId = PaperConsts.TEMP_ID
 
     // Editor view.
     private var mView: PaperEditorContract.View? = null

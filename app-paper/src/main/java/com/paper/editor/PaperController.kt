@@ -103,7 +103,7 @@ class PaperController(private val mUiScheduler: Scheduler,
             controller.loadScrap(scrap)
 
             // Add controller to the lookup table.
-            mControllers[scrap.id] = controller
+            mControllers[scrap.uuid] = controller
         }
     }
 
@@ -209,7 +209,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         // Create controller.
         val controller = ScrapController(mUiScheduler, mWorkerScheduler)
         controller.loadScrap(scrap)
-        mControllers[scrap.id] = controller
+        mControllers[scrap.uuid] = controller
 
         // Inflate scraps.
         mCanvasView?.addViewBy(scrap)

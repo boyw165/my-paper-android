@@ -21,13 +21,28 @@
 package com.paper.shared.model.repository.json
 
 import com.google.gson.*
-import com.paper.shared.model.PaperModel
+import com.paper.shared.model.ScrapModel
 import java.lang.reflect.Type
 
-class PaperModelTranslator : JsonSerializer<PaperModel>,
-                             JsonDeserializer<PaperModel> {
+class ScrapModelTranslator : JsonSerializer<ScrapModel>,
+                             JsonDeserializer<ScrapModel> {
 
-    override fun serialize(src: PaperModel,
+    //open class ScrapModel {
+    //
+    //    val uuid: UUID = UUID.randomUUID()
+    //
+    //    var x: Float = 0f
+    //    var y: Float = 0f
+    //    var width: Float = 1f
+    //    var height: Float = 1f
+    //
+    //    var scale: Float = 1f
+    //    var rotationInRadians: Float = 0f
+    //
+    //    var sketch: Sketch? = null
+    //}
+
+    override fun serialize(src: ScrapModel,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -43,8 +58,8 @@ class PaperModelTranslator : JsonSerializer<PaperModel>,
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): PaperModel {
-        val model = PaperModel()
+                             context: JsonDeserializationContext): ScrapModel {
+        val model = ScrapModel()
 
         // Deserialize.
         val root = json.asJsonObject

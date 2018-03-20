@@ -24,18 +24,20 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.StaggeredGridLayoutManager
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
-import android.widget.TextView
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.*
 import com.paper.gallery.PaperGalleryContract
 import com.paper.gallery.PaperGalleryPresenter
-import com.paper.gallery.PapersEpoxyController
+import com.paper.gallery.PaperThumbnailEpoxyController
+import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.Observable
@@ -62,7 +64,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     private val mPapersView by lazy { findViewById<RecyclerView>(R.id.paper_list) }
-    private val mPapersController by lazy { PapersEpoxyController() }
+    private val mPapersController by lazy { PaperThumbnailEpoxyController() }
 
     private val mPresenter by lazy {
         PaperGalleryPresenter(
@@ -90,6 +92,10 @@ class PaperGalleryActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_paper_gallery)
 
+        // Paper thumbnails.
+        mPapersView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        mPapersView.adapter = mPapersController.adapter
+
         mPresenter.bindViewOnCreate(
             view = this,
             navigator = this)
@@ -98,8 +104,31 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun onDestroy() {
         super.onDestroy()
 
+        mPresenter.unbindViewOnDestroy()
+
         // Force to hide the progress-bar.
         hideProgressBar()
+
+        // Break the reference to the Epoxy controller's adapter so that the
+        // context reference would be recycled.
+        mPapersView.adapter = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        mPresenter.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        mPresenter.onPause()
+    }
+
+    override fun showPaperThumbnails(papers: List<PaperModel>) {
+        mPapersController.cancelPendingModelBuild()
+        mPapersController.setData(papers)
     }
 
     override fun showExpMenu() {

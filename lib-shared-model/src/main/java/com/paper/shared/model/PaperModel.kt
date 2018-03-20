@@ -20,18 +20,22 @@
 
 package com.paper.shared.model
 
-class PaperModel {
+import java.util.*
 
-    var id: Long = PaperConsts.INVALID_ID
+class PaperModel(
+    // The SQLite ID.
+    val id: Long = PaperConsts.TEMP_ID,
+    // The global ID.
+    val uuid: UUID = UUID.randomUUID(),
+    val createdAt: Long = 0L) {
 
-    var createdAt: Long = 0L
     var modifiedAt: Long = 0L
 
     // By default is landscape A4, 210 x 297 units.
     var width: Float = 297f
     var height: Float = 210f
 
-    var thumbnailPath: String? = null
+    var thumbnailPath: String = ""
     var thumbnailWidth: Int = 0
     var thumbnailHeight: Int = 0
 

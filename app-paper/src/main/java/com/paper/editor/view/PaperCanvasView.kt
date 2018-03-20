@@ -204,7 +204,7 @@ class PaperCanvasView : FrameLayout,
 
     // TODO: Separate the application domain and business domain model.
     override fun addViewBy(scrap: ScrapModel) {
-        val id = scrap.id
+        val id = scrap.uuid
         when {
             scrap.sketch != null -> {
                 val scrapView = ScrapView(context)

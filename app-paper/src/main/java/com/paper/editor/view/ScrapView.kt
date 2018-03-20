@@ -128,7 +128,7 @@ open class ScrapView : FrameLayout,
     }
 
     override fun getScrapId(): UUID {
-        return mModel.id
+        return mModel.uuid
     }
 
     // Gesture ////////////////////////////////////////////////////////////////

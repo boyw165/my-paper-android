@@ -1,16 +1,22 @@
-//  Copyright Aug 2017-present boyw165@gmail.com
+// Copyright Mar 2017-present boyw165@gmail.com
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
 //
-//  http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 
 package com.paper.shared.model.repository.sqlite
 
@@ -23,21 +29,23 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.net.Uri
 
-class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
+class PaperContentProvider : ContentProvider(),
+                             SQLiteHelper.DbHelperListener {
+
+    companion object {
+        // URI.
+        private const val MATCHER_CODE_PAPER_ID: Int = 1
+        private const val MATCHER_CODE_PAPER_ALL: Int = 2
+
+        // Table commands.
+        private const val COMMA: String = ", "
+    }
 
     // SQLite.
     private var mDbHelper: SQLiteHelper? = null
-    // Resolver.
+
     private var mResolver: ContentResolver? = null
-
-    // URI.
-    private val MATCHER_CODE_PAPER_ID: Int = 1
-    private val MATCHER_CODE_PAPER_ALL: Int = 2
-
     private var mUriMatcher: UriMatcher? = null
-
-    // Table commands.
-    private val COMMA: String = ", "
 
     override fun onCreate(): Boolean {
         val authority = context.packageName
@@ -63,17 +71,21 @@ class PaperContentProvider : ContentProvider(), SQLiteHelper.DbHelperListener {
     override fun onDbCreate(db: SQLiteDatabase) {
         val sharedCommand: String =
             "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA" +
+            "${PaperTable.COL_UUID} STRING NOT NULL $COMMA" +
             "${PaperTable.COL_CREATED_AT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_WIDTH} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_CAPTION} INTEGER NOT NULL $COMMA" +
+            "${PaperTable.COL_WIDTH} REAL NOT NULL $COMMA" +
+            "${PaperTable.COL_HEIGHT} REAL NOT NULL $COMMA" +
+            "${PaperTable.COL_CAPTION} STRING NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_DATA_BLOB} BLOB NOT NULL"
+            "${PaperTable.COL_SCRAPS} STRING NOT NULL"
 
         // Normal table.
         db.execSQL("create table ${PaperTable.TABLE_NAME} ($sharedCommand)")
+
+        // TODO: Remove it.
         // Temporary table.
         db.execSQL("create table ${PaperTable.TABLE_NAME_TEMP} ($sharedCommand)")
     }

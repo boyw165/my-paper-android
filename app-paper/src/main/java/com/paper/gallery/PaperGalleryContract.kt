@@ -20,11 +20,14 @@
 
 package com.paper.gallery
 
+import com.paper.shared.model.PaperModel
 import io.reactivex.Observable
 
 class PaperGalleryContract private constructor() {
 
     interface View {
+
+        fun showPaperThumbnails(papers: List<PaperModel>)
 
         fun showExpMenu()
 

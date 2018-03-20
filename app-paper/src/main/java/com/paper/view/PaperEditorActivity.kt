@@ -93,7 +93,7 @@ class PaperEditorActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_paper_editor)
 
-        val paperId = intent.getLongExtra(AppConsts.PARAMS_PAPER_ID, PaperConsts.INVALID_ID)
+        val paperId = intent.getLongExtra(AppConsts.PARAMS_PAPER_ID, PaperConsts.TEMP_ID)
 
         // Presenter.
         mEditorPresenter.bindViewOnCreate(this)
@@ -194,7 +194,7 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     override fun close() {
-//        finish()
+        finish()
     }
 
     override fun onClickCloseButton(): Observable<Any> {
