@@ -99,13 +99,32 @@ class PaperGalleryActivity : AppCompatActivity(),
 
         // Paper thumbnail list view.
         mPapersView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+        // Paper thumbnail list view.
+        mPapersView.adapter = mPapersController.adapter
+
+        // Presenter.
+        mPresenter.bindViewOnCreate(
+            view = this,
+            navigator = this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Presenter.
+        mPresenter.unbindViewOnDestroy()
+
+        // Paper thumbnail list view.
+        // Break the reference to the Epoxy controller's adapter so that the
+        // context reference would be recycled.
+        mPapersView.adapter = null
     }
 
     override fun onResume() {
         super.onResume()
 
-        // Paper thumbnail list view.
-        mPapersView.adapter = mPapersController.adapter
+//        // Paper thumbnail list view.
+//        mPapersView.adapter = mPapersController.adapter
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(
             object : PaperThumbnailEpoxyModel.OnClickPaperThumbnailListener {
@@ -113,32 +132,20 @@ class PaperGalleryActivity : AppCompatActivity(),
                     mClickPaperSignal.onNext(id)
                 }
             })
-
-        mPresenter.bindViewOnCreate(
-            view = this,
-            navigator = this)
         mPresenter.onResume()
     }
 
     override fun onPause() {
         super.onPause()
 
+        // Presenter.
         mPresenter.onPause()
-        mPresenter.unbindViewOnDestroy()
 
-        // Force to hide the progress-bar.
-        hideProgressBar()
-
-        // Paper thumbnail list view.
-        // Break the reference to the Epoxy controller's adapter so that the
-        // context reference would be recycled.
-        mPapersView.adapter = null
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(null)
     }
 
     override fun showPaperThumbnails(papers: List<PaperModel>) {
-        mPapersController.cancelPendingModelBuild()
         mPapersController.setData(papers)
     }
 
