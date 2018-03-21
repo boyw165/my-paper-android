@@ -399,6 +399,12 @@ class PaperCanvasView : FrameLayout,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
+    private fun ensureMainThread() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw IllegalThreadStateException("Not in MAIN thread")
+        }
+    }
+
     private fun validateViewPortMatrix() {
         if (mMatrixFromViewToModel.isIdentity) {
             // Calculate the canvas transform in terms of the view-port
