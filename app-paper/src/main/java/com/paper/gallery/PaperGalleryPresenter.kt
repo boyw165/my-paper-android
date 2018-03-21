@@ -136,6 +136,9 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
     fun onPause() {
         mDisposablesOnResume.clear()
+
+        // Force to hide the progress-bar.
+        mView?.hideProgressBar()
     }
 
     ///////////////////////////////////////////////////////////////////////////

@@ -30,9 +30,12 @@ class PaperThumbnailEpoxyController : TypedEpoxyController<List<PaperModel>>() {
 
     override fun buildModels(data: List<PaperModel>) {
         data.forEachIndexed { _, paper ->
-            PaperThumbnailEpoxyModel(paper.id,
+            val id = paper.id
+            val uuid = paper.uuid
+
+            PaperThumbnailEpoxyModel(id,
                                      mListener)
-                .id(paper.id)
+                .id(uuid.toString())
                 .addTo(this)
         }
     }
