@@ -206,7 +206,9 @@ class PaperCanvasView : FrameLayout,
     }
 
     // TODO: Separate the application domain and business domain model.
-    override fun addViewBy(scrap: ScrapModel) {
+    override fun addScrapView(scrap: ScrapModel) {
+        ensureMainThread()
+
         val id = scrap.uuid
         when {
             scrap.sketch != null -> {
@@ -236,10 +238,12 @@ class PaperCanvasView : FrameLayout,
         }
     }
 
-    override fun removeViewBy(id: UUID) {
+    override fun removeScrapView(id: UUID) {
+        ensureMainThread()
+
         val view = (mViewLookupTable[id] ?: throw NoSuchElementException(
             "No view with ID=%d".format(id)))
-        val scrapView = view as IScrapView
+        val scrapView = view as ScrapView
 
         // Remove view.
         mRootContainer.removeView(view)
@@ -253,9 +257,11 @@ class PaperCanvasView : FrameLayout,
     }
 
     override fun removeAllViews() {
+        ensureMainThread()
+
         mViewLookupTable.values.forEach {
             val scrapView = it as IScrapView
-            removeViewBy(scrapView.getScrapId())
+            removeScrapView(scrapView.getScrapId())
         }
     }
 

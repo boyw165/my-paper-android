@@ -68,7 +68,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         mCanvasView?.let { canvasView ->
             // Inflate scraps.
             mModel.scraps.forEach { scrap ->
-                canvasView.addViewBy(scrap)
+                canvasView.addScrapView(scrap)
             }
         }
     }
@@ -212,7 +212,7 @@ class PaperController(private val mUiScheduler: Scheduler,
         mControllers[scrap.uuid] = controller
 
         // Inflate scraps.
-        mCanvasView?.addViewBy(scrap)
+        mCanvasView?.addScrapView(scrap)
     }
 
     override fun onPinchBegin(event: MyMotionEvent,

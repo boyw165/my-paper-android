@@ -28,9 +28,9 @@ interface ICanvasView : IScrapLifecycleListener {
 
     // Scrap manipulation /////////////////////////////////////////////////////
 
-    fun addViewBy(scrap: ScrapModel)
+    fun addScrapView(scrap: ScrapModel)
 
-    fun removeViewBy(id: UUID)
+    fun removeScrapView(id: UUID)
 
     fun removeAllViews()
 
