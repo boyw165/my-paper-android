@@ -44,6 +44,7 @@ import com.paper.shared.model.repository.SketchRepo
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 
 class PaperEditorActivity : AppCompatActivity(),
                             IContextProvider,
@@ -51,7 +52,6 @@ class PaperEditorActivity : AppCompatActivity(),
                             PaperEditorContract.View {
 
     // View.
-    private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
     private val mBtnDraw: SwitchCompat by lazy { findViewById<SwitchCompat>(R.id.btn_draw) }
     private val mCanvasView: PaperCanvasView by lazy { findViewById<PaperCanvasView>(R.id.paper_canvas) }
     private val mProgressBar: AlertDialog by lazy {
@@ -59,6 +59,10 @@ class PaperEditorActivity : AppCompatActivity(),
             .setCancelable(false)
             .create()
     }
+
+    // Back button and signal.
+    private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
+    private val mClickSysBackSignal = PublishSubject.create<Any>()
 
     // Repositories.
     // TODO: Inject the repo.
@@ -160,6 +164,10 @@ class PaperEditorActivity : AppCompatActivity(),
         mEditorPresenter.onPause()
     }
 
+    override fun onBackPressed() {
+        mClickSysBackSignal.onNext(0)
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Context provider ///////////////////////////////////////////////////////
 
@@ -198,7 +206,8 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     override fun onClickCloseButton(): Observable<Any> {
-        return RxView.clicks(mBtnClose)
+        return Observable.merge(mClickSysBackSignal,
+                                RxView.clicks(mBtnClose))
     }
 
     override fun onClickDrawButton(): Observable<Boolean> {

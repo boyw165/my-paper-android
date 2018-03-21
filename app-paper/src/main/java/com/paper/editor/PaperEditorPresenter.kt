@@ -56,7 +56,13 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    commitPaperById(mPaperId)
+                    // TODO: Remove the try-catch until the updating existing
+                    // TODO: paper is finished.
+                    try {
+                        commitPaperById(mPaperId)
+                    } catch (err: Throwable) {
+                        // DO NOTHING.
+                    }
 
                     mView?.close()
                 })
