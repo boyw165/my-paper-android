@@ -22,8 +22,10 @@ package com.paper.editor.view
 
 import android.content.Context
 import android.graphics.*
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
 import com.paper.R
@@ -49,7 +51,8 @@ open class ScrapView : FrameLayout,
     private var mIfHandleEvent = false
     private val mTransformHelper: TransformUtils = TransformUtils()
     private val mGestureDetector: GestureDetector by lazy {
-        GestureDetector(context,
+        GestureDetector(Looper.getMainLooper(),
+                        ViewConfiguration.get(context),
                         resources.getDimension(R.dimen.touch_slop),
                         resources.getDimension(R.dimen.tap_slop),
                         resources.getDimension(R.dimen.fling_min_vec),

@@ -22,10 +22,12 @@ package com.paper.editor.view
 
 import android.content.Context
 import android.graphics.*
+import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -53,7 +55,8 @@ class PaperCanvasView : FrameLayout,
 
     // Gesture.
     private val mGestureDetector by lazy {
-        GestureDetector(context,
+        GestureDetector(Looper.getMainLooper(),
+                        ViewConfiguration.get(context),
                         resources.getDimension(R.dimen.touch_slop),
                         resources.getDimension(R.dimen.tap_slop),
                         resources.getDimension(R.dimen.fling_min_vec),
