@@ -52,10 +52,6 @@ interface ICanvasView : IScrapLifecycleListener {
 
     fun stopUpdateViewport()
 
-    fun normalizePointer(p: PointF): PointF
-
-//    fun convertPointToParentWorld(point: FloatArray)
-
     // Sketch /////////////////////////////////////////////////////////////////
 
     fun startDrawSketch(x: Float, y: Float)

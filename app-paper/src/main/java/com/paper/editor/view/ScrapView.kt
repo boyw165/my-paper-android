@@ -226,17 +226,17 @@ open class ScrapView : FrameLayout,
         var bottom = Float.MIN_VALUE
         mModel.sketch?.let { sketch ->
             sketch.allStrokes.forEach { stroke ->
-                stroke.allPathTuple.forEach { tuple ->
+                stroke.pathTupleList.forEach { tuple ->
                     left = Math.min(left, tuple.firstPoint.x)
                     top = Math.min(top, tuple.firstPoint.y)
                     right = Math.max(right, tuple.firstPoint.x)
                     bottom = Math.max(bottom, tuple.firstPoint.y)
                 }
             }
-            mScrapBound.set(left * width,
-                            top * height,
-                            right * width,
-                            bottom * height)
+            mScrapBound.set(left / mViewToModelScale,
+                            top / mViewToModelScale,
+                            right / mViewToModelScale,
+                            bottom / mViewToModelScale)
         }
 
         // Path for sketch.
@@ -250,9 +250,9 @@ open class ScrapView : FrameLayout,
             mSketchPath.reset()
 
             sketch.allStrokes.forEach { stroke ->
-                stroke.allPathTuple.forEachIndexed { i, tuple ->
-                    val x = tuple.firstPoint.x * width
-                    val y = tuple.firstPoint.y * height
+                stroke.pathTupleList.forEachIndexed { i, tuple ->
+                    val x = tuple.firstPoint.x / mViewToModelScale
+                    val y = tuple.firstPoint.y / mViewToModelScale
 
                     when (i) {
                         0 -> {

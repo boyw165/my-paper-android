@@ -47,7 +47,7 @@ class PaperController(private val mUiScheduler: Scheduler,
 
     // Model.
     private lateinit var mModel: PaperModel
-    private var mTmpSketch: SketchModel? = null
+    private val mTmpStroke = SketchStroke()
 
     // Sub controllers.
     private val mControllers: HashMap<UUID, IScrapController> = hashMapOf()
@@ -169,12 +169,10 @@ class PaperController(private val mUiScheduler: Scheduler,
 
         val x = event.downFocusX
         val y = event.downFocusY
-        val np = mCanvasView!!.normalizePointer(PointF(x, y))
 
-        mTmpSketch = SketchModel()
-        mTmpSketch!!.addStroke(SketchStroke())
-        mTmpSketch!!.lastStroke.setWidth(0.2f)
-        mTmpSketch!!.lastStroke.add(PathTuple(np.x, np.y))
+        mTmpStroke.width = 0.2f
+        mTmpStroke.clearAllPathTuple()
+        mTmpStroke.addPathTuple(PathTuple(x, y))
 
         // Notify view.
         mCanvasView!!.startDrawSketch(x, y)
@@ -190,9 +188,8 @@ class PaperController(private val mUiScheduler: Scheduler,
 
         val x = event.downFocusX
         val y = event.downFocusY
-        val np = mCanvasView!!.normalizePointer(PointF(x, y))
 
-        mTmpSketch!!.lastStroke.add(PathTuple(np.x, np.y))
+        mTmpStroke.addPathTuple(PathTuple(x, y))
 
         // Notify view.
         mCanvasView!!.onDrawSketch(x, y)
@@ -208,19 +205,26 @@ class PaperController(private val mUiScheduler: Scheduler,
 
         val x = event.downFocusX
         val y = event.downFocusY
-        val np = mCanvasView!!.normalizePointer(PointF(x, y))
 
-        mTmpSketch!!.lastStroke.add(PathTuple(np.x, np.y))
+        mTmpStroke.addPathTuple(PathTuple(x, y))
 
         // Notify view.
         mCanvasView!!.stopDrawSketch()
 
         // TODO: Normalize the strokes.
         // Commit the temporary scrap.
+        val strokeBoundLeft = mTmpStroke.bound.left
+        val strokeBoundTop = mTmpStroke.bound.top
+        mTmpStroke.offset(-strokeBoundLeft, -strokeBoundTop)
+
+        val sketch = SketchModel()
+        sketch.addStroke(mTmpStroke.copy())
         val scrap = ScrapModel()
-        scrap.sketch = mTmpSketch
+        scrap.x = strokeBoundLeft
+        scrap.y = strokeBoundTop
+        scrap.sketch = sketch
+
         mModel.scraps.add(scrap)
-        mTmpSketch = null
 
         // Create controller.
         val controller = ScrapController(mUiScheduler, mWorkerScheduler)

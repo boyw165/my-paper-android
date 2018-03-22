@@ -23,57 +23,34 @@ package com.paper.shared.model.sketch
 import android.graphics.PointF
 import android.graphics.RectF
 
-import java.util.ArrayList
-
 /**
  * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
  * stroke contains tuple(s), [PathTuple]. A tuple represents a node of
  * a path segment and contains at least one point, [PointF]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
-class SketchStroke {
-
-    // State.
+data class SketchStroke(
     // The byte order is ARGB.
-    private var mColor: Int = 0
-    private var mWidth: Float = 0.toFloat()
-    var isEraser: Boolean = false
-        get() = field
-        set(value) { field = value }
-    private val mPathTupleList = ArrayList<PathTuple>()
-    val bound = RectF(java.lang.Float.MAX_VALUE,
-            java.lang.Float.MAX_VALUE,
-            java.lang.Float.MIN_VALUE,
-            java.lang.Float.MIN_VALUE)
+    var color: Int = 0,
+    var width: Float = 0.toFloat(),
+    var isEraser: Boolean = false,
+    private val mPathTupleList: MutableList<PathTuple> = ArrayList()) {
 
-    fun setWidth(width: Float): SketchStroke {
-        mWidth = width
-        return this
+    val pathTupleList: List<PathTuple> get() {
+        val ret = mutableListOf<PathTuple>()
+
+        mPathTupleList.forEach { tuple ->
+            ret.add(PathTuple(tuple))
+        }
+
+        return ret
     }
 
-    fun getWidth(): Float = mWidth
-
-    /**
-     * Set color, the format is the same with [android.graphics.Color].
-     */
-    fun setColor(color: Int): SketchStroke {
-        mColor = color
-        return this
-    }
-
-    fun getColor(): Int = mColor
-
-    fun savePathTuple(tuple: PathTuple?): Boolean {
-        if (tuple == null || tuple.pointSize == 0) return false
-
-        // Calculate the boundary by the last point of the given tuple.
-        val point = tuple.getPointAt(tuple.pointSize - 1)
-        calculateBound(point.x, point.y)
-
-        return mPathTupleList.add(tuple)
-    }
-
-    fun getPathTupleAt(position: Int): PathTuple = mPathTupleList[position]
+    private val mBound = RectF(java.lang.Float.MAX_VALUE,
+                               java.lang.Float.MAX_VALUE,
+                               java.lang.Float.MIN_VALUE,
+                               java.lang.Float.MIN_VALUE)
+    val bound get() = RectF(mBound)
 
     val firstPathTuple: PathTuple
         get() = mPathTupleList[0]
@@ -83,7 +60,11 @@ class SketchStroke {
 
     fun pathTupleSize(): Int = mPathTupleList.size
 
-    fun add(pathTuple: PathTuple) {
+    fun clearAllPathTuple() {
+        mPathTupleList.clear()
+    }
+
+    fun addPathTuple(pathTuple: PathTuple) {
         val point = pathTuple.getPointAt(0)
 
         // Calculate new boundary.
@@ -92,34 +73,39 @@ class SketchStroke {
         mPathTupleList.add(pathTuple)
     }
 
-    fun addAll(pathTupleList: List<PathTuple>) {
-        // Calculate new boundary.
-        for (pathTuple in pathTupleList) {
-            val point = pathTuple.getPointAt(0)
-            calculateBound(point.x, point.y)
+//    fun addAllPathTuple(pathTupleList: List<PathTuple>) {
+//        // Calculate new boundary.
+//        for (pathTuple in pathTupleList) {
+//            val point = pathTuple.getPointAt(0)
+//            calculateBound(point.x, point.y)
+//        }
+//
+//        this.mPathTupleList.addAll(pathTupleList)
+//    }
+
+    fun offset(offsetX: Float, offsetY: Float) {
+        mPathTupleList.forEach { tuple ->
+            tuple.allPoints.forEach { pt ->
+                pt.offset(offsetX, offsetY)
+            }
         }
-
-        mPathTupleList.addAll(pathTupleList)
     }
-
-    val allPathTuple: List<PathTuple>
-        get() = mPathTupleList
 
     override fun toString(): String {
         return "stroke{" +
-                ", color=" + mColor +
-                ", width=" + mWidth +
-                ", pathTupleList=" + mPathTupleList +
-                '}'
+               ", color=" + color +
+               ", width=" + width +
+               ", mPathTupleList=" + mPathTupleList +
+               '}'
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun calculateBound(x: Float, y: Float) {
-        bound.left = Math.min(bound.left, x)
-        bound.top = Math.min(bound.top, y)
-        bound.right = Math.max(bound.right, x)
-        bound.bottom = Math.max(bound.bottom, y)
+        mBound.left = Math.min(mBound.left, x)
+        mBound.top = Math.min(mBound.top, y)
+        mBound.right = Math.max(mBound.right, x)
+        mBound.bottom = Math.max(mBound.bottom, y)
     }
 }

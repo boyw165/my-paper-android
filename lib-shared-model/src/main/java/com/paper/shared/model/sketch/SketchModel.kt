@@ -66,7 +66,6 @@ class SketchModel {
         mStrokesBoundDirty = false
     }
     constructor(strokes: List<SketchStroke> = emptyList()) {
-
         if (!strokes.isEmpty()) {
             mStrokes.addAll(strokes)
         }

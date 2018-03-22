@@ -38,8 +38,8 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
 
         root.addProperty("x", src.x)
         root.addProperty("y", src.y)
-        root.addProperty("width", src.width)
-        root.addProperty("height", src.height)
+//        root.addProperty("width", src.width)
+//        root.addProperty("height", src.height)
 
         root.addProperty("scale", src.scale)
         root.addProperty("rotationInRadians", src.rotationInRadians)
@@ -60,8 +60,8 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
 
         model.x = root.get("x").asFloat
         model.y = root.get("y").asFloat
-        model.width = root.get("width").asFloat
-        model.height = root.get("height").asFloat
+//        model.width = root.get("width").asFloat
+//        model.height = root.get("height").asFloat
 
         model.scale = root.get("scale").asFloat
         model.rotationInRadians = root.get("rotationInRadians").asFloat

@@ -39,18 +39,18 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
 
             // Stroke color. The format is [R,G,B,A].
             val colorJson = JsonArray()
-            colorJson.add((stroke.getColor() shr 16 and 0xFF).toFloat() / 0xFF)
-            colorJson.add((stroke.getColor() shr 8 and 0xFF).toFloat() / 0xFF)
-            colorJson.add((stroke.getColor() and 0xFF).toFloat() / 0xFF)
-            colorJson.add((stroke.getColor() shr 24 and 0xFF).toFloat() / 0xFF)
+            colorJson.add((stroke.color shr 16 and 0xFF).toFloat() / 0xFF)
+            colorJson.add((stroke.color shr 8 and 0xFF).toFloat() / 0xFF)
+            colorJson.add((stroke.color and 0xFF).toFloat() / 0xFF)
+            colorJson.add((stroke.color shr 24 and 0xFF).toFloat() / 0xFF)
             strokeObj.add("color", colorJson)
             // Stroke width.
-            strokeObj.addProperty("width", stroke.getWidth())
+            strokeObj.addProperty("width", stroke.width)
 
             // ... and several tuple.
             val tuplesJson = JsonArray()
             strokeObj.add("path_tuples", tuplesJson)
-            for (tuple in stroke.allPathTuple) {
+            for (tuple in stroke.pathTupleList) {
                 val tupleJson = JsonArray()
 
                 // Add tuple to the tuple list.
@@ -110,13 +110,13 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
                 }
 
                 // Add tuple to the stroke.
-                stroke.add(pathTuple)
+                stroke.addPathTuple(pathTuple)
             }
 
             // Stroke color.
             val colorJson = strokeJson.get("color")
             if (colorJson.isJsonPrimitive) {
-                stroke.setColor(colorJson.asInt)
+                stroke.color = colorJson.asInt
             } else if (colorJson.isJsonArray) {
                 val rgbaJson = colorJson.asJsonArray
 
@@ -125,11 +125,11 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
                 val g = (rgbaJson.get(1).asFloat * 0xFF).toInt()
                 val b = (rgbaJson.get(2).asFloat * 0xFF).toInt()
                 val a = (rgbaJson.get(3).asFloat * 0xFF).toInt()
-                stroke.setColor((a shl 24).or(r shl 16).or(g shl 8).or(b))
+                stroke.color = ((a shl 24).or(r shl 16).or(g shl 8).or(b))
             }
 
             // Stroke width.
-            stroke.setWidth(strokeJson.get("width").asFloat)
+            stroke.width = strokeJson.get("width").asFloat
 
             // Add stroke to the sketch.
             model.addStroke(stroke)

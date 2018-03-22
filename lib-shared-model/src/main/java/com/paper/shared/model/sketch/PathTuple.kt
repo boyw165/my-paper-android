@@ -41,9 +41,11 @@ class PathTuple {
         addPoint(x, y)
     }
 
-    constructor(points: List<PointF>) {
+    constructor(other: PathTuple) {
         mPoints.clear()
-        mPoints.addAll(points)
+        other.allPoints.forEach { pt ->
+            mPoints.add(PointF(pt.x, pt.y))
+        }
     }
 
     fun addPoint(x: Float, y: Float) {

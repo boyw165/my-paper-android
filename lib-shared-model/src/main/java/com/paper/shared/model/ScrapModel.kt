@@ -28,8 +28,8 @@ open class ScrapModel(
 
     var x: Float = 0f
     var y: Float = 0f
-    var width: Float = 1f
-    var height: Float = 1f
+//    var width: Float = 1f
+//    var height: Float = 1f
 
     var scale: Float = 1f
     var rotationInRadians: Float = 0f

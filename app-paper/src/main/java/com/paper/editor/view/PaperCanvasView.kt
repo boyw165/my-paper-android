@@ -52,7 +52,7 @@ class PaperCanvasView : FrameLayout,
     // View-Models.
     private var mModelWidth: Float = 0f
     private var mModelHeight: Float = 0f
-    private var mScaleFromModelToView: Float = 0f
+    private var mModelToViewScale: Float = 0f
 
     // Listeners.
     private var mListener: IScrapLifecycleListener? = null
@@ -69,6 +69,9 @@ class PaperCanvasView : FrameLayout,
     private val mPointerMap = floatArrayOf(0f, 0f)
     private val mTmpMatrix = Matrix()
     private val mTransformHelper = TransformUtils()
+    private val mEventNormalizationHelper by lazy {
+        GestureEventNormalizationHelper()
+    }
 
     // Common transform.
     private val mMatrixFromViewToModel = Matrix()
@@ -91,10 +94,14 @@ class PaperCanvasView : FrameLayout,
     constructor(context: Context) : this(context, null)
     constructor(context: Context,
                 attrs: AttributeSet?) : this(context, attrs, 0)
-
     constructor(context: Context,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        // Map the events to the canvas world and apply normalization function.
+        mGestureDetector.tapGestureListener = mEventNormalizationHelper
+        mGestureDetector.dragGestureListener = mEventNormalizationHelper
+        mGestureDetector.pinchGestureListener = mEventNormalizationHelper
+
         val oneDp = context.resources.getDimension(R.dimen.one_dp)
 
         mGridPaint.color = Color.LTGRAY
@@ -160,8 +167,12 @@ class PaperCanvasView : FrameLayout,
             val viewHeight = bottom - top
 
             // Hold the scale factor.
-            mScaleFromModelToView = Math.min(viewWidth / mModelWidth,
+            mModelToViewScale = Math.min(viewWidth / mModelWidth,
                                              viewHeight / mModelHeight)
+
+            // Also update the event normalization helper.
+            mEventNormalizationHelper.setNormalizationFactors(
+                1f / mModelToViewScale, 1f / mModelToViewScale)
 
             // Reset container's transform.
             mRootContainer.scaleX = 1f
@@ -171,8 +182,8 @@ class PaperCanvasView : FrameLayout,
 
             // View port (in the model coordinate).
             mViewPort.set(0f, 0f,
-                          viewWidth / mScaleFromModelToView,
-                          viewHeight / mScaleFromModelToView)
+                          viewWidth / mModelToViewScale,
+                          viewHeight / mModelToViewScale)
 
             Log.d(AppConsts.TAG, "Layout with model size and view-port configuration updated.")
 
@@ -239,7 +250,7 @@ class PaperCanvasView : FrameLayout,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT)
 
-                scrapView.setViewToModelScale(1f / mScaleFromModelToView)
+                scrapView.setViewToModelScale(1f / mModelToViewScale)
                 // TODO: Initialize the view by model?
                 // TODO: Separate the application domain and business domain model.
                 scrapView.setModel(scrap)
@@ -313,9 +324,7 @@ class PaperCanvasView : FrameLayout,
     // Transform //////////////////////////////////////////////////////////////
 
     override fun setGestureListener(listener: SimpleGestureListener?) {
-        mGestureDetector.tapGestureListener = listener
-        mGestureDetector.dragGestureListener = listener
-        mGestureDetector.pinchGestureListener = listener
+        mEventNormalizationHelper.setGestureListener(listener)
     }
 
     override fun startUpdateViewport() {
@@ -355,8 +364,8 @@ class PaperCanvasView : FrameLayout,
         // Infer the view-port by above container boundary.
         mViewPort.set(0f, 0f, mModelWidth, mModelHeight)
         val viewPortScale = width.toFloat() / (containerRightBottom.x - containerLeftTop.x)
-        val viewPortTx = -containerLeftTop.x / mScaleFromModelToView
-        val viewPortTy = -containerLeftTop.y / mScaleFromModelToView
+        val viewPortTx = -containerLeftTop.x / mModelToViewScale
+        val viewPortTy = -containerLeftTop.y / mModelToViewScale
         mTmpMatrix.reset()
         mTmpMatrix.postTranslate(viewPortTx, viewPortTy)
         mTmpMatrix.postScale(viewPortScale, viewPortScale, 0f, 0f)
@@ -376,8 +385,8 @@ class PaperCanvasView : FrameLayout,
         val finalTy = -mViewPort.top
         mRootContainer.scaleX = finalScale
         mRootContainer.scaleY = finalScale
-        mRootContainer.translationX = mRootContainer.scaleX * mScaleFromModelToView * finalTx
-        mRootContainer.translationY = mRootContainer.scaleX * mScaleFromModelToView * finalTy
+        mRootContainer.translationX = mRootContainer.scaleX * mModelToViewScale * finalTx
+        mRootContainer.translationY = mRootContainer.scaleX * mModelToViewScale * finalTy
 
         invalidate()
     }
@@ -386,31 +395,21 @@ class PaperCanvasView : FrameLayout,
         // DO NOTHING.
     }
 
-    // TODO: This is not even an abstraction of the view.
-    override fun normalizePointer(p: PointF): PointF {
-        validateViewPortMatrix()
-
-        // Calculate the canvas transform in terms of the view-port
-        mPointerMap[0] = p.x
-        mPointerMap[1] = p.y
-        mMatrixFromViewToModel.mapPoints(mPointerMap)
-
-        return PointF(mPointerMap[0] / mModelWidth,
-                      mPointerMap[1] / mModelHeight)
-    }
-
     // Drawing ////////////////////////////////////////////////////////////////
 
     override fun startDrawSketch(x: Float, y: Float) {
         mSketchPath.reset()
-        mSketchPath.moveTo(x, y)
-        mSketchPath.lineTo(x, y)
+        mSketchPath.moveTo(mEventNormalizationHelper.inverseNormalizationToX(x),
+                           mEventNormalizationHelper.inverseNormalizationToY(y))
+        mSketchPath.lineTo(mEventNormalizationHelper.inverseNormalizationToX(x),
+                           mEventNormalizationHelper.inverseNormalizationToY(y))
 
         invalidate()
     }
 
     override fun onDrawSketch(x: Float, y: Float) {
-        mSketchPath.lineTo(x, y)
+        mSketchPath.lineTo(mEventNormalizationHelper.inverseNormalizationToX(x),
+                           mEventNormalizationHelper.inverseNormalizationToY(y))
 
         invalidate()
     }
@@ -433,7 +432,7 @@ class PaperCanvasView : FrameLayout,
     private fun validateViewPortMatrix() {
         if (mMatrixFromViewToModel.isIdentity) {
             // Calculate the canvas transform in terms of the view-port
-            val scaleFromViewToModel = 1f / mScaleFromModelToView
+            val scaleFromViewToModel = 1f / mModelToViewScale
             val viewPortScale = mViewPort.width() / mModelWidth
             val viewPortTx = mViewPort.left
             val viewPortTy = mViewPort.top
@@ -495,8 +494,8 @@ class PaperCanvasView : FrameLayout,
 
         // From model to view coordinate.
         mTmpMatrix.reset()
-        mTmpMatrix.postScale(mScaleFromModelToView,
-                             mScaleFromModelToView)
+        mTmpMatrix.postScale(mModelToViewScale,
+                             mModelToViewScale)
 
         // Transform contributed by view-port.
         val viewPortScale = mViewPort.width() / mModelWidth
@@ -504,8 +503,8 @@ class PaperCanvasView : FrameLayout,
         val viewPortTy = mViewPort.top
         mTmpMatrix.postScale(1f / viewPortScale,
                              1f / viewPortScale)
-        mTmpMatrix.postTranslate(1f / viewPortScale * mScaleFromModelToView * -viewPortTx,
-                                 1f / viewPortScale * mScaleFromModelToView * -viewPortTy)
+        mTmpMatrix.postTranslate(1f / viewPortScale * mModelToViewScale * -viewPortTx,
+                                 1f / viewPortScale * mModelToViewScale * -viewPortTy)
         canvas.concat(mTmpMatrix)
 
         val cell = Math.min(mModelWidth, mModelHeight) / 20
@@ -537,7 +536,7 @@ class PaperCanvasView : FrameLayout,
         val scale = 1f / 6
         mTmpMatrix.reset()
         mTmpMatrix.postScale(scale, scale)
-        mTmpMatrix.postScale(mScaleFromModelToView, mScaleFromModelToView)
+        mTmpMatrix.postScale(mModelToViewScale, mModelToViewScale)
         canvas.concat(mTmpMatrix)
 
         canvas.drawRect(0f, 0f, mModelWidth, mModelHeight, mModelBoundPaint)
