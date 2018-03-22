@@ -22,6 +22,7 @@ package com.paper.editor
 
 import android.graphics.Matrix
 import android.graphics.PointF
+import android.util.Log
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.editor.view.IScrapView
 import com.paper.editor.view.SimpleGestureListener
@@ -82,11 +83,8 @@ class ScrapController(private val mUiScheduler: Scheduler,
                         context: Any?,
                         startPointer: PointF,
                         stopPointer: PointF) {
-        // Map the coordinates from child world to the parent world.
-        val startPointerInParent: PointF = convertPointToParentWorld(startPointer)
-        val stopPointerInParent: PointF = convertPointToParentWorld(stopPointer)
-        val delta = PointF(stopPointerInParent.x - startPointerInParent.x,
-                           stopPointerInParent.y - startPointerInParent.y)
+        val delta = PointF(stopPointer.x - startPointer.x,
+                           stopPointer.y - startPointer.y)
 
         // Update the RAW transform (without any modification).
         mStopMatrixToParent.postTranslate(delta.x, delta.y)
@@ -98,6 +96,11 @@ class ScrapController(private val mUiScheduler: Scheduler,
         mStopTransformToParent.scaleX = mTransformHelper.scaleX
         mStopTransformToParent.scaleY = mTransformHelper.scaleY
         mStopTransformToParent.rotationInRadians = mTransformHelper.rotationInRadians
+
+        Log.d("xyz", "start($startPointer), " +
+                     "stop($stopPointer), " +
+                     "onDrag(tx=${mStopTransformToParent.translationX}," +
+                     "ty=${mStopTransformToParent.translationY})")
 
         mView!!.setTransform(mStopTransformToParent.copy())
     }
@@ -125,17 +128,9 @@ class ScrapController(private val mUiScheduler: Scheduler,
                          context: Any?,
                          startPointers: Array<PointF>,
                          stopPointers: Array<PointF>) {
-        // Map the coordinates from child world to the parent world.
-        val startPointersInParent = Array(startPointers.size, { i ->
-            convertPointToParentWorld(startPointers[i])
-        })
-        val stopPointersInParent = Array(stopPointers.size, { i ->
-            convertPointToParentWorld(stopPointers[i])
-        })
-
         // Calculate the transformation.
         val transform = TransformUtils.getTransformFromPointers(
-            startPointersInParent, stopPointersInParent)
+            startPointers, stopPointers)
 
         val dx = transform[TransformUtils.DELTA_X]
         val dy = transform[TransformUtils.DELTA_Y]
@@ -176,18 +171,13 @@ class ScrapController(private val mUiScheduler: Scheduler,
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun holdStartTransform() {
+        // Get the initial transform from model.
         mStartMatrixToParent.reset()
-        // TODO: Get from model?
-        mStartMatrixToParent.set(mView!!.getTransformMatrix())
+        mStartMatrixToParent.postScale(mModel.scale, mModel.scale)
+        mStartMatrixToParent.postRotate(Math.toDegrees(mModel.rotationInRadians.toDouble()).toFloat())
+        mStartMatrixToParent.postTranslate(mModel.x, mModel.y)
+
         mStopMatrixToParent.reset()
         mStopMatrixToParent.set(mStartMatrixToParent)
-    }
-
-    private fun convertPointToParentWorld(point: PointF): PointF {
-        mPointerMap[0] = point.x
-        mPointerMap[1] = point.y
-        mView!!.convertPointToParentWorld(mPointerMap)
-
-        return PointF(mPointerMap[0], mPointerMap[1])
     }
 }

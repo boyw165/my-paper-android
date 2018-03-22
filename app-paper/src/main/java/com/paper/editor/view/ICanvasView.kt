@@ -22,9 +22,12 @@ package com.paper.editor.view
 
 import android.graphics.PointF
 import com.paper.shared.model.ScrapModel
+import io.reactivex.Observable
 import java.util.*
 
 interface ICanvasView : IScrapLifecycleListener {
+
+    fun onLayoutFinished(): Observable<ICanvasView>
 
     // Scrap manipulation /////////////////////////////////////////////////////
 

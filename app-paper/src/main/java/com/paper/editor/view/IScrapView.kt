@@ -21,8 +21,6 @@
 package com.paper.editor.view
 
 import android.graphics.Matrix
-import android.graphics.PointF
-import com.paper.editor.ITouchConfig
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import java.util.*
@@ -39,17 +37,7 @@ interface IScrapView {
 
     // Transform //////////////////////////////////////////////////////////////
 
-    fun getTransform(): TransformModel
-
-    fun getTransformMatrix(): Matrix
-
     fun setTransform(transform: TransformModel)
-
-    fun setTransformPivot(px: Float, py: Float)
-
-    fun normalizePointer(p: PointF): PointF
-
-    fun convertPointToParentWorld(point: FloatArray)
 
     // Rendering //////////////////////////////////////////////////////////////
 

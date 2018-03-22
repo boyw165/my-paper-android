@@ -21,6 +21,7 @@
 package com.paper.editor
 
 import android.graphics.PointF
+import android.os.Looper
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.editor.data.GestureRecord
 import com.paper.editor.view.ICanvasView
@@ -55,26 +56,39 @@ class PaperController(private val mUiScheduler: Scheduler,
     private val mGestureHistory = mutableListOf<GestureRecord>()
 
     // Disposables
-    private val mDisposablesOnCreate = CompositeDisposable()
+    private val mDisposablesOnBind = CompositeDisposable()
     private val mDisposablesOnResume = CompositeDisposable()
 
     fun bindView(view: ICanvasView) {
+        if (mCanvasView != null) throw IllegalStateException("Already bind to a view")
+
+        ensureMainThread()
+
         mCanvasView = view
 
+        mDisposablesOnBind.add(
+            view.onLayoutFinished()
+                .take(1)
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // Inflate scraps.
+                    mModel.scraps.forEach { scrap ->
+                        view.addScrapView(scrap)
+                    }
+                })
+
         // TODO: Encapsulate the inflation with a custom Observable.
-        mCanvasView?.setScrapLifecycleListener(this@PaperController)
-        mCanvasView?.setGestureListener(this@PaperController)
-        mCanvasView?.setCanvasSize(mModel.width, mModel.height)
-        mCanvasView?.let { canvasView ->
-            // Inflate scraps.
-            mModel.scraps.forEach { scrap ->
-                canvasView.addScrapView(scrap)
-            }
-        }
+        view.setScrapLifecycleListener(this@PaperController)
+        view.setGestureListener(this@PaperController)
+        view.setCanvasSize(mModel.width, mModel.height)
     }
 
     fun unbindView() {
-        mDisposablesOnCreate.clear()
+        if (mCanvasView == null) throw IllegalStateException("No view to unbind")
+
+        ensureMainThread()
+
+        mDisposablesOnBind.clear()
 
         mCanvasView?.setScrapLifecycleListener(null)
         mCanvasView?.setGestureListener(null)
@@ -90,7 +104,9 @@ class PaperController(private val mUiScheduler: Scheduler,
     ///////////////////////////////////////////////////////////////////////////
     // Paper things ///////////////////////////////////////////////////////////
 
-    fun loadPaper(model: PaperModel) {
+    fun initScrapControllers(model: PaperModel) {
+        ensureMainThread()
+
         mControllers.clear()
 
         mModel = model
@@ -242,7 +258,11 @@ class PaperController(private val mUiScheduler: Scheduler,
     }
 
     ///////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
+
+    private fun ensureMainThread() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw IllegalThreadStateException("Not in MAIN thread")
+        }
+    }
 }

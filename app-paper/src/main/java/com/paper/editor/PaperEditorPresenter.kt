@@ -108,11 +108,11 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                 .subscribe { paper ->
                     // Inflate model where it would create the corresponding
                     // scrap-controllers.
-                    mPaperController.loadPaper(paper)
+                    mPaperController.initScrapControllers(paper)
 
                     // Bind view.
-                    mView?.getCanvasView()?.let { canvas ->
-                        mPaperController.bindView(canvas)
+                    mView?.getCanvasView()?.let { canvasView ->
+                        mPaperController.bindView(canvasView)
                     }
                 })
     }

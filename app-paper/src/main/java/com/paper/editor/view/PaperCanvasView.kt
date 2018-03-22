@@ -25,6 +25,7 @@ import android.graphics.*
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -32,9 +33,12 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
+import com.paper.AppConsts
 import com.paper.R
 import com.paper.shared.model.ScrapModel
 import com.paper.util.TransformUtils
+import io.reactivex.Observable
+import io.reactivex.subjects.BehaviorSubject
 import java.lang.UnsupportedOperationException
 import java.util.*
 
@@ -81,6 +85,9 @@ class PaperCanvasView : FrameLayout,
     private val mSketchPaint = Paint()
     private val mSketchPath = Path()
 
+    // Layout signal
+    private val mLayoutFinishedSignal = BehaviorSubject.create<ICanvasView>()
+
     constructor(context: Context) : this(context, null)
     constructor(context: Context,
                 attrs: AttributeSet?) : this(context, attrs, 0)
@@ -119,6 +126,8 @@ class PaperCanvasView : FrameLayout,
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
+        Log.d("xyz", "PaperCanvasView # onMeasure()")
+
         if (mModelWidth == 0f || mModelHeight == 0f) {
             super.onMeasure(widthSpec, heightSpec)
         } else {
@@ -141,9 +150,12 @@ class PaperCanvasView : FrameLayout,
                           top: Int,
                           right: Int,
                           bottom: Int) {
+        Log.d(AppConsts.TAG, "PaperCanvasView # onLayout(changed=$changed)")
+
         super.onLayout(changed, left, top, right, bottom)
 
-        if (changed) {
+        if (changed &&
+            mModelWidth > 0f && mModelHeight > 0f) {
             val viewWidth = right - left
             val viewHeight = bottom - top
 
@@ -161,6 +173,12 @@ class PaperCanvasView : FrameLayout,
             mViewPort.set(0f, 0f,
                           viewWidth / mScaleFromModelToView,
                           viewHeight / mScaleFromModelToView)
+
+            Log.d(AppConsts.TAG, "Layout with model size and view-port configuration updated.")
+
+            // Notify layout finished.
+            mLayoutFinishedSignal.onNext(this)
+//            mLayoutFinishedSignal.onComplete()
         }
     }
 
@@ -191,6 +209,10 @@ class PaperCanvasView : FrameLayout,
     ///////////////////////////////////////////////////////////////////////////
     // ICanvasView ////////////////////////////////////////////////////////////
 
+    override fun onLayoutFinished(): Observable<ICanvasView> {
+        return mLayoutFinishedSignal
+    }
+
     override fun setCanvasSize(width: Float,
                                height: Float) {
         mModelWidth = width
@@ -217,12 +239,15 @@ class PaperCanvasView : FrameLayout,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT)
 
+                scrapView.setViewToModelScale(1f / mScaleFromModelToView)
                 // TODO: Initialize the view by model?
                 // TODO: Separate the application domain and business domain model.
                 scrapView.setModel(scrap)
 
                 // Add view.
+                Log.d("xyz", "PaperCanvasView # addView()")
                 mRootContainer.addView(scrapView)
+                // child view's mParent is assigned by here.
 
                 // Add to lookup table.
                 mViewLookupTable[id] = scrapView

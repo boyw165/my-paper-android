@@ -24,6 +24,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
@@ -349,6 +350,7 @@ class PaperRepo(private val mAuthority: String,
             }
 
             values.put(PaperTable.COL_SCRAPS, json.toString())
+            Log.d("xyz", json.toString())
         }
 
         return values

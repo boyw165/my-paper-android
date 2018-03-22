@@ -24,10 +24,12 @@ import android.content.Context
 import android.graphics.*
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import com.cardinalblue.gesture.GestureDetector
+import com.paper.AppConsts
 import com.paper.R
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
@@ -35,9 +37,12 @@ import com.paper.util.TransformUtils
 import java.util.*
 
 open class ScrapView : FrameLayout,
-                       IScrapView {
+                       IScrapView,
+                       GestureEventNormalizationHelper.ToCanvasWorldConverter {
 
     private lateinit var mModel: ScrapModel
+
+    private var mViewToModelScale: Float = 1f
 
     // Rendering properties.
     private var mIsCacheDirty: Boolean = true
@@ -58,29 +63,52 @@ open class ScrapView : FrameLayout,
                         resources.getDimension(R.dimen.fling_min_vec),
                         resources.getDimension(R.dimen.fling_max_vec))
     }
+    private val mEventNormalizationHelper by lazy {
+        GestureEventNormalizationHelper(this@ScrapView)
+    }
 
     constructor(context: Context?) : this(context, null)
-
     constructor(context: Context?,
                 attrs: AttributeSet?) : this(context, attrs, 0)
-
     constructor(context: Context?,
                 attrs: AttributeSet?,
-                defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+                defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
+        // Map the events to the canvas world and apply normalization function.
+        mGestureDetector.tapGestureListener = mEventNormalizationHelper
+        mGestureDetector.dragGestureListener = mEventNormalizationHelper
+        mGestureDetector.pinchGestureListener = mEventNormalizationHelper
 
         // Changing the pivot to left-top at the beginning.
         // Note: Changing the pivot will update the rendering matrix, where it
         // is like making the parent see the child in a different angles.
         pivotX = 0f
         pivotY = 0f
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
 
         // Giving a background would make onDraw() able to be called.
         setBackgroundColor(Color.TRANSPARENT)
 
         invalidateRenderingCache()
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+
+        Log.d(AppConsts.TAG, "ScrapView # onMeasure()")
+    }
+
+    override fun onLayout(changed: Boolean,
+                          left: Int,
+                          top: Int,
+                          right: Int,
+                          bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+
+        Log.d(AppConsts.TAG, "ScrapView # onLayout(changed=$changed)")
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -124,10 +152,20 @@ open class ScrapView : FrameLayout,
     override fun setModel(model: ScrapModel) {
         mModel = model
 
+        // Update view transform according to model.
+        setTransform(TransformModel(
+            translationX = mModel.x,
+            translationY = mModel.y,
+            scaleX = mModel.scale,
+            scaleY = mModel.scale,
+            rotationInRadians = mModel.rotationInRadians))
+
         invalidateRenderingCache()
 
         invalidate()
-        requestLayout()
+        if (!isLayoutRequested) {
+            requestLayout()
+        }
     }
 
     override fun getScrapId(): UUID {
@@ -137,46 +175,21 @@ open class ScrapView : FrameLayout,
     // Gesture ////////////////////////////////////////////////////////////////
 
     override fun setGestureListener(listener: SimpleGestureListener?) {
-        mGestureDetector.tapGestureListener = listener
-        mGestureDetector.dragGestureListener = listener
-        mGestureDetector.pinchGestureListener = listener
+        mEventNormalizationHelper.setGestureListener(listener)
     }
 
     // Transform //////////////////////////////////////////////////////////////
 
-    override fun getTransform(): TransformModel {
-        return TransformModel(
-            translationX = this.translationX,
-            translationY = this.translationY,
-            scaleX = this.scaleX,
-            scaleY = this.scaleY,
-            rotationInRadians = Math.toRadians(this.rotation.toDouble()).toFloat())
+    override fun mapToCanvasWorld(nums: FloatArray) {
+        matrix.mapPoints(nums)
     }
 
     override fun setTransform(transform: TransformModel) {
         scaleX = transform.scaleX
         scaleY = transform.scaleY
         rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
-        translationX = transform.translationX
-        translationY = transform.translationY
-    }
-
-    override fun getTransformMatrix(): Matrix {
-        return matrix
-    }
-
-    override fun setTransformPivot(px: Float,
-                                   py: Float) {
-        pivotX = px
-        pivotY = py
-    }
-
-    override fun convertPointToParentWorld(point: FloatArray) {
-        matrix.mapPoints(point)
-    }
-
-    override fun normalizePointer(p: PointF): PointF {
-        return PointF(p.x / width, p.y / height)
+        translationX = mEventNormalizationHelper.inverseNormalizationToX(transform.translationX)
+        translationY = mEventNormalizationHelper.inverseNormalizationToY(transform.translationY)
     }
 
     // Rendering //////////////////////////////////////////////////////////////
@@ -187,33 +200,41 @@ open class ScrapView : FrameLayout,
         mIsCacheDirty = true
     }
 
+    // Parent /////////////////////////////////////////////////////////////////
+
+    fun setViewToModelScale(scale: Float) {
+        mViewToModelScale = scale
+
+        // Also update the event normalization helper.
+        mEventNormalizationHelper.setNormalizationFactors(
+            mViewToModelScale, mViewToModelScale)
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun validateRenderingCache() {
         if (!mIsCacheDirty) return
 
-        // Translation.
-        translationX = mModel.x * width
-        translationY = mModel.y * height
-
         // Boundary.
         var left = Float.MAX_VALUE
         var top = Float.MAX_VALUE
         var right = Float.MIN_VALUE
         var bottom = Float.MIN_VALUE
-        mModel.sketch?.allStrokes?.forEach { stroke ->
-            stroke.allPathTuple.forEach { tuple ->
-                left = Math.min(left, tuple.firstPoint.x)
-                top = Math.min(top, tuple.firstPoint.y)
-                right = Math.max(right, tuple.firstPoint.x)
-                bottom = Math.max(bottom, tuple.firstPoint.y)
+        mModel.sketch?.let { sketch ->
+            sketch.allStrokes.forEach { stroke ->
+                stroke.allPathTuple.forEach { tuple ->
+                    left = Math.min(left, tuple.firstPoint.x)
+                    top = Math.min(top, tuple.firstPoint.y)
+                    right = Math.max(right, tuple.firstPoint.x)
+                    bottom = Math.max(bottom, tuple.firstPoint.y)
+                }
             }
+            mScrapBound.set(left * width,
+                            top * height,
+                            right * width,
+                            bottom * height)
         }
-        mScrapBound.set(left * width,
-                        top * height,
-                        right * width,
-                        bottom * height)
 
         // Path for sketch.
         rebuildSketchPath()

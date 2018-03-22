@@ -22,5 +22,7 @@ package com.paper
 
 object AppConsts {
 
+    const val TAG = "paper"
+
     const val PARAMS_PAPER_ID = "params_paper_id"
 }

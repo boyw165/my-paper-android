@@ -145,7 +145,6 @@ class PaperEditorActivity : AppCompatActivity(),
     override fun onDestroy() {
         super.onDestroy()
 
-        mPaperController.unbindView()
         mEditorPresenter.unbindViewOnDestroy()
 
         //        // Force to hide the progress-bar.
