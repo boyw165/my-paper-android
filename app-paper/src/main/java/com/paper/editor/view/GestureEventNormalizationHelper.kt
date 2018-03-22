@@ -23,16 +23,19 @@ package com.paper.editor.view
 import android.graphics.PointF
 import com.cardinalblue.gesture.MyMotionEvent
 
-class GestureEventNormalizationHelper(
-    private val mConverter: ToCanvasWorldConverter)
-    : SimpleGestureListener() {
+class GestureEventNormalizationHelper : SimpleGestureListener() {
 
     private var mXFactor: Float = 1f
     private var mYFactor: Float = 1f
 
+    private val mNumbersMap = floatArrayOf(0f, 0f)
+    private var mMapper: Mapper? = null
+
     private var mListener: SimpleGestureListener? = null
 
-    private val mNumbersMap = floatArrayOf(0f, 0f)
+    fun setNumberMapper(mapper: Mapper?) {
+        mMapper = mapper
+    }
 
     fun setNormalizationFactors(x: Float, y: Float) {
         mXFactor = x
@@ -157,23 +160,23 @@ class GestureEventNormalizationHelper(
             maskedAction = event.maskedAction,
             downXs = FloatArray(downXs.size, { i ->
                 mNumbersMap[0] = downXs[i]
-                mConverter.mapToCanvasWorld(mNumbersMap)
+                mMapper?.map(mNumbersMap)
                 mNumbersMap[0] * mXFactor
             }),
             downYs = FloatArray(downYs.size, { i ->
                 mNumbersMap[0] = downYs[i]
-                mConverter.mapToCanvasWorld(mNumbersMap)
+                mMapper?.map(mNumbersMap)
                 mNumbersMap[0] * mYFactor
             }),
             isUp = event.isUp,
             upX = event.upX.let { x ->
                 mNumbersMap[0] = x
-                mConverter.mapToCanvasWorld(mNumbersMap)
+                mMapper?.map(mNumbersMap)
                 mNumbersMap[0] * mXFactor
             },
             upY = event.upY.let { y ->
                 mNumbersMap[0] = y
-                mConverter.mapToCanvasWorld(mNumbersMap)
+                mMapper?.map(mNumbersMap)
                 mNumbersMap[0] * mYFactor
             })
     }
@@ -181,7 +184,7 @@ class GestureEventNormalizationHelper(
     private fun normalizePointer(pt: PointF): PointF {
         mNumbersMap[0] = pt.x
         mNumbersMap[1] = pt.y
-        mConverter.mapToCanvasWorld(mNumbersMap)
+        mMapper?.map(mNumbersMap)
 
         return PointF(mNumbersMap[0] * mXFactor,
                       mNumbersMap[1] * mYFactor)
@@ -191,7 +194,7 @@ class GestureEventNormalizationHelper(
         return Array(pts.size, { i ->
             mNumbersMap[0] = pts[i].x
             mNumbersMap[1] = pts[i].y
-            mConverter.mapToCanvasWorld(mNumbersMap)
+            mMapper?.map(mNumbersMap)
 
             PointF(mNumbersMap[0] * mXFactor,
                    mNumbersMap[1] * mYFactor)
@@ -201,8 +204,8 @@ class GestureEventNormalizationHelper(
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    interface ToCanvasWorldConverter {
+    interface Mapper {
 
-        fun mapToCanvasWorld(nums: FloatArray)
+        fun map(nums: FloatArray)
     }
 }

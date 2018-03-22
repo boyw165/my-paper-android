@@ -38,7 +38,7 @@ import java.util.*
 
 open class ScrapView : FrameLayout,
                        IScrapView,
-                       GestureEventNormalizationHelper.ToCanvasWorldConverter {
+                       GestureEventNormalizationHelper.Mapper {
 
     private lateinit var mModel: ScrapModel
 
@@ -64,7 +64,7 @@ open class ScrapView : FrameLayout,
                         resources.getDimension(R.dimen.fling_max_vec))
     }
     private val mEventNormalizationHelper by lazy {
-        GestureEventNormalizationHelper(this@ScrapView)
+        GestureEventNormalizationHelper()
     }
 
     constructor(context: Context?) : this(context, null)
@@ -73,7 +73,6 @@ open class ScrapView : FrameLayout,
     constructor(context: Context?,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-
         // Map the events to the canvas world and apply normalization function.
         mGestureDetector.tapGestureListener = mEventNormalizationHelper
         mGestureDetector.dragGestureListener = mEventNormalizationHelper
@@ -88,6 +87,10 @@ open class ScrapView : FrameLayout,
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+
+        // Enable helper of converting the event from this coordinate to canvas
+        // coordinate.
+        mEventNormalizationHelper.setNumberMapper(this@ScrapView)
 
         // Giving a background would make onDraw() able to be called.
         setBackgroundColor(Color.TRANSPARENT)
@@ -180,7 +183,7 @@ open class ScrapView : FrameLayout,
 
     // Transform //////////////////////////////////////////////////////////////
 
-    override fun mapToCanvasWorld(nums: FloatArray) {
+    override fun map(nums: FloatArray) {
         matrix.mapPoints(nums)
     }
 
