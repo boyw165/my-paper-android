@@ -22,6 +22,7 @@ package com.paper.editor.view
 
 import android.graphics.PointF
 import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.sketch.SketchStroke
 import io.reactivex.Observable
 import java.util.*
 
@@ -54,9 +55,9 @@ interface ICanvasView : IScrapLifecycleListener {
 
     // Sketch /////////////////////////////////////////////////////////////////
 
-    fun startDrawSketch(x: Float, y: Float)
+    fun startDrawStroke(x: Float, y: Float)
 
-    fun onDrawSketch(x: Float, y: Float)
+    fun onDrawStroke(x: Float, y: Float)
 
-    fun stopDrawSketch()
+    fun stopDrawStroke(): SketchStroke
 }

@@ -32,15 +32,11 @@ class PathTuple {
 
     private val mPoints = ArrayList<PointF>()
 
-    constructor() {
-        // EMPTY.
-    }
-
+    constructor() : this(0f, 0f)
     constructor(x: Float,
                 y: Float) {
         addPoint(x, y)
     }
-
     constructor(other: PathTuple) {
         mPoints.clear()
         other.allPoints.forEach { pt ->
@@ -52,9 +48,11 @@ class PathTuple {
         mPoints.add(PointF(x, y))
     }
 
+    // TODO: Copy and return.
     fun getPointAt(position: Int): PointF = mPoints[position]
 
     val firstPoint: PointF
+        // TODO: Copy and return.
         get() = mPoints[0]
 
     val lastPoint: PointF
@@ -64,7 +62,22 @@ class PathTuple {
         get() = mPoints.size
 
     val allPoints: List<PointF>
+        // TODO: Copy and return.
         get() = mPoints
+
+    fun scale(scale: Float) {
+        mPoints.forEach { pt ->
+            pt.x = scale * pt.x
+            pt.y = scale * pt.y
+        }
+    }
+
+    fun translate(tx: Float, ty: Float) {
+        mPoints.forEach { pt ->
+            pt.x += tx
+            pt.y += ty
+        }
+    }
 
     override fun toString(): String {
         return "PathTuple[" +

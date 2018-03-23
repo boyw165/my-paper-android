@@ -30,9 +30,7 @@ import com.paper.editor.view.IScrapView
 import com.paper.editor.view.SimpleGestureListener
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.SketchModel
-import com.paper.shared.model.sketch.SketchStroke
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import java.util.*
@@ -47,7 +45,6 @@ class PaperController(private val mUiScheduler: Scheduler,
 
     // Model.
     private lateinit var mModel: PaperModel
-    private val mTmpStroke = SketchStroke()
 
     // Sub controllers.
     private val mControllers: HashMap<UUID, IScrapController> = hashMapOf()
@@ -170,12 +167,8 @@ class PaperController(private val mUiScheduler: Scheduler,
         val x = event.downFocusX
         val y = event.downFocusY
 
-        mTmpStroke.width = 0.2f
-        mTmpStroke.clearAllPathTuple()
-        mTmpStroke.addPathTuple(PathTuple(x, y))
-
         // Notify view.
-        mCanvasView!!.startDrawSketch(x, y)
+        mCanvasView!!.startDrawStroke(x, y)
     }
 
     override fun onDrag(event: MyMotionEvent,
@@ -189,10 +182,8 @@ class PaperController(private val mUiScheduler: Scheduler,
         val x = event.downFocusX
         val y = event.downFocusY
 
-        mTmpStroke.addPathTuple(PathTuple(x, y))
-
         // Notify view.
-        mCanvasView!!.onDrawSketch(x, y)
+        mCanvasView!!.onDrawStroke(x, y)
     }
 
     override fun onDragEnd(event: MyMotionEvent,
@@ -203,22 +194,16 @@ class PaperController(private val mUiScheduler: Scheduler,
         // If PINCH is ever present, skip drawing sketch.
         if (mGestureHistory.contains(GestureRecord.PINCH)) return
 
-        val x = event.downFocusX
-        val y = event.downFocusY
-
-        mTmpStroke.addPathTuple(PathTuple(x, y))
-
         // Notify view.
-        mCanvasView!!.stopDrawSketch()
+        val stroke = mCanvasView!!.stopDrawStroke()
 
-        // TODO: Normalize the strokes.
         // Commit the temporary scrap.
-        val strokeBoundLeft = mTmpStroke.bound.left
-        val strokeBoundTop = mTmpStroke.bound.top
-        mTmpStroke.offset(-strokeBoundLeft, -strokeBoundTop)
+        val strokeBoundLeft = stroke.bound.left
+        val strokeBoundTop = stroke.bound.top
+        stroke.offset(-strokeBoundLeft, -strokeBoundTop)
 
         val sketch = SketchModel()
-        sketch.addStroke(mTmpStroke.copy())
+        sketch.addStroke(stroke)
         val scrap = ScrapModel()
         scrap.x = strokeBoundLeft
         scrap.y = strokeBoundTop

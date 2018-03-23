@@ -36,6 +36,8 @@ import com.cardinalblue.gesture.GestureDetector
 import com.paper.AppConsts
 import com.paper.R
 import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.sketch.PathTuple
+import com.paper.shared.model.sketch.SketchStroke
 import com.paper.util.TransformUtils
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
@@ -80,6 +82,9 @@ class PaperCanvasView : FrameLayout,
     private val mMatrixFromViewToModel = Matrix()
 
     // View port.
+    /**
+     * The view-port boundary relative to model boundary.
+     */
     private val mViewPort = RectF()
     private val mViewPortStart = RectF()
     private val mViewPortPaint = Paint()
@@ -88,8 +93,9 @@ class PaperCanvasView : FrameLayout,
 
     // Rendering resource.
     private val mGridPaint = Paint()
-    private val mSketchPaint = Paint()
-    private val mSketchPath = Path()
+    private val mStrokePaint = Paint()
+    private val mStrokePath = Path()
+    private val mStrokePathTupleList = mutableListOf<PathTuple>()
 
     // Layout signal
     private val mLayoutFinishedSignal = BehaviorSubject.create<ICanvasView>()
@@ -111,9 +117,9 @@ class PaperCanvasView : FrameLayout,
         mGridPaint.style = Paint.Style.STROKE
         mGridPaint.strokeWidth = oneDp
 
-        mSketchPaint.strokeWidth = oneDp
-        mSketchPaint.color = Color.BLACK
-        mSketchPaint.style = Paint.Style.STROKE
+        mStrokePaint.strokeWidth = oneDp
+        mStrokePaint.color = Color.BLACK
+        mStrokePaint.style = Paint.Style.STROKE
 
         // For showing the relative boundary of view-port and model.
         mModelBoundPaint.color = Color.RED
@@ -203,7 +209,7 @@ class PaperCanvasView : FrameLayout,
         drawBoundAndGrid(canvas)
 
         // SketchModel.
-        canvas.drawPath(mSketchPath, mSketchPaint)
+        canvas.drawPath(mStrokePath, mStrokePaint)
 
         // Display the view-port relative boundary to the model.
         drawMeter(canvas)
@@ -394,27 +400,48 @@ class PaperCanvasView : FrameLayout,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    override fun startDrawSketch(x: Float, y: Float) {
-        mSketchPath.reset()
-        mSketchPath.moveTo(mEventNormalizationHelper.inverseNormalizationToX(x),
+    override fun startDrawStroke(x: Float, y: Float) {
+        mStrokePath.reset()
+        mStrokePath.moveTo(mEventNormalizationHelper.inverseNormalizationToX(x),
                            mEventNormalizationHelper.inverseNormalizationToY(y))
-        mSketchPath.lineTo(mEventNormalizationHelper.inverseNormalizationToX(x),
+        mStrokePath.lineTo(mEventNormalizationHelper.inverseNormalizationToX(x),
                            mEventNormalizationHelper.inverseNormalizationToY(y))
+
+        mStrokePathTupleList.clear()
+        mStrokePathTupleList.add(PathTuple(x, y))
 
         invalidate()
     }
 
-    override fun onDrawSketch(x: Float, y: Float) {
-        mSketchPath.lineTo(mEventNormalizationHelper.inverseNormalizationToX(x),
+    override fun onDrawStroke(x: Float, y: Float) {
+        mStrokePath.lineTo(mEventNormalizationHelper.inverseNormalizationToX(x),
                            mEventNormalizationHelper.inverseNormalizationToY(y))
+
+        mStrokePathTupleList.add(PathTuple(x, y))
 
         invalidate()
     }
 
-    override fun stopDrawSketch() {
-        mSketchPath.reset()
+    override fun stopDrawStroke(): SketchStroke {
+        mStrokePath.reset()
+
+        val sketchStroke = SketchStroke()
+        // Map tuple list to model world by also considering view-port transform.
+        val offsetX = mViewPort.left
+        val offsetY = mViewPort.top
+        val scale = Math.max(mViewPort.width() / mModelWidth,
+                             mViewPort.height() / mModelHeight)
+        mStrokePathTupleList.forEach { tuple ->
+            tuple.scale(scale)
+            tuple.translate(offsetX, offsetY)
+
+            sketchStroke.addPathTuple(tuple)
+        }
+        mStrokePathTupleList.clear()
 
         invalidate()
+
+        return sketchStroke
     }
 
     ///////////////////////////////////////////////////////////////////////////
