@@ -45,9 +45,12 @@ import java.util.*
 class PaperCanvasView : FrameLayout,
                         ICanvasView {
 
-    // Views.
+    // Scraps.
     private val mViewLookupTable = hashMapOf<UUID, View>()
+
+    // Container.
     private val mRootContainer by lazy { FrameLayout(context, null) }
+    private val mRootContainerBound = RectF()
 
     // View-Models.
     private var mModelWidth: Float = 0f
@@ -352,20 +355,14 @@ class PaperCanvasView : FrameLayout,
         mTmpMatrix.postTranslate(dx, dy)
 
         // Use the matrix to get the container boundary.
-        mPointerMap[0] = 0f
-        mPointerMap[1] = 0f
-        mTmpMatrix.mapPoints(mPointerMap)
-        val containerLeftTop = PointF(mPointerMap[0], mPointerMap[1])
-        mPointerMap[0] = width.toFloat()
-        mPointerMap[1] = height.toFloat()
-        mTmpMatrix.mapPoints(mPointerMap)
-        val containerRightBottom = PointF(mPointerMap[0], mPointerMap[1])
+        mRootContainerBound.set(0f, 0f, width.toFloat(), height.toFloat())
+        mTmpMatrix.mapRect(mRootContainerBound)
 
         // Infer the view-port by above container boundary.
         mViewPort.set(0f, 0f, mModelWidth, mModelHeight)
-        val viewPortScale = width.toFloat() / (containerRightBottom.x - containerLeftTop.x)
-        val viewPortTx = -containerLeftTop.x / mModelToViewScale
-        val viewPortTy = -containerLeftTop.y / mModelToViewScale
+        val viewPortScale = width.toFloat() / mRootContainerBound.width()
+        val viewPortTx = -mRootContainerBound.left / mModelToViewScale
+        val viewPortTy = -mRootContainerBound.top / mModelToViewScale
         mTmpMatrix.reset()
         mTmpMatrix.postTranslate(viewPortTx, viewPortTy)
         mTmpMatrix.postScale(viewPortScale, viewPortScale, 0f, 0f)
