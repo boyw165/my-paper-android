@@ -97,12 +97,16 @@ class PaperCanvasView : FrameLayout,
     private val mStrokePath = Path()
     private val mStrokePathTupleList = mutableListOf<PathTuple>()
 
+    // Export.
+    private val mBackgroundPaint = Paint()
+
     // Layout signal
     private val mLayoutFinishedSignal = BehaviorSubject.create<ICanvasView>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context,
                 attrs: AttributeSet?) : this(context, attrs, 0)
+
     constructor(context: Context,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
@@ -120,6 +124,9 @@ class PaperCanvasView : FrameLayout,
         mStrokePaint.strokeWidth = oneDp
         mStrokePaint.color = Color.BLACK
         mStrokePaint.style = Paint.Style.STROKE
+
+        mBackgroundPaint.style = Paint.Style.FILL
+        mBackgroundPaint.color = Color.WHITE
 
         // For showing the relative boundary of view-port and model.
         mModelBoundPaint.color = Color.RED
@@ -177,7 +184,7 @@ class PaperCanvasView : FrameLayout,
 
             // Hold the scale factor.
             mModelToViewScale = Math.min(viewWidth / mModelWidth,
-                                             viewHeight / mModelHeight)
+                                         viewHeight / mModelHeight)
 
             // Also update the event normalization helper.
             mEventNormalizationHelper.setNormalizationFactors(
@@ -198,7 +205,7 @@ class PaperCanvasView : FrameLayout,
 
             // Notify layout finished.
             mLayoutFinishedSignal.onNext(this)
-//            mLayoutFinishedSignal.onComplete()
+            //            mLayoutFinishedSignal.onComplete()
         }
     }
 
@@ -231,6 +238,20 @@ class PaperCanvasView : FrameLayout,
 
     override fun onLayoutFinished(): Observable<ICanvasView> {
         return mLayoutFinishedSignal
+    }
+
+    override fun takeSnapshot(): Bitmap {
+        val bmp = Bitmap.createBitmap((mModelToViewScale * mModelWidth).toInt(),
+                                      (mModelToViewScale * mModelHeight).toInt(),
+                                      Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+
+        canvas.drawRect(0f, 0f,
+                        bmp.width.toFloat(), bmp.height.toFloat(),
+                        mBackgroundPaint)
+        mRootContainer.draw(canvas)
+
+        return bmp
     }
 
     override fun setCanvasSize(width: Float,

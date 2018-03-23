@@ -20,6 +20,7 @@
 
 package com.paper.editor.view
 
+import android.graphics.Bitmap
 import android.graphics.PointF
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.sketch.SketchStroke
@@ -29,6 +30,8 @@ import java.util.*
 interface ICanvasView : IScrapLifecycleListener {
 
     fun onLayoutFinished(): Observable<ICanvasView>
+
+    fun takeSnapshot(): Bitmap
 
     // Scrap manipulation /////////////////////////////////////////////////////
 

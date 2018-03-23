@@ -20,13 +20,20 @@
 
 package com.paper.editor
 
+import android.graphics.Bitmap
+import android.os.Environment
 import com.paper.event.ProgressEvent
 import com.paper.protocol.IPresenter
 import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
+import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 class PaperEditorPresenter(private val mPaperController: PaperController,
@@ -54,16 +61,13 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
         mDisposablesOnCreate.add(
             mView!!.onClickCloseButton()
                 .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(mWorkerScheduler)
+                .switchMap {
+                    commitPaperById(mPaperId)
+                    return@switchMap Observable.just(0)
+                }
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    // TODO: Remove the try-catch until the updating existing
-                    // TODO: paper is finished.
-                    try {
-                        commitPaperById(mPaperId)
-                    } catch (err: Throwable) {
-                        // DO NOTHING.
-                    }
-
                     mView?.close()
                 })
 
@@ -121,6 +125,28 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun commitPaperById(id: Long) {
+        val paper = mPaperController.getPaper()
+
+        mView?.getCanvasView()?.let { canvasView ->
+            val dir = File("${Environment.getExternalStorageDirectory()}/paper")
+            if (!dir.exists()) {
+                dir.mkdir()
+            }
+
+            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+            val bmp = canvasView.takeSnapshot()
+            val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
+                               "$ts.jpg")
+
+            FileOutputStream(bmpFile).use { out ->
+                bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+            }
+
+            paper.thumbnailWidth = bmp.width
+            paper.thumbnailHeight = bmp.height
+            paper.thumbnailPath = bmpFile.canonicalPath
+        }
+
         mPaperRepo.putPaperById(id, mPaperController.getPaper())
     }
 }
