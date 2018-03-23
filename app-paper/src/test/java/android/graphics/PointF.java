@@ -6,12 +6,12 @@ public class PointF {
     public final float y;
 
     public PointF(float x, float y) {
-        this.x = x;
-        this.y = y;
+        this.setX(x);
+        this.setY(y);
     }
 
     @Override
     public String toString() {
-        return "PointF(" + x + ", " + y + ")";
+        return "PointF(" + getX() + ", " + getY() + ")";
     }
 }

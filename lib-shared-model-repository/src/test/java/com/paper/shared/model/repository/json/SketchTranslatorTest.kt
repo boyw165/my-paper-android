@@ -1,27 +1,52 @@
-//  Copyright Sep 2017-present boyw165@gmail.com
+// Copyright Mar 2017-present boyw165@gmail.com
 //
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
 //
-//  http://www.apache.org/licenses/LICENSE-2.0
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
 //
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 
 package com.paper.shared.model.repository.json
 
+import android.graphics.PointF
 import com.google.gson.GsonBuilder
 import com.paper.shared.model.sketch.SketchModel
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 import java.io.FileReader
 
+//@RunWith(MockitoJUnitRunner::class)
 class SketchTranslatorTest {
+
+//    val mPoints = floatArrayOf(0f, 0f)
+//
+//    @Before
+//    fun setup() {
+//        val pt = Mockito.mock(PointF::class.java)
+//
+//        Mockito.`when`(pt).then { x, y ->
+//            mPoints[0] = x
+//        }()
+//        Mockito.`when`(pt.x).thenReturn(mPoints[0])
+//        Mockito.`when`(pt.y).thenReturn(mPoints[1])
+//    }
 
     @Test
     fun deserializeSketch_With_ThreeDots() {
@@ -34,11 +59,11 @@ class SketchTranslatorTest {
         Assert.assertEquals(3, model.strokeSize)
 
         // Check color of the first stroke.
-        Assert.assertEquals(0xFFED4956.toInt(), model.getStrokeAt(0).getColor())
+        Assert.assertEquals(0xFFED4956.toInt(), model.getStrokeAt(0).color)
         // Check color of the second stroke.
-        Assert.assertEquals(0xFF70C050.toInt(), model.getStrokeAt(1).getColor())
+        Assert.assertEquals(0xFF70C050.toInt(), model.getStrokeAt(1).color)
         // Check color of the third stroke.
-        Assert.assertEquals(0xFF3897F0.toInt(), model.getStrokeAt(2).getColor())
+        Assert.assertEquals(0xFF3897F0.toInt(), model.getStrokeAt(2).color)
 
         // Every dot stroke has just one tuple-point.
         for (stroke in model.allStrokes) {
