@@ -35,11 +35,13 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.AppConsts
 import com.paper.R
-import com.paper.gallery.*
+import com.paper.gallery.PaperGalleryContract
+import com.paper.gallery.PaperGalleryPresenter
 import com.paper.gallery.view.IOnClickPaperThumbnailListener
 import com.paper.gallery.view.PaperThumbnailEpoxyController
+import com.paper.protocol.IPaperRepoProvider
 import com.paper.shared.model.PaperModel
-import com.paper.shared.model.repository.PaperRepo
+import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -87,12 +89,8 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     // Repo.
-    // TODO: Inject the repo.
-    private val mPaperRepo: PaperRepo by lazy {
-        PaperRepo(packageName,
-                  contentResolver,
-                  externalCacheDir,
-                  Schedulers.io())
+    private val mPaperRepo: IPaperModelRepo by lazy {
+        (application as IPaperRepoProvider).getRepo()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

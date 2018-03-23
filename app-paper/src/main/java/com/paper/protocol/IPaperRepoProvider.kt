@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,34 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view
+package com.paper.protocol
 
-import android.support.multidex.MultiDexApplication
-import com.paper.protocol.IDatabaseIOSchedulerProvider
-import com.paper.protocol.IPaperRepoProvider
-import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
-import io.reactivex.Scheduler
-import io.reactivex.internal.schedulers.SingleScheduler
 
-class PaperApplication : MultiDexApplication(),
-                         IDatabaseIOSchedulerProvider,
-                         IPaperRepoProvider {
+interface IPaperRepoProvider {
 
-    // Database.
-    private val mPaperRepo: PaperRepo by lazy {
-        PaperRepo(packageName,
-                  contentResolver,
-                  externalCacheDir,
-                  getScheduler())
-    }
-    private val mDbScheduler = SingleScheduler()
-
-    override fun getRepo(): IPaperModelRepo {
-        return mPaperRepo
-    }
-
-    override fun getScheduler(): Scheduler {
-        return mDbScheduler
-    }
+    fun getRepo(): IPaperModelRepo
 }

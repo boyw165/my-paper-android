@@ -23,7 +23,7 @@ package com.paper.gallery
 import android.Manifest
 import com.paper.event.ProgressEvent
 import com.paper.shared.model.PaperConsts
-import com.paper.shared.model.repository.PaperRepo
+import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -32,7 +32,7 @@ import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
 class PaperGalleryPresenter(private val mPermission: RxPermissions,
-                            private val mRepo: PaperRepo,
+                            private val mRepo: IPaperModelRepo,
                             private val mUiScheduler: Scheduler,
                             private val mWorkerScheduler: Scheduler) {
 

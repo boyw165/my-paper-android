@@ -25,6 +25,7 @@ import android.os.Environment
 import com.paper.event.ProgressEvent
 import com.paper.protocol.IPresenter
 import com.paper.shared.model.PaperConsts
+import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -62,11 +63,9 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
             mView!!.onClickCloseButton()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .take(1)
-                .observeOn(mWorkerScheduler)
-                .switchMap {
-                    commitPaperById(mPaperId)
-                    return@switchMap Observable.just(0)
-                }
+                .map { mPaperController.getPaper() }
+                .switchMap { paper -> updateThumbnail(paper) }
+                .switchMap { paper -> commitPaper(paper) }
                 .observeOn(mUiScheduler)
                 .subscribe {
                     mView?.close()
@@ -125,29 +124,39 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun commitPaperById(id: Long) {
-        val paper = mPaperController.getPaper()
+    private fun updateThumbnail(paper: PaperModel): Observable<PaperModel> {
+        return Observable
+            .fromCallable {
+                mView?.getCanvasView()?.let { canvasView ->
+                    val dir = File("${Environment.getExternalStorageDirectory()}/paper")
+                    if (!dir.exists()) {
+                        dir.mkdir()
+                    }
 
-        mView?.getCanvasView()?.let { canvasView ->
-            val dir = File("${Environment.getExternalStorageDirectory()}/paper")
-            if (!dir.exists()) {
-                dir.mkdir()
+                    val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+                    val bmp = canvasView.takeSnapshot()
+                    val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
+                                       "$ts.jpg")
+
+                    FileOutputStream(bmpFile).use { out ->
+                        bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                    }
+
+                    paper.thumbnailWidth = bmp.width
+                    paper.thumbnailHeight = bmp.height
+                    paper.thumbnailPath = bmpFile.canonicalPath
+                }
+
+                return@fromCallable paper
             }
+            .subscribeOn(mWorkerScheduler)
+    }
 
-            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-            val bmp = canvasView.takeSnapshot()
-            val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
-                               "$ts.jpg")
-
-            FileOutputStream(bmpFile).use { out ->
-                bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+    private fun commitPaper(paper: PaperModel): Observable<PaperModel> {
+        return Observable
+            .fromCallable {
+                mPaperRepo.putPaperById(paper.id, paper)
+                return@fromCallable paper
             }
-
-            paper.thumbnailWidth = bmp.width
-            paper.thumbnailHeight = bmp.height
-            paper.thumbnailPath = bmpFile.canonicalPath
-        }
-
-        mPaperRepo.putPaperById(id, paper)
     }
 }

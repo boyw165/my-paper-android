@@ -47,7 +47,7 @@ import java.util.*
 class PaperRepo(private val mAuthority: String,
                 private val mResolver: ContentResolver,
                 private val mCacheDirFile: File,
-                private val mIoScheduler: Scheduler) : IPaperModelRepo {
+                private val mDbIoScheduler: Scheduler) : IPaperModelRepo {
 
     private val mTempFile by lazy { File(mCacheDirFile, "$mAuthority.temp_paper") }
 
@@ -107,7 +107,7 @@ class PaperRepo(private val mAuthority: String,
                 // Return..
                 papers
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun getPaperById(id: Long): Single<PaperModel> {
@@ -182,7 +182,7 @@ class PaperRepo(private val mAuthority: String,
 
                 return@fromCallable 100
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
             // FIXME: The insertion might happen after refreshing the list.
             // FIXME: Solution could be using a single thread scheduler.
             .subscribe()
@@ -198,7 +198,7 @@ class PaperRepo(private val mAuthority: String,
                 // TODO: Implement it.
                 return@fromCallable true
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun deletePaperById(id: Long): Observable<Boolean> {
@@ -244,7 +244,7 @@ class PaperRepo(private val mAuthority: String,
 
                 return@fromCallable paper
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun hasTempPaper(): Observable<Boolean> {
@@ -252,7 +252,7 @@ class PaperRepo(private val mAuthority: String,
             .fromCallable {
                 mTempFile.exists()
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun getTempPaper(): Single<PaperModel> {
@@ -275,7 +275,7 @@ class PaperRepo(private val mAuthority: String,
                 // Return..
                 newPaper
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun newTempPaper(caption: String): Single<PaperModel> {
@@ -298,7 +298,7 @@ class PaperRepo(private val mAuthority: String,
                 // Return..
                 newPaper
             }
-            .subscribeOn(mIoScheduler)
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun newTempPaper(other: PaperModel): Observable<PaperModel> {

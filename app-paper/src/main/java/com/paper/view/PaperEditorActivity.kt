@@ -38,9 +38,9 @@ import com.paper.editor.PaperEditorPresenter
 import com.paper.editor.view.ICanvasView
 import com.paper.editor.view.PaperCanvasView
 import com.paper.protocol.IContextProvider
+import com.paper.protocol.IPaperRepoProvider
 import com.paper.shared.model.PaperConsts
-import com.paper.shared.model.repository.PaperRepo
-import com.paper.shared.model.repository.SketchRepo
+import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -66,17 +66,8 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // Repositories.
     // TODO: Inject the repo.
-    private val mPaperRepo: PaperRepo by lazy {
-        PaperRepo(packageName,
-                  contentResolver,
-                  externalCacheDir,
-                  Schedulers.io())
-    }
-    private val mSketchRepo: SketchRepo by lazy {
-        SketchRepo(packageName,
-                   contentResolver,
-                   externalCacheDir,
-                   Schedulers.io())
+    private val mPaperRepo: IPaperModelRepo by lazy {
+        (application as IPaperRepoProvider).getRepo()
     }
 
     // Presenters and controllers.
@@ -89,7 +80,7 @@ class PaperEditorActivity : AppCompatActivity(),
         PaperEditorPresenter(mPaperController,
                              mPaperRepo,
                              AndroidSchedulers.mainThread(),
-                             Schedulers.io())
+                             Schedulers.single())
     }
 
     override fun onCreate(savedState: Bundle?) {
