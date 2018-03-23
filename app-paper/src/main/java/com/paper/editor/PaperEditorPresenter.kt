@@ -155,8 +155,11 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
     private fun commitPaper(paper: PaperModel): Observable<PaperModel> {
         return Observable
             .fromCallable {
+                paper.modifiedAt = getCurrentTime()
                 mPaperRepo.putPaperById(paper.id, paper)
                 return@fromCallable paper
             }
     }
+
+    private fun getCurrentTime(): Long = System.currentTimeMillis() / 1000
 }
