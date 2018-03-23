@@ -256,7 +256,7 @@ class PaperCanvasView : FrameLayout,
                 scrapView.setModel(scrap)
 
                 // Add view.
-                Log.d("xyz", "PaperCanvasView # addView()")
+                Log.d(AppConsts.TAG, "PaperCanvasView # addView()")
                 mRootContainer.addView(scrapView)
                 // child view's mParent is assigned by here.
 

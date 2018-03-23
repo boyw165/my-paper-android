@@ -99,9 +99,16 @@ open class ScrapView : FrameLayout,
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-
         Log.d(AppConsts.TAG, "ScrapView # onMeasure()")
+
+        validateRenderingCache()
+
+        val expectedWidth = mScrapBound.width()
+        val expectedHeight = mScrapBound.height()
+        super.onMeasure(MeasureSpec.makeMeasureSpec(expectedWidth.toInt(),
+                                                    MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(expectedHeight.toInt(),
+                                                    MeasureSpec.EXACTLY))
     }
 
     override fun onLayout(changed: Boolean,
@@ -171,6 +178,14 @@ open class ScrapView : FrameLayout,
         }
     }
 
+    fun setViewToModelScale(scale: Float) {
+        mViewToModelScale = scale
+
+        // Also update the event normalization helper.
+        mEventNormalizationHelper.setNormalizationFactors(
+            mViewToModelScale, mViewToModelScale)
+    }
+
     override fun getScrapId(): UUID {
         return mModel.uuid
     }
@@ -203,16 +218,6 @@ open class ScrapView : FrameLayout,
         mIsCacheDirty = true
     }
 
-    // Parent /////////////////////////////////////////////////////////////////
-
-    fun setViewToModelScale(scale: Float) {
-        mViewToModelScale = scale
-
-        // Also update the event normalization helper.
-        mEventNormalizationHelper.setNormalizationFactors(
-            mViewToModelScale, mViewToModelScale)
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
@@ -220,6 +225,15 @@ open class ScrapView : FrameLayout,
         if (!mIsCacheDirty) return
 
         // Boundary.
+        rebuildSketchBound()
+
+        // Path for sketch.
+        rebuildSketchPath()
+
+        mIsCacheDirty = false
+    }
+
+    private fun rebuildSketchBound() {
         var left = Float.MAX_VALUE
         var top = Float.MAX_VALUE
         var right = Float.MIN_VALUE
@@ -233,16 +247,17 @@ open class ScrapView : FrameLayout,
                     bottom = Math.max(bottom, tuple.firstPoint.y)
                 }
             }
-            mScrapBound.set(left / mViewToModelScale,
-                            top / mViewToModelScale,
-                            right / mViewToModelScale,
-                            bottom / mViewToModelScale)
+            mScrapBound.set(left,
+                            top,
+                            right,
+                            bottom)
         }
 
-        // Path for sketch.
-        rebuildSketchPath()
-
-        mIsCacheDirty = false
+        // To view world.
+        mScrapBound.set(mScrapBound.left / mViewToModelScale,
+                        mScrapBound.top / mViewToModelScale,
+                        mScrapBound.right / mViewToModelScale,
+                        mScrapBound.bottom / mViewToModelScale)
     }
 
     private fun rebuildSketchPath() {
