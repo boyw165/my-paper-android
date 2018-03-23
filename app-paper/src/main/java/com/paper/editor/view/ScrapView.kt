@@ -234,10 +234,10 @@ open class ScrapView : FrameLayout,
     }
 
     private fun rebuildSketchBound() {
-        var left = Float.MAX_VALUE
-        var top = Float.MAX_VALUE
-        var right = Float.MIN_VALUE
-        var bottom = Float.MIN_VALUE
+        var left = Float.POSITIVE_INFINITY
+        var top = Float.POSITIVE_INFINITY
+        var right = Float.NEGATIVE_INFINITY
+        var bottom = Float.NEGATIVE_INFINITY
         mModel.sketch?.let { sketch ->
             sketch.allStrokes.forEach { stroke ->
                 stroke.pathTupleList.forEach { tuple ->

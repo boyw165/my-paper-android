@@ -148,6 +148,6 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
             paper.thumbnailPath = bmpFile.canonicalPath
         }
 
-        mPaperRepo.putPaperById(id, mPaperController.getPaper())
+        mPaperRepo.putPaperById(id, paper)
     }
 }
