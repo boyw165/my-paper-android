@@ -129,7 +129,7 @@ class PaperContentProvider : ContentProvider(),
                 val paperId = ContentUris.parseId(uri)
 
                 return db!!.query(PaperTable.TABLE_NAME,
-                                  Array(0, {""}),
+                                  Array(0, { "" }),
                                   "${PaperTable.COL_ID}=$paperId",
                                   null,
                                   null, null,
@@ -147,20 +147,60 @@ class PaperContentProvider : ContentProvider(),
                 throw SQLiteDatabaseCorruptException("Cannot query $uri")
             }
         }
-
     }
 
     override fun update(uri: Uri,
                         values: ContentValues?,
                         whereClause: String?,
                         whereArgs: Array<out String>?): Int {
-        TODO("not implemented")
+        val db: SQLiteDatabase = mDbHelper!!.writableDatabase
+
+        when (mUriMatcher!!.match(uri)) {
+            MATCHER_CODE_PAPER_ID -> {
+                val paperId = ContentUris.parseId(uri)
+                val num = db.update(
+                    PaperTable.TABLE_NAME,
+                    values,
+                    // Where clause
+                    "${PaperTable.COL_ID}=$paperId",
+                    // Where clause args
+                    null)
+
+                // Notify the observers.
+                mResolver?.notifyChange(uri, null)
+
+                return num
+            }
+            else -> {
+                throw IllegalArgumentException("Unrecognized update URI, $uri.")
+            }
+        }
     }
 
     override fun delete(uri: Uri,
                         selection: String?,
                         selectionArgs: Array<out String>?): Int {
-        TODO("not implemented")
+        val db: SQLiteDatabase = mDbHelper!!.writableDatabase
+
+        when (mUriMatcher!!.match(uri)) {
+            MATCHER_CODE_PAPER_ID -> {
+                val paperId = ContentUris.parseId(uri)
+                val num = db.delete(
+                    PaperTable.TABLE_NAME,
+                    // Where clause
+                    "${PaperTable.COL_ID}=$paperId",
+                    // Where clause args
+                    null)
+
+                // Notify the observers.
+                mResolver?.notifyChange(uri, null)
+
+                return num
+            }
+            else -> {
+                throw IllegalArgumentException("Unrecognized update URI, $uri.")
+            }
+        }
     }
 
     override fun getType(uri: Uri): String? = null
