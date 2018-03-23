@@ -56,8 +56,9 @@ class PaperThumbnailEpoxyModel(
         val layout = super.buildView(parent)
         val params = layout.layoutParams
 
-        // Update layout size by fixing width and changing width.
-        params.height = (params.width / mLayoutRatio).toInt()
+        // TODO: Constraint size.
+        // Update layout size by fixing height and changing width.
+        params.width = (params.height * mLayoutRatio).toInt()
 
         return layout
     }
