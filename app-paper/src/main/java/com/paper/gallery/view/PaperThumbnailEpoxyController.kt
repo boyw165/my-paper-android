@@ -18,29 +18,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.gallery
+package com.paper.gallery.view
 
 import com.airbnb.epoxy.TypedEpoxyController
-import com.paper.gallery.PaperThumbnailEpoxyModel.OnClickPaperThumbnailListener
+import com.bumptech.glide.RequestManager
 import com.paper.shared.model.PaperModel
 
-class PaperThumbnailEpoxyController : TypedEpoxyController<List<PaperModel>>() {
+class PaperThumbnailEpoxyController(
+    private val mGlide: RequestManager)
+    : TypedEpoxyController<List<PaperModel>>() {
 
-    private var mListener: OnClickPaperThumbnailListener? = null
+    private var mListener: IOnClickPaperThumbnailListener? = null
 
     override fun buildModels(data: List<PaperModel>) {
         data.forEachIndexed { _, paper ->
             val id = paper.id
             val uuid = paper.uuid
 
-            PaperThumbnailEpoxyModel(id,
-                                     mListener)
+            PaperThumbnailEpoxyModel(id)
+                .setThumbnail(mGlide,
+                              paper.thumbnailPath,
+                              paper.thumbnailWidth,
+                              paper.thumbnailHeight)
+                .setClickListener(mListener)
+                // Epoxy view-model ID.
                 .id(uuid.toString())
                 .addTo(this)
         }
     }
 
-    fun setOnClickPaperThumbnailListener(listener: OnClickPaperThumbnailListener?) {
+    fun setOnClickPaperThumbnailListener(listener: IOnClickPaperThumbnailListener?) {
         mListener = listener
     }
 }

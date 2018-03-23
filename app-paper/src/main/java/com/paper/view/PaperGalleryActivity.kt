@@ -30,14 +30,14 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
+import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.AppConsts
 import com.paper.R
-import com.paper.gallery.PaperGalleryContract
-import com.paper.gallery.PaperGalleryPresenter
-import com.paper.gallery.PaperThumbnailEpoxyController
-import com.paper.gallery.PaperThumbnailEpoxyModel
+import com.paper.gallery.*
+import com.paper.gallery.view.IOnClickPaperThumbnailListener
+import com.paper.gallery.view.PaperThumbnailEpoxyController
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.PaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
@@ -69,7 +69,9 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     // Paper thumbnail list view and controller.
     private val mPapersView by lazy { findViewById<RecyclerView>(R.id.paper_list) }
-    private val mPapersController by lazy { PaperThumbnailEpoxyController() }
+    private val mPapersController by lazy {
+        PaperThumbnailEpoxyController(Glide.with(this@PaperGalleryActivity))
+    }
 
     private val mPresenter by lazy {
         PaperGalleryPresenter(
@@ -127,7 +129,7 @@ class PaperGalleryActivity : AppCompatActivity(),
 //        mPapersView.adapter = mPapersController.adapter
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(
-            object : PaperThumbnailEpoxyModel.OnClickPaperThumbnailListener {
+            object : IOnClickPaperThumbnailListener {
                 override fun onClickPaperThumbnail(id: Long) {
                     mClickPaperSignal.onNext(id)
                 }

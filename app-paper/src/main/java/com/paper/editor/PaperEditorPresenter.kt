@@ -61,6 +61,7 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
         mDisposablesOnCreate.add(
             mView!!.onClickCloseButton()
                 .debounce(150, TimeUnit.MILLISECONDS)
+                .take(1)
                 .observeOn(mWorkerScheduler)
                 .switchMap {
                     commitPaperById(mPaperId)
