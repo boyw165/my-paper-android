@@ -342,8 +342,8 @@ class PaperCanvasView : FrameLayout,
         // Calculate the container matrix.
         val transform = TransformUtils.getTransformFromPointers(
             startPointers, stopPointers)
-        val dx = transform[TransformUtils.DELTA_X]
-        val dy = transform[TransformUtils.DELTA_Y]
+        val dx = mEventNormalizationHelper.inverseNormalizationToX(transform[TransformUtils.DELTA_X])
+        val dy = mEventNormalizationHelper.inverseNormalizationToY(transform[TransformUtils.DELTA_Y])
         val dScale = transform[TransformUtils.DELTA_SCALE_X]
         val pivotX = transform[TransformUtils.PIVOT_X]
         val pivotY = transform[TransformUtils.PIVOT_Y]
