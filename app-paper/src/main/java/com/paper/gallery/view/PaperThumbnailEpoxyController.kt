@@ -44,7 +44,7 @@ class PaperThumbnailEpoxyController(
                 .setLayoutRatio(mRatio)
                 .setClickListener(mListener)
                 // Epoxy view-model ID.
-                .id("${paper.uuid}+${paper.thumbnailPath}")
+                .id("${paper.uuid}+${paper.modifiedAt}+${paper.thumbnailPath}")
                 .addTo(this)
         }
     }

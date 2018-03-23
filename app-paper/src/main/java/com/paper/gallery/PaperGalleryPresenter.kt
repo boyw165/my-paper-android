@@ -22,7 +22,9 @@ package com.paper.gallery
 
 import android.Manifest
 import com.paper.event.ProgressEvent
+import com.paper.protocol.ISharedPreferenceService
 import com.paper.shared.model.PaperConsts
+import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.Observable
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit
 
 class PaperGalleryPresenter(private val mPermission: RxPermissions,
                             private val mRepo: IPaperModelRepo,
+                            private val mPrefs: ISharedPreferenceService,
                             private val mUiScheduler: Scheduler,
                             private val mWorkerScheduler: Scheduler) {
 
@@ -41,6 +44,8 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
     // Progress signal.
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+
+    private val mPaperSnapshots = mutableListOf<PaperModel>()
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -113,6 +118,13 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 .subscribe {
                     view.hideProgressBar()
                 })
+        // Browse papers.
+        mDisposablesOnCreate.add(
+            view.onBrowsePaper()
+                .observeOn(mUiScheduler)
+                .subscribe { position ->
+                    mPrefs.putInt(PREF_BROWSE_POSITION, position)
+                })
     }
 
     fun unbindViewOnDestroy() {
@@ -130,6 +142,9 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 }
                 .observeOn(mUiScheduler)
                 .subscribe { papers ->
+                    // Hold the paper snapshots.
+                    mPaperSnapshots.addAll(papers)
+
                     mView?.let { view ->
                         // Figure out the smallest aspect-ratio.
                         var min = Float.POSITIVE_INFINITY
@@ -137,6 +152,9 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
                         view.setPaperThumbnailAspectRatio(min)
                         view.showPaperThumbnails(papers)
+
+                        val position = mPrefs.getInt(PREF_BROWSE_POSITION, 0)
+                        view.showPaperThumbnailAt(position)
                     }
                 })
     }
@@ -146,6 +164,9 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
         // Force to hide the progress-bar.
         mView?.hideProgressBar()
+
+        // Clear snapshots reference.
+        mPaperSnapshots.clear()
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -158,5 +179,13 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
             // TODO: Properly handle it, like showing permission explanation
             // TODO: page if it is denied.
             .filter { it }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    internal companion object {
+
+        const val PREF_BROWSE_POSITION = "browse_position"
     }
 }

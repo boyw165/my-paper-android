@@ -31,6 +31,8 @@ class PaperGalleryContract private constructor() {
 
         fun showPaperThumbnails(papers: List<PaperModel>)
 
+        fun showPaperThumbnailAt(position: Int)
+
         fun showExpMenu()
 
         fun showProgressBar()
@@ -48,6 +50,8 @@ class PaperGalleryContract private constructor() {
         fun onClickShowExpMenu(): Observable<Any>
 
         fun onClickExpMenu(): Observable<Int>
+
+        fun onBrowsePaper(): Observable<Int>
     }
 
     interface Navigator {

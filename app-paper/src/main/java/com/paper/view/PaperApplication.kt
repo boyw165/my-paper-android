@@ -20,9 +20,11 @@
 
 package com.paper.view
 
+import android.content.Context
 import android.support.multidex.MultiDexApplication
 import com.paper.protocol.IDatabaseIOSchedulerProvider
 import com.paper.protocol.IPaperRepoProvider
+import com.paper.protocol.ISharedPreferenceService
 import com.paper.shared.model.repository.PaperRepo
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Scheduler
@@ -30,7 +32,8 @@ import io.reactivex.internal.schedulers.SingleScheduler
 
 class PaperApplication : MultiDexApplication(),
                          IDatabaseIOSchedulerProvider,
-                         IPaperRepoProvider {
+                         IPaperRepoProvider,
+                         ISharedPreferenceService {
 
     // Database.
     private val mPaperRepo: PaperRepo by lazy {
@@ -41,11 +44,40 @@ class PaperApplication : MultiDexApplication(),
     }
     private val mDbScheduler = SingleScheduler()
 
+    // Shared preference.
+    private val mPreferences by lazy { getSharedPreferences(packageName, Context.MODE_PRIVATE) }
+
+    // Repository and scheduler ///////////////////////////////////////////////
+
     override fun getRepo(): IPaperModelRepo {
         return mPaperRepo
     }
 
     override fun getScheduler(): Scheduler {
         return mDbScheduler
+    }
+
+    // Shared preference //////////////////////////////////////////////////////
+
+    override fun putString(key: String, value: String) {
+        mPreferences
+            .edit()
+            .putString(key, value)
+            .apply()
+    }
+
+    override fun getString(key: String, defaultValue: String): String {
+        return mPreferences.getString(key, defaultValue)
+    }
+
+    override fun putInt(key: String, value: Int) {
+        mPreferences
+            .edit()
+            .putInt(key, value)
+            .apply()
+    }
+
+    override fun getInt(key: String, defaultValue: Int): Int {
+        return mPreferences.getInt(key, defaultValue)
     }
 }

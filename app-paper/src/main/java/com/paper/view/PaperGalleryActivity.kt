@@ -24,8 +24,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.StaggeredGridLayoutManager
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
@@ -40,8 +38,8 @@ import com.paper.gallery.PaperGalleryPresenter
 import com.paper.gallery.view.IOnClickPaperThumbnailListener
 import com.paper.gallery.view.PaperThumbnailEpoxyController
 import com.paper.protocol.IPaperRepoProvider
+import com.paper.protocol.ISharedPreferenceService
 import com.paper.shared.model.PaperModel
-import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
 import com.yarolegovich.discretescrollview.transform.Pivot
@@ -55,16 +53,19 @@ class PaperGalleryActivity : AppCompatActivity(),
                              PaperGalleryContract.View,
                              PaperGalleryContract.Navigator {
 
-    // View.
+    // Experiment views.
     private val mBtnExp: View by lazy { findViewById<View>(R.id.btn_other_exp) }
     private val mBtnExpMenu: PopupMenu by lazy {
         val m = PopupMenu(this@PaperGalleryActivity, mBtnExp)
         m.inflate(R.menu.menu_exp)
         m
     }
+
+    // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelAllPapers by lazy { findViewById<ImageView>(R.id.btn_delete_all) }
     private val mClickPaperSignal = PublishSubject.create<Long>()
+    private val mBrowsePositionSignal = PublishSubject.create<Int>()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -78,22 +79,14 @@ class PaperGalleryActivity : AppCompatActivity(),
         PaperThumbnailEpoxyController(Glide.with(this@PaperGalleryActivity))
     }
 
+    // Presenter.
     private val mPresenter by lazy {
         PaperGalleryPresenter(
-            mRxPermissions,
-            mPaperRepo,
+            RxPermissions(this@PaperGalleryActivity),
+            (application as IPaperRepoProvider).getRepo(),
+            (application as ISharedPreferenceService),
             AndroidSchedulers.mainThread(),
             Schedulers.io())
-    }
-
-    // Permission.
-    private val mRxPermissions: RxPermissions by lazy {
-        RxPermissions(this@PaperGalleryActivity)
-    }
-
-    // Repo.
-    private val mPaperRepo: IPaperModelRepo by lazy {
-        (application as IPaperRepoProvider).getRepo()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,6 +107,15 @@ class PaperGalleryActivity : AppCompatActivity(),
         // Determines how much time it takes to change the item on fling, settle
         // or smoothScroll
         mPapersView.setItemTransitionTimeMillis(300)
+        mPapersView.addScrollListener { scrollPosition,
+                                        currentPosition,
+                                        newPosition,
+                                        currentHolder,
+                                        newCurrent ->
+            if (currentPosition != newPosition) {
+                mBrowsePositionSignal.onNext(newPosition)
+            }
+        }
 
         // Presenter.
         mPresenter.bindViewOnCreate(
@@ -166,6 +168,13 @@ class PaperGalleryActivity : AppCompatActivity(),
         mPapersController.setData(papers)
     }
 
+    override fun showPaperThumbnailAt(position: Int) {
+        if (position > 0 &&
+            mPapersView.adapter.itemCount > position) {
+            mPapersView.post { mPapersView.smoothScrollToPosition(position) }
+        }
+    }
+
     override fun showExpMenu() {
         mBtnExpMenu.show()
     }
@@ -185,6 +194,10 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     override fun onClickPaper(): Observable<Long> {
         return mClickPaperSignal
+    }
+
+    override fun onBrowsePaper(): Observable<Int> {
+        return mBrowsePositionSignal
     }
 
     override fun onClickNewPaper(): Observable<Any> {
