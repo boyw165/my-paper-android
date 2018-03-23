@@ -130,7 +130,14 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 }
                 .observeOn(mUiScheduler)
                 .subscribe { papers ->
-                    mView?.showPaperThumbnails(papers)
+                    mView?.let { view ->
+                        // Figure out the smallest aspect-ratio.
+                        var min = Float.POSITIVE_INFINITY
+                        papers.forEach { min = Math.min(min, it.width / it.height) }
+
+                        view.setPaperThumbnailAspectRatio(min)
+                        view.showPaperThumbnails(papers)
+                    }
                 })
     }
 

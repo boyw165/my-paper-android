@@ -96,7 +96,7 @@ ext {
             // Custom View.
             airbnbEpoxy            : 'com.airbnb.android:epoxy:2.7.3',
             airbnbEpoxyAnnotation  : 'com.airbnb.android:epoxy-processor:2.7.3',
-            discreteScrollView     : 'com.yarolegovich:discrete-scrollview:1.3.2',
+            discreteScrollView     : 'com.yarolegovich:discrete-scrollview:1.4.4',
             // ASYNC.
             bolts                  : "com.parse.bolts:bolts-tasks:$BOLTS_VER",
             // BUS.

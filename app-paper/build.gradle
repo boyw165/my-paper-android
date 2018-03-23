@@ -75,8 +75,9 @@ dependencies {
     // Image loader.
     implementation rootProject.ext.dep.glide
 
-    // View.
+    // RecyclerView.
     implementation rootProject.ext.dep.airbnbEpoxy
+    implementation rootProject.ext.dep.discreteScrollView
 
     // RxKotlin.
     implementation rootProject.ext.dep.rxKotlin

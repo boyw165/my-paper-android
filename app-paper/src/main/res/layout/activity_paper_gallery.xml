@@ -26,10 +26,11 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@android:drawable/ic_menu_help"/>
 
-    <android.support.v7.widget.RecyclerView
+    <com.yarolegovich.discretescrollview.DiscreteScrollView
         android:id="@+id/paper_list"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:dsv_orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -41,13 +42,13 @@
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:scaleType="centerCrop"
-        app:srcCompat="@drawable/img_android"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHeight_default="wrap"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/btn_delete_all"
         app:layout_constraintWidth_default="wrap"
-        app:layout_constraintHorizontal_chainStyle="packed"/>
+        app:srcCompat="@drawable/img_android"/>
 
     <!-- Delete all papers -->
     <android.support.v7.widget.AppCompatImageView
@@ -55,11 +56,11 @@
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:scaleType="centerCrop"
-        app:srcCompat="@drawable/icon_toolbar_close"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHeight_default="wrap"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintLeft_toRightOf="@+id/btn_new"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintWidth_default="wrap"
-        app:layout_constraintHorizontal_chainStyle="packed"/>
+        app:srcCompat="@drawable/icon_toolbar_close"/>
 </android.support.constraint.ConstraintLayout>

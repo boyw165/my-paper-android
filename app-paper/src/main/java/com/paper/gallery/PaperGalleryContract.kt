@@ -27,6 +27,8 @@ class PaperGalleryContract private constructor() {
 
     interface View {
 
+        fun setPaperThumbnailAspectRatio(ratio: Float)
+
         fun showPaperThumbnails(papers: List<PaperModel>)
 
         fun showExpMenu()

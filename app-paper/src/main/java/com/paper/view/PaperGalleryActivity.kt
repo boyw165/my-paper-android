@@ -43,6 +43,9 @@ import com.paper.protocol.IPaperRepoProvider
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
+import com.yarolegovich.discretescrollview.DiscreteScrollView
+import com.yarolegovich.discretescrollview.transform.Pivot
+import com.yarolegovich.discretescrollview.transform.ScaleTransformer
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -70,7 +73,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     // Paper thumbnail list view and controller.
-    private val mPapersView by lazy { findViewById<RecyclerView>(R.id.paper_list) }
+    private val mPapersView by lazy { findViewById<DiscreteScrollView>(R.id.paper_list) }
     private val mPapersController by lazy {
         PaperThumbnailEpoxyController(Glide.with(this@PaperGalleryActivity))
     }
@@ -98,9 +101,19 @@ class PaperGalleryActivity : AppCompatActivity(),
         setContentView(R.layout.activity_paper_gallery)
 
         // Paper thumbnail list view.
-        mPapersView.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-        // Paper thumbnail list view.
         mPapersView.adapter = mPapersController.adapter
+        mPapersView.setItemTransformer(
+            ScaleTransformer.Builder()
+                .setMaxScale(1.05f)
+                .setMinScale(0.8f)
+                .setPivotX(Pivot.X.CENTER) // CENTER is a default one
+                .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
+                .build())
+        mPapersView.setSlideOnFling(true)
+        mPapersView.setOverScrollEnabled(true)
+        // Determines how much time it takes to change the item on fling, settle
+        // or smoothScroll
+        mPapersView.setItemTransitionTimeMillis(300)
 
         // Presenter.
         mPresenter.bindViewOnCreate(
@@ -123,8 +136,8 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-//        // Paper thumbnail list view.
-//        mPapersView.adapter = mPapersController.adapter
+        //        // Paper thumbnail list view.
+        //        mPapersView.adapter = mPapersController.adapter
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(
             object : IOnClickPaperThumbnailListener {
@@ -143,6 +156,10 @@ class PaperGalleryActivity : AppCompatActivity(),
 
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(null)
+    }
+
+    override fun setPaperThumbnailAspectRatio(ratio: Float) {
+        mPapersController.setThumbnailAspectRatio(ratio)
     }
 
     override fun showPaperThumbnails(papers: List<PaperModel>) {

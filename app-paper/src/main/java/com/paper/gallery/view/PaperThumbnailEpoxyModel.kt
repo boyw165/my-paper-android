@@ -23,9 +23,13 @@ package com.paper.gallery.view
 import android.support.constraint.ConstraintLayout
 import android.support.constraint.ConstraintSet
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import com.airbnb.epoxy.EpoxyModel
+import com.bumptech.glide.Priority
 import com.bumptech.glide.RequestManager
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.paper.R
 
 class PaperThumbnailEpoxyModel(
@@ -41,27 +45,54 @@ class PaperThumbnailEpoxyModel(
 
     // View
     private var mThumbView: ImageView? = null
+    private var mThumbViewContainer: ViewGroup? = null
+    private var mLayoutRatio = 1f
 
     override fun getDefaultLayout(): Int {
         return R.layout.item_paper_thumbnail
     }
 
-    override fun bind(view: View?) {
+    override fun buildView(parent: ViewGroup): View {
+        val layout = super.buildView(parent)
+        val params = layout.layoutParams
+
+        // Update layout size by fixing width and changing width.
+        params.height = (params.width / mLayoutRatio).toInt()
+
+        return layout
+    }
+
+    override fun bind(view: View) {
         super.bind(view)
 
+        val layoutWidth = view.layoutParams.width
+
         if (mThumbView == null) {
-            mThumbView = view?.findViewById(R.id.image_view)
+            mThumbView = view.findViewById(R.id.image_view)
+        }
+        if (mThumbViewContainer == null) {
+            mThumbViewContainer = view.findViewById(R.id.image_view_container)
         }
 
+        // Update thumbnail size by fixing width and changing width.
+        val thumbRatio = mThumbWidth / mThumbHeight
+        mThumbViewContainer?.layoutParams?.width = layoutWidth
+        mThumbViewContainer?.layoutParams?.height = layoutWidth / thumbRatio
+
         // Click
-        view?.setOnClickListener({
+        view.setOnClickListener {
             mListener?.onClickPaperThumbnail(mPaperId)
-        })
+        }
 
         // Thumb
         mGlide?.let { imgLoader ->
             imgLoader
                 .load(mThumbPath)
+                .apply(RequestOptions
+                           .skipMemoryCacheOf(true)
+                           .priority(Priority.NORMAL)
+                           .diskCacheStrategy(DiskCacheStrategy.NONE)
+                           .dontTransform())
                 .into(mThumbView)
         }
     }
@@ -71,6 +102,11 @@ class PaperThumbnailEpoxyModel(
 
         // Click
         view?.setOnClickListener(null)
+    }
+
+    fun setLayoutRatio(ratio: Float): PaperThumbnailEpoxyModel {
+        mLayoutRatio = ratio
+        return this
     }
 
     fun setThumbnail(glide: RequestManager?,
