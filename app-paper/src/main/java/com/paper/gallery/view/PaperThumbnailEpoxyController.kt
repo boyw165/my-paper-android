@@ -33,7 +33,6 @@ class PaperThumbnailEpoxyController(
     override fun buildModels(data: List<PaperModel>) {
         data.forEachIndexed { _, paper ->
             val id = paper.id
-            val uuid = paper.uuid
 
             PaperThumbnailEpoxyModel(id)
                 .setThumbnail(mGlide,
@@ -42,7 +41,7 @@ class PaperThumbnailEpoxyController(
                               paper.thumbnailHeight)
                 .setClickListener(mListener)
                 // Epoxy view-model ID.
-                .id(uuid.toString())
+                .id("${paper.uuid}+${paper.thumbnailPath}")
                 .addTo(this)
         }
     }
