@@ -32,7 +32,7 @@ class PathTuple {
 
     private val mPoints = ArrayList<PointF>()
 
-    constructor() : this(0f, 0f)
+    constructor()
     constructor(x: Float,
                 y: Float) {
         addPoint(x, y)
