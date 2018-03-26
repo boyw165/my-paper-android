@@ -95,42 +95,6 @@ class PaperEditorActivity : AppCompatActivity(),
 
         // Load paper.
         mEditorPresenter.loadPaperById(paperId)
-
-        //        mDisposables1.add(
-        //            mPaperRepo
-        //                // Get the temporary paper if it exists.
-        //                .getTempPaper()
-        //                // TODO: New temp sketch.
-        //                .flatMap { paper ->
-        //                    // FIXME: Create a temporary fullscreen size sketch.
-        //                    mSketchRepo.newTempSketch(paper.width, paper.height)
-        //                }
-        //                // Convert to view-model.
-        //                .compose { upstream ->
-        //                    upstream
-        //                        .map { anything -> UiModel.succeed(anything) }
-        ////                        .startWith { UiModel.inProgress(null) }
-        //                        .onErrorReturn { err -> UiModel.failed(err) }
-        //                }
-        //                .observeOn(AndroidSchedulers.mainThread())
-        //                .subscribe { vm ->
-        //                    when {
-        //                        vm.isInProgress -> {
-        //                            showProgressBar()
-        //                        }
-        //                        vm.isSuccessful -> {
-        //                            hideProgressBar()
-        //
-        //                            val sketch = vm.bundle
-        //                            navigateToSketchEditor(sketch.width, sketch.height)
-        //                        }
-        //                        else -> {
-        //                            showError(vm.error)
-        //                            hideProgressBar()
-        //                            finish()
-        //                        }
-        //                    }
-        //                })
     }
 
     override fun onDestroy() {

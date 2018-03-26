@@ -92,6 +92,10 @@ class PaperController(private val mUiScheduler: Scheduler,
         mCanvasView = null
 
         // Unbind views from sub-controllers
+        recycleControllers()
+    }
+
+    private fun recycleControllers() {
         mControllers.values.forEach { controller ->
             controller.unbindView()
         }
@@ -101,10 +105,10 @@ class PaperController(private val mUiScheduler: Scheduler,
     ///////////////////////////////////////////////////////////////////////////
     // Paper things ///////////////////////////////////////////////////////////
 
-    fun initScrapControllers(model: PaperModel) {
+    fun setPaper(model: PaperModel) {
         ensureMainThread()
 
-        mControllers.clear()
+        recycleControllers()
 
         mModel = model
         // Create the scrap controller.
