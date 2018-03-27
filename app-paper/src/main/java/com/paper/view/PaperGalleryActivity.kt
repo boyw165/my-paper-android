@@ -31,7 +31,7 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.AppConsts
+import com.paper.AppConst
 import com.paper.R
 import com.paper.gallery.PaperGalleryContract
 import com.paper.gallery.PaperGalleryPresenter
@@ -253,7 +253,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun navigateToPaperEditor(id: Long) {
         startActivity(Intent(this@PaperGalleryActivity,
                              PaperEditorActivity::class.java)
-                          .putExtra(AppConsts.PARAMS_PAPER_ID, id))
+                          .putExtra(AppConst.PARAMS_PAPER_ID, id))
     }
 
     ///////////////////////////////////////////////////////////////////////////

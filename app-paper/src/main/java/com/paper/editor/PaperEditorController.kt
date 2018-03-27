@@ -22,6 +22,7 @@ package com.paper.editor
 
 import android.graphics.Bitmap
 import android.os.Environment
+import com.paper.editor.widget.PaperWidget
 import com.paper.event.ProgressEvent
 import com.paper.protocol.IPresenter
 import com.paper.shared.model.PaperConsts
@@ -37,10 +38,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class PaperEditorPresenter(private val mPaperController: PaperController,
-                           private val mPaperRepo: IPaperModelRepo,
-                           private val mUiScheduler: Scheduler,
-                           private val mWorkerScheduler: Scheduler)
+class PaperEditorController(private val mPaperWidget: PaperWidget,
+                            private val mPaperRepo: IPaperModelRepo,
+                            private val mUiScheduler: Scheduler,
+                            private val mWorkerScheduler: Scheduler)
     : IPresenter<PaperEditorContract.View> {
 
     private var mPaperId = PaperConsts.TEMP_ID
@@ -63,27 +64,20 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
             mView!!.onClickCloseButton()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .take(1)
-                .map { mPaperController.getPaper() }
-                .switchMap { paper -> updateThumbnail(paper) }
-                .switchMap { paper -> commitPaper(paper) }
+//                .map { mPaperWidget.getPaper() }
+//                .switchMap { paper -> updateThumbnail(paper) }
+//                .switchMap { paper -> commitPaper(paper) }
                 .observeOn(mUiScheduler)
                 .subscribe {
                     mView?.close()
                 })
-
-        // Draw toggle button.
-        mDisposablesOnCreate.add(
-            mView!!.onClickDrawButton()
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(mUiScheduler)
-                .subscribe { checked ->
-                    // TODO: Configure paper controller to drawing mode.
-                })
     }
 
     override fun unbindViewOnDestroy() {
-        // Paper controller.
-        mPaperController.unbindView()
+        // Unbind widget.
+        mView?.getCanvasView()?.unbindWidget()
+        // Unbind model.
+        mPaperWidget.unbindModel()
 
         mDisposablesOnCreate.clear()
         mDisposables.clear()
@@ -109,15 +103,12 @@ class PaperEditorPresenter(private val mPaperController: PaperController,
                 .toObservable()
                 // TODO: Support progress event.
                 .observeOn(mUiScheduler)
-                .subscribe { paper ->
-                    // Inflate model where it would create the corresponding
-                    // scrap-controllers.
-                    mPaperController.setPaper(paper)
+                .subscribe { paperM ->
+                    // Bind main widget to the model.
+                    mPaperWidget.bindModel(paperM)
 
-                    // Bind view.
-                    mView?.getCanvasView()?.let { canvasView ->
-                        mPaperController.bindView(canvasView)
-                    }
+                    // And then bind view with the widget.
+                    mView?.getCanvasView()?.bindWidget(mPaperWidget)
                 })
     }
 

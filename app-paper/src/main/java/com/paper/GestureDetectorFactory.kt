@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,29 +18,26 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper
 
-import com.paper.editor.view.IPaperWidgetView
-import io.reactivex.Observable
+import android.os.Looper
+import android.view.ViewConfiguration
+import com.cardinalblue.gesture.GestureDetector
 
-class PaperEditorContract private constructor() {
+class GestureDetectorFactory(
+    private val mViewConfig: ViewConfiguration,
+    private val touchSlop: Float,
+    private val tapSlop: Float,
+    private val minFlingVec: Float,
+    private val maxFlingVec: Float)
+    : IGestureDetectorFactory {
 
-    interface View {
-
-        fun getCanvasView(): IPaperWidgetView
-
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
+    override fun create(): GestureDetector {
+        return GestureDetector(Looper.getMainLooper(),
+                               mViewConfig,
+                               touchSlop,
+                               tapSlop,
+                               minFlingVec,
+                               maxFlingVec)
     }
 }

@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper
+package com.paper.editor.widget
 
-object AppConsts {
+import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.TransformModel
+import io.reactivex.Observable
+import java.util.*
 
-    const val TAG = "paper"
+interface IScrapWidget: IBaseWidget<ScrapModel> {
 
-    const val PARAMS_PAPER_ID = "params_paper_id"
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
+
+    // For output /////////////////////////////////////////////////////////////
+
+    fun getId(): UUID
+
+    fun onTransform(): Observable<TransformModel>
 }

@@ -29,18 +29,17 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxCompoundButton
-import com.paper.AppConsts
+import com.paper.AppConst
 import com.paper.R
 import com.paper.editor.ITouchConfig
-import com.paper.editor.PaperController
 import com.paper.editor.PaperEditorContract
-import com.paper.editor.PaperEditorPresenter
-import com.paper.editor.view.ICanvasView
-import com.paper.editor.view.PaperCanvasView
+import com.paper.editor.PaperEditorController
+import com.paper.editor.view.IPaperWidgetView
+import com.paper.editor.view.PaperWidgetView
+import com.paper.editor.widget.PaperWidget
 import com.paper.protocol.IContextProvider
 import com.paper.protocol.IPaperRepoProvider
 import com.paper.shared.model.PaperConsts
-import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -53,7 +52,7 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // View.
     private val mBtnDraw: SwitchCompat by lazy { findViewById<SwitchCompat>(R.id.btn_draw) }
-    private val mCanvasView: PaperCanvasView by lazy { findViewById<PaperCanvasView>(R.id.paper_canvas) }
+    private val mCanvasView: PaperWidgetView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
             .setCancelable(false)
@@ -66,21 +65,19 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // Repositories.
     // TODO: Inject the repo.
-    private val mPaperRepo: IPaperModelRepo by lazy {
-        (application as IPaperRepoProvider).getRepo()
-    }
+    private val mPaperRepo by lazy { (application as IPaperRepoProvider).getRepo() }
 
     // Presenters and controllers.
-    private val mPaperController: PaperController by lazy {
-        PaperController(AndroidSchedulers.mainThread(),
-                        Schedulers.io())
+    private val mPaperController by lazy {
+        PaperWidget(AndroidSchedulers.mainThread(),
+                    Schedulers.io())
     }
-    private val mEditorPresenter: PaperEditorPresenter by lazy {
+    private val mEditorPresenter: PaperEditorController by lazy {
         // TODO: It's not a good design that the presenter knows other presenters.
-        PaperEditorPresenter(mPaperController,
-                             mPaperRepo,
-                             AndroidSchedulers.mainThread(),
-                             Schedulers.single())
+        PaperEditorController(mPaperController,
+                              mPaperRepo,
+                              AndroidSchedulers.mainThread(),
+                              Schedulers.single())
     }
 
     override fun onCreate(savedState: Bundle?) {
@@ -88,7 +85,7 @@ class PaperEditorActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_paper_editor)
 
-        val paperId = intent.getLongExtra(AppConsts.PARAMS_PAPER_ID, PaperConsts.TEMP_ID)
+        val paperId = intent.getLongExtra(AppConst.PARAMS_PAPER_ID, PaperConsts.TEMP_ID)
 
         // Presenter.
         mEditorPresenter.bindViewOnCreate(this)
@@ -102,8 +99,8 @@ class PaperEditorActivity : AppCompatActivity(),
 
         mEditorPresenter.unbindViewOnDestroy()
 
-        //        // Force to hide the progress-bar.
-        //        hideProgressBar()
+//        // Force to hide the progress-bar.
+//        hideProgressBar()
     }
 
     override fun onResume() {
@@ -151,7 +148,7 @@ class PaperEditorActivity : AppCompatActivity(),
     ///////////////////////////////////////////////////////////////////////////
     // Editor view ////////////////////////////////////////////////////////////
 
-    override fun getCanvasView(): ICanvasView {
+    override fun getCanvasView(): IPaperWidgetView {
         return mCanvasView
     }
 
@@ -194,20 +191,20 @@ class PaperEditorActivity : AppCompatActivity(),
     private fun navigateToSketchEditor(width: Int, height: Int) {
         // FIXME: Workaround of creating a new paper model and navigate to the
         // FIXME: sketch editor immediately.
-//        startActivityForResult(
-//            Intent(this, SketchEditorActivity::class.java)
-//                // Pass a sketch width and height.
-//                .putExtra(SketchEditorActivity.PARAMS_SKETCH_WIDTH, width)
-//                .putExtra(SketchEditorActivity.PARAMS_SKETCH_HEIGHT, height)
-//                // Pass a sketch background.
-//                //                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
-//                // Remembering brush color and stroke width.
-//                //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
-//                //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_SIZE, brushSize)
-//                // Ask the editor enter fullscreen mode.
-//                .putExtra(SketchEditorActivity.PARAMS_FULLSCREEN_MODE, false)
-//                // DEBUG mode.
-//                .putExtra(SketchEditorActivity.PARAMS_DEBUG_MODE, true),
-//            0)
+        //        startActivityForResult(
+        //            Intent(this, SketchEditorActivity::class.java)
+        //                // Pass a sketch width and height.
+        //                .putExtra(SketchEditorActivity.PARAMS_SKETCH_WIDTH, width)
+        //                .putExtra(SketchEditorActivity.PARAMS_SKETCH_HEIGHT, height)
+        //                // Pass a sketch background.
+        //                //                .putExtra(SketchEditorActivity.PARAMS_BACKGROUND_FILE, background)
+        //                // Remembering brush color and stroke width.
+        //                //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_COLOR, brushColor)
+        //                //                .putExtra(SketchEditorActivity.PARAMS_REMEMBERING_BRUSH_SIZE, brushSize)
+        //                // Ask the editor enter fullscreen mode.
+        //                .putExtra(SketchEditorActivity.PARAMS_FULLSCREEN_MODE, false)
+        //                // DEBUG mode.
+        //                .putExtra(SketchEditorActivity.PARAMS_DEBUG_MODE, true),
+        //            0)
     }
 }

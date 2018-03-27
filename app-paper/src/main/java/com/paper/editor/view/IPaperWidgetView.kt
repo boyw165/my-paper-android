@@ -18,29 +18,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view
 
-import com.paper.editor.view.IPaperWidgetView
-import io.reactivex.Observable
+import android.graphics.Bitmap
+import com.paper.editor.widget.IPaperWidget
+import com.paper.editor.widget.IScrapWidget
 
-class PaperEditorContract private constructor() {
+interface IPaperWidgetView {
 
-    interface View {
+    fun bindWidget(widget: IPaperWidget)
 
-        fun getCanvasView(): IPaperWidgetView
+    fun unbindWidget()
 
-        fun showProgressBar(progress: Int)
+    fun takeSnapshot(): Bitmap
 
-        fun hideProgressBar()
+    fun addScrap(widget: IScrapWidget)
 
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
-    }
+    fun removeScrap(widget: IScrapWidget)
 }

@@ -27,13 +27,15 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // Google Support Library.
-    implementation rootProject.ext.dep.supportAppcompatV7
+    api rootProject.ext.dep.supportAppcompatV7
 
     // Kotlin.
-    implementation rootProject.ext.dep.kotlinStdlibJre7
+    api rootProject.ext.dep.kotlinStdlibJre7
 
     // JSON.
-    implementation rootProject.ext.dep.gson
+    api rootProject.ext.dep.gson
+    // Rx-Java.
+    api rootProject.ext.dep.rxJava
 
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit

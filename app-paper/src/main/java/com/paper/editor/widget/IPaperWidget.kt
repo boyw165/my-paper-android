@@ -18,16 +18,37 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.widget
 
-import com.paper.editor.view.IScrapView
-import com.paper.shared.model.ScrapModel
+import com.paper.editor.data.DrawSVGEvent
+import com.paper.editor.data.Size
+import com.paper.shared.model.PaperModel
+import io.reactivex.Observable
 
-interface IScrapController {
+interface IPaperWidget : IBaseWidget<PaperModel> {
 
-    fun loadScrap(model: ScrapModel)
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-    fun bindView(view: IScrapView)
+    fun handleActionBegin()
 
-    fun unbindView()
+    fun handleActionEnd()
+
+    fun handleTap(x: Float, y: Float)
+
+    fun handleDragBegin(x: Float, y: Float)
+
+    fun handleDrag(x: Float, y: Float)
+
+    fun handleDragEnd(x: Float, y: Float)
+
+    // For output /////////////////////////////////////////////////////////////
+
+    fun onSetCanvasSize(): Observable<Size>
+
+    fun onAddScrapWidget(): Observable<IScrapWidget>
+
+    fun onRemoveScrapWidget(): Observable<IScrapWidget>
+
+    fun onDrawSVG(): Observable<DrawSVGEvent>
 }

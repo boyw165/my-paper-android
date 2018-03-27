@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,29 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper
 
-import com.paper.editor.view.IPaperWidgetView
-import io.reactivex.Observable
+object AppConst {
 
-class PaperEditorContract private constructor() {
+    const val TAG = "paper"
 
-    interface View {
+    const val MODEL_RESOLUTION_SCALE_BASE = 5f
 
-        fun getCanvasView(): IPaperWidgetView
-
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
-    }
+    const val PARAMS_PAPER_ID = "params_paper_id"
 }

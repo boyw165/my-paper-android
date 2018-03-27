@@ -22,6 +22,8 @@ package com.paper.view
 
 import android.content.Context
 import android.support.multidex.MultiDexApplication
+import com.cardinalblue.gesture.GestureDetector
+import com.paper.IGestureDetectorFactory
 import com.paper.protocol.IDatabaseIOSchedulerProvider
 import com.paper.protocol.IPaperRepoProvider
 import com.paper.protocol.ISharedPreferenceService
