@@ -65,15 +65,15 @@ data class SketchStroke(
         mPathTupleList.add(pathTuple)
     }
 
-//    fun addAllPathTuple(pathTupleList: List<PathTuple>) {
-//        // Calculate new boundary.
-//        for (pathTuple in pathTupleList) {
-//            val point = pathTuple.getPointAt(0)
-//            calculateBound(point.x, point.y)
-//        }
-//
-//        this.mPathTupleList.addAll(pathTupleList)
-//    }
+    fun addAllPathTuple(pathTupleList: List<PathTuple>) {
+        // Calculate new boundary.
+        for (pathTuple in pathTupleList) {
+            val point = pathTuple.getPointAt(0)
+            calculateBound(point.x, point.y)
+        }
+
+        this.mPathTupleList.addAll(pathTupleList)
+    }
 
     fun offset(offsetX: Float, offsetY: Float) {
         mPathTupleList.forEach { tuple ->

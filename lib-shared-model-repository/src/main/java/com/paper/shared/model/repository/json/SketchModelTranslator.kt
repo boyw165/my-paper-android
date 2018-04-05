@@ -15,7 +15,6 @@
 package com.paper.shared.model.repository.json
 
 import com.google.gson.*
-import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.SketchModel
 import com.paper.shared.model.sketch.SketchStroke
 import java.lang.reflect.Type
@@ -50,23 +49,10 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
             // ... and several tuple.
             val tuplesJson = JsonArray()
             strokeObj.add("path_tuples", tuplesJson)
-            for (tuple in stroke.pathTupleList) {
-                val tupleJson = JsonArray()
 
-                // Add tuple to the tuple list.
-                tuplesJson.add(tupleJson)
-
-                // A tuple contains several points.
-                for (point in tuple.allPoints) {
-                    val pointObj = JsonArray()
-
-                    pointObj.add(point.x)
-                    pointObj.add(point.y)
-
-                    // Add point to the tuple.
-                    tupleJson.add(pointObj)
-                }
-            }
+            // Save via SVG format
+            var svgTransJson = SVGTranslator.pathTupleToSVG(stroke.pathTupleList)
+            tuplesJson.add(svgTransJson)
         }
 
         return root
@@ -87,30 +73,9 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
 
             // Parse path-tuple
             val pathTuplesJson = strokeJson.get("path_tuples").asJsonArray
-            for (j in 0 until pathTuplesJson.size()) {
-                val pathTupleJson = pathTuplesJson.get(j).asJsonArray
-                val pathTuple = PathTuple()
-
-                // Add point to the tuple.
-                // It's a heterogeneous array,
-                // could be [f, f] or [[f, f], [f, f], ...].
-                if (pathTupleJson.get(0).isJsonPrimitive) {
-                    // If it is [f, f]...
-                    pathTuple.addPoint(
-                        pathTupleJson.get(0).asFloat,
-                        pathTupleJson.get(1).asFloat)
-                } else if (pathTupleJson.get(0).isJsonArray) {
-                    // If it is [[f, f], [f, f], ...]...
-                    for (k in 0 until pathTupleJson.size()) {
-                        val pointJson = pathTupleJson.get(k).asJsonArray
-                        pathTuple.addPoint(
-                            pointJson.get(0).asFloat,
-                            pointJson.get(1).asFloat)
-                    }
-                }
-
-                // Add tuple to the stroke.
-                stroke.addPathTuple(pathTuple)
+            pathTuplesJson.forEach { pathTupleJson ->
+                // Add tuplePath to the stroke.
+                stroke.addAllPathTuple(SVGTranslator.svgToPathTuple(pathTupleJson.asString))
             }
 
             // Stroke color.
