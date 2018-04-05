@@ -20,6 +20,8 @@
 
 package com.paper.shared.model
 
+import io.reactivex.Observable
+import io.reactivex.subjects.ReplaySubject
 import java.util.*
 
 class PaperModel(
@@ -41,5 +43,20 @@ class PaperModel(
 
     var caption: String = ""
 
-    val scraps: MutableList<ScrapModel> = mutableListOf()
+    // Scraps
+    private var mScraps = mutableListOf<ScrapModel>()
+    private val mAddScrapSignal = ReplaySubject.create<ScrapModel>()
+    private val mRemoveScrapSignal = ReplaySubject.create<ScrapModel>()
+    val scraps: List<ScrapModel>
+        get() = mScraps
+    fun addScrap(scrap: ScrapModel) {
+        mScraps.add(scrap)
+        mAddScrapSignal.onNext(scrap)
+    }
+    fun removeScrap(scrap: ScrapModel) {
+        mScraps.remove(scrap)
+        mRemoveScrapSignal.onNext(scrap)
+    }
+    fun onAddScrap(): Observable<ScrapModel> = mAddScrapSignal
+    fun onRemoveScrap(): Observable<ScrapModel> = mRemoveScrapSignal
 }

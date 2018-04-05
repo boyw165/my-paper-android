@@ -20,47 +20,30 @@
 
 package com.paper.editor.view
 
-import android.graphics.Bitmap
-import android.graphics.PointF
-import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.sketch.SketchStroke
-import io.reactivex.Observable
-import java.util.*
+import android.graphics.Canvas
+import android.view.MotionEvent
+import com.cardinalblue.gesture.IAllGesturesListener
+import com.paper.editor.widget.IScrapWidget
 
-interface ICanvasView : IScrapLifecycleListener {
+interface IScrapWidgetView {
 
-    fun onLayoutFinished(): Observable<ICanvasView>
+    fun bindWidget(widget: IScrapWidget)
 
-    fun takeSnapshot(): Bitmap
+    fun unbindWidget()
 
-    // Scrap manipulation /////////////////////////////////////////////////////
+    fun addChild(child: IScrapWidgetView)
 
-    fun addScrapView(scrap: ScrapModel)
+    fun removeChild(child: IScrapWidgetView)
 
-    fun removeScrapView(id: UUID)
+    // Gesture ////////////////////////////////////////////////////////////////
 
-    fun removeAllViews()
+    fun setGestureListener(listener: IAllGesturesListener?)
 
-    fun setScrapLifecycleListener(listener: IScrapLifecycleListener?)
+    // Rendering //////////////////////////////////////////////////////////////
 
-    // Transform //////////////////////////////////////////////////////////////
+    fun dispatchDraw(canvas: Canvas)
 
-    fun setCanvasSize(width: Float, height: Float)
+    // Touch //////////////////////////////////////////////////////////////////
 
-    fun setGestureListener(listener: SimpleGestureListener?)
-
-    fun startUpdateViewport()
-
-    fun onUpdateViewport(startPointers: Array<PointF>,
-                         stopPointers: Array<PointF>)
-
-    fun stopUpdateViewport()
-
-    // Sketch /////////////////////////////////////////////////////////////////
-
-    fun startDrawStroke(x: Float, y: Float)
-
-    fun onDrawStroke(x: Float, y: Float)
-
-    fun stopDrawStroke(): SketchStroke
+    fun dispatchTouch(event: MotionEvent)
 }

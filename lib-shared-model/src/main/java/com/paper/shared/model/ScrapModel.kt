@@ -21,18 +21,49 @@
 package com.paper.shared.model
 
 import com.paper.shared.model.sketch.SketchModel
+import io.reactivex.Observable
+import io.reactivex.subjects.BehaviorSubject
 import java.util.*
 
 open class ScrapModel(
     val uuid: UUID = UUID.randomUUID()) {
 
-    var x: Float = 0f
-    var y: Float = 0f
-//    var width: Float = 1f
-//    var height: Float = 1f
+    // X and y
+    private val mSetXSignal = BehaviorSubject.createDefault(0f)
+    private val mSetYSignal = BehaviorSubject.createDefault(0f)
+    var x: Float
+        get() = mSetXSignal.value
+        set(value) = mSetXSignal.onNext(value)
+    var y: Float
+        get() = mSetYSignal.value
+        set(value) = mSetYSignal.onNext(value)
+    /**
+     * Observe x update.
+     */
+    fun onSetX(): Observable<Float> {
+        return mSetXSignal
+    }
+    /**
+     * Observe y update.
+     */
+    fun onSetY(): Observable<Float> {
+        return mSetYSignal
+    }
 
-    var scale: Float = 1f
-    var rotationInRadians: Float = 0f
+    var scale: Float
+        get() = mSetScaleSignal.value
+        set(value) = mSetScaleSignal.onNext(value)
+    var rotationInRadians: Float
+        get() = mSetRotationSignal.value
+        set(value) = mSetRotationSignal.onNext(value)
+    private val mSetScaleSignal = BehaviorSubject.createDefault(1f)
+    private val mSetRotationSignal = BehaviorSubject.createDefault(0f)
 
-    var sketch: SketchModel? = null
+    var sketch: SketchModel
+        get() = mSetSketchSignal.value
+        set(value) = mSetSketchSignal.onNext(value)
+    private val mSetSketchSignal = BehaviorSubject.createDefault(SketchModel())
+
+    // TODO: Support image?
+//    var image: Any
 }

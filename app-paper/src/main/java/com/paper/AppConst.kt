@@ -20,9 +20,16 @@
 
 package com.paper
 
-object AppConsts {
+object AppConst {
+
+    // Common /////////////////////////////////////////////////////////////////
 
     const val TAG = "paper"
 
     const val PARAMS_PAPER_ID = "params_paper_id"
+
+    // Paper editor ///////////////////////////////////////////////////////////
+
+    const val VIEW_PORT_MIN_SCALE = 5f
+    const val COLLECT_STROKES_TIMEOUT_MS = 850L
 }

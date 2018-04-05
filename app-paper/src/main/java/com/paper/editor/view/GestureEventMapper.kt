@@ -21,36 +21,43 @@
 package com.paper.editor.view
 
 import android.graphics.PointF
+import com.cardinalblue.gesture.IAllGesturesListener
 import com.cardinalblue.gesture.MyMotionEvent
 
-class GestureEventNormalizationHelper : SimpleGestureListener() {
-
-    private var mXFactor: Float = 1f
-    private var mYFactor: Float = 1f
+class GestureEventMapper : SimpleGestureListener() {
 
     private val mNumbersMap = floatArrayOf(0f, 0f)
     private var mMapper: Mapper? = null
 
-    private var mListener: SimpleGestureListener? = null
+    private var mListener: IAllGesturesListener? = null
 
     fun setNumberMapper(mapper: Mapper?) {
         mMapper = mapper
     }
 
-    fun setNormalizationFactors(x: Float, y: Float) {
-        mXFactor = x
-        mYFactor = y
+    fun map(x: Float, y: Float): Pair<Float, Float> {
+        mNumbersMap[0] = x
+        mNumbersMap[1] = y
+        mMapper?.map(mNumbersMap)
+        return Pair(mNumbersMap[0],
+                    mNumbersMap[1])
     }
 
-    fun inverseNormalizationToX(x: Float): Float {
-        return x / mXFactor
+    fun invertMap(x: Float, y: Float): Pair<Float, Float> {
+        mNumbersMap[0] = x
+        mNumbersMap[1] = y
+        mMapper?.invertMap(mNumbersMap)
+        return Pair(mNumbersMap[0],
+                    mNumbersMap[1])
     }
 
-    fun inverseNormalizationToY(y: Float): Float {
-        return y / mYFactor
+    fun invertScale(num: Float): Float {
+        mNumbersMap[0] = num
+        mMapper?.invertMap(mNumbersMap)
+        return mNumbersMap[0]
     }
 
-    fun setGestureListener(listener: SimpleGestureListener?) {
+    fun setGestureListener(listener: IAllGesturesListener?) {
         mListener = listener
     }
 
@@ -69,7 +76,14 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
         mListener?.onActionEnd(normalizeEvent(event), target, context)
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    // Tap ////////////////////////////////////////////////////////////////////
+
+    override fun onSingleTap(event: MyMotionEvent,
+                             target: Any?, context:
+                             Any?) {
+        mListener?.onSingleTap(normalizeEvent(event), target, context)
+    }
+
     // Drag ///////////////////////////////////////////////////////////////////
 
     override fun onDragBegin(event: MyMotionEvent,
@@ -98,8 +112,9 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
         mListener?.onDragFling(normalizeEvent(event), target, context,
                                normalizePointer(startPointer),
                                normalizePointer(stopPointer),
-                               velocityX / mXFactor,
-                               velocityY / mYFactor)
+                               // FIXME: Get the scale from the matrix?
+                               velocityX,
+                               velocityY)
     }
 
     override fun onDragEnd(event: MyMotionEvent,
@@ -112,7 +127,6 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
                              normalizePointer(stopPointer))
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     // Pinch //////////////////////////////////////////////////////////////////
 
     override fun onPinchBegin(event: MyMotionEvent,
@@ -161,23 +175,23 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
             downXs = FloatArray(downXs.size, { i ->
                 mNumbersMap[0] = downXs[i]
                 mMapper?.map(mNumbersMap)
-                mNumbersMap[0] * mXFactor
+                mNumbersMap[0]
             }),
             downYs = FloatArray(downYs.size, { i ->
                 mNumbersMap[0] = downYs[i]
                 mMapper?.map(mNumbersMap)
-                mNumbersMap[0] * mYFactor
+                mNumbersMap[0]
             }),
             isUp = event.isUp,
             upX = event.upX.let { x ->
                 mNumbersMap[0] = x
                 mMapper?.map(mNumbersMap)
-                mNumbersMap[0] * mXFactor
+                mNumbersMap[0]
             },
             upY = event.upY.let { y ->
                 mNumbersMap[0] = y
                 mMapper?.map(mNumbersMap)
-                mNumbersMap[0] * mYFactor
+                mNumbersMap[0]
             })
     }
 
@@ -186,8 +200,8 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
         mNumbersMap[1] = pt.y
         mMapper?.map(mNumbersMap)
 
-        return PointF(mNumbersMap[0] * mXFactor,
-                      mNumbersMap[1] * mYFactor)
+        return PointF(mNumbersMap[0],
+                      mNumbersMap[1])
     }
 
     private fun normalizePointers(pts: Array<PointF>): Array<PointF> {
@@ -196,8 +210,8 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
             mNumbersMap[1] = pts[i].y
             mMapper?.map(mNumbersMap)
 
-            PointF(mNumbersMap[0] * mXFactor,
-                   mNumbersMap[1] * mYFactor)
+            PointF(mNumbersMap[0],
+                   mNumbersMap[1])
         })
     }
 
@@ -207,5 +221,7 @@ class GestureEventNormalizationHelper : SimpleGestureListener() {
     interface Mapper {
 
         fun map(nums: FloatArray)
+
+        fun invertMap(nums: FloatArray)
     }
 }

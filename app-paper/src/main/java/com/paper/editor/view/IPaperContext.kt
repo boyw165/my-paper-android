@@ -18,29 +18,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view
 
-import com.paper.editor.view.IPaperWidgetView
-import io.reactivex.Observable
+import android.view.ViewConfiguration
 
-class PaperEditorContract private constructor() {
+/**
+ * The context gives the global editor settings and the ability to map point
+ * from one coordinate to other coordinate.
+ */
+interface IPaperContext {
 
-    interface View {
+    // Rendering //////////////////////////////////////////////////////////////
 
-        fun getCanvasView(): IPaperWidgetView
+    fun getMinStrokeWidth(): Float
 
-        fun showProgressBar(progress: Int)
+    fun getMaxStrokeWidth(): Float
 
-        fun hideProgressBar()
+    /**
+     * Map the point observed in the Model world to the View world.
+     */
+    fun mapM2V(x: Float, y: Float): FloatArray
 
-        fun showErrorAlert(error: Throwable)
+    // Gesture ////////////////////////////////////////////////////////////////
 
-        fun close()
+    fun getViewConfiguration(): ViewConfiguration
 
-        fun onClickCloseButton(): Observable<Any>
+    fun getTouchSlop(): Float
 
-        fun onClickDrawButton(): Observable<Boolean>
+    fun getTapSlop(): Float
 
-        fun onClickMenu(): Observable<Any>
-    }
+    fun getMinFlingVec(): Float
+
+    fun getMaxFlingVec(): Float
 }

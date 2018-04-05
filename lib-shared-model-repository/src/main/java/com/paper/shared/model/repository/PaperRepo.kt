@@ -258,12 +258,12 @@ class PaperRepo(private val mAuthority: String,
     override fun getTempPaper(): Single<PaperModel> {
         return Single
             .fromCallable {
-                // Sol#1
-                //                mTempFile
-                //                    .bufferedReader()
-                //                    .use { reader ->
-                //                        mGson.fromJson(reader, PaperModel::class.java)
-                //                    }
+//                // Sol#1
+//                return@fromCallable mTempFile
+//                    .bufferedReader()
+//                    .use { reader ->
+//                        mGson.fromJson(reader, PaperModel::class.java)
+//                    }
 
                 // Sol#2
                 // TODO: Assign default portrait size.
@@ -271,9 +271,7 @@ class PaperRepo(private val mAuthority: String,
                 val newPaper = PaperModel(
                     createdAt = timestamp)
                 newPaper.modifiedAt = timestamp
-
-                // Return..
-                newPaper
+                return@fromCallable newPaper
             }
             .subscribeOn(mDbIoScheduler)
     }
@@ -380,7 +378,7 @@ class PaperRepo(private val mAuthority: String,
             val jsonString = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_SCRAPS))
             val json = mGson.fromJson(jsonString, JsonObject::class.java)
             json.get(PaperTable.COL_DATA).asJsonArray.forEach { element ->
-                paper.scraps.add(mGson.fromJson(element, ScrapModel::class.java))
+                paper.addScrap(mGson.fromJson(element, ScrapModel::class.java))
             }
         }
 

@@ -36,15 +36,7 @@ data class SketchStroke(
     var isEraser: Boolean = false,
     private val mPathTupleList: MutableList<PathTuple> = ArrayList()) {
 
-    val pathTupleList: List<PathTuple> get() {
-        val ret = mutableListOf<PathTuple>()
-
-        mPathTupleList.forEach { tuple ->
-            ret.add(PathTuple(tuple))
-        }
-
-        return ret
-    }
+    val pathTupleList: List<PathTuple> get() = mPathTupleList
 
     private val mBound = RectF(java.lang.Float.MAX_VALUE,
                                java.lang.Float.MAX_VALUE,

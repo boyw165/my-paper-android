@@ -20,8 +20,8 @@
 
 package com.paper.shared.model
 
-data class TransformModel(var translationX: Float,
-                          var translationY: Float,
-                          var scaleX: Float,
-                          var scaleY: Float,
-                          var rotationInRadians: Float)
+data class TransformModel(var translationX: Float = 0f,
+                          var translationY: Float = 0f,
+                          var scaleX: Float = 1f,
+                          var scaleY: Float = 1f,
+                          var rotationInRadians: Float = 0f)

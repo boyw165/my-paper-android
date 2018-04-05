@@ -18,29 +18,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.widget
 
-import com.paper.editor.view.IPaperWidgetView
+import com.paper.editor.data.DrawSVGEvent
+import com.paper.shared.model.ScrapModel
+import com.paper.shared.model.TransformModel
 import io.reactivex.Observable
+import java.util.*
 
-class PaperEditorContract private constructor() {
+interface IScrapWidget: IBaseWidget<ScrapModel> {
 
-    interface View {
+    // For input //////////////////////////////////////////////////////////////
 
-        fun getCanvasView(): IPaperWidgetView
+    fun handleTap(x: Float, y: Float)
 
-        fun showProgressBar(progress: Int)
+    // For output /////////////////////////////////////////////////////////////
 
-        fun hideProgressBar()
+    fun getId(): UUID
 
-        fun showErrorAlert(error: Throwable)
+    fun onDrawSVG(): Observable<DrawSVGEvent>
 
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
-    }
+    fun onTransform(): Observable<TransformModel>
 }

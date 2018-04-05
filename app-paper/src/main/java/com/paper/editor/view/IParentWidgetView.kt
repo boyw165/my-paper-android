@@ -18,29 +18,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view
 
-import com.paper.editor.view.IPaperWidgetView
-import io.reactivex.Observable
+/**
+ * The parent View for the current [IScrapWidgetView].
+ */
+interface IParentWidgetView {
 
-class PaperEditorContract private constructor() {
-
-    interface View {
-
-        fun getCanvasView(): IPaperWidgetView
-
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
-    }
+    fun delayedInvalidate()
 }

@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,28 +18,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.data
 
-import android.graphics.Matrix
-import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.TransformModel
-import java.util.*
+import android.graphics.PointF
 
-interface IScrapView {
+data class DrawSVGEvent(
+    val action: Action,
+    val point: PointF = PointF()) {
 
-    fun setModel(model: ScrapModel)
-
-    fun getScrapId(): UUID
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    fun setGestureListener(listener: SimpleGestureListener?)
-
-    // Transform //////////////////////////////////////////////////////////////
-
-    fun setTransform(transform: TransformModel)
-
-    // Rendering //////////////////////////////////////////////////////////////
-
-    fun invalidateRenderingCache()
+    enum class Action {
+        // Creation action.
+        MOVE,
+        LINE_TO,
+        CUBIC_TO,
+        QUAD_TO,
+        // TODO: Support
+        CLOSE,
+        // Destruction action.
+        CLEAR_ALL
+    }
 }

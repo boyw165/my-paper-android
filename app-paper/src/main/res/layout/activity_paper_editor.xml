@@ -33,7 +33,7 @@
         app:srcCompat="@drawable/icon_toolbar_close"/>
 
     <!-- Paper canvas -->
-    <com.paper.editor.view.PaperCanvasView
+    <com.paper.editor.view.PaperWidgetView
         android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"

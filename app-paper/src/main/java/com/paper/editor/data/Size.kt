@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.data
 
-interface IScrapLifecycleListener {
-
-    fun onAttachToCanvas(view: IScrapView)
-
-    fun onDetachFromCanvas(view: IScrapView)
-}
+data class Size(val width: Float = 0f,
+                val height: Float = 0f)

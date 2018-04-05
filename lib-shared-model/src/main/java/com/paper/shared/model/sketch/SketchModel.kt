@@ -56,13 +56,13 @@ class SketchModel {
 
     private val mMutex = Any()
 
-    val mStrokes: MutableList<SketchStroke> = ArrayList()
-    var mStrokesBoundDirty = true
-    var mStrokesBound = RectF()
+    private val mStrokes: MutableList<SketchStroke> = ArrayList()
+    private var mStrokesBoundDirty = true
+    private var mStrokesBound = RectF()
 
     constructor() : this(emptyList())
     constructor(other: SketchModel) : this(other.allStrokes) {
-        mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
+//        mStrokesBound = RectF(other.strokesBoundaryWithinCanvas)
         mStrokesBoundDirty = false
     }
     constructor(strokes: List<SketchStroke> = emptyList()) {
@@ -91,6 +91,13 @@ class SketchModel {
         }
     }
 
+    fun addAllStroke(stroke: List<SketchStroke>) {
+        synchronized(mMutex) {
+            mStrokes.addAll(stroke)
+            mStrokesBoundDirty = true
+        }
+    }
+
     val firstStroke: SketchStroke
         get() {
             synchronized(mMutex) {
@@ -108,6 +115,7 @@ class SketchModel {
     val allStrokes: List<SketchStroke>
         get() {
             synchronized(mMutex) {
+                // TODO: Recursively copy
                 return ArrayList(mStrokes)
             }
         }
@@ -115,54 +123,6 @@ class SketchModel {
     fun clearStrokes() {
         synchronized(mMutex) {
             mStrokes.clear()
-        }
-    }
-
-    // Also consider the stroke width.
-    // Constraint the boundary inside the canvas.
-    val strokesBoundaryWithinCanvas: RectF
-        get() {
-            if (mStrokesBoundDirty) {
-                synchronized(mMutex) {
-                    mStrokesBound.set(
-                        java.lang.Float.MAX_VALUE,
-                        java.lang.Float.MAX_VALUE,
-                        java.lang.Float.MIN_VALUE,
-                        java.lang.Float.MIN_VALUE)
-
-                    // TODO: Fix it, and the following code might not be somewhere else.
-//                    val aspectRatio = width.toFloat() / height
-//                    for (stroke in mStrokes) {
-//                        val strokeBound = stroke.bound
-//                        val halfStrokeWidth = stroke.getWidth() / 2
-//
-//                        mStrokesBound.left = Math.min(mStrokesBound.left, strokeBound.left - halfStrokeWidth)
-//                        mStrokesBound.top = Math.min(mStrokesBound.top, strokeBound.top - halfStrokeWidth * aspectRatio)
-//                        mStrokesBound.right = Math.max(mStrokesBound.right, strokeBound.right + halfStrokeWidth)
-//                        mStrokesBound.bottom = Math.max(mStrokesBound.bottom, strokeBound.bottom + halfStrokeWidth * aspectRatio)
-//                    }
-
-                    // Clamp the bound within a 1x1 square.
-                    mStrokesBound.left = Math.max(mStrokesBound.left, 0f)
-                    mStrokesBound.top = Math.max(mStrokesBound.top, 0f)
-                    mStrokesBound.right = Math.min(mStrokesBound.right, 1f)
-                    mStrokesBound.bottom = Math.min(mStrokesBound.bottom, 1f)
-
-                    mStrokesBoundDirty = false
-                }
-            }
-
-            return mStrokesBound
-        }
-
-    fun setStrokes(strokes: List<SketchStroke>?) {
-        synchronized(mMutex) {
-            mStrokes!!.clear()
-
-            if (strokes != null) {
-                mStrokes!!.addAll(strokes)
-            }
-
             mStrokesBoundDirty = true
         }
     }
