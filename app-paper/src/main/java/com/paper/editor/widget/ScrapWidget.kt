@@ -20,13 +20,17 @@
 
 package com.paper.editor.widget
 
+import android.graphics.PointF
+import com.paper.editor.data.DrawSVGEvent
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class ScrapWidget(
     private val mUiScheduler: Scheduler,
@@ -34,9 +38,13 @@ class ScrapWidget(
     : IScrapWidget {
 
     private lateinit var mModel: ScrapModel
-    private val mModelDisposables = CompositeDisposable()
+
+    private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
 
     private val mSetTransformSignal = BehaviorSubject.create<TransformModel>()
+
+    private val mCancelSignal = PublishSubject.create<Any>()
+    private val mDisposables = CompositeDisposable()
 
     override fun bindModel(model: ScrapModel) {
         ensureNoLeakedBinding()
@@ -52,11 +60,52 @@ class ScrapWidget(
     }
 
     override fun unbindModel() {
-        mModelDisposables.clear()
+        mCancelSignal.onNext(0)
+        mDisposables.clear()
     }
 
     override fun getId(): UUID {
         return mModel.uuid
+    }
+
+    // Drawing ////////////////////////////////////////////////////////////////
+
+    override fun onDrawSVG(): Observable<DrawSVGEvent> {
+        // FIXME: It's dangerous that any new draw event is created before this
+        // FIXME: initialization finishes.
+        Observable
+            .timer(1, TimeUnit.MILLISECONDS, mUiScheduler)
+            .takeUntil(mCancelSignal)
+            .subscribe {
+                mModel.sketch.allStrokes.forEach { stroke ->
+                    val lastIndex = stroke.pathTupleList.lastIndex
+
+                    stroke.pathTupleList.forEachIndexed { i, path ->
+                        when (i) {
+                            0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
+                                action = DrawSVGEvent.Action.MOVE,
+                                point = PointF(path.firstPoint.x,
+                                               path.firstPoint.y)))
+                            lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
+                                action = DrawSVGEvent.Action.CLOSE,
+                                point = PointF(path.firstPoint.x,
+                                               path.firstPoint.y)))
+                            else -> mDrawSVGSignal.onNext(DrawSVGEvent(
+                                action = DrawSVGEvent.Action.LINE_TO,
+                                point = PointF(path.firstPoint.x,
+                                               path.firstPoint.y)))
+                        }
+                    }
+                }
+            }
+
+        return mDrawSVGSignal
+    }
+
+    // Touch //////////////////////////////////////////////////////////////////
+
+    override fun handleTap(x: Float, y: Float) {
+        TODO()
     }
 
     override fun onTransform(): Observable<TransformModel> {
@@ -67,7 +116,7 @@ class ScrapWidget(
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun ensureNoLeakedBinding() {
-        if (mModelDisposables.size() > 0)
+        if (mDisposables.size() > 0)
             throw IllegalStateException("Already bind a model")
     }
 }

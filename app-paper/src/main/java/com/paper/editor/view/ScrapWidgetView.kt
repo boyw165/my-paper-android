@@ -20,174 +20,91 @@
 
 package com.paper.editor.view
 
-import android.content.Context
 import android.graphics.*
 import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
-import android.view.ViewConfiguration
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.AppConst
-import com.paper.R
+import com.paper.editor.data.DrawSVGEvent
 import com.paper.editor.widget.IScrapWidget
+import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
-open class ScrapWidgetView(private val mContext: Context,
-                           private val mScaleFromModelToView: Float)
-    : IScrapWidgetView,
-      GestureEventMapper.Mapper {
+open class ScrapWidgetView : IScrapWidgetView {
 
     private lateinit var mWidget: IScrapWidget
-    private val mModelDisposables = CompositeDisposable()
 
+    private var mContext: IPaperContext? = null
+    private var mParent: IParentWidgetView? = null
     private val mChildren = mutableListOf<ScrapWidgetView>()
 
     // Rendering properties.
+    private var mX = Float.NaN
+    private var mY = Float.NaN
+    private var mScale = Float.NaN
+    private var mRotationInRadians = Float.NaN
     private var mIsCacheDirty: Boolean = true
-    private val mScrapBound = RectF(0f, 0f,
-                                    mScaleFromModelToView * 100f,
-                                    mScaleFromModelToView * 100f)
-    private val mSketchPath = Path()
-    private val mSketchPaint = Paint()
-    private val mSketchMinWidth: Float by lazy { mContext.resources.getDimension(R.dimen.sketch_min_stroke_width) }
-    private val mSketchMaxWidth: Float by lazy { mContext.resources.getDimension(R.dimen.sketch_max_stroke_width) }
-
-    // Transform
-    private val mToParentMatrix = Matrix()
-    private val mToParentMatrixInverse = Matrix()
+    private val mScrapBound = RectF(0f, 0f, 0f, 0f)
+    private val mStrokePaths = mutableListOf<Path>()
+    private val mStrokePaint = Paint()
+    private val mDebugPaint = Paint()
+    private var mIsMatrixDirty = true
+    /**
+     * The matrix used for mapping a point from this world to parent world.
+     */
+    private val mMatrix = Matrix()
+    /**
+     * The inverse matrix of [mMatrix], which is used for mapping a point from
+     * parent world to this world.
+     */
+    private val mMatrixInverse = Matrix()
     private val mTransformHelper: TransformUtils = TransformUtils()
 
     // Gesture.
     private var mIfHandleEvent = false
     private val mGestureDetector: GestureDetector by lazy {
-        GestureDetector(Looper.getMainLooper(),
-                        ViewConfiguration.get(mContext),
-                        mContext.resources.getDimension(R.dimen.touch_slop),
-                        mContext.resources.getDimension(R.dimen.tap_slop),
-                        mContext.resources.getDimension(R.dimen.fling_min_vec),
-                        mContext.resources.getDimension(R.dimen.fling_max_vec))
-    }
-    private val mEventNormalizationHelper by lazy {
-        GestureEventMapper()
-    }
-
-    init {
-        // Map the events to the canvas world and apply normalization function.
-        mGestureDetector.tapGestureListener = mEventNormalizationHelper
-        mGestureDetector.dragGestureListener = mEventNormalizationHelper
-        mGestureDetector.pinchGestureListener = mEventNormalizationHelper
+        val field = GestureDetector(Looper.getMainLooper(),
+                                    mContext!!.getViewConfiguration(),
+                                    mContext!!.getTouchSlop(),
+                                    mContext!!.getTapSlop(),
+                                    mContext!!.getMinFlingVec(),
+                                    mContext!!.getMaxFlingVec())
+//        field.tapGestureListener = this@ScrapWidgetView
+//        field.dragGestureListener = this@ScrapWidgetView
+//        field.pinchGestureListener = this@ScrapWidgetView
+        field
     }
 
-//    override fun onAttachedToWindow() {
-//        super.onAttachedToWindow()
-//
-//        // Enable helper of converting the event from this coordinate to canvas
-//        // coordinate.
-//        mEventNormalizationHelper.setNumberMapper(this@ScrapWidgetView)
-//
-//        // Giving a background would make onDraw() able to be called.
-//        setBackgroundColor(Color.TRANSPARENT)
-//
-//        invalidateRenderingCache()
-//    }
-
-    override fun dispatchDraw(canvas: Canvas) {
-        val count = canvas.save()
-        canvas.concat(mToParentMatrix)
-
-        // Draw itself
-        onDraw(canvas)
-
-        // Then children
-        mChildren.forEach { it.dispatchDraw(canvas) }
-
-        canvas.restoreToCount(count)
-    }
-
-    override fun dispatchTouch(event: MotionEvent) {
-        TODO()
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // IScrapWidgetView ///////////////////////////////////////////////////////
-
-    protected fun onDraw(canvas: Canvas) {
-        mSketchPaint.style = Paint.Style.STROKE
-        mSketchPaint.color = Color.BLUE
-        mSketchPaint.strokeWidth = mSketchMinWidth
-
-        //        validateRenderingCache()
-
-        // TEST: Improve performance.
-        canvas.clipRect(mScrapBound)
-
-        // Boundary.
-        canvas.drawRect(mScrapBound, mSketchPaint)
-        //        // Sketch.
-        //        canvas.drawPath(mSketchPath, mSketchPaint)
-    }
-
-    protected fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.getX(0)
-        val y = event.getY(0)
-
-        // If the canvas doesn't handle the touch, bubble up the event.
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                mIfHandleEvent = mScrapBound.contains(x, y)
-            }
-        }
-
-        return if (mIfHandleEvent) {
-            mGestureDetector.onTouchEvent(event, null, null)
-            true
-        } else {
-            false
-        }
-    }
+    private val mDisposables = CompositeDisposable()
 
     override fun bindWidget(widget: IScrapWidget) {
         mWidget = widget
 
-        mModelDisposables.add(
-            mWidget.onTransform()
-                .subscribe { xform ->
-                    val scaledModelX = mScaleFromModelToView * xform.translationX
-                    val scaledModelY = mScaleFromModelToView * xform.translationY
-
-                    mToParentMatrix.reset()
-                    mToParentMatrix.postScale(xform.scaleX, xform.scaleY)
-                    mToParentMatrix.postRotate(Math.toDegrees(xform.rotationInRadians.toDouble()).toFloat())
-                    mToParentMatrix.postTranslate(scaledModelX, scaledModelY)
-
-                    Log.d(AppConst.TAG, "x=${xform.translationX}, y=${xform.translationY}")
-                    Log.d(AppConst.TAG, "x=$scaledModelX, y=$scaledModelY")
-
-                    mToParentMatrix.invert(mToParentMatrixInverse)
-
-//                    invalidate()
+        mDisposables.add(
+            mWidget.onDrawSVG()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { event ->
+                    onDrawSVG(event)
                 })
 
-//        // Update view transform according to model.
-//        setTransform(TransformModel(
-//            translationX = mWidget.x,
-//            translationY = mWidget.y,
-//            scaleX = mWidget.scale,
-//            scaleY = mWidget.scale,
-//            rotationInRadians = mWidget.rotationInRadians))
-//
-//        invalidateRenderingCache()
-//
-//        invalidate()
-//        if (!isLayoutRequested) {
-//            requestLayout()
-//        }
+        mDisposables.add(
+            mWidget.onTransform()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { xform ->
+                    onUpdateTransform(xform)
+                })
     }
 
     override fun unbindWidget() {
-        mModelDisposables.clear()
+        // Clear the reference!
+        mContext = null
+        mParent = null
+
+        mDisposables.clear()
     }
 
     override fun addChild(child: IScrapWidgetView) {
@@ -200,108 +117,150 @@ open class ScrapWidgetView(private val mContext: Context,
         mChildren.remove(childView)
     }
 
-    override fun setGestureListener(listener: IAllGesturesListener?) {
-        mEventNormalizationHelper.setGestureListener(listener)
+    fun setParent(parent: IParentWidgetView) {
+        mParent = parent
     }
 
-//    fun setViewToModelScale(scale: Float) {
-//        mViewToModelScale = scale
-//
-//        // Also update the event normalization helper.
-//        mEventNormalizationHelper.setScaleFactors(
-//            mViewToModelScale, mViewToModelScale)
-//    }
+    fun setPaperContext(context: IPaperContext) {
+        mContext = context
 
-    // Transform //////////////////////////////////////////////////////////////
+        mStrokePaint.style = Paint.Style.STROKE
+        mStrokePaint.color = Color.RED
+        mStrokePaint.strokeWidth = 3f * mContext!!.getMinStrokeWidth()
 
-    override fun map(nums: FloatArray) {
-        // TODO()
-//        matrix.mapPoints(nums)
+        mDebugPaint.style = Paint.Style.STROKE
+        mDebugPaint.color = Color.RED
+        mDebugPaint.strokeWidth = 3f
     }
 
-    override fun invertMap(nums: FloatArray) {
-        // TODO()
+    // Draw ///////////////////////////////////////////////////////
+
+    override fun dispatchDraw(canvas: Canvas) {
+        val count = canvas.save()
+
+        computeMatrix()
+        canvas.concat(mMatrix)
+
+        // Draw itself
+        onDraw(canvas)
+
+        // Then children
+        mChildren.forEach { it.dispatchDraw(canvas) }
+
+        canvas.restoreToCount(count)
     }
 
-    //
-//    override fun setTransform(transform: TransformModel) {
-//        scaleX = transform.scaleX
-//        scaleY = transform.scaleY
-//        rotation = Math.toDegrees(transform.rotationInRadians.toDouble()).toFloat()
-//        translationX = mEventNormalizationHelper.invertScale(transform.translationX)
-//        translationY = mEventNormalizationHelper.invertScaleY(transform.translationY)
-//    }
+    private fun onDraw(canvas: Canvas) {
+//        // TEST: Improve performance.
+//        canvas.clipRect(mScrapBound)
 
-    // Rendering //////////////////////////////////////////////////////////////
+        validateRenderingCache()
 
-//    override fun invalidateRenderingCache() {
-//        // Mark the rendering cache is dirty and later validateRenderingCache()
-//        // would update the necessary properties for rendering and touching.
-//        mIsCacheDirty = true
-//    }
+        // Sketch.
+        mStrokePaths.forEach { path ->
+            canvas.drawPath(path, mStrokePaint)
+        }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
+        drawCenter(canvas)
+    }
 
-//    private fun validateRenderingCache() {
-//        if (!mIsCacheDirty) return
-//
-//        // Boundary.
+    private fun drawCenter(canvas: Canvas) {
+        canvas.drawLine(-20f, 0f, 20f, 0f, mDebugPaint)
+        canvas.drawLine(0f, -20f, 0f, 20f, mDebugPaint)
+    }
+
+    private fun onDrawSVG(event: DrawSVGEvent) {
+        val nx = event.point.x
+        val ny = event.point.y
+        val (x, y) = mContext!!.mapM2V(nx, ny)
+
+        when (event.action) {
+            DrawSVGEvent.Action.MOVE -> {
+                val path = Path()
+                path.moveTo(x, y)
+
+                mStrokePaths.add(path)
+            }
+            DrawSVGEvent.Action.LINE_TO -> {
+                val path = mStrokePaths[mStrokePaths.size - 1]
+                path.lineTo(x, y)
+            }
+            DrawSVGEvent.Action.CLOSE -> {
+                // DO NOTHING.
+                Log.d(AppConst.TAG, "")
+            }
+            DrawSVGEvent.Action.CLEAR_ALL -> {
+                mStrokePaths.clear()
+            }
+            else -> {
+                // NOT SUPPORT
+            }
+        }
+
+        mParent?.delayedInvalidate()
+    }
+
+    private fun onUpdateTransform(xform: TransformModel) {
+        mX = xform.translationX
+        mY = xform.translationY
+        mScale = xform.scaleX
+        mRotationInRadians = xform.rotationInRadians
+
+        mIsMatrixDirty = true
+
+        // Trigger the invalidation will lead to dispatchDraw and onDraw
+        // functions
+        invalidate(false)
+    }
+
+    private fun invalidate(rebuildCache: Boolean) {
+        if (rebuildCache) {
+            invalidateRenderingCache()
+        }
+
+        mParent?.delayedInvalidate()
+    }
+
+    private fun computeMatrix() {
+        if (mIsMatrixDirty) {
+            val (x, y) = mContext!!.mapM2V(mX, mY)
+
+            mMatrix.reset()
+            mMatrix.postScale(mScale, mScale)
+            mMatrix.postRotate(Math.toDegrees(mRotationInRadians.toDouble()).toFloat())
+            mMatrix.postTranslate(x, y)
+
+            mIsMatrixDirty = false
+        }
+    }
+
+    private fun invalidateRenderingCache() {
+        // Mark the rendering cache is dirty and later validateRenderingCache()
+        // would update the necessary properties for rendering and touching.
+        mIsCacheDirty = true
+    }
+
+    private fun validateRenderingCache() {
+        if (!mIsCacheDirty) return
+
 //        rebuildSketchBound()
-//
-//        // Path for sketch.
 //        rebuildSketchPath()
-//
-//        mIsCacheDirty = false
-//    }
-//
-//    private fun rebuildSketchBound() {
-//        var left = Float.POSITIVE_INFINITY
-//        var top = Float.POSITIVE_INFINITY
-//        var right = Float.NEGATIVE_INFINITY
-//        var bottom = Float.NEGATIVE_INFINITY
-//        mWidget.sketch?.let { sketch ->
-//            sketch.allStrokes.forEach { stroke ->
-//                stroke.pathTupleList.forEach { tuple ->
-//                    left = Math.min(left, tuple.firstPoint.x)
-//                    top = Math.min(top, tuple.firstPoint.y)
-//                    right = Math.max(right, tuple.firstPoint.x)
-//                    bottom = Math.max(bottom, tuple.firstPoint.y)
-//                }
-//            }
-//            mScrapBound.set(left,
-//                            top,
-//                            right,
-//                            bottom)
-//        }
-//
-//        // To view world.
-//        mScrapBound.set(mScrapBound.left / mViewToModelScale,
-//                        mScrapBound.top / mViewToModelScale,
-//                        mScrapBound.right / mViewToModelScale,
-//                        mScrapBound.bottom / mViewToModelScale)
-//    }
-//
-//    private fun rebuildSketchPath() {
-//        mWidget.sketch?.let { sketch ->
-//            mSketchPath.reset()
-//
-//            sketch.allStrokes.forEach { stroke ->
-//                stroke.pathTupleList.forEachIndexed { i, tuple ->
-//                    val x = tuple.firstPoint.x / mViewToModelScale
-//                    val y = tuple.firstPoint.y / mViewToModelScale
-//
-//                    when (i) {
-//                        0 -> {
-//                            mSketchPath.moveTo(x, y)
-//                        }
-//                        else -> {
-//                            mSketchPath.lineTo(x, y)
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
+
+        mIsCacheDirty = false
+    }
+
+    // Touch //////////////////////////////////////////////////////////////////
+
+    override fun dispatchTouch(event: MotionEvent) {
+        TODO()
+    }
+
+    protected fun onTouchEvent(event: MotionEvent): Boolean {
+        return false
+    }
+
+    override fun setGestureListener(listener: IAllGesturesListener?) {
+        TODO()
+    }
 }
 

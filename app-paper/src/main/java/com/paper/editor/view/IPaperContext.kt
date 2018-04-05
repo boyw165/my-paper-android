@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,18 +18,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper
+package com.paper.editor.view
 
-object AppConst {
+import android.view.ViewConfiguration
 
-    // Common /////////////////////////////////////////////////////////////////
+/**
+ * The context gives the global editor settings and the ability to map point
+ * from one coordinate to other coordinate.
+ */
+interface IPaperContext {
 
-    const val TAG = "paper"
+    // Rendering //////////////////////////////////////////////////////////////
 
-    const val PARAMS_PAPER_ID = "params_paper_id"
+    fun getMinStrokeWidth(): Float
 
-    // Paper editor ///////////////////////////////////////////////////////////
+    fun getMaxStrokeWidth(): Float
 
-    const val VIEW_PORT_MIN_SCALE = 5f
-    const val COLLECT_STROKES_TIMEOUT_MS = 850L
+    /**
+     * Map the point observed in the Model world to the View world.
+     */
+    fun mapM2V(x: Float, y: Float): FloatArray
+
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    fun getViewConfiguration(): ViewConfiguration
+
+    fun getTouchSlop(): Float
+
+    fun getTapSlop(): Float
+
+    fun getMinFlingVec(): Float
+
+    fun getMaxFlingVec(): Float
 }

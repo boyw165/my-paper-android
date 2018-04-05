@@ -20,6 +20,7 @@
 
 package com.paper.editor.widget
 
+import com.paper.editor.data.DrawSVGEvent
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import io.reactivex.Observable
@@ -28,11 +29,14 @@ import java.util.*
 interface IScrapWidget: IBaseWidget<ScrapModel> {
 
     // For input //////////////////////////////////////////////////////////////
-    // TODO: How to define the inbox?
+
+    fun handleTap(x: Float, y: Float)
 
     // For output /////////////////////////////////////////////////////////////
 
     fun getId(): UUID
+
+    fun onDrawSVG(): Observable<DrawSVGEvent>
 
     fun onTransform(): Observable<TransformModel>
 }

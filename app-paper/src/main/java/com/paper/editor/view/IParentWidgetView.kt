@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,18 +18,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper
+package com.paper.editor.view
 
-object AppConst {
+/**
+ * The parent View for the current [IScrapWidgetView].
+ */
+interface IParentWidgetView {
 
-    // Common /////////////////////////////////////////////////////////////////
-
-    const val TAG = "paper"
-
-    const val PARAMS_PAPER_ID = "params_paper_id"
-
-    // Paper editor ///////////////////////////////////////////////////////////
-
-    const val VIEW_PORT_MIN_SCALE = 5f
-    const val COLLECT_STROKES_TIMEOUT_MS = 850L
+    fun delayedInvalidate()
 }

@@ -36,6 +36,7 @@ import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.NoSuchElementException
 
 class PaperWidget(private val mUiScheduler: Scheduler,
@@ -45,6 +46,9 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     // Model
     private lateinit var mModel: PaperModel
     private val mModelDisposables = CompositeDisposable()
+
+    // Global canceller
+    private val mCancelSignal = PublishSubject.create<Any>()
 
     // Scrap controllers
     private val mScrapWidgets = hashMapOf<UUID, IScrapWidget>()
@@ -56,7 +60,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Drawing
     private val mStrokes = mutableListOf<SketchStroke>()
+    private val mStrokesCollector = Timer("strokesCollector")
     private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
+
+    // Debug
+    private val mDebugSignal = PublishSubject.create<String>()
 
     override fun bindModel(model: PaperModel) {
         ensureNoLeakedBinding()
@@ -99,10 +107,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         Log.d(AppConst.TAG, "unbind from the model")
     }
 
-    override fun onSetCanvasSize(): Observable<Size> {
-        return Observable.just(Size(mModel.width, mModel.height))
-    }
-
     // Gesture ////////////////////////////////////////////////////////////////
 
     override fun handleActionBegin() {
@@ -112,8 +116,29 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     }
 
     override fun handleTap(x: Float, y: Float) {
-        addScrapAtPosition((mModel.width * Math.random()).toFloat(),
-                           (mModel.height * Math.random()).toFloat())
+        // Draw a DOT!!!
+        val w = (Math.random()).toFloat()
+        val h = (Math.random()).toFloat()
+        val x1 = x - w / 2f
+        val y1 = y - h / 2f
+        val x2 = x + w / 2f
+        val y2 = y + h / 2f
+        val stroke = SketchStroke(
+            color = 0,
+            isEraser = false,
+            width = 1f)
+        stroke.addPathTuple(PathTuple(x1, y1))
+        stroke.addPathTuple(PathTuple(x2, y2))
+        // Add to stroke collection
+        mStrokes.add(stroke)
+
+//        mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
+//                                           point = PointF(x1, y1)))
+//        mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
+//                                           point = PointF(x2, y2)))
+//        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
+
+        collectStrokesAndCreateScrap()
     }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
@@ -128,8 +153,17 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
+    /**
+     * A timeout in milliseconds to collect the temporary strokes as a new
+     * [ScrapModel].
+     */
+    var collectStrokesTimeout = 0L
+
     override fun handleDragBegin(x: Float,
                                  y: Float) {
+        // Clear all the delayed execution.
+        mCancelSignal.onNext(0)
+
         val stroke = SketchStroke(
             color = 0,
             isEraser = false,
@@ -156,15 +190,72 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     override fun handleDragEnd(x: Float,
                                y: Float) {
-        // TODO: Set a timer and create a Scrap when time is up.
+        // Set a timer and create a Scrap when time is up.
+        Observable
+            .timer(collectStrokesTimeout,
+                   TimeUnit.MILLISECONDS,
+                   mUiScheduler)
+            .takeUntil(mCancelSignal)
+            .subscribe {
+                collectStrokesAndCreateScrap()
+            }
 
         // Notify the observer
-        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE,
-                                           point = PointF(x, y)))
+        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
+    }
+
+    private fun collectStrokesAndCreateScrap() {
+        var left = Float.POSITIVE_INFINITY
+        var top = Float.POSITIVE_INFINITY
+        var right = Float.NEGATIVE_INFINITY
+        var bottom = Float.NEGATIVE_INFINITY
+
+        mStrokes.forEach { stroke ->
+            val bound = stroke.bound
+
+            left = Math.min(left, bound.left)
+            top = Math.min(top, bound.top)
+            right = Math.max(right, bound.right)
+            bottom = Math.max(bottom, bound.bottom)
+        }
+
+        val cx = (left + right) / 2f
+        val cy = (top + bottom) / 2f
+
+        mStrokes.forEach { stroke ->
+            stroke.offset(-cx, -cy)
+        }
+
+        val scrapM = ScrapModel()
+        scrapM.x = cx
+        scrapM.y = cy
+        scrapM.sketch.addAllStroke(mStrokes)
+
+        // Clear widget hold strokes
+        mStrokes.clear()
+
+        // Add to Model (will trigger bound View to react)
+        mModel.addScrap(scrapM)
+
+        // Notify view to clear strokes
+        mDrawSVGSignal.onNext(DrawSVGEvent(
+            action = CLEAR_ALL))
+
+        mDebugSignal.onNext("Collect strokes!")
+    }
+
+    override fun onSetCanvasSize(): Observable<Size> {
+        return Observable.just(Size(mModel.width, mModel.height))
     }
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {
         return mDrawSVGSignal
+    }
+
+    // Debug //////////////////////////////////////////////////////////////////
+
+    override fun onPrintDebugMessage(): Observable<String> {
+        return mDebugSignal
     }
 
     ///////////////////////////////////////////////////////////////////////////

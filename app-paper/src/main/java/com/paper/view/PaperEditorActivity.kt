@@ -69,11 +69,12 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // Presenters and controllers.
     private val mPaperController by lazy {
-        PaperWidget(AndroidSchedulers.mainThread(),
-                    Schedulers.io())
+        val field = PaperWidget(AndroidSchedulers.mainThread(),
+                                Schedulers.io())
+        field.collectStrokesTimeout = AppConst.COLLECT_STROKES_TIMEOUT_MS
+        field
     }
     private val mEditorPresenter: PaperEditorController by lazy {
-        // TODO: It's not a good design that the presenter knows other presenters.
         PaperEditorController(mPaperController,
                               mPaperRepo,
                               AndroidSchedulers.mainThread(),

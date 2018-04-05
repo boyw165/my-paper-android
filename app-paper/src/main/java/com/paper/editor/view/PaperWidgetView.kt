@@ -30,6 +30,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.cardinalblue.gesture.MyMotionEvent
@@ -40,13 +41,17 @@ import com.paper.editor.data.DrawSVGEvent
 import com.paper.editor.data.Size
 import com.paper.editor.widget.IPaperWidget
 import com.paper.editor.widget.IScrapWidget
+import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 
 class PaperWidgetView : View,
                         IPaperWidgetView,
+                        IPaperContext,
+                        IParentWidgetView,
                         IAllGesturesListener {
 
     // Scraps.
@@ -64,6 +69,7 @@ class PaperWidgetView : View,
      * Scale factor from Model world to View world.
      */
     private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
+    private val mTransformM2V = BehaviorSubject.createDefault(TransformModel())
     /**
      * A util for getting translationX, translationY, scaleX, scaleY, and
      * rotationInDegrees from a [Matrix]
@@ -78,13 +84,17 @@ class PaperWidgetView : View,
     private val mTmpMatrixStart = Matrix()
 
     // Gesture.
+    private val mTouchSlop by lazy { resources.getDimension(R.dimen.touch_slop) }
+    private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
+    private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
+    private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
     private val mGestureDetector by lazy {
         val detector = GestureDetector(Looper.getMainLooper(),
-                        ViewConfiguration.get(context),
-                        resources.getDimension(R.dimen.touch_slop),
-                        resources.getDimension(R.dimen.tap_slop),
-                        resources.getDimension(R.dimen.fling_min_vec),
-                        resources.getDimension(R.dimen.fling_max_vec))
+                                       ViewConfiguration.get(context),
+                                       mTouchSlop,
+                                       mTapSlop,
+                                       mMinFlingVec,
+                                       mMaxFlingVec)
 
         // Set mapper as the listener.
         detector.tapGestureListener = this@PaperWidgetView
@@ -116,6 +126,15 @@ class PaperWidgetView : View,
     /**
      * The matrix used for mapping a point from the canvas world to view port
      * world in the View perspective.
+     *
+     * @sample
+     * .---------------.
+     * |               | ----> View canvas
+     * |       .---.   |
+     * |       | V | --------> View port
+     * |       | P |   |
+     * |       '---'   |
+     * '---------------'
      */
     private val mCanvasMatrix = Matrix()
     /**
@@ -130,6 +149,8 @@ class PaperWidgetView : View,
 
     // Rendering resource.
     private val mUiHandler by lazy { Handler(Looper.getMainLooper()) }
+    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
+    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
     private val mBackgroundPaint = Paint()
     private val mGridPaint = Paint()
     private val mStrokePaint = Paint()
@@ -188,11 +209,13 @@ class PaperWidgetView : View,
         // Add or remove scraps
         mWidgetDisposables.add(
             widget.onAddScrapWidget()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { scrapWidget ->
                     addScrap(scrapWidget)
                 })
         mWidgetDisposables.add(
             widget.onRemoveScrapWidget()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { scrapWidget ->
                     removeScrap(scrapWidget)
                 })
@@ -200,6 +223,7 @@ class PaperWidgetView : View,
         // Drawing
         mWidgetDisposables.add(
             widget.onDrawSVG()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     onDrawSVG(event)
                 })
@@ -209,6 +233,7 @@ class PaperWidgetView : View,
             Observables.combineLatest(
                 RxView.globalLayouts(this@PaperWidgetView),
                 widget.onSetCanvasSize().doOnNext {  })
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (_, size) ->
                     Log.d(AppConst.TAG, "the layout is done, and canvas size is ${size.width} x ${size.height}")
 
@@ -218,9 +243,20 @@ class PaperWidgetView : View,
         // View port and canvas matrix change
         mWidgetDisposables.add(
             mViewPort
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { _ ->
                     markCanvasMatrixDirty()
                     delayedInvalidate()
+                })
+
+        // Debug
+        mWidgetDisposables.add(
+            mWidget
+                .onPrintDebugMessage()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { message ->
+                    Log.d(AppConst.TAG, message)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 })
     }
 
@@ -235,10 +271,10 @@ class PaperWidgetView : View,
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
     override fun addScrap(widget: IScrapWidget) {
-        val scrapView = ScrapWidgetView(
-            context,
-            mScaleM2V.value)
+        val scrapView = ScrapWidgetView()
 
+        scrapView.setPaperContext(this)
+        scrapView.setParent(this)
         scrapView.bindWidget(widget)
         mScrapViews.add(scrapView)
 
@@ -248,8 +284,8 @@ class PaperWidgetView : View,
     override fun removeScrap(widget: IScrapWidget) {
         val scrapView = mScrapViews.firstOrNull { it == widget }
                         ?: throw NoSuchElementException("Cannot find the widget")
-        scrapView.unbindWidget()
 
+        scrapView.unbindWidget()
         mScrapViews.remove(scrapView)
 
         delayedInvalidate()
@@ -279,7 +315,7 @@ class PaperWidgetView : View,
         // '-------------------'
         val maxScale = Math.min(canvasWidth / width,
                                 canvasHeight / height)
-        val minScale = maxScale / AppConst.MODEL_RESOLUTION_SCALE_BASE
+        val minScale = maxScale / AppConst.VIEW_PORT_MIN_SCALE
         mViewPortMax.set(0f, 0f, maxScale * width, maxScale * height)
         mViewPortMin.set(0f, 0f, minScale * width, minScale * height)
         mViewPortBase.set(mViewPortMax)
@@ -296,19 +332,33 @@ class PaperWidgetView : View,
         // layout is changed).
         resetViewPort(canvasWidth,
                       canvasHeight,
-                      mViewPortMin.width(),
-                      mViewPortMin.height())
+                      mViewPortMax.width(),
+                      mViewPortMax.height())
 
         delayedInvalidate()
     }
 
-    private fun delayedInvalidate() {
+    override fun delayedInvalidate() {
         mUiHandler.removeCallbacks(mInvalidateRunnable)
         mUiHandler.postDelayed(mInvalidateRunnable, 0)
     }
 
     private val mInvalidateRunnable = Runnable {
         invalidate()
+    }
+
+    private fun dispatchDrawScraps(canvas: Canvas,
+                                   scrapViews: List<IScrapWidgetView>) {
+        scrapViews.forEach { scrapView ->
+            scrapView.dispatchDraw(canvas)
+        }
+    }
+
+    private fun drawTempStrokes(canvas: Canvas,
+                                strokes: List<Path>) {
+        strokes.forEach { path ->
+            canvas.drawPath(path, mStrokePaint)
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -333,15 +383,11 @@ class PaperWidgetView : View,
         // Background
         drawBackground(canvas, mw, mh, scaleM2V)
 
-        // Dispatch scrap views rendering.
-        mScrapViews.forEach { scrapView ->
-            scrapView.dispatchDraw(canvas)
-        }
+        // Draw scrap views.
+        dispatchDrawScraps(canvas, mScrapViews)
 
-        // Temporary sketch.
-        mStrokePaths.forEach { path ->
-            canvas.drawPath(path, mStrokePaint)
-        }
+        // Draw temporary sketch.
+        drawTempStrokes(canvas, mStrokePaths)
 
         canvas.restoreToCount(count)
 
@@ -357,32 +403,26 @@ class PaperWidgetView : View,
         when (event.action) {
             DrawSVGEvent.Action.MOVE -> {
                 val path = Path()
-
-                // TODO: Map the point from model world to view world.
                 path.moveTo(x, y)
-//                Log.d(AppConst.TAG, "M %.3f, %.3f".format(x, y))
 
                 mStrokePaths.add(path)
-
-                delayedInvalidate()
             }
             DrawSVGEvent.Action.LINE_TO -> {
                 val path = mStrokePaths[mStrokePaths.size - 1]
-
-                // TODO: Map the point from model world to view world.
                 path.lineTo(x, y)
-//                Log.d(AppConst.TAG, "L %.3f, %.3f".format(x, y))
-
-                delayedInvalidate()
             }
             DrawSVGEvent.Action.CLOSE -> {
-//                Log.d(AppConst.TAG, "Z")
                 // DO NOTHING.
+            }
+            DrawSVGEvent.Action.CLEAR_ALL -> {
+                mStrokePaths.clear()
             }
             else -> {
                 // NOT SUPPORT
             }
         }
+
+        delayedInvalidate()
     }
 
     override fun takeSnapshot(): Bitmap {
@@ -749,6 +789,40 @@ class PaperWidgetView : View,
         mTmpPoint[1] = scaleVP * scaleM2V * y
 
         return mTmpPoint
+    }
+
+    override fun getViewConfiguration(): ViewConfiguration {
+        return ViewConfiguration.get(context)
+    }
+
+    override fun getTouchSlop(): Float {
+        return mTouchSlop
+    }
+
+    override fun getTapSlop(): Float {
+        return mTapSlop
+    }
+
+    override fun getMinFlingVec(): Float {
+        return mMinFlingVec
+    }
+
+    override fun getMaxFlingVec(): Float {
+        return mMaxFlingVec
+    }
+
+    // Context ////////////////////////////////////////////////////////////////
+
+    override fun getMinStrokeWidth(): Float {
+        return mMinStrokeWidth
+    }
+
+    override fun getMaxStrokeWidth(): Float {
+        return mMaxStrokeWidth
+    }
+
+    override fun mapM2V(x: Float, y: Float): FloatArray {
+        return toViewWorld(x, y)
     }
 
     ///////////////////////////////////////////////////////////////////////////

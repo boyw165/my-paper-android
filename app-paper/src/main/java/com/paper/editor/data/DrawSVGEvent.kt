@@ -24,14 +24,17 @@ import android.graphics.PointF
 
 data class DrawSVGEvent(
     val action: Action,
-    val point: PointF) {
+    val point: PointF = PointF()) {
 
     enum class Action {
+        // Creation action.
         MOVE,
         LINE_TO,
         CUBIC_TO,
         QUAD_TO,
         // TODO: Support
-        CLOSE
+        CLOSE,
+        // Destruction action.
+        CLEAR_ALL
     }
 }

@@ -28,19 +28,26 @@ import java.util.*
 open class ScrapModel(
     val uuid: UUID = UUID.randomUUID()) {
 
+    // X and y
+    private val mSetXSignal = BehaviorSubject.createDefault(0f)
+    private val mSetYSignal = BehaviorSubject.createDefault(0f)
     var x: Float
         get() = mSetXSignal.value
         set(value) = mSetXSignal.onNext(value)
     var y: Float
         get() = mSetYSignal.value
         set(value) = mSetYSignal.onNext(value)
-    private val mSetXSignal = BehaviorSubject.createDefault(0f)
-    private val mSetYSignal = BehaviorSubject.createDefault(0f)
     /**
-     *
+     * Observe x update.
      */
     fun onSetX(): Observable<Float> {
         return mSetXSignal
+    }
+    /**
+     * Observe y update.
+     */
+    fun onSetY(): Observable<Float> {
+        return mSetYSignal
     }
 
     var scale: Float
