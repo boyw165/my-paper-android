@@ -23,38 +23,30 @@
 
 package com.paper.shared.model.repository.json
 
-import com.google.gson.JsonArray
 import com.paper.shared.model.sketch.PathTuple
 
 object SVGTranslator {
 
-    fun pathTupleToSVG(tupleList: List<PathTuple>) : JsonArray {
-        val pathTupleJson = JsonArray()
-        var svgString = ""
+    fun toSVG(tupleList: List<PathTuple>): String {
+        val builder = StringBuilder()
+
         tupleList.forEachIndexed { index, tuple ->
             // FIXME current just need for the Path, it should be handle more cases
-            if(index == 0) {
-                tuple.allPoints.forEach { point ->
-                    svgString += "M"
-                    svgString += point.x
-                    svgString += ","
-                    svgString += point.y
-                }
+            if (index == 0) {
+                builder.append("M${tuple.firstPoint.x},${tuple.firstPoint.y}")
             } else {
                 tuple.allPoints.forEach { point ->
-                    svgString += " L"
-                    svgString += point.x
-                    svgString += ","
-                    svgString += point.y
+                    builder.append(" L${point.x},${point.y}")
                 }
             }
-        }
-        pathTupleJson.add(svgString)
 
-        return pathTupleJson
+            if (index == tupleList.lastIndex) builder.append(" Z")
+        }
+
+        return builder.toString()
     }
 
-    fun svgToPathTuple(svgString: String) : List<PathTuple> {
+    fun fromSVG(svgString: String): List<PathTuple> {
         val pathTuples: MutableList<PathTuple> = mutableListOf()
         val tuples = svgString.split(" ").toTypedArray()
 
