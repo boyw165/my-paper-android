@@ -15,7 +15,6 @@
 package com.paper.shared.model.repository.json
 
 import com.google.gson.*
-import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.SketchModel
 import com.paper.shared.model.sketch.SketchStroke
 import java.lang.reflect.Type
@@ -37,36 +36,14 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
 
             strokeListObj.add(strokeObj)
 
-            // Stroke color. The format is [R,G,B,A].
-            val colorJson = JsonArray()
-            colorJson.add((stroke.color shr 16 and 0xFF).toFloat() / 0xFF)
-            colorJson.add((stroke.color shr 8 and 0xFF).toFloat() / 0xFF)
-            colorJson.add((stroke.color and 0xFF).toFloat() / 0xFF)
-            colorJson.add((stroke.color shr 24 and 0xFF).toFloat() / 0xFF)
-            strokeObj.add("color", colorJson)
+            // Stroke color, #ARGB
+            strokeObj.addProperty("color", olorIntToHexString(stroke.color))
             // Stroke width.
             strokeObj.addProperty("width", stroke.width)
 
-            // ... and several tuple.
-            val tuplesJson = JsonArray()
-            strokeObj.add("path_tuples", tuplesJson)
-            for (tuple in stroke.pathTupleList) {
-                val tupleJson = JsonArray()
-
-                // Add tuple to the tuple list.
-                tuplesJson.add(tupleJson)
-
-                // A tuple contains several points.
-                for (point in tuple.allPoints) {
-                    val pointObj = JsonArray()
-
-                    pointObj.add(point.x)
-                    pointObj.add(point.y)
-
-                    // Add point to the tuple.
-                    tupleJson.add(pointObj)
-                }
-            }
+            // Save via SVG format
+            val svgTransJson = SVGTranslator.toSVG(stroke.pathTupleList)
+            strokeObj.addProperty("path", svgTransJson)
         }
 
         return root
@@ -86,47 +63,13 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
             val stroke = SketchStroke()
 
             // Parse path-tuple
-            val pathTuplesJson = strokeJson.get("path_tuples").asJsonArray
-            for (j in 0 until pathTuplesJson.size()) {
-                val pathTupleJson = pathTuplesJson.get(j).asJsonArray
-                val pathTuple = PathTuple()
+            val pathString = strokeJson.get("path").asString
+            // Add tuplePath to the stroke.
+            stroke.addAllPathTuple(SVGTranslator.fromSVG(pathString))
 
-                // Add point to the tuple.
-                // It's a heterogeneous array,
-                // could be [f, f] or [[f, f], [f, f], ...].
-                if (pathTupleJson.get(0).isJsonPrimitive) {
-                    // If it is [f, f]...
-                    pathTuple.addPoint(
-                        pathTupleJson.get(0).asFloat,
-                        pathTupleJson.get(1).asFloat)
-                } else if (pathTupleJson.get(0).isJsonArray) {
-                    // If it is [[f, f], [f, f], ...]...
-                    for (k in 0 until pathTupleJson.size()) {
-                        val pointJson = pathTupleJson.get(k).asJsonArray
-                        pathTuple.addPoint(
-                            pointJson.get(0).asFloat,
-                            pointJson.get(1).asFloat)
-                    }
-                }
-
-                // Add tuple to the stroke.
-                stroke.addPathTuple(pathTuple)
-            }
-
-            // Stroke color.
-            val colorJson = strokeJson.get("color")
-            if (colorJson.isJsonPrimitive) {
-                stroke.color = colorJson.asInt
-            } else if (colorJson.isJsonArray) {
-                val rgbaJson = colorJson.asJsonArray
-
-                // [R,G,B,A] and each element is a normalized number.
-                val r = (rgbaJson.get(0).asFloat * 0xFF).toInt()
-                val g = (rgbaJson.get(1).asFloat * 0xFF).toInt()
-                val b = (rgbaJson.get(2).asFloat * 0xFF).toInt()
-                val a = (rgbaJson.get(3).asFloat * 0xFF).toInt()
-                stroke.color = ((a shl 24).or(r shl 16).or(g shl 8).or(b))
-            }
+            // Stroke color, #ARGB
+            val colorTicket = strokeJson.get("color").asString
+            stroke.color = hexStringToColorInt(colorTicket)
 
             // Stroke width.
             stroke.width = strokeJson.get("width").asFloat
@@ -136,5 +79,15 @@ class SketchModelTranslator : JsonSerializer<SketchModel>,
         }
 
         return model
+    }
+
+    private fun olorIntToHexString(color: Int): String {
+        return "#${Integer.toHexString(color).toUpperCase()}"
+    }
+
+    private fun hexStringToColorInt(ticket: String): Int {
+        val hex = ticket.substring(1)
+        return Integer.parseInt(hex.substring(0, 2), 16).shl(24) +
+               Integer.parseInt(hex.substring(2), 16)
     }
 }

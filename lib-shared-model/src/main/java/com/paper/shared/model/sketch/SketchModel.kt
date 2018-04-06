@@ -20,7 +20,7 @@
 
 package com.paper.shared.model.sketch
 
-import android.graphics.RectF
+import com.paper.shared.model.Rect
 import kotlin.collections.ArrayList
 
 /**
@@ -58,7 +58,7 @@ class SketchModel {
 
     private val mStrokes: MutableList<SketchStroke> = ArrayList()
     private var mStrokesBoundDirty = true
-    private var mStrokesBound = RectF()
+    private var mStrokesBound = Rect()
 
     constructor() : this(emptyList())
     constructor(other: SketchModel) : this(other.allStrokes) {

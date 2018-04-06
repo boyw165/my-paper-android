@@ -20,8 +20,7 @@
 
 package com.paper.shared.model.sketch
 
-import android.graphics.PointF
-
+import com.paper.shared.model.Point
 import java.util.ArrayList
 
 /**
@@ -30,7 +29,7 @@ import java.util.ArrayList
  */
 class PathTuple {
 
-    private val mPoints = ArrayList<PointF>()
+    private val mPoints = ArrayList<Point>()
 
     constructor()
     constructor(x: Float,
@@ -40,28 +39,28 @@ class PathTuple {
     constructor(other: PathTuple) {
         mPoints.clear()
         other.allPoints.forEach { pt ->
-            mPoints.add(PointF(pt.x, pt.y))
+            mPoints.add(Point(pt.x, pt.y))
         }
     }
 
     fun addPoint(x: Float, y: Float) {
-        mPoints.add(PointF(x, y))
+        mPoints.add(Point(x, y))
     }
 
     // TODO: Copy and return.
-    fun getPointAt(position: Int): PointF = mPoints[position]
+    fun getPointAt(position: Int): Point = mPoints[position]
 
-    val firstPoint: PointF
+    val firstPoint: Point
         // TODO: Copy and return.
         get() = mPoints[0]
 
-    val lastPoint: PointF
+    val lastPoint: Point
         get() = mPoints[pointSize - 1]
 
     val pointSize: Int
         get() = mPoints.size
 
-    val allPoints: List<PointF>
+    val allPoints: List<Point>
         // TODO: Copy and return.
         get() = mPoints
 

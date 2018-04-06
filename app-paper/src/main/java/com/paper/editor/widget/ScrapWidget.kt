@@ -20,8 +20,8 @@
 
 package com.paper.editor.widget
 
-import android.graphics.PointF
 import com.paper.editor.data.DrawSVGEvent
+import com.paper.shared.model.Point
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.TransformModel
 import io.reactivex.Observable
@@ -84,16 +84,16 @@ class ScrapWidget(
                         when (i) {
                             0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                 action = DrawSVGEvent.Action.MOVE,
-                                point = PointF(path.firstPoint.x,
-                                               path.firstPoint.y)))
+                                point = Point(path.firstPoint.x,
+                                              path.firstPoint.y)))
                             lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                 action = DrawSVGEvent.Action.CLOSE,
-                                point = PointF(path.firstPoint.x,
-                                               path.firstPoint.y)))
+                                point = Point(path.firstPoint.x,
+                                              path.firstPoint.y)))
                             else -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                 action = DrawSVGEvent.Action.LINE_TO,
-                                point = PointF(path.firstPoint.x,
-                                               path.firstPoint.y)))
+                                point = Point(path.firstPoint.x,
+                                              path.firstPoint.y)))
                         }
                     }
                 }

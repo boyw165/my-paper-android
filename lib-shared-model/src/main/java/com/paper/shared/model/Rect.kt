@@ -18,23 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.data
+package com.paper.shared.model
 
-import com.paper.shared.model.Point
+data class Rect(var left: Float = 0f,
+                var top: Float = 0f,
+                var right: Float = 0f,
+                var bottom: Float = 0f) {
 
-data class DrawSVGEvent(
-    val action: Action,
-    val point: Point = Point()) {
-
-    enum class Action {
-        // Creation action.
-        MOVE,
-        LINE_TO,
-        CUBIC_TO,
-        QUAD_TO,
-        // TODO: Support
-        CLOSE,
-        // Destruction action.
-        CLEAR_ALL
-    }
+    val width: Float get() = right - left
+    val height: Float get() = bottom - top
 }
