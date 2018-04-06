@@ -9,6 +9,6 @@
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@drawable/img_android"/>
+            android:src="@drawable/img_splash_screen"/>
     </item>
 </layer-list>
