@@ -20,13 +20,12 @@
 
 package com.paper.shared.model.sketch
 
-import android.graphics.PointF
-import android.graphics.RectF
+import com.paper.shared.model.Rect
 
 /**
  * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
  * stroke contains tuple(s), [PathTuple]. A tuple represents a node of
- * a path segment and contains at least one point, [PointF]. These
+ * a path segment and contains at least one point, [Point]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
 data class SketchStroke(
@@ -38,11 +37,11 @@ data class SketchStroke(
 
     val pathTupleList: List<PathTuple> get() = mPathTupleList
 
-    private val mBound = RectF(java.lang.Float.MAX_VALUE,
-                               java.lang.Float.MAX_VALUE,
-                               java.lang.Float.MIN_VALUE,
-                               java.lang.Float.MIN_VALUE)
-    val bound get() = RectF(mBound)
+    private val mBound = Rect(java.lang.Float.MAX_VALUE,
+                              java.lang.Float.MAX_VALUE,
+                              java.lang.Float.MIN_VALUE,
+                              java.lang.Float.MIN_VALUE)
+    val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
     val firstPathTuple: PathTuple
         get() = mPathTupleList[0]

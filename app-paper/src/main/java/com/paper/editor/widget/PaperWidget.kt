@@ -20,7 +20,6 @@
 
 package com.paper.editor.widget
 
-import android.graphics.PointF
 import android.util.Log
 import com.paper.AppConst
 import com.paper.editor.data.DrawSVGEvent
@@ -28,6 +27,7 @@ import com.paper.editor.data.DrawSVGEvent.Action.*
 import com.paper.editor.data.GestureRecord
 import com.paper.editor.data.Size
 import com.paper.shared.model.PaperModel
+import com.paper.shared.model.Point
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.SketchStroke
@@ -174,7 +174,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = PointF(x, y)))
+                                           point = Point(x, y)))
     }
 
     override fun handleDrag(x: Float,
@@ -185,7 +185,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
-                                           point = PointF(x, y)))
+                                           point = Point(x, y)))
     }
 
     override fun handleDragEnd(x: Float,
