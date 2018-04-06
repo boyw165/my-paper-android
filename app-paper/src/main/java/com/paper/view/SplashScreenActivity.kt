@@ -18,49 +18,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view;
+package com.paper.view
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import com.paper.R
+import io.reactivex.Observable
+import java.util.concurrent.TimeUnit
 
-import com.paper.R;
-
-import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Observable;
-import io.reactivex.functions.Consumer;
-
-public class SplashScreenActivity extends AppCompatActivity {
+class SplashScreenActivity : AppCompatActivity() {
 
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         // Init Fabric crashlytics.
-//        Fabric.with(this, new Crashlytics());
+        //        Fabric.with(this, new Crashlytics());
 
-        setContentView(R.layout.activity_splash_screen);
+        setContentView(R.layout.activity_splash_screen)
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+    override fun onResume() {
+        super.onResume()
 
         // Do nothing but wait few seconds and launch the start page.
         Observable
             .just(true)
-            .delay(75, TimeUnit.MILLISECONDS)
-            .subscribe(new Consumer<Boolean>() {
-                @Override
-                public void accept(Boolean ignored) throws Exception {
-                    startActivity(new Intent(SplashScreenActivity.this,
-                                             PaperGalleryActivity.class));
-                    finish();
-                }
-            });
+            .delay(650, TimeUnit.MILLISECONDS)
+            .subscribe {
+                startActivity(Intent(this@SplashScreenActivity,
+                                     PaperGalleryActivity::class.java))
+                finish()
+            }
     }
 }
