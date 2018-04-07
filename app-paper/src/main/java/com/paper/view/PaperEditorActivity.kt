@@ -51,7 +51,6 @@ class PaperEditorActivity : AppCompatActivity(),
                             PaperEditorContract.View {
 
     // View.
-    private val mBtnDraw: SwitchCompat by lazy { findViewById<SwitchCompat>(R.id.btn_draw) }
     private val mCanvasView: PaperWidgetView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
@@ -163,7 +162,7 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     override fun onClickDrawButton(): Observable<Boolean> {
-        return RxCompoundButton.checkedChanges(mBtnDraw)
+        TODO()
     }
 
     override fun onClickMenu(): Observable<Any> {

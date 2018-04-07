@@ -10,6 +10,9 @@
     <color name="colorControlNormal">@color/black_30</color>
     <color name="navigationBarColor">@android:color/black</color>
 
+    <!-- Paper palette -->
+    <color name="bg_editor_top_bar">#AAFFFFFF</color>
+
     <!-- Background -->
     <color name="bg_splash_screen">@color/windowBackground</color>
     <color name="bg_translucent_black">#B2000000</color>
