@@ -13,34 +13,82 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="@dimen/toolbar_height"/>
 
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/btn_close"
-        android:layout_width="@dimen/toolbar_height"
-        android:layout_height="@dimen/toolbar_height"
-        android:padding="16dp"
-        android:scaleType="fitCenter"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/icon_toolbar_close"/>
-
-    <android.support.v7.widget.SwitchCompat
-        android:id="@+id/btn_draw"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/toolbar_height"
-        android:scaleType="fitCenter"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/icon_toolbar_close"/>
+    <android.support.constraint.Guideline
+        android:id="@+id/guide_editor_panel_top"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="200dp"/>
 
     <!-- Paper canvas -->
     <com.paper.editor.view.PaperWidgetView
         android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/guide_editor_panel_top"
         app:layout_constraintHeight_default="wrap"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/guide_toolbar_bottom"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_default="wrap"/>
+
+    <!-- Top bar -->
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/bg_editor_top_bar"
+        app:layout_constraintBottom_toBottomOf="@id/guide_toolbar_bottom"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/btn_close"
+        android:layout_width="@dimen/toolbar_height"
+        android:layout_height="@dimen/toolbar_height"
+        android:scaleType="centerInside"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/sel_icon_close"/>
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/btn_delete"
+        android:layout_width="@dimen/toolbar_height"
+        android:layout_height="@dimen/toolbar_height"
+        android:scaleType="centerInside"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/sel_icon_e_delete"/>
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/btn_undo"
+        android:layout_width="@dimen/toolbar_height"
+        android:layout_height="@dimen/toolbar_height"
+        android:scaleType="centerInside"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/btn_redo"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/sel_icon_e_undo"/>
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/btn_redo"
+        android:layout_width="@dimen/toolbar_height"
+        android:layout_height="@dimen/toolbar_height"
+        android:scaleType="centerInside"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintLeft_toRightOf="@+id/btn_undo"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/sel_icon_e_redo"/>
+
+    <!-- Editor panel -->
+    <com.paper.editor.view.EditorPanelView
+        android:id="@+id/editor_panel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guide_editor_panel_top"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 </android.support.constraint.ConstraintLayout>

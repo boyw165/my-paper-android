@@ -180,9 +180,9 @@ class PaperWidgetView : View,
         mViewPortPaint.style = Paint.Style.STROKE
         mViewPortPaint.strokeWidth = 2f * oneDp
 
-        // Giving a background would make onDraw() able to be called.
-        setBackgroundColor(Color.WHITE)
-        ViewCompat.setElevation(this, 12f * oneDp)
+//        // Giving a background would make onDraw() able to be called.
+//        setBackgroundColor(Color.WHITE)
+//        ViewCompat.setElevation(this, 12f * oneDp)
     }
 
     override fun onMeasure(widthSpec: Int,
