@@ -52,18 +52,19 @@ import io.reactivex.subjects.PublishSubject
 class PaperGalleryActivity : AppCompatActivity(),
                              PaperGalleryContract.View,
                              PaperGalleryContract.Navigator {
+    // Settings view
+    private val mBtnSettings: View by lazy { findViewById<View>(R.id.btn_settings) }
 
     // Experiment views.
-    private val mBtnExp: View by lazy { findViewById<View>(R.id.btn_other_exp) }
     private val mBtnExpMenu: PopupMenu by lazy {
-        val m = PopupMenu(this@PaperGalleryActivity, mBtnExp)
+        val m = PopupMenu(this@PaperGalleryActivity, mBtnSettings)
         m.inflate(R.menu.menu_exp)
         m
     }
 
     // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
-    private val mBtnDelAllPapers by lazy { findViewById<ImageView>(R.id.btn_delete_all) }
+    private val mBtnDelAllPapers by lazy { findViewById<ImageView>(R.id.btn_delete) }
     private val mClickPaperSignal = PublishSubject.create<Long>()
     private val mBrowsePositionSignal = PublishSubject.create<Int>()
 
@@ -209,7 +210,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun onClickShowExpMenu(): Observable<Any> {
-        return RxView.clicks(mBtnExp)
+        return RxView.clicks(mBtnSettings)
     }
 
     override fun onClickExpMenu(): Observable<Int> {
