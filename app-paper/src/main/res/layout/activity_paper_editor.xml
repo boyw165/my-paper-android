@@ -31,6 +31,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@color/bg_editor_top_bar"
+        android:clickable="true"
+        android:focusable="true"
         app:layout_constraintBottom_toBottomOf="@id/guide_toolbar_bottom"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
