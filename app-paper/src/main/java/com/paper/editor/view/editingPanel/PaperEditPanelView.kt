@@ -45,19 +45,6 @@ class PaperEditPanelView : ConstraintLayout,
 
     private var mOneDp = 0f
 
-    // View port sub-view
-    private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
-
-    // Tools sub-view
-    private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
-    private val mToolListViewController by lazy {
-        ToolListEpoxyController(mWidget,
-                                Glide.with(context))
-    }
-    // Tool signal
-    private val mColorTicket = PublishSubject.create<Int>()
-    private val mEditingTool = PublishSubject.create<Int>()
-
     // The business login/view-model
     private val mWidget by lazy {
         PaperEditPanelWidget(
@@ -79,28 +66,44 @@ class PaperEditPanelView : ConstraintLayout,
 
         mToolListView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         mToolListView.adapter = mToolListViewController.adapter
+
+        mColorTicketsView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        mColorTicketsView.adapter = mColorTicketsViewController.adapter
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        // Editing tool
+        // Edit tool, e.g. eraser, pen, scissor, ...
         mDisposables.add(
-            mWidget.onUpdateEditingToolList()
+            mWidget.onUpdateEditToolList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     // Update view
                     mToolListViewController.setData(event)
 
                     // Notify observer
-                    val toolID = event.toolIDs.indexOf(event.usingIndex)
-                    mEditingTool.onNext(toolID)
+                    val toolID = event.toolIDs[event.usingIndex]
+                    mSelectedEditTool.onNext(toolID)
                 })
         mDisposables.add(
-            mWidget.onChooseUnsupportedTool()
+            mWidget.onChooseUnsupportedEditTool()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     Toast.makeText(context, R.string.msg_under_construction, Toast.LENGTH_SHORT).show()
+                })
+
+        // Color tickets
+        mDisposables.add(
+            mWidget.onUpdateColorTicketList()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { event ->
+                    // Update view
+                    mColorTicketsViewController.setData(event)
+
+                    // Notify observer
+                    val color = event.colorTickets[event.usingIndex]
+                    mSelectedColorTicket.onNext(color)
                 })
 
         mWidget.handleStart()
@@ -114,19 +117,43 @@ class PaperEditPanelView : ConstraintLayout,
         mWidget.handleStop()
     }
 
+    // View port indicator ////////////////////////////////////////////////////
+
+    // View port sub-view
+    private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
+
     override fun setCanvasAndViewPort(canvas: Rect,
                                       viewPort: Rect) {
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
 
-    // Tool ///////////////////////////////////////////////////////////////////
+    // Edit tool //////////////////////////////////////////////////////////////
 
-    override fun onChooseColorTicket(): Observable<Int> {
-        return mColorTicket
+    // Tools sub-view
+    private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
+    private val mToolListViewController by lazy {
+        ToolListEpoxyController(mWidget = mWidget,
+                                mImgLoader = Glide.with(context))
+    }
+    private val mSelectedEditTool = PublishSubject.create<Int>()
+
+    override fun onChooseEditTool(): Observable<Int> {
+        return mSelectedEditTool
     }
 
-    override fun onChooseEditingTool(): Observable<Int> {
-        return mEditingTool
+    // Color & stroke width ///////////////////////////////////////////////////
+
+    // Color & stroke width
+    private val mColorTicketsView by lazy { findViewById<RecyclerView>(R.id.list_color_tickets) }
+    private val mColorTicketsViewController by lazy {
+        ColorTicketListEpoxyController(mWidget = mWidget,
+                                       mImgLoader = Glide.with(context))
+    }
+    private val mSelectedColorTicket = PublishSubject.create<Int>()
+    private val mStrokeWidthView by lazy { findViewById<RecyclerView>(R.id.list_color_tickets) }
+
+    override fun onChooseColorTicket(): Observable<Int> {
+        return mSelectedColorTicket
     }
 
     // Other //////////////////////////////////////////////////////////////////

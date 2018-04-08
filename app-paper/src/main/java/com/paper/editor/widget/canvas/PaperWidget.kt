@@ -240,8 +240,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Notify view to clear strokes
         mDrawSVGSignal.onNext(DrawSVGEvent(
             action = CLEAR_ALL))
-
-        mDebugSignal.onNext("Collect strokes!")
     }
 
     override fun onSetCanvasSize(): Observable<Rect> {

@@ -33,5 +33,5 @@ interface IPaperEditPanelView {
 
     fun onChooseColorTicket(): Observable<Int>
 
-    fun onChooseEditingTool(): Observable<Int>
+    fun onChooseEditTool(): Observable<Int>
 }

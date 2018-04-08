@@ -18,8 +18,26 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.data
+package com.paper.editor.view.editingPanel
 
-data class UpdateColorTicketsEvent(
-    val colorTickets: List<Int>,
-    val usingIndex: Int = -1)
+import com.airbnb.epoxy.TypedEpoxyController
+import com.bumptech.glide.RequestManager
+import com.paper.editor.data.UpdateColorTicketsEvent
+import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
+
+class ColorTicketListEpoxyController(
+    private val mWidget: PaperEditPanelWidget,
+    private val mImgLoader: RequestManager)
+    : TypedEpoxyController<UpdateColorTicketsEvent>() {
+
+    override fun buildModels(data: UpdateColorTicketsEvent) {
+        data.colorTickets.forEachIndexed { i, color ->
+            ColorTicketEpoxyViewModel(
+                mColor = color,
+                mWidget = mWidget,
+                mIsUsing = i == data.usingIndex)
+                .id(i)
+                .addTo(this)
+        }
+    }
+}

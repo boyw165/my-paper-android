@@ -20,6 +20,7 @@
 
 package com.paper.editor.widget.editingPanel
 
+import com.paper.editor.data.UpdateColorTicketsEvent
 import com.paper.editor.data.UpdateEditingToolsEvent
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -31,12 +32,6 @@ class PaperEditPanelWidget(
     private val mUiScheduler: Scheduler,
     private val mWorkerScheduler: Scheduler) {
 
-    // Editing tool
-    private var mToolIndex = -1
-    private val mEditingTools = BehaviorSubject.create<UpdateEditingToolsEvent>()
-
-    private val mUnsupportedToolMsg = PublishSubject.create<Any>()
-
     private val mDisposables = CompositeDisposable()
 
     // Lifecycle //////////////////////////////////////////////////////////////
@@ -45,11 +40,18 @@ class PaperEditPanelWidget(
         ensureNoLeakingSubscription()
 
         // Prepare initial tools and select the pen by default.
-        val tools = getToolIDs()
+        val tools = getEditToolIDs()
         mToolIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)
         mEditingTools.onNext(UpdateEditingToolsEvent(
             toolIDs = tools,
             usingIndex = mToolIndex))
+
+        // Prepare initial color tickets
+        val colors = getColorTickets()
+        mColorIndex = colors.indexOf(ColorTicketFactory.DEFAULT_COLOR_2)
+        mColorTickets.onNext(UpdateColorTicketsEvent(
+            colorTickets = colors,
+            usingIndex = mColorIndex))
     }
 
     fun handleStop() {
@@ -66,10 +68,15 @@ class PaperEditPanelWidget(
         TODO("not implemented")
     }
 
-    // Editing tool ///////////////////////////////////////////////////////////
+    // Edit tool //////////////////////////////////////////////////////////////
+
+    private var mToolIndex = -1
+    private val mEditingTools = BehaviorSubject.create<UpdateEditingToolsEvent>()
+
+    private val mUnsupportedToolMsg = PublishSubject.create<Any>()
 
     fun handleClickTool(toolID: Int) {
-        val toolIDs = getToolIDs()
+        val toolIDs = getEditToolIDs()
         val usingIndex = if (toolID != EditingToolFactory.TOOL_PEN) {
             mUnsupportedToolMsg.onNext(0)
             toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
@@ -82,18 +89,46 @@ class PaperEditPanelWidget(
             usingIndex = usingIndex))
     }
 
-    fun onUpdateEditingToolList(): Observable<UpdateEditingToolsEvent> {
+    fun onUpdateEditToolList(): Observable<UpdateEditingToolsEvent> {
         return mEditingTools
     }
 
-    fun onChooseUnsupportedTool(): Observable<Any> {
+    fun onChooseUnsupportedEditTool(): Observable<Any> {
         return mUnsupportedToolMsg
     }
 
-    private fun getToolIDs(): List<Int> {
-        return mutableListOf(
+    private fun getEditToolIDs(): List<Int> {
+        return listOf(
             EditingToolFactory.TOOL_ERASER,
             EditingToolFactory.TOOL_PEN,
             EditingToolFactory.TOOL_SCISSOR)
+    }
+
+    // Color & stroke width ///////////////////////////////////////////////////
+
+    private var mColorIndex = -1
+    private val mColorTickets = PublishSubject.create<UpdateColorTicketsEvent>()
+
+    fun handleClickColor(color: Int) {
+        val colors = getColorTickets()
+        val usingIndex = colors.indexOf(color)
+
+        mColorTickets.onNext(UpdateColorTicketsEvent(
+            colorTickets = colors,
+            usingIndex = usingIndex))
+    }
+
+    fun onUpdateColorTicketList(): Observable<UpdateColorTicketsEvent> {
+        return mColorTickets
+    }
+
+    private fun getColorTickets(): List<Int> {
+        return listOf(
+            ColorTicketFactory.DEFAULT_COLOR_1,
+            ColorTicketFactory.DEFAULT_COLOR_2,
+            ColorTicketFactory.DEFAULT_COLOR_3,
+            ColorTicketFactory.DEFAULT_COLOR_4,
+            ColorTicketFactory.DEFAULT_COLOR_5,
+            ColorTicketFactory.DEFAULT_COLOR_6)
     }
 }

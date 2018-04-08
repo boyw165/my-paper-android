@@ -18,8 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.data
+package com.paper.editor.widget.editingPanel
 
-data class UpdateColorTicketsEvent(
-    val colorTickets: List<Int>,
-    val usingIndex: Int = -1)
+object ColorTicketFactory {
+
+    const val DEFAULT_COLOR_1 = 0xFFE75058.toInt()
+    const val DEFAULT_COLOR_2 = 0xFFDDB543.toInt()
+    const val DEFAULT_COLOR_3 = 0xFFE5D5C8.toInt()
+    const val DEFAULT_COLOR_4 = 0xFFC79E80.toInt()
+    const val DEFAULT_COLOR_5 = 0xFF848F94.toInt()
+    const val DEFAULT_COLOR_6 = 0xFF010101.toInt()
+}
