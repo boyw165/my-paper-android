@@ -55,7 +55,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     private val mAddWidgetSignal = PublishSubject.create<IScrapWidget>()
     private val mRemoveWidgetSignal = PublishSubject.create<IScrapWidget>()
 
-    // Gesture detector
+    // Gesture
     private val mGestureHistory = mutableListOf<GestureRecord>()
 
     // Drawing
