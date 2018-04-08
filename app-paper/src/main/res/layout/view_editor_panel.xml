@@ -84,25 +84,40 @@
     <!-- Canvas & view port indicator -->
     <com.paper.editor.view.ViewPortIndicatorView
         android:id="@+id/view_port_indicator"
-        android:layout_width="100dp"
+        android:layout_width="116dp"
         android:layout_height="0dp"
         android:paddingBottom="5dp"
-        android:paddingEnd="12dp"
-        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:paddingStart="16dp"
         android:paddingTop="5dp"
         app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"
         app:layout_constraintLeft_toLeftOf="@+id/guide_secondary_bound"
         app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"
         app:layout_constraintWidth_default="wrap"/>
 
+    <View
+        android:id="@+id/separator"
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="20dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="20dp"
+        android:background="#B3B3B3"
+        app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"
+        app:layout_constraintLeft_toRightOf="@+id/view_port_indicator"
+        app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"/>
+
     <!-- Pen, brush, scissor, ... tools -->
     <android.support.v7.widget.RecyclerView
         android:id="@+id/list_tools"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:clipToPadding="false"
         android:orientation="horizontal"
+        android:paddingEnd="1dp"
+        android:paddingStart="20dp"
         app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"
-        app:layout_constraintLeft_toRightOf="@+id/view_port_indicator"
+        app:layout_constraintLeft_toRightOf="@+id/separator"
         app:layout_constraintRight_toRightOf="@+id/guide_secondary_bound"
         app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"/>
 </android.support.constraint.ConstraintLayout>

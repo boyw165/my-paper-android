@@ -27,6 +27,9 @@ import com.paper.R
 import com.paper.shared.model.Rect
 import io.reactivex.disposables.CompositeDisposable
 
+/**
+ * See [R.layout.view_editor_panel].
+ */
 class EditingPanelView : ConstraintLayout,
                          IEditingPanelView {
 
