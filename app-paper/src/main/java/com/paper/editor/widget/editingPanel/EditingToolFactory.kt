@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,33 +20,9 @@
 
 package com.paper.editor.widget.editingPanel
 
-import com.paper.editor.data.UpdateEditingToolEvent
-import io.reactivex.Observable
-import io.reactivex.Scheduler
-import io.reactivex.subjects.BehaviorSubject
+object EditingToolFactory {
 
-class EditorPanelWidget(
-    private val mUiScheduler: Scheduler,
-    private val mWorkerScheduler: Scheduler) {
-
-    private val mSetEditingTool = BehaviorSubject.create<UpdateEditingToolEvent>()
-
-    fun handleStart() {
-        // Prepare initial tools and select the pen by default.
-        val tools = mutableListOf(
-            EditingToolFactory.TOOL_ERASER,
-            EditingToolFactory.TOOL_PEN,
-            EditingToolFactory.TOOL_SCISSOR)
-        mSetEditingTool.onNext(UpdateEditingToolEvent(
-            toolIDs = tools,
-            usingIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)))
-    }
-
-    fun handleChoosePrimaryFunction(id: Int) {
-        TODO("not implemented")
-    }
-
-    fun onUpdateEditingToolList(): Observable<UpdateEditingToolEvent> {
-        return mSetEditingTool
-    }
+    const val TOOL_ERASER = 0
+    const val TOOL_PEN = 1
+    const val TOOL_SCISSOR = 2
 }

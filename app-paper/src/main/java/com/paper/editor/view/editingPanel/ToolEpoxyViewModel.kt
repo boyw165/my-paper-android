@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,35 +18,45 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.widget.editingPanel
+package com.paper.editor.view.editingPanel
 
-import com.paper.editor.data.UpdateEditingToolEvent
-import io.reactivex.Observable
-import io.reactivex.Scheduler
-import io.reactivex.subjects.BehaviorSubject
+import android.util.Log
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import com.airbnb.epoxy.EpoxyModel
+import com.bumptech.glide.RequestManager
+import com.paper.AppConst
+import com.paper.R
 
-class EditorPanelWidget(
-    private val mUiScheduler: Scheduler,
-    private val mWorkerScheduler: Scheduler) {
+class ToolEpoxyViewModel(
+    private val mImgLoader: RequestManager,
+    private val mResourceId: Int,
+    private val mFadeResourceId: Int,
+    private val mIsUsing: Boolean = false)
+    : EpoxyModel<View>() {
 
-    private val mSetEditingTool = BehaviorSubject.create<UpdateEditingToolEvent>()
+    private lateinit var mImgView: ImageView
 
-    fun handleStart() {
-        // Prepare initial tools and select the pen by default.
-        val tools = mutableListOf(
-            EditingToolFactory.TOOL_ERASER,
-            EditingToolFactory.TOOL_PEN,
-            EditingToolFactory.TOOL_SCISSOR)
-        mSetEditingTool.onNext(UpdateEditingToolEvent(
-            toolIDs = tools,
-            usingIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)))
+    override fun getDefaultLayout(): Int {
+        return R.layout.item_editing_tool
     }
 
-    fun handleChoosePrimaryFunction(id: Int) {
-        TODO("not implemented")
+    override fun buildView(parent: ViewGroup?): View {
+        val view = super.buildView(parent)
+
+        mImgView = view.findViewById(R.id.image_view)
+
+        return view
     }
 
-    fun onUpdateEditingToolList(): Observable<UpdateEditingToolEvent> {
-        return mSetEditingTool
+    override fun bind(view: View) {
+        super.bind(view)
+
+        if (mIsUsing) {
+            mImgView.setImageResource(mResourceId)
+        } else {
+            mImgView.setImageResource(mFadeResourceId)
+        }
     }
 }

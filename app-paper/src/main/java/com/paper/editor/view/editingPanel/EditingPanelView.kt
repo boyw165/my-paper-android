@@ -22,12 +22,17 @@ package com.paper.editor.view.editingPanel
 
 import android.content.Context
 import android.support.constraint.ConstraintLayout
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
+import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.editor.view.canvas.ViewPortIndicatorView
+import com.paper.editor.widget.editingPanel.EditorPanelWidget
 import com.paper.shared.model.Rect
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 
 /**
  * See [R.layout.view_editor_panel].
@@ -35,12 +40,18 @@ import io.reactivex.disposables.CompositeDisposable
 class EditingPanelView : ConstraintLayout,
                          IEditingPanelView {
 
-    // View port
+    // View port sub-view
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
 
-    // Tools
+    // Tools sub-view
     private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
-//    private val mToolListViewController by lazy {  }
+    private val mToolListViewController by lazy { ToolListEpoxyController(Glide.with(context)) }
+
+    private val mWidget by lazy {
+        EditorPanelWidget(
+            AndroidSchedulers.mainThread(),
+            Schedulers.io())
+    }
 
     private val mDisposables = CompositeDisposable()
 
@@ -52,12 +63,22 @@ class EditingPanelView : ConstraintLayout,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         inflate(context, R.layout.view_editor_panel, this)
+
+        mToolListView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        mToolListView.adapter = mToolListViewController.adapter
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        // TODO: Bind widget
+        mDisposables.add(
+            mWidget.onUpdateEditingToolList()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { event ->
+                    mToolListViewController.setData(event)
+                })
+
+        mWidget.handleStart()
     }
 
     override fun onDetachedFromWindow() {
