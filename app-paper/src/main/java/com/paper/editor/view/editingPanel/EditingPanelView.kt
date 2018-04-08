@@ -107,6 +107,8 @@ class EditingPanelView : ConstraintLayout,
         super.onDetachedFromWindow()
 
         mDisposables.clear()
+
+        mWidget.handleStop()
     }
 
     override fun setCanvasAndViewPort(canvas: Rect,

@@ -23,6 +23,7 @@ package com.paper.editor.widget.editingPanel
 import com.paper.editor.data.UpdateEditingToolsEvent
 import io.reactivex.Observable
 import io.reactivex.Scheduler
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
@@ -36,13 +37,29 @@ class EditingPanelWidget(
 
     private val mUnsupportedToolMsg = PublishSubject.create<Any>()
 
+    private val mDisposables = CompositeDisposable()
+
+    // Lifecycle //////////////////////////////////////////////////////////////
+
     fun handleStart() {
+        ensureNoLeakingSubscription()
+
         // Prepare initial tools and select the pen by default.
         val tools = getToolIDs()
         mToolIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)
         mEditingTools.onNext(UpdateEditingToolsEvent(
             toolIDs = tools,
             usingIndex = mToolIndex))
+    }
+
+    fun handleStop() {
+        mDisposables.clear()
+    }
+
+    private fun ensureNoLeakingSubscription() {
+        if (mDisposables.size() > 0) {
+            throw IllegalStateException("Already started!")
+        }
     }
 
     fun handleChoosePrimaryFunction(id: Int) {
