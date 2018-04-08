@@ -74,6 +74,7 @@ dependencies {
 
     // Image loader.
     implementation rootProject.ext.dep.glide
+    implementation rootProject.ext.dep.fresco
 
     // RecyclerView.
     implementation rootProject.ext.dep.airbnbEpoxy

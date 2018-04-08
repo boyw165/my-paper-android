@@ -63,7 +63,7 @@ ext {
             // JSON.
             gson                   : "com.google.code.gson:gson:2.7",
             // Image.
-            fresco                 : "com.facebook.fresco:fresco:0.14.1",
+            fresco                 : "com.facebook.fresco:fresco:1.8.1",
             glide                  : 'com.github.bumptech.glide:glide:4.3.1',
             glideAnnotation        : 'com.github.bumptech.glide:compiler:4.3.1',
             lottie                 : 'com.airbnb.android:lottie:2.1.0',
