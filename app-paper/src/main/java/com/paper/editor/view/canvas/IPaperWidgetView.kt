@@ -18,32 +18,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view.canvas
 
-import com.paper.editor.view.editingPanel.IPaperEditPanelView
-import com.paper.editor.view.canvas.IPaperWidgetView
+import android.graphics.Bitmap
+import com.paper.editor.data.DrawViewPortEvent
+import com.paper.editor.widget.canvas.IPaperWidget
 import io.reactivex.Observable
 
-class PaperEditorContract private constructor() {
+interface IPaperWidgetView {
 
-    interface View {
+    fun bindWidget(widget: IPaperWidget)
 
-        fun getCanvasView(): IPaperWidgetView
+    fun unbindWidget()
 
-        fun getEditingPanelView(): IPaperEditPanelView
+    fun takeSnapshot(): Bitmap
 
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
-    }
+    fun onDrawViewPort(): Observable<DrawViewPortEvent>
 }

@@ -22,8 +22,7 @@ package com.paper.view
 
 import android.content.Context
 import android.support.multidex.MultiDexApplication
-import com.cardinalblue.gesture.GestureDetector
-import com.paper.IGestureDetectorFactory
+import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.protocol.IDatabaseIOSchedulerProvider
 import com.paper.protocol.IPaperRepoProvider
 import com.paper.protocol.ISharedPreferenceService
@@ -37,6 +36,14 @@ class PaperApplication : MultiDexApplication(),
                          IPaperRepoProvider,
                          ISharedPreferenceService {
 
+    override fun onCreate() {
+        super.onCreate()
+
+        Fresco.initialize(this)
+    }
+
+    // Repository and scheduler ///////////////////////////////////////////////
+
     // Database.
     private val mPaperRepo: PaperRepo by lazy {
         PaperRepo(packageName,
@@ -44,22 +51,21 @@ class PaperApplication : MultiDexApplication(),
                   externalCacheDir,
                   getScheduler())
     }
-    private val mDbScheduler = SingleScheduler()
-
-    // Shared preference.
-    private val mPreferences by lazy { getSharedPreferences(packageName, Context.MODE_PRIVATE) }
-
-    // Repository and scheduler ///////////////////////////////////////////////
 
     override fun getRepo(): IPaperModelRepo {
         return mPaperRepo
     }
+
+    private val mDbScheduler = SingleScheduler()
 
     override fun getScheduler(): Scheduler {
         return mDbScheduler
     }
 
     // Shared preference //////////////////////////////////////////////////////
+
+    // Shared preference.
+    private val mPreferences by lazy { getSharedPreferences(packageName, Context.MODE_PRIVATE) }
 
     override fun putString(key: String, value: String) {
         mPreferences

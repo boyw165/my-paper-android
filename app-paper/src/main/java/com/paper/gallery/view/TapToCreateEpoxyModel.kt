@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,32 +18,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.gallery.view
 
-import com.paper.editor.view.editingPanel.IPaperEditPanelView
-import com.paper.editor.view.canvas.IPaperWidgetView
-import io.reactivex.Observable
+import android.view.View
+import android.view.ViewGroup
+import com.airbnb.epoxy.EpoxyModel
+import com.paper.R
 
-class PaperEditorContract private constructor() {
+class TapToCreateEpoxyModel : EpoxyModel<View>() {
 
-    interface View {
+    override fun getDefaultLayout(): Int {
+        return R.layout.item_paper_tap_to_create
+    }
 
-        fun getCanvasView(): IPaperWidgetView
+    override fun buildView(parent: ViewGroup): View {
+        val layout = super.buildView(parent)
 
-        fun getEditingPanelView(): IPaperEditPanelView
-
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
+        return layout
     }
 }

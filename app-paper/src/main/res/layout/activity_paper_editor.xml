@@ -13,20 +13,14 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="@dimen/toolbar_height"/>
 
-    <android.support.constraint.Guideline
-        android:id="@+id/guide_editor_panel_top"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_end="200dp"/>
-
     <!-- Paper canvas -->
-    <com.paper.editor.view.PaperWidgetView
+    <com.paper.editor.view.canvas.PaperWidgetView
         android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@id/guide_editor_panel_top"
-        app:layout_constraintHeight_default="wrap"
+        android:paddingTop="@dimen/toolbar_height"
+        app:layout_constraintBottom_toTopOf="@+id/editing_panel"
+        app:layout_constraintHeight_default="spread"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -37,6 +31,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@color/bg_editor_top_bar"
+        android:clickable="true"
+        android:focusable="true"
         app:layout_constraintBottom_toBottomOf="@id/guide_toolbar_bottom"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -83,12 +79,13 @@
         app:srcCompat="@drawable/sel_icon_e_redo"/>
 
     <!-- Editor panel -->
-    <com.paper.editor.view.EditorPanelView
-        android:id="@+id/editor_panel"
+    <com.paper.editor.view.editingPanel.PaperEditPanelView
+        android:id="@+id/editing_panel"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guide_editor_panel_top"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@+id/paper_canvas"
+        app:layout_constraintWidth_default="spread"/>
 </android.support.constraint.ConstraintLayout>

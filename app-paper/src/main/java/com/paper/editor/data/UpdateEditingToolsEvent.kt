@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,32 +18,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.data
 
-import com.paper.editor.view.editingPanel.IPaperEditPanelView
-import com.paper.editor.view.canvas.IPaperWidgetView
-import io.reactivex.Observable
-
-class PaperEditorContract private constructor() {
-
-    interface View {
-
-        fun getCanvasView(): IPaperWidgetView
-
-        fun getEditingPanelView(): IPaperEditPanelView
-
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
-    }
-}
+data class UpdateEditingToolsEvent(
+    val toolIDs: List<Int>,
+    val usingIndex: Int = -1)

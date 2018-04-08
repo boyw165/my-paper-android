@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,46 +18,26 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.gallery.view
+package com.paper.editor.view.editingPanel
 
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
-import com.paper.shared.model.PaperModel
+import com.paper.editor.data.UpdateColorTicketsEvent
+import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
 
-class PaperThumbnailEpoxyController(
-    private val mGlide: RequestManager)
-    : TypedEpoxyController<List<PaperModel>>() {
+class ColorTicketListEpoxyController(
+    private val mWidget: PaperEditPanelWidget,
+    private val mImgLoader: RequestManager)
+    : TypedEpoxyController<UpdateColorTicketsEvent>() {
 
-    private var mRatio = 1f
-
-    private var mListener: IOnClickPaperThumbnailListener? = null
-
-    override fun buildModels(data: List<PaperModel>) {
-        TapToCreateEpoxyModel()
-            .id(0)
-            .addTo(this)
-
-        data.forEachIndexed { _, paper ->
-            val id = paper.id
-
-            PaperThumbnailEpoxyModel(id)
-                .setThumbnail(mGlide,
-                              paper.thumbnailPath,
-                              paper.thumbnailWidth,
-                              paper.thumbnailHeight)
-                .setLayoutRatio(mRatio)
-                .setClickListener(mListener)
-                // Epoxy view-model ID.
-                .id("${paper.uuid}+${paper.modifiedAt}+${paper.thumbnailPath}")
+    override fun buildModels(data: UpdateColorTicketsEvent) {
+        data.colorTickets.forEachIndexed { i, color ->
+            ColorTicketEpoxyViewModel(
+                mColor = color,
+                mWidget = mWidget,
+                mIsUsing = i == data.usingIndex)
+                .id(i)
                 .addTo(this)
         }
-    }
-
-    fun setThumbnailAspectRatio(ratio: Float) {
-        mRatio = ratio
-    }
-
-    fun setOnClickPaperThumbnailListener(listener: IOnClickPaperThumbnailListener?) {
-        mListener = listener
     }
 }

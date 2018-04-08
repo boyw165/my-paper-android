@@ -18,32 +18,32 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.view.canvas
 
-import com.paper.editor.view.editingPanel.IPaperEditPanelView
-import com.paper.editor.view.canvas.IPaperWidgetView
-import io.reactivex.Observable
+import android.graphics.Canvas
+import android.view.MotionEvent
+import com.cardinalblue.gesture.IAllGesturesListener
+import com.paper.editor.widget.canvas.IScrapWidget
 
-class PaperEditorContract private constructor() {
+interface IScrapWidgetView {
 
-    interface View {
+    fun bindWidget(widget: IScrapWidget)
 
-        fun getCanvasView(): IPaperWidgetView
+    fun unbindWidget()
 
-        fun getEditingPanelView(): IPaperEditPanelView
+    fun addChild(child: IScrapWidgetView)
 
-        fun showProgressBar(progress: Int)
+    fun removeChild(child: IScrapWidgetView)
 
-        fun hideProgressBar()
+    // Gesture ////////////////////////////////////////////////////////////////
 
-        fun showErrorAlert(error: Throwable)
+    fun setGestureListener(listener: IAllGesturesListener?)
 
-        fun close()
+    // Rendering //////////////////////////////////////////////////////////////
 
-        fun onClickCloseButton(): Observable<Any>
+    fun dispatchDraw(canvas: Canvas)
 
-        fun onClickDrawButton(): Observable<Boolean>
+    // Touch //////////////////////////////////////////////////////////////////
 
-        fun onClickMenu(): Observable<Any>
-    }
+    fun dispatchTouch(event: MotionEvent)
 }

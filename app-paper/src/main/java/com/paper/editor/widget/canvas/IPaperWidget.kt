@@ -18,32 +18,39 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.widget.canvas
 
-import com.paper.editor.view.editingPanel.IPaperEditPanelView
-import com.paper.editor.view.canvas.IPaperWidgetView
+import com.paper.editor.data.DrawSVGEvent
+import com.paper.shared.model.PaperModel
+import com.paper.shared.model.Rect
 import io.reactivex.Observable
 
-class PaperEditorContract private constructor() {
+interface IPaperWidget : IBaseWidget<PaperModel> {
 
-    interface View {
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-        fun getCanvasView(): IPaperWidgetView
+    fun handleActionBegin()
 
-        fun getEditingPanelView(): IPaperEditPanelView
+    fun handleActionEnd()
 
-        fun showProgressBar(progress: Int)
+    fun handleTap(x: Float, y: Float)
 
-        fun hideProgressBar()
+    fun handleDragBegin(x: Float, y: Float)
 
-        fun showErrorAlert(error: Throwable)
+    fun handleDrag(x: Float, y: Float)
 
-        fun close()
+    fun handleDragEnd(x: Float, y: Float)
 
-        fun onClickCloseButton(): Observable<Any>
+    // For output /////////////////////////////////////////////////////////////
 
-        fun onClickDrawButton(): Observable<Boolean>
+    fun onSetCanvasSize(): Observable<Rect>
 
-        fun onClickMenu(): Observable<Any>
-    }
+    fun onAddScrapWidget(): Observable<IScrapWidget>
+
+    fun onRemoveScrapWidget(): Observable<IScrapWidget>
+
+    fun onDrawSVG(): Observable<DrawSVGEvent>
+
+    fun onPrintDebugMessage(): Observable<String>
 }
