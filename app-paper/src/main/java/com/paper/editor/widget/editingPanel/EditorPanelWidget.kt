@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,25 +18,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.widget
+package com.paper.editor.widget.editingPanel
 
-import com.paper.editor.data.DrawSVGEvent
-import com.paper.shared.model.ScrapModel
-import com.paper.shared.model.TransformModel
+import com.paper.editor.data.DrawViewPortEvent
+import com.paper.shared.model.Rect
 import io.reactivex.Observable
-import java.util.*
+import io.reactivex.Scheduler
+import io.reactivex.disposables.CompositeDisposable
 
-interface IScrapWidget: IBaseWidget<ScrapModel> {
+class EditorPanelWidget(
+    private val mUiScheduler: Scheduler,
+    private val mWorkerScheduler: Scheduler) {
 
-    // For input //////////////////////////////////////////////////////////////
+    private val mDisposables = CompositeDisposable()
 
-    fun handleTap(x: Float, y: Float)
+    fun handleUpdateViewPort(canvas: Rect,
+                                      viewPort: Rect) {
+        TODO("not implemented")
+    }
 
-    // For output /////////////////////////////////////////////////////////////
+    fun handleChoosePrimaryFunction(id: Int) {
+        TODO("not implemented")
+    }
 
-    fun getId(): UUID
+    fun onUpdateViewPort(): Observable<DrawViewPortEvent> {
+        TODO("not implemented")
+    }
 
-    fun onDrawSVG(): Observable<DrawSVGEvent>
-
-    fun onTransform(): Observable<TransformModel>
+    fun onChooseSecondaryTool(): Observable<Any> {
+        TODO("not implemented")
+    }
 }

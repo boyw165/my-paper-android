@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.widget
+package com.paper.editor.widget.canvas
 
 import android.util.Log
 import com.paper.AppConst
@@ -77,7 +77,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
                     val widget = ScrapWidget(mUiScheduler,
-                                             mWorkerScheduler)
+                                                                            mWorkerScheduler)
                     mScrapWidgets[scrapM.uuid] = widget
 
                     widget.bindModel(scrapM)

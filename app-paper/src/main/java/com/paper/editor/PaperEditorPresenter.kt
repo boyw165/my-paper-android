@@ -23,7 +23,7 @@ package com.paper.editor
 import android.graphics.Bitmap
 import android.os.Environment
 import com.paper.AppConst
-import com.paper.editor.widget.PaperWidget
+import com.paper.editor.widget.canvas.PaperWidget
 import com.paper.event.ProgressEvent
 import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.PaperModel

@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.widget
+package com.paper.editor.widget.canvas
 
 import com.paper.editor.data.DrawSVGEvent
 import com.paper.shared.model.Point

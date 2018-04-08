@@ -22,7 +22,7 @@ package com.paper.editor.view.canvas
 
 import android.graphics.Bitmap
 import com.paper.editor.data.DrawViewPortEvent
-import com.paper.editor.widget.IPaperWidget
+import com.paper.editor.widget.canvas.IPaperWidget
 import io.reactivex.Observable
 
 interface IPaperWidgetView {

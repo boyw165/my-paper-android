@@ -40,8 +40,8 @@ import com.paper.R
 import com.paper.editor.data.DrawSVGEvent
 import com.paper.editor.data.DrawViewPortEvent
 import com.paper.editor.data.GestureRecord
-import com.paper.editor.widget.IPaperWidget
-import com.paper.editor.widget.IScrapWidget
+import com.paper.editor.widget.canvas.IPaperWidget
+import com.paper.editor.widget.canvas.IScrapWidget
 import com.paper.shared.model.Rect
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils

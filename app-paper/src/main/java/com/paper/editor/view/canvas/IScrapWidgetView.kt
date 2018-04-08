@@ -23,7 +23,7 @@ package com.paper.editor.view.canvas
 import android.graphics.Canvas
 import android.view.MotionEvent
 import com.cardinalblue.gesture.IAllGesturesListener
-import com.paper.editor.widget.IScrapWidget
+import com.paper.editor.widget.canvas.IScrapWidget
 
 interface IScrapWidgetView {
 

@@ -28,7 +28,7 @@ import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.AppConst
 import com.paper.editor.data.DrawSVGEvent
-import com.paper.editor.widget.IScrapWidget
+import com.paper.editor.widget.canvas.IScrapWidget
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
 import io.reactivex.android.schedulers.AndroidSchedulers

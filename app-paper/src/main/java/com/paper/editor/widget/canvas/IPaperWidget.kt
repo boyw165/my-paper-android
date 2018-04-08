@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,34 +18,39 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.widget
+package com.paper.editor.widget.canvas
 
-import com.paper.editor.data.DrawViewPortEvent
+import com.paper.editor.data.DrawSVGEvent
+import com.paper.shared.model.PaperModel
 import com.paper.shared.model.Rect
 import io.reactivex.Observable
-import io.reactivex.Scheduler
-import io.reactivex.disposables.CompositeDisposable
 
-class EditorPanelWidget(
-    private val mUiScheduler: Scheduler,
-    private val mWorkerScheduler: Scheduler) {
+interface IPaperWidget : IBaseWidget<PaperModel> {
 
-    private val mDisposables = CompositeDisposable()
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-    fun handleUpdateViewPort(canvas: Rect,
-                                      viewPort: Rect) {
-        TODO("not implemented")
-    }
+    fun handleActionBegin()
 
-    fun handleChoosePrimaryFunction(id: Int) {
-        TODO("not implemented")
-    }
+    fun handleActionEnd()
 
-    fun onUpdateViewPort(): Observable<DrawViewPortEvent> {
-        TODO("not implemented")
-    }
+    fun handleTap(x: Float, y: Float)
 
-    fun onChooseSecondaryTool(): Observable<Any> {
-        TODO("not implemented")
-    }
+    fun handleDragBegin(x: Float, y: Float)
+
+    fun handleDrag(x: Float, y: Float)
+
+    fun handleDragEnd(x: Float, y: Float)
+
+    // For output /////////////////////////////////////////////////////////////
+
+    fun onSetCanvasSize(): Observable<Rect>
+
+    fun onAddScrapWidget(): Observable<IScrapWidget>
+
+    fun onRemoveScrapWidget(): Observable<IScrapWidget>
+
+    fun onDrawSVG(): Observable<DrawSVGEvent>
+
+    fun onPrintDebugMessage(): Observable<String>
 }
