@@ -30,8 +30,8 @@ import com.paper.AppConst
 import com.paper.R
 import com.paper.editor.PaperEditorContract
 import com.paper.editor.PaperEditorPresenter
-import com.paper.editor.view.editingPanel.EditingPanelView
-import com.paper.editor.view.editingPanel.IEditingPanelView
+import com.paper.editor.view.editingPanel.PaperEditPanelView
+import com.paper.editor.view.editingPanel.IPaperEditPanelView
 import com.paper.editor.view.canvas.IPaperWidgetView
 import com.paper.editor.view.canvas.PaperWidgetView
 import com.paper.protocol.IPaperRepoProvider
@@ -46,7 +46,7 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // View.
     private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
-    private val mEditingPanelView by lazy { findViewById<EditingPanelView>(R.id.editing_panel) }
+    private val mEditingPanelView by lazy { findViewById<PaperEditPanelView>(R.id.editing_panel) }
     private val mProgressBar by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
             .setCancelable(false)
@@ -102,7 +102,7 @@ class PaperEditorActivity : AppCompatActivity(),
         return mCanvasView
     }
 
-    override fun getEditingPanelView(): IEditingPanelView {
+    override fun getEditingPanelView(): IPaperEditPanelView {
         return mEditingPanelView
     }
 

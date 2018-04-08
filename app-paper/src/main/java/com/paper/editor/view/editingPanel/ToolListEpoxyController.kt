@@ -24,11 +24,11 @@ import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.R
 import com.paper.editor.data.UpdateEditingToolsEvent
-import com.paper.editor.widget.editingPanel.EditingPanelWidget
+import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
 import com.paper.editor.widget.editingPanel.EditingToolFactory
 
 class ToolListEpoxyController(
-    private val mWidget: EditingPanelWidget,
+    private val mWidget: PaperEditPanelWidget,
     private val mImgLoader: RequestManager)
     : TypedEpoxyController<UpdateEditingToolsEvent>() {
 

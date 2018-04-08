@@ -27,7 +27,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
-class EditingPanelWidget(
+class PaperEditPanelWidget(
     private val mUiScheduler: Scheduler,
     private val mWorkerScheduler: Scheduler) {
 

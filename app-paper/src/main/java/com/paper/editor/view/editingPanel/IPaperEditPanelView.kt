@@ -23,7 +23,7 @@ package com.paper.editor.view.editingPanel
 import com.paper.shared.model.Rect
 import io.reactivex.Observable
 
-interface IEditingPanelView {
+interface IPaperEditPanelView {
 
     // Input //////////////////////////////////////////////////////////////////
 

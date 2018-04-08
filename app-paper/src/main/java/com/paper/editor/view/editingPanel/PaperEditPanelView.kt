@@ -29,7 +29,7 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.editor.view.canvas.ViewPortIndicatorView
-import com.paper.editor.widget.editingPanel.EditingPanelWidget
+import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
 import com.paper.shared.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -38,10 +38,12 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 
 /**
- * See [R.layout.view_editor_panel].
+ * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
  */
-class EditingPanelView : ConstraintLayout,
-                         IEditingPanelView {
+class PaperEditPanelView : ConstraintLayout,
+                           IPaperEditPanelView {
+
+    private var mOneDp = 0f
 
     // View port sub-view
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
@@ -58,11 +60,10 @@ class EditingPanelView : ConstraintLayout,
 
     // The business login/view-model
     private val mWidget by lazy {
-        EditingPanelWidget(
+        PaperEditPanelWidget(
             AndroidSchedulers.mainThread(),
             Schedulers.io())
     }
-
     private val mDisposables = CompositeDisposable()
 
     constructor(context: Context) : this(context, null)
@@ -72,7 +73,9 @@ class EditingPanelView : ConstraintLayout,
     constructor(context: Context,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        inflate(context, R.layout.view_editor_panel, this)
+        inflate(context, R.layout.view_paper_edit_panel, this)
+
+        mOneDp = context.resources.getDimension(R.dimen.one_dp)
 
         mToolListView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         mToolListView.adapter = mToolListViewController.adapter

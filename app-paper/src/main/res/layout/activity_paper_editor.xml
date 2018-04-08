@@ -79,7 +79,7 @@
         app:srcCompat="@drawable/sel_icon_e_redo"/>
 
     <!-- Editor panel -->
-    <com.paper.editor.view.editingPanel.EditingPanelView
+    <com.paper.editor.view.editingPanel.PaperEditPanelView
         android:id="@+id/editing_panel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

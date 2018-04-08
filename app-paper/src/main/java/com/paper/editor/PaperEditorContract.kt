@@ -20,7 +20,7 @@
 
 package com.paper.editor
 
-import com.paper.editor.view.editingPanel.IEditingPanelView
+import com.paper.editor.view.editingPanel.IPaperEditPanelView
 import com.paper.editor.view.canvas.IPaperWidgetView
 import io.reactivex.Observable
 
@@ -30,7 +30,7 @@ class PaperEditorContract private constructor() {
 
         fun getCanvasView(): IPaperWidgetView
 
-        fun getEditingPanelView(): IEditingPanelView
+        fun getEditingPanelView(): IPaperEditPanelView
 
         fun showProgressBar(progress: Int)
 

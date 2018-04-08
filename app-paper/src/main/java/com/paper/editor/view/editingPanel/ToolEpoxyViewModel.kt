@@ -26,11 +26,11 @@ import android.widget.ImageView
 import com.airbnb.epoxy.EpoxyModel
 import com.bumptech.glide.RequestManager
 import com.paper.R
-import com.paper.editor.widget.editingPanel.EditingPanelWidget
+import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
 
 class ToolEpoxyViewModel(
     private val mToolID: Int,
-    private val mWidget: EditingPanelWidget,
+    private val mWidget: PaperEditPanelWidget,
     private val mImgLoader: RequestManager,
     private val mResourceId: Int,
     private val mFadeResourceId: Int,
