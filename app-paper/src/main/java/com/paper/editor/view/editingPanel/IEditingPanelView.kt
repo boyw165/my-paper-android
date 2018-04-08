@@ -21,6 +21,7 @@
 package com.paper.editor.view.editingPanel
 
 import com.paper.shared.model.Rect
+import io.reactivex.Observable
 
 interface IEditingPanelView {
 
@@ -29,4 +30,8 @@ interface IEditingPanelView {
     fun setCanvasAndViewPort(canvas: Rect, viewPort: Rect)
 
     // Output /////////////////////////////////////////////////////////////////
+
+    fun onChooseColorTicket(): Observable<Int>
+
+    fun onChooseEditingTool(): Observable<Int>
 }

@@ -23,16 +23,20 @@ package com.paper.editor.view.editingPanel
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.R
-import com.paper.editor.data.UpdateEditingToolEvent
+import com.paper.editor.data.UpdateEditingToolsEvent
+import com.paper.editor.widget.editingPanel.EditingPanelWidget
 import com.paper.editor.widget.editingPanel.EditingToolFactory
 
 class ToolListEpoxyController(
+    private val mWidget: EditingPanelWidget,
     private val mImgLoader: RequestManager)
-    : TypedEpoxyController<UpdateEditingToolEvent>() {
+    : TypedEpoxyController<UpdateEditingToolsEvent>() {
 
-    override fun buildModels(data: UpdateEditingToolEvent) {
+    override fun buildModels(data: UpdateEditingToolsEvent) {
         data.toolIDs.forEachIndexed { i, toolId ->
             ToolEpoxyViewModel(
+                toolId,
+                mWidget,
                 mImgLoader = mImgLoader,
                 mResourceId = getResourceId(toolId),
                 mFadeResourceId = getFadeResourceId(toolId),

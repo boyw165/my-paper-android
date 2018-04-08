@@ -20,33 +20,63 @@
 
 package com.paper.editor.widget.editingPanel
 
-import com.paper.editor.data.UpdateEditingToolEvent
+import com.paper.editor.data.UpdateEditingToolsEvent
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 
-class EditorPanelWidget(
+class EditingPanelWidget(
     private val mUiScheduler: Scheduler,
     private val mWorkerScheduler: Scheduler) {
 
-    private val mSetEditingTool = BehaviorSubject.create<UpdateEditingToolEvent>()
+    // Editing tool
+    private var mToolIndex = -1
+    private val mEditingTools = BehaviorSubject.create<UpdateEditingToolsEvent>()
+
+    private val mUnsupportedToolMsg = PublishSubject.create<Any>()
 
     fun handleStart() {
         // Prepare initial tools and select the pen by default.
-        val tools = mutableListOf(
-            EditingToolFactory.TOOL_ERASER,
-            EditingToolFactory.TOOL_PEN,
-            EditingToolFactory.TOOL_SCISSOR)
-        mSetEditingTool.onNext(UpdateEditingToolEvent(
+        val tools = getToolIDs()
+        mToolIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)
+        mEditingTools.onNext(UpdateEditingToolsEvent(
             toolIDs = tools,
-            usingIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)))
+            usingIndex = mToolIndex))
     }
 
     fun handleChoosePrimaryFunction(id: Int) {
         TODO("not implemented")
     }
 
-    fun onUpdateEditingToolList(): Observable<UpdateEditingToolEvent> {
-        return mSetEditingTool
+    // Editing tool ///////////////////////////////////////////////////////////
+
+    fun handleClickTool(toolID: Int) {
+        val toolIDs = getToolIDs()
+        val usingIndex = if (toolID != EditingToolFactory.TOOL_PEN) {
+            mUnsupportedToolMsg.onNext(0)
+            toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
+        } else {
+            toolIDs.indexOf(toolID)
+        }
+
+        mEditingTools.onNext(UpdateEditingToolsEvent(
+            toolIDs = toolIDs,
+            usingIndex = usingIndex))
+    }
+
+    fun onUpdateEditingToolList(): Observable<UpdateEditingToolsEvent> {
+        return mEditingTools
+    }
+
+    fun onChooseUnsupportedTool(): Observable<Any> {
+        return mUnsupportedToolMsg
+    }
+
+    private fun getToolIDs(): List<Int> {
+        return mutableListOf(
+            EditingToolFactory.TOOL_ERASER,
+            EditingToolFactory.TOOL_PEN,
+            EditingToolFactory.TOOL_SCISSOR)
     }
 }

@@ -20,16 +20,17 @@
 
 package com.paper.editor.view.editingPanel
 
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import com.airbnb.epoxy.EpoxyModel
 import com.bumptech.glide.RequestManager
-import com.paper.AppConst
 import com.paper.R
+import com.paper.editor.widget.editingPanel.EditingPanelWidget
 
 class ToolEpoxyViewModel(
+    private val mToolID: Int,
+    private val mWidget: EditingPanelWidget,
     private val mImgLoader: RequestManager,
     private val mResourceId: Int,
     private val mFadeResourceId: Int,
@@ -52,6 +53,10 @@ class ToolEpoxyViewModel(
 
     override fun bind(view: View) {
         super.bind(view)
+
+        view.setOnClickListener {
+            mWidget.handleClickTool(mToolID)
+        }
 
         if (mIsUsing) {
             mImgView.setImageResource(mResourceId)

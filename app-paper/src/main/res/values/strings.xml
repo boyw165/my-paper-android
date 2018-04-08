@@ -13,6 +13,7 @@
     <string name="doodle_clear_message">Clear all your strokes and it is not a reversible action. Are you sure to continue?</string>
     <string name="doodle_clear_ok">OK</string>
     <string name="doodle_clear_cancel">CANCEL</string>
+    <string name="msg_under_construction">Sorry, we\'re still working on this feature</string>
 
     <string name="tap_anywhere_to_start">Tap anywhere to start</string>
 </resources>

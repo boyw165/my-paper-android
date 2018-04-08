@@ -25,14 +25,17 @@ import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
+import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.editor.view.canvas.ViewPortIndicatorView
-import com.paper.editor.widget.editingPanel.EditorPanelWidget
+import com.paper.editor.widget.editingPanel.EditingPanelWidget
 import com.paper.shared.model.Rect
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 
 /**
  * See [R.layout.view_editor_panel].
@@ -45,10 +48,17 @@ class EditingPanelView : ConstraintLayout,
 
     // Tools sub-view
     private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
-    private val mToolListViewController by lazy { ToolListEpoxyController(Glide.with(context)) }
+    private val mToolListViewController by lazy {
+        ToolListEpoxyController(mWidget,
+                                Glide.with(context))
+    }
+    // Tool signal
+    private val mColorTicket = PublishSubject.create<Int>()
+    private val mEditingTool = PublishSubject.create<Int>()
 
+    // The business login/view-model
     private val mWidget by lazy {
-        EditorPanelWidget(
+        EditingPanelWidget(
             AndroidSchedulers.mainThread(),
             Schedulers.io())
     }
@@ -71,11 +81,23 @@ class EditingPanelView : ConstraintLayout,
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
+        // Editing tool
         mDisposables.add(
             mWidget.onUpdateEditingToolList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
+                    // Update view
                     mToolListViewController.setData(event)
+
+                    // Notify observer
+                    val toolID = event.toolIDs.indexOf(event.usingIndex)
+                    mEditingTool.onNext(toolID)
+                })
+        mDisposables.add(
+            mWidget.onChooseUnsupportedTool()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    Toast.makeText(context, R.string.msg_under_construction, Toast.LENGTH_SHORT).show()
                 })
 
         mWidget.handleStart()
@@ -91,6 +113,18 @@ class EditingPanelView : ConstraintLayout,
                                       viewPort: Rect) {
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
+
+    // Tool ///////////////////////////////////////////////////////////////////
+
+    override fun onChooseColorTicket(): Observable<Int> {
+        return mColorTicket
+    }
+
+    override fun onChooseEditingTool(): Observable<Int> {
+        return mEditingTool
+    }
+
+    // Other //////////////////////////////////////////////////////////////////
 
     private fun ensureNoLeakingSubscriptions() {
         if (mDisposables.size() > 0) {
