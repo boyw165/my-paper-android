@@ -25,9 +25,9 @@ import com.paper.AppConst
 import com.paper.editor.data.DrawSVGEvent
 import com.paper.editor.data.DrawSVGEvent.Action.*
 import com.paper.editor.data.GestureRecord
-import com.paper.editor.data.Size
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.Point
+import com.paper.shared.model.Rect
 import com.paper.shared.model.ScrapModel
 import com.paper.shared.model.sketch.PathTuple
 import com.paper.shared.model.sketch.SketchStroke
@@ -244,8 +244,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mDebugSignal.onNext("Collect strokes!")
     }
 
-    override fun onSetCanvasSize(): Observable<Size> {
-        return Observable.just(Size(mModel.width, mModel.height))
+    override fun onSetCanvasSize(): Observable<Rect> {
+        return Observable.just(Rect(0f, 0f, mModel.width, mModel.height))
     }
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {

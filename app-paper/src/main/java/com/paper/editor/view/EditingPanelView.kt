@@ -21,18 +21,49 @@
 package com.paper.editor.view
 
 import android.content.Context
+import android.support.constraint.ConstraintLayout
 import android.util.AttributeSet
-import android.widget.FrameLayout
 import com.paper.R
+import com.paper.shared.model.Rect
+import io.reactivex.disposables.CompositeDisposable
 
-class EditorPanelView : FrameLayout {
+class EditingPanelView : ConstraintLayout,
+                         IEditingPanelView {
+
+    private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
+
+    private val mDisposables = CompositeDisposable()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context,
                 attrs: AttributeSet?) : this(context, attrs, 0)
+
     constructor(context: Context,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         inflate(context, R.layout.view_editor_panel, this)
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+
+        // TODO: Bind widget
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        mDisposables.clear()
+    }
+
+    override fun setCanvasAndViewPort(canvas: Rect,
+                                      viewPort: Rect) {
+        mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
+    }
+
+    private fun ensureNoLeakingSubscriptions() {
+        if (mDisposables.size() > 0) {
+            throw IllegalStateException("Already bind to a widget")
+        }
     }
 }

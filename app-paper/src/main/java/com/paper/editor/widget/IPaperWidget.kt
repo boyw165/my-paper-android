@@ -21,8 +21,8 @@
 package com.paper.editor.widget
 
 import com.paper.editor.data.DrawSVGEvent
-import com.paper.editor.data.Size
 import com.paper.shared.model.PaperModel
+import com.paper.shared.model.Rect
 import io.reactivex.Observable
 
 interface IPaperWidget : IBaseWidget<PaperModel> {
@@ -44,7 +44,7 @@ interface IPaperWidget : IBaseWidget<PaperModel> {
 
     // For output /////////////////////////////////////////////////////////////
 
-    fun onSetCanvasSize(): Observable<Size>
+    fun onSetCanvasSize(): Observable<Rect>
 
     fun onAddScrapWidget(): Observable<IScrapWidget>
 

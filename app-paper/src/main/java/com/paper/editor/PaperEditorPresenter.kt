@@ -22,15 +22,17 @@ package com.paper.editor
 
 import android.graphics.Bitmap
 import android.os.Environment
+import com.paper.AppConst
 import com.paper.editor.widget.PaperWidget
 import com.paper.event.ProgressEvent
-import com.paper.protocol.IPresenter
 import com.paper.shared.model.PaperConsts
 import com.paper.shared.model.PaperModel
 import com.paper.shared.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
 import io.reactivex.Scheduler
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.io.FileOutputStream
@@ -38,16 +40,21 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class PaperEditorController(private val mPaperWidget: PaperWidget,
-                            private val mPaperRepo: IPaperModelRepo,
-                            private val mUiScheduler: Scheduler,
-                            private val mWorkerScheduler: Scheduler)
-    : IPresenter<PaperEditorContract.View> {
+class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
+                           private val mUiScheduler: Scheduler,
+                           private val mWorkerScheduler: Scheduler) {
 
     private var mPaperId = PaperConsts.TEMP_ID
 
     // Editor view.
     private var mView: PaperEditorContract.View? = null
+
+    private val mPaperWidget by lazy {
+        val field = PaperWidget(AndroidSchedulers.mainThread(),
+                                Schedulers.io())
+        field.collectStrokesTimeout = AppConst.COLLECT_STROKES_TIMEOUT_MS
+        field
+    }
 
     // Progress signal.
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
@@ -56,7 +63,7 @@ class PaperEditorController(private val mPaperWidget: PaperWidget,
     private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposables = CompositeDisposable()
 
-    override fun bindViewOnCreate(view: PaperEditorContract.View) {
+    fun bindViewOnCreate(view: PaperEditorContract.View) {
         mView = view
 
         // Close button.
@@ -71,9 +78,21 @@ class PaperEditorController(private val mPaperWidget: PaperWidget,
                 .subscribe {
                     mView?.close()
                 })
+
+        val canvasView = view.getCanvasView()
+        val editingPanelView = view.getEditingPanelView()
+        mDisposablesOnCreate.add(
+            canvasView
+                .onDrawViewPort()
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    editingPanelView.setCanvasAndViewPort(
+                        event.canvas,
+                        event.viewPort)
+                })
     }
 
-    override fun unbindViewOnDestroy() {
+    fun unbindViewOnDestroy() {
         // Unbind widget.
         mView?.getCanvasView()?.unbindWidget()
         // Unbind model.
@@ -83,14 +102,6 @@ class PaperEditorController(private val mPaperWidget: PaperWidget,
         mDisposables.clear()
 
         mView = null
-    }
-
-    override fun onResume() {
-        // DO NOTHING
-    }
-
-    override fun onPause() {
-        // DO NOTHING
     }
 
     fun loadPaperById(id: Long) {

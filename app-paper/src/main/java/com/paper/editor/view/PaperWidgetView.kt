@@ -24,7 +24,6 @@ import android.content.Context
 import android.graphics.*
 import android.os.Handler
 import android.os.Looper
-import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -38,11 +37,13 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.AppConst
 import com.paper.R
 import com.paper.editor.data.DrawSVGEvent
-import com.paper.editor.data.Size
+import com.paper.editor.data.DrawViewPortEvent
 import com.paper.editor.widget.IPaperWidget
 import com.paper.editor.widget.IScrapWidget
+import com.paper.shared.model.Rect
 import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
@@ -64,7 +65,7 @@ class PaperWidgetView : View,
     /**
      * Model canvas size.
      */
-    private val mMSize = BehaviorSubject.createDefault(Size())
+    private val mMSize = BehaviorSubject.createDefault(Rect())
     /**
      * Scale factor from Model world to View world.
      */
@@ -146,6 +147,8 @@ class PaperWidgetView : View,
     // View port paints
     private val mViewPortPaint = Paint()
     private val mCanvasBoundPaint = Paint()
+    // Output signal related to view port
+    private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
 
     // Rendering resource.
     private val mUiHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -232,7 +235,7 @@ class PaperWidgetView : View,
         mWidgetDisposables.add(
             Observables.combineLatest(
                 RxView.globalLayouts(this@PaperWidgetView),
-                widget.onSetCanvasSize().doOnNext {  })
+                widget.onSetCanvasSize())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (_, size) ->
                     Log.d(AppConst.TAG, "the layout is done, and canvas size is ${size.width} x ${size.height}")
@@ -244,9 +247,16 @@ class PaperWidgetView : View,
         mWidgetDisposables.add(
             mViewPort
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { _ ->
+                .subscribe { vp ->
                     markCanvasMatrixDirty()
                     delayedInvalidate()
+
+                    mDrawViewPortSignal.onNext(DrawViewPortEvent(
+                        canvas = mMSize.value.copy(),
+                        viewPort = Rect(vp.left,
+                                        vp.top,
+                                        vp.right,
+                                        vp.bottom)))
                 })
 
         // Debug
@@ -260,6 +270,10 @@ class PaperWidgetView : View,
                 })
     }
 
+    override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
+        return mDrawViewPortSignal
+    }
+
     override fun unbindWidget() {
         mWidgetDisposables.clear()
 
@@ -270,7 +284,7 @@ class PaperWidgetView : View,
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
-    override fun addScrap(widget: IScrapWidget) {
+    private fun addScrap(widget: IScrapWidget) {
         val scrapView = ScrapWidgetView()
 
         scrapView.setPaperContext(this)
@@ -281,7 +295,7 @@ class PaperWidgetView : View,
         delayedInvalidate()
     }
 
-    override fun removeScrap(widget: IScrapWidget) {
+    private fun removeScrap(widget: IScrapWidget) {
         val scrapView = mScrapViews.firstOrNull { it == widget }
                         ?: throw NoSuchElementException("Cannot find the widget")
 
@@ -321,7 +335,7 @@ class PaperWidgetView : View,
         mViewPortBase.set(mViewPortMax)
 
         // Hold canvas size.
-        mMSize.onNext(Size(canvasWidth, canvasHeight))
+        mMSize.onNext(Rect(0f, 0f, canvasWidth, canvasHeight))
 
         // Initially the model-to-view scale is derived by the scale
         // from min view port boundary to the view boundary.
@@ -391,8 +405,8 @@ class PaperWidgetView : View,
 
         canvas.restoreToCount(count)
 
-        // Display the view-port relative boundary to the model.
-        drawMeter(canvas, mw, mh)
+//        // Display the view-port relative boundary to the model.
+//        drawMeter(canvas, mw, mh)
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {

@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,5 +20,8 @@
 
 package com.paper.editor.data
 
-data class Size(val width: Float = 0f,
-                val height: Float = 0f)
+import com.paper.shared.model.Rect
+
+data class DrawViewPortEvent(
+    val canvas: Rect,
+    val viewPort: Rect)

@@ -20,24 +20,20 @@
 
 package com.paper.view
 
-import android.content.Context
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.SwitchCompat
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.jakewharton.rxbinding2.widget.RxCompoundButton
 import com.paper.AppConst
 import com.paper.R
-import com.paper.editor.ITouchConfig
 import com.paper.editor.PaperEditorContract
-import com.paper.editor.PaperEditorController
+import com.paper.editor.PaperEditorPresenter
+import com.paper.editor.view.EditingPanelView
+import com.paper.editor.view.IEditingPanelView
 import com.paper.editor.view.IPaperWidgetView
 import com.paper.editor.view.PaperWidgetView
-import com.paper.editor.widget.PaperWidget
-import com.paper.protocol.IContextProvider
 import com.paper.protocol.IPaperRepoProvider
 import com.paper.shared.model.PaperConsts
 import io.reactivex.Observable
@@ -46,13 +42,12 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 
 class PaperEditorActivity : AppCompatActivity(),
-                            IContextProvider,
-                            ITouchConfig,
                             PaperEditorContract.View {
 
     // View.
-    private val mCanvasView: PaperWidgetView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
-    private val mProgressBar: AlertDialog by lazy {
+    private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
+    private val mEditingPanelView by lazy { findViewById<EditingPanelView>(R.id.editing_panel) }
+    private val mProgressBar by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
             .setCancelable(false)
             .create()
@@ -67,17 +62,10 @@ class PaperEditorActivity : AppCompatActivity(),
     private val mPaperRepo by lazy { (application as IPaperRepoProvider).getRepo() }
 
     // Presenters and controllers.
-    private val mPaperController by lazy {
-        val field = PaperWidget(AndroidSchedulers.mainThread(),
-                                Schedulers.io())
-        field.collectStrokesTimeout = AppConst.COLLECT_STROKES_TIMEOUT_MS
-        field
-    }
-    private val mEditorPresenter: PaperEditorController by lazy {
-        PaperEditorController(mPaperController,
-                              mPaperRepo,
-                              AndroidSchedulers.mainThread(),
-                              Schedulers.single())
+    private val mEditorPresenter: PaperEditorPresenter by lazy {
+        PaperEditorPresenter(mPaperRepo,
+                             AndroidSchedulers.mainThread(),
+                             Schedulers.single())
     }
 
     override fun onCreate(savedState: Bundle?) {
@@ -103,46 +91,8 @@ class PaperEditorActivity : AppCompatActivity(),
 //        hideProgressBar()
     }
 
-    override fun onResume() {
-        super.onResume()
-
-        mEditorPresenter.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        mEditorPresenter.onPause()
-    }
-
     override fun onBackPressed() {
         mClickSysBackSignal.onNext(0)
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Context provider ///////////////////////////////////////////////////////
-
-    override fun getContext(): Context {
-        return this
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Canvas config //////////////////////////////////////////////////////////
-
-    override fun getTouchSlop(): Float {
-        return resources.getDimension(R.dimen.touch_slop)
-    }
-
-    override fun getTapSlop(): Float {
-        return resources.getDimension(R.dimen.tap_slop)
-    }
-
-    override fun getMinFlingVec(): Float {
-        return resources.getDimension(R.dimen.fling_min_vec)
-    }
-
-    override fun getMaxFlingVec(): Float {
-        return resources.getDimension(R.dimen.fling_max_vec)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -150,6 +100,10 @@ class PaperEditorActivity : AppCompatActivity(),
 
     override fun getCanvasView(): IPaperWidgetView {
         return mCanvasView
+    }
+
+    override fun getEditingPanelView(): IEditingPanelView {
+        return mEditingPanelView
     }
 
     override fun close() {

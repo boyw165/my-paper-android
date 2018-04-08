@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,32 +18,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor
+package com.paper.editor.widget
 
-import com.paper.editor.view.IEditingPanelView
-import com.paper.editor.view.IPaperWidgetView
+import com.paper.editor.data.DrawViewPortEvent
+import com.paper.shared.model.Rect
 import io.reactivex.Observable
+import io.reactivex.Scheduler
+import io.reactivex.disposables.CompositeDisposable
 
-class PaperEditorContract private constructor() {
+class EditorPanelWidget(
+    private val mUiScheduler: Scheduler,
+    private val mWorkerScheduler: Scheduler) {
 
-    interface View {
+    private val mDisposables = CompositeDisposable()
 
-        fun getCanvasView(): IPaperWidgetView
+    fun handleUpdateViewPort(canvas: Rect,
+                                      viewPort: Rect) {
+        TODO("not implemented")
+    }
 
-        fun getEditingPanelView(): IEditingPanelView
+    fun handleChoosePrimaryFunction(id: Int) {
+        TODO("not implemented")
+    }
 
-        fun showProgressBar(progress: Int)
+    fun onUpdateViewPort(): Observable<DrawViewPortEvent> {
+        TODO("not implemented")
+    }
 
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickDrawButton(): Observable<Boolean>
-
-        fun onClickMenu(): Observable<Any>
+    fun onChooseSecondaryTool(): Observable<Any> {
+        TODO("not implemented")
     }
 }

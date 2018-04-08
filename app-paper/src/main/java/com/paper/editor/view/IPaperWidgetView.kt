@@ -21,8 +21,9 @@
 package com.paper.editor.view
 
 import android.graphics.Bitmap
+import com.paper.editor.data.DrawViewPortEvent
 import com.paper.editor.widget.IPaperWidget
-import com.paper.editor.widget.IScrapWidget
+import io.reactivex.Observable
 
 interface IPaperWidgetView {
 
@@ -32,7 +33,5 @@ interface IPaperWidgetView {
 
     fun takeSnapshot(): Bitmap
 
-    fun addScrap(widget: IScrapWidget)
-
-    fun removeScrap(widget: IScrapWidget)
+    fun onDrawViewPort(): Observable<DrawViewPortEvent>
 }
