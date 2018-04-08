@@ -24,6 +24,7 @@ import android.content.Context
 import android.graphics.*
 import android.os.Handler
 import android.os.Looper
+import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -327,11 +328,13 @@ class PaperWidgetView : View,
         // |                   |
         // |                   |
         // '-------------------'
-        val maxScale = Math.min(canvasWidth / width,
-                                canvasHeight / height)
+        val spaceWidth = this.width - ViewCompat.getPaddingStart(this) - ViewCompat.getPaddingEnd(this)
+        val spaceHeight = this.height - paddingTop - paddingBottom
+        val maxScale = Math.min(canvasWidth / spaceWidth,
+                                canvasHeight / spaceHeight)
         val minScale = maxScale / AppConst.VIEW_PORT_MIN_SCALE
-        mViewPortMax.set(0f, 0f, maxScale * width, maxScale * height)
-        mViewPortMin.set(0f, 0f, minScale * width, minScale * height)
+        mViewPortMax.set(0f, 0f, maxScale * spaceWidth, maxScale * spaceHeight)
+        mViewPortMin.set(0f, 0f, minScale * spaceWidth, minScale * spaceHeight)
         mViewPortBase.set(mViewPortMax)
 
         // Hold canvas size.
@@ -392,6 +395,7 @@ class PaperWidgetView : View,
         // To view canvas world.
         computeCanvasMatrix(scaleM2V)
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+        canvas.translate(ViewCompat.getPaddingStart(this).toFloat(), paddingTop.toFloat())
         canvas.concat(mCanvasMatrix)
 
         // Background
@@ -695,7 +699,6 @@ class PaperWidgetView : View,
         val vw = mViewPortMax.width() / scaleVP
         val vh = mViewPortMax.height() / scaleVP
         mTmpBound.set(vx, vy, vx + vw, vy + vh)
-//        Log.d(AppConst.TAG, "update view port: canvasMatrix=$mTmpMatrix, rect=$mTmpBound")
 
         // Constraint view port
         val minWidth = mViewPortMin.width()
