@@ -84,10 +84,10 @@
     <!-- Canvas & view port indicator -->
     <com.paper.editor.view.ViewPortIndicatorView
         android:id="@+id/view_port_indicator"
-        android:layout_width="100dp"
+        android:layout_width="116dp"
         android:layout_height="0dp"
         android:paddingBottom="5dp"
-        android:paddingEnd="4dp"
+        android:paddingEnd="20dp"
         android:paddingStart="16dp"
         android:paddingTop="5dp"
         app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"
@@ -100,7 +100,6 @@
         android:layout_width="1dp"
         android:layout_height="0dp"
         android:layout_marginBottom="20dp"
-        android:layout_marginStart="10dp"
         android:layout_marginTop="20dp"
         android:background="#4AB3B3B3"
         app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"

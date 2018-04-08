@@ -58,7 +58,7 @@ class ViewPortIndicatorView : View {
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         mCanvasPaint.color = ContextCompat.getColor(context, R.color.white)
         mCanvasPaint.style = Paint.Style.FILL
-        mCanvasPaint.setShadowLayer(10f * mOneDp, 3f * mOneDp, 3f * mOneDp, Color.BLACK)
+        mCanvasPaint.setShadowLayer(10f * mOneDp, 0f, 3f * mOneDp, Color.BLACK)
 
         mViewPortPaint.color = ContextCompat.getColor(context, R.color.accent)
         mViewPortPaint.style = Paint.Style.STROKE
