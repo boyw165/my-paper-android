@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="300dp"
+    android:layout_height="300dp"
+    android:clipToPadding="false"
+    android:background="@drawable/bg_dashed_round_rect"
+    android:padding="16dp">
+
+    <android.support.v7.widget.AppCompatTextView
+        android:id="@+id/txt_tap_to_create"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/msg_create_cta"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:scaleType="centerCrop"/>
+</android.support.constraint.ConstraintLayout>

@@ -33,6 +33,10 @@ class PaperThumbnailEpoxyController(
     private var mListener: IOnClickPaperThumbnailListener? = null
 
     override fun buildModels(data: List<PaperModel>) {
+        TapToCreateEpoxyModel()
+            .id(0)
+            .addTo(this)
+
         data.forEachIndexed { _, paper ->
             val id = paper.id
 
