@@ -14,7 +14,7 @@
         app:layout_constraintGuide_begin="@dimen/toolbar_height"/>
 
     <!-- Paper canvas -->
-    <com.paper.editor.view.PaperWidgetView
+    <com.paper.editor.view.canvas.PaperWidgetView
         android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -79,7 +79,7 @@
         app:srcCompat="@drawable/sel_icon_e_redo"/>
 
     <!-- Editor panel -->
-    <com.paper.editor.view.EditingPanelView
+    <com.paper.editor.view.editingPanel.EditingPanelView
         android:id="@+id/editing_panel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

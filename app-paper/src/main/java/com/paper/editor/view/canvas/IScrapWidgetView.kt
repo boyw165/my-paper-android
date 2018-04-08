@@ -18,12 +18,32 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.view.canvas
 
-/**
- * The parent View for the current [IScrapWidgetView].
- */
-interface IParentWidgetView {
+import android.graphics.Canvas
+import android.view.MotionEvent
+import com.cardinalblue.gesture.IAllGesturesListener
+import com.paper.editor.widget.IScrapWidget
 
-    fun delayedInvalidate()
+interface IScrapWidgetView {
+
+    fun bindWidget(widget: IScrapWidget)
+
+    fun unbindWidget()
+
+    fun addChild(child: IScrapWidgetView)
+
+    fun removeChild(child: IScrapWidgetView)
+
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    fun setGestureListener(listener: IAllGesturesListener?)
+
+    // Rendering //////////////////////////////////////////////////////////////
+
+    fun dispatchDraw(canvas: Canvas)
+
+    // Touch //////////////////////////////////////////////////////////////////
+
+    fun dispatchTouch(event: MotionEvent)
 }

@@ -30,10 +30,10 @@ import com.paper.AppConst
 import com.paper.R
 import com.paper.editor.PaperEditorContract
 import com.paper.editor.PaperEditorPresenter
-import com.paper.editor.view.EditingPanelView
-import com.paper.editor.view.IEditingPanelView
-import com.paper.editor.view.IPaperWidgetView
-import com.paper.editor.view.PaperWidgetView
+import com.paper.editor.view.editingPanel.EditingPanelView
+import com.paper.editor.view.editingPanel.IEditingPanelView
+import com.paper.editor.view.canvas.IPaperWidgetView
+import com.paper.editor.view.canvas.PaperWidgetView
 import com.paper.protocol.IPaperRepoProvider
 import com.paper.shared.model.PaperConsts
 import io.reactivex.Observable

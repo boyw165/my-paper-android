@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,15 +18,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.view.canvas
 
-import com.paper.shared.model.Rect
+/**
+ * The parent View for the current [IScrapWidgetView].
+ */
+interface IParentWidgetView {
 
-interface IEditingPanelView {
-
-    // Input //////////////////////////////////////////////////////////////////
-
-    fun setCanvasAndViewPort(canvas: Rect, viewPort: Rect)
-
-    // Output /////////////////////////////////////////////////////////////////
+    fun delayedInvalidate()
 }

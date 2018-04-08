@@ -18,12 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.view.editingPanel
 
 import android.content.Context
 import android.support.constraint.ConstraintLayout
+import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import com.paper.R
+import com.paper.editor.view.canvas.ViewPortIndicatorView
 import com.paper.shared.model.Rect
 import io.reactivex.disposables.CompositeDisposable
 
@@ -33,7 +35,12 @@ import io.reactivex.disposables.CompositeDisposable
 class EditingPanelView : ConstraintLayout,
                          IEditingPanelView {
 
+    // View port
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
+
+    // Tools
+    private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
+//    private val mToolListViewController by lazy {  }
 
     private val mDisposables = CompositeDisposable()
 

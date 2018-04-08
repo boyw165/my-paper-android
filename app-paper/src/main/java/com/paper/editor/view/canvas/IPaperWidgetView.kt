@@ -18,32 +18,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.view.canvas
 
-import android.graphics.Canvas
-import android.view.MotionEvent
-import com.cardinalblue.gesture.IAllGesturesListener
-import com.paper.editor.widget.IScrapWidget
+import android.graphics.Bitmap
+import com.paper.editor.data.DrawViewPortEvent
+import com.paper.editor.widget.IPaperWidget
+import io.reactivex.Observable
 
-interface IScrapWidgetView {
+interface IPaperWidgetView {
 
-    fun bindWidget(widget: IScrapWidget)
+    fun bindWidget(widget: IPaperWidget)
 
     fun unbindWidget()
 
-    fun addChild(child: IScrapWidgetView)
+    fun takeSnapshot(): Bitmap
 
-    fun removeChild(child: IScrapWidgetView)
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    fun setGestureListener(listener: IAllGesturesListener?)
-
-    // Rendering //////////////////////////////////////////////////////////////
-
-    fun dispatchDraw(canvas: Canvas)
-
-    // Touch //////////////////////////////////////////////////////////////////
-
-    fun dispatchTouch(event: MotionEvent)
+    fun onDrawViewPort(): Observable<DrawViewPortEvent>
 }

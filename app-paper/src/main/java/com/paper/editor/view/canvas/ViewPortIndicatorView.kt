@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.view.canvas
 
 import android.content.Context
 import android.graphics.Canvas

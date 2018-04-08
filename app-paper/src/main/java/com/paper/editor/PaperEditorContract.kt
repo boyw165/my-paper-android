@@ -20,8 +20,8 @@
 
 package com.paper.editor
 
-import com.paper.editor.view.IEditingPanelView
-import com.paper.editor.view.IPaperWidgetView
+import com.paper.editor.view.editingPanel.IEditingPanelView
+import com.paper.editor.view.canvas.IPaperWidgetView
 import io.reactivex.Observable
 
 class PaperEditorContract private constructor() {

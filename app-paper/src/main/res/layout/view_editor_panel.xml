@@ -82,7 +82,7 @@
         app:layout_constraintTop_toTopOf="@+id/guide_tertiary_bound"/>
 
     <!-- Canvas & view port indicator -->
-    <com.paper.editor.view.ViewPortIndicatorView
+    <com.paper.editor.view.canvas.ViewPortIndicatorView
         android:id="@+id/view_port_indicator"
         android:layout_width="116dp"
         android:layout_height="0dp"

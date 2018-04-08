@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,36 +18,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.editor.view
+package com.paper.editor.view.editingPanel
 
-import android.view.ViewConfiguration
+import com.paper.shared.model.Rect
 
-/**
- * The context gives the global editor settings and the ability to map point
- * from one coordinate to other coordinate.
- */
-interface IPaperContext {
+interface IEditingPanelView {
 
-    // Rendering //////////////////////////////////////////////////////////////
+    // Input //////////////////////////////////////////////////////////////////
 
-    fun getMinStrokeWidth(): Float
+    fun setCanvasAndViewPort(canvas: Rect, viewPort: Rect)
 
-    fun getMaxStrokeWidth(): Float
-
-    /**
-     * Map the point observed in the Model world to the View world.
-     */
-    fun mapM2V(x: Float, y: Float): FloatArray
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    fun getViewConfiguration(): ViewConfiguration
-
-    fun getTouchSlop(): Float
-
-    fun getTapSlop(): Float
-
-    fun getMinFlingVec(): Float
-
-    fun getMaxFlingVec(): Float
+    // Output /////////////////////////////////////////////////////////////////
 }
