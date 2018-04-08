@@ -398,6 +398,8 @@ class PaperWidgetView : View,
         // To view canvas world.
         computeCanvasMatrix(scaleM2V)
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+        // View might have padding, if so we need to shift canvas to show
+        // padding on the screen.
         canvas.translate(ViewCompat.getPaddingStart(this).toFloat(), paddingTop.toFloat())
         canvas.concat(mCanvasMatrix)
 
@@ -480,6 +482,7 @@ class PaperWidgetView : View,
             val vw = mViewPort.value.width()
             val scaleVP = mViewPortBase.width() / vw
 
+            mCanvasMatrix.reset()
             //        canvas width
             // .-------------------------.
             // |h         .---.          |
@@ -489,8 +492,6 @@ class PaperWidgetView : View,
             // |h                        |
             // |t                        |
             // '-------------------------'
-
-            mCanvasMatrix.reset()
             mCanvasMatrix.postScale(scaleVP,
                                     scaleVP)
             mCanvasMatrix.postTranslate(-scaleVP * scaleM2V * vx,
@@ -806,8 +807,10 @@ class PaperWidgetView : View,
      */
     private fun toModelWorld(x: Float,
                              y: Float): FloatArray {
-        mTmpPoint[0] = x
-        mTmpPoint[1] = y
+        // View might have padding, if so we need to subtract the padding to get
+        // the position in the real view port.
+        mTmpPoint[0] = x - ViewCompat.getPaddingStart(this)
+        mTmpPoint[1] = y - this.paddingTop
 
         // Map the point from screen (view port) to the view canvas world.
         mCanvasMatrixInverse.mapPoints(mTmpPoint)
