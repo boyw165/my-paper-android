@@ -78,22 +78,29 @@ class ScrapWidget(
             .takeUntil(mCancelSignal)
             .subscribe {
                 mModel.sketch.allStrokes.forEach { stroke ->
-                    val lastIndex = stroke.pathTupleList.lastIndex
-
-                    stroke.pathTupleList.forEachIndexed { i, path ->
-                        when (i) {
-                            0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
-                                action = DrawSVGEvent.Action.MOVE,
-                                point = Point(path.firstPoint.x,
-                                              path.firstPoint.y)))
-                            lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
-                                action = DrawSVGEvent.Action.CLOSE,
-                                point = Point(path.firstPoint.x,
-                                              path.firstPoint.y)))
-                            else -> mDrawSVGSignal.onNext(DrawSVGEvent(
-                                action = DrawSVGEvent.Action.LINE_TO,
-                                point = Point(path.firstPoint.x,
-                                              path.firstPoint.y)))
+                    if (stroke.firstPathTuple == stroke.lastPathTuple) {
+                        val onlyPath = stroke.lastPathTuple
+                        mDrawSVGSignal.onNext(DrawSVGEvent(
+                            action = DrawSVGEvent.Action.DOT_AT,
+                            point = Point(onlyPath.firstPoint.x,
+                                          onlyPath.firstPoint.y)))
+                    } else {
+                        val lastIndex = stroke.pathTupleList.lastIndex
+                        stroke.pathTupleList.forEachIndexed { i, path ->
+                            when (i) {
+                                0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
+                                    action = DrawSVGEvent.Action.MOVE,
+                                    point = Point(path.firstPoint.x,
+                                                  path.firstPoint.y)))
+                                lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
+                                    action = DrawSVGEvent.Action.CLOSE,
+                                    point = Point(path.firstPoint.x,
+                                                  path.firstPoint.y)))
+                                else -> mDrawSVGSignal.onNext(DrawSVGEvent(
+                                    action = DrawSVGEvent.Action.LINE_TO,
+                                    point = Point(path.firstPoint.x,
+                                                  path.firstPoint.y)))
+                            }
                         }
                     }
                 }
