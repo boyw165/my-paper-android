@@ -32,6 +32,7 @@ data class DrawSVGEvent(
         LINE_TO,
         CUBIC_TO,
         QUAD_TO,
+        DOT_AT,
         // TODO: Support
         CLOSE,
         // Destruction action.

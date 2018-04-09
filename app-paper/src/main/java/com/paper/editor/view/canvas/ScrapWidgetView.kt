@@ -175,6 +175,12 @@ open class ScrapWidgetView : IScrapWidgetView {
         val (x, y) = mContext!!.mapM2V(nx, ny)
 
         when (event.action) {
+            DrawSVGEvent.Action.DOT_AT -> {
+                val path = Path()
+                path.addCircle(x, y, 5f, Path.Direction.CCW)
+
+                mStrokePaths.add(path)
+            }
             DrawSVGEvent.Action.MOVE -> {
                 val path = Path()
                 path.moveTo(x, y)
