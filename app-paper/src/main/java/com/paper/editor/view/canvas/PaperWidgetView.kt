@@ -156,26 +156,20 @@ class PaperWidgetView : View,
 
     // Rendering resource.
     private val mUiHandler by lazy { Handler(Looper.getMainLooper()) }
+    private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
     private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
     private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
     private val mBackgroundPaint = Paint()
     private val mGridPaint = Paint()
-    private val mStrokePaint = Paint()
-    private val mStrokePaths = mutableListOf<Path>()
+    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int)
         : super(context, attrs, defStyleAttr) {
-        val oneDp = context.resources.getDimension(R.dimen.one_dp)
-
         mGridPaint.color = Color.LTGRAY
         mGridPaint.style = Paint.Style.STROKE
-        mGridPaint.strokeWidth = 2f * oneDp
-
-        mStrokePaint.strokeWidth = oneDp
-        mStrokePaint.color = Color.BLACK
-        mStrokePaint.style = Paint.Style.STROKE
+        mGridPaint.strokeWidth = 2f * mOneDp
 
         mBackgroundPaint.style = Paint.Style.FILL
         mBackgroundPaint.color = Color.WHITE
@@ -185,7 +179,7 @@ class PaperWidgetView : View,
         mCanvasBoundPaint.style = Paint.Style.FILL
         mViewPortPaint.color = Color.GREEN
         mViewPortPaint.style = Paint.Style.STROKE
-        mViewPortPaint.strokeWidth = 2f * oneDp
+        mViewPortPaint.strokeWidth = 2f * mOneDp
 
 //        // Giving a background would make onDraw() able to be called.
 //        setBackgroundColor(Color.WHITE)
@@ -375,9 +369,9 @@ class PaperWidgetView : View,
     }
 
     private fun drawTempStrokes(canvas: Canvas,
-                                strokes: List<Path>) {
-        strokes.forEach { path ->
-            canvas.drawPath(path, mStrokePaint)
+                                drawables: List<SVGDrawable>) {
+        drawables.forEach { drawable ->
+            drawable.onDraw(canvas)
         }
     }
 
@@ -410,7 +404,7 @@ class PaperWidgetView : View,
         dispatchDrawScraps(canvas, mScrapViews)
 
         // Draw temporary sketch.
-        drawTempStrokes(canvas, mStrokePaths)
+        drawTempStrokes(canvas, mStrokeDrawables)
 
         canvas.restoreToCount(count)
 
@@ -425,20 +419,21 @@ class PaperWidgetView : View,
 
         when (event.action) {
             DrawSVGEvent.Action.MOVE -> {
-                val path = Path()
-                path.moveTo(x, y)
+                val drawable = SVGDrawable(oneDp = mOneDp)
+                drawable.moveTo(x, y)
 
-                mStrokePaths.add(path)
+                mStrokeDrawables.add(drawable)
             }
             DrawSVGEvent.Action.LINE_TO -> {
-                val path = mStrokePaths[mStrokePaths.size - 1]
-                path.lineTo(x, y)
+                val drawable = mStrokeDrawables.last()
+                drawable.lineTo(x, y)
             }
             DrawSVGEvent.Action.CLOSE -> {
-                // DO NOTHING.
+                val drawable = mStrokeDrawables.last()
+                drawable.close()
             }
             DrawSVGEvent.Action.CLEAR_ALL -> {
-                mStrokePaths.clear()
+                mStrokeDrawables.clear()
             }
             else -> {
                 // NOT SUPPORT

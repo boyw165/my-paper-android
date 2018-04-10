@@ -21,7 +21,9 @@
 package com.paper.shared.model
 
 data class Point(var x: Float = 0f,
-                 var y: Float = 0f) {
+                 var y: Float = 0f,
+                 var dx: Float = 0f,
+                 var dy: Float = 0f) {
 
     fun offset(tx: Float,
                ty: Float) {
