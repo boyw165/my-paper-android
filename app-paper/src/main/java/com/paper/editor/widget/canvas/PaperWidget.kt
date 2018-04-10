@@ -171,8 +171,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mLineToSignal.throttleFirst(100, TimeUnit.MILLISECONDS)
 
         mLineToSignal
-            .throttleLast(AppConst.COLLECT_PATH_WINDOW_MS,
-                          TimeUnit.MILLISECONDS, mUiScheduler)
+            .throttleFirst(AppConst.COLLECT_PATH_WINDOW_MS,
+                           TimeUnit.MILLISECONDS, mUiScheduler)
             .takeUntil(mCancelDrawingSignal)
             .subscribe { p ->
                 stroke.addPathTuple(PathTuple(p.x, p.y))
