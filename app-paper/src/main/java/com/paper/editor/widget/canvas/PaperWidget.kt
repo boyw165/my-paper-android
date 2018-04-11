@@ -171,9 +171,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mLineToSignal.throttleFirst(100, TimeUnit.MILLISECONDS)
 
         mLineToSignal
-            .throttleFirst(AppConst.COLLECT_PATH_WINDOW_MS,
-                           TimeUnit.MILLISECONDS, mUiScheduler)
+            // FIXME: The window filter would make the SVGDrawable laggy.
+//            .throttleFirst(AppConst.COLLECT_PATH_WINDOW_MS,
+//                           TimeUnit.MILLISECONDS, mUiScheduler)
             .takeUntil(mCancelDrawingSignal)
+            .observeOn(mUiScheduler)
             .subscribe { p ->
                 stroke.addPathTuple(PathTuple(p.x, p.y))
 
@@ -249,9 +251,9 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Add to Model (will trigger bound View to react)
         mModel.addScrap(scrapM)
 
-//        // Notify view to clear strokes
-//        mDrawSVGSignal.onNext(DrawSVGEvent(
-//            action = CLEAR_ALL))
+        // Notify view to clear strokes
+        mDrawSVGSignal.onNext(DrawSVGEvent(
+            action = CLEAR_ALL))
     }
 
     override fun onSetCanvasSize(): Observable<Rect> {
