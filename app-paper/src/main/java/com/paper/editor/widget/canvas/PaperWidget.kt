@@ -249,9 +249,9 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Add to Model (will trigger bound View to react)
         mModel.addScrap(scrapM)
 
-        // Notify view to clear strokes
-        mDrawSVGSignal.onNext(DrawSVGEvent(
-            action = CLEAR_ALL))
+//        // Notify view to clear strokes
+//        mDrawSVGSignal.onNext(DrawSVGEvent(
+//            action = CLEAR_ALL))
     }
 
     override fun onSetCanvasSize(): Observable<Rect> {
