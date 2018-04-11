@@ -47,16 +47,17 @@ class SVGDrawable(oneDp: Float) {
     private var mVelocityFilterWeight: Float = 0.toFloat()
     private var mLastWidth: Float = 0.toFloat()
     private var mLastVelocity: Float = 0.toFloat()
-    private var mMinWidth: Int = 0
-    private var mMaxWidth: Int = 0
+    private var mMinWidth: Float = 0f
+    private var mMaxWidth: Float = 0f
 
     init {
         mStrokePaint.strokeWidth = mOneDp
         mStrokePaint.color = Color.BLACK
         mStrokePaint.style = Paint.Style.STROKE
+        mStrokePaint.strokeCap = Paint.Cap.ROUND
 
-        mMinWidth = 3
-        mMaxWidth = 7
+        mMinWidth = 3f * oneDp
+        mMaxWidth = 9f * oneDp
         mVelocityFilterWeight = 0.9f
     }
 
