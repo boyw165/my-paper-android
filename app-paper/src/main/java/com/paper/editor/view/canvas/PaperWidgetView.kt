@@ -50,6 +50,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 
 class PaperWidgetView : View,
                         IPaperWidgetView,
@@ -153,6 +154,7 @@ class PaperWidgetView : View,
     private val mCanvasBoundPaint = Paint()
     // Output signal related to view port
     private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
+    private val mOnLayoutChangeSignal = PublishSubject.create<Boolean>()
 
     // Rendering resource.
     private val mUiHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -162,6 +164,7 @@ class PaperWidgetView : View,
     private val mBackgroundPaint = Paint()
     private val mGridPaint = Paint()
     private val mStrokeDrawables = mutableListOf<SVGDrawable>()
+    private var mCanvasBitmap: Bitmap? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -199,6 +202,8 @@ class PaperWidgetView : View,
                           bottom: Int) {
         Log.d(AppConst.TAG, "PaperWidgetView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
+
+        mOnLayoutChangeSignal.onNext(changed)
     }
 
     override fun bindWidget(widget: IPaperWidget) {
@@ -232,14 +237,16 @@ class PaperWidgetView : View,
         // Canvas size change
         mWidgetDisposables.add(
             Observables.combineLatest(
-                RxView.globalLayouts(this@PaperWidgetView),
+                mOnLayoutChangeSignal,
                 widget.onSetCanvasSize())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { (_, size) ->
-                    Log.d(AppConst.TAG, "the layout is done, and canvas size is ${size.width} x ${size.height}")
-
-                    onUpdateLayoutOrCanvas(size.width,
-                                           size.height)
+                .subscribe { (changed, size) ->
+                    if (changed) {
+                        Log.d(AppConst.TAG, "the layout is done, and canvas " +
+                                            "size is ${size.width} x ${size.height}")
+                        onUpdateLayoutOrCanvas(size.width,
+                                               size.height)
+                    }
                 })
         // View port and canvas matrix change
         mWidgetDisposables.add(
