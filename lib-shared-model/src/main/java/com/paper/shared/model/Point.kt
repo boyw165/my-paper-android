@@ -22,12 +22,22 @@ package com.paper.shared.model
 
 data class Point(var x: Float = 0f,
                  var y: Float = 0f,
-                 var dx: Float = 0f,
-                 var dy: Float = 0f) {
+                 var time: Long = System.currentTimeMillis()) {
 
     fun offset(tx: Float,
                ty: Float) {
         x += tx
         y += ty
+    }
+
+    fun velocityFrom(start: Point): Float {
+        val vec = distanceTo(start) / (this.time - start.time)
+        return if (vec.isNaN()) 0f else vec
+    }
+
+    fun distanceTo(other: Point): Float {
+        val dx = other.x - this.x
+        val dy = other.y - this.y
+        return Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
     }
 }

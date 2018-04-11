@@ -24,6 +24,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import com.paper.editor.data.Bezier
 import com.paper.shared.model.Point
 
 class SVGDrawable(oneDp: Float) {
@@ -32,21 +33,41 @@ class SVGDrawable(oneDp: Float) {
 
     private val mPath = Path()
     private val mStrokePoint = mutableListOf<Point>()
+    private val mStrokeWidth = mutableListOf<Float>()
     private val mStrokePaint = Paint()
+
+    // Bezier
+    private var mCachedPoints: MutableList<Point> = mutableListOf()
+    private val mBezierCached = Bezier()
+    private var mVelocityFilterWeight: Float = 0.toFloat()
+    private var mLastWidth: Float = 0.toFloat()
+    private var mLastVelocity: Float = 0.toFloat()
+    private var mMinWidth: Float = 0f
+    private var mMaxWidth: Float = 0f
 
     init {
         mStrokePaint.strokeWidth = mOneDp
         mStrokePaint.color = Color.BLACK
         mStrokePaint.style = Paint.Style.STROKE
+        mStrokePaint.strokeCap = Paint.Cap.ROUND
+
+        mMinWidth = 3f * oneDp
+        mMaxWidth = 9f * oneDp
+        mVelocityFilterWeight = 0.9f
+    }
+
+    fun clear() {
+        TODO()
     }
 
     fun moveTo(x: Float, y: Float) {
         mPath.reset()
         mPath.moveTo(x, y)
+        addPoint(getNewPoint(x, y))
     }
 
     fun lineTo(x: Float, y: Float) {
-        mPath.lineTo(x, y)
+        addPoint(getNewPoint(x, y))
     }
 
     fun close() {
@@ -54,33 +75,120 @@ class SVGDrawable(oneDp: Float) {
     }
 
     fun onDraw(canvas: Canvas) {
-        canvas.drawPath(mPath, mStrokePaint)
+        mStrokePoint.forEachIndexed { index, point ->
+            mStrokePaint.strokeWidth = mStrokeWidth[index]
+            canvas.drawPoint(point.x, point.y, mStrokePaint)
+        }
     }
 
-//    private fun calculateCurveControlPoints(s1: TimedPoint, s2: TimedPoint, s3: TimedPoint): ControlTimedPoints {
-//        val dx1 = s1.x - s2.x
-//        val dy1 = s1.y - s2.y
-//        val dx2 = s2.x - s3.x
-//        val dy2 = s2.y - s3.y
-//
-//        val m1X = (s1.x + s2.x) / 2.0f
-//        val m1Y = (s1.y + s2.y) / 2.0f
-//        val m2X = (s2.x + s3.x) / 2.0f
-//        val m2Y = (s2.y + s3.y) / 2.0f
-//
-//        val l1 = Math.sqrt((dx1 * dx1 + dy1 * dy1).toDouble()).toFloat()
-//        val l2 = Math.sqrt((dx2 * dx2 + dy2 * dy2).toDouble()).toFloat()
-//
-//        val dxm = m1X - m2X
-//        val dym = m1Y - m2Y
-//        var k = l2 / (l1 + l2)
-//        if (java.lang.Float.isNaN(k)) k = 0.0f
-//        val cmX = m2X + dxm * k
-//        val cmY = m2Y + dym * k
-//
-//        val tx = s2.x - cmX
-//        val ty = s2.y - cmY
-//
-//        return mControlTimedPointsCached.set(getNewPoint(m1X + tx, m1Y + ty), getNewPoint(m2X + tx, m2Y + ty))
-//    }
+    // Start of Bezier functions
+    private fun addPoint(newPoint: Point) {
+        mCachedPoints.add(newPoint)
+
+        val pointsCount = mCachedPoints.size
+        if (pointsCount > 3) {
+
+            val (_, c2) = calculateCurveControlPoints(mCachedPoints[0], mCachedPoints[1], mCachedPoints[2])
+            val (c3, _) = calculateCurveControlPoints(mCachedPoints[1], mCachedPoints[2], mCachedPoints[3])
+
+            val curve = mBezierCached.set(mCachedPoints[1], c2, c3, mCachedPoints[2])
+
+            val startPoint = curve.startPoint
+            val endPoint = curve.endPoint
+
+            var velocity = endPoint.velocityFrom(startPoint)
+            velocity = if (java.lang.Float.isNaN(velocity)) 0.0f else velocity
+
+            velocity = mVelocityFilterWeight * velocity + (1 - mVelocityFilterWeight) * mLastVelocity
+
+            // The new width is a function of the velocity. Higher velocities
+            // correspond to thinner strokes.
+            val newWidth = strokeWidth(velocity)
+
+            // The Bezier's width starts out as last curve's final width, and
+            // gradually changes to the stroke width just calculated. The new
+            // width calculation is based on the velocity between the Bezier's
+            // start and end mCachedPoints.
+            addBezier(curve, mLastWidth, newWidth)
+
+            mLastVelocity = velocity
+            mLastWidth = newWidth
+
+            // Remove the first element from the list,
+            // so that we always have no more than 4 mCachedPoints in mCachedPoints array.
+            mCachedPoints.removeAt(0)
+        } else if (pointsCount == 1) {
+            // To reduce the initial lag make it work with 3 mCachedPoints
+            // by duplicating the first point
+            val firstPoint = mCachedPoints[0]
+            mCachedPoints.add(getNewPoint(firstPoint.x, firstPoint.y))
+        }
+    }
+
+    private fun calculateCurveControlPoints(s1: Point, s2: Point, s3: Point): Pair<Point, Point> {
+        val dx1 = s1.x - s2.x
+        val dy1 = s1.y - s2.y
+        val dx2 = s2.x - s3.x
+        val dy2 = s2.y - s3.y
+
+        val m1X = (s1.x + s2.x) / 2.0f
+        val m1Y = (s1.y + s2.y) / 2.0f
+        val m2X = (s2.x + s3.x) / 2.0f
+        val m2Y = (s2.y + s3.y) / 2.0f
+
+        val l1 = Math.sqrt((dx1 * dx1 + dy1 * dy1).toDouble()).toFloat()
+        val l2 = Math.sqrt((dx2 * dx2 + dy2 * dy2).toDouble()).toFloat()
+
+        val dxm = m1X - m2X
+        val dym = m1Y - m2Y
+        var k = l2 / (l1 + l2)
+        if (java.lang.Float.isNaN(k)) k = 0.0f
+        val cmX = m2X + dxm * k
+        val cmY = m2Y + dym * k
+
+        val tx = s2.x - cmX
+        val ty = s2.y - cmY
+
+        return Pair(getNewPoint(m1X + tx, m1Y + ty), getNewPoint(m2X + tx, m2Y + ty))
+    }
+
+    private fun addBezier(curve: Bezier, startWidth: Float, endWidth: Float) {
+        val widthDelta = endWidth - startWidth
+        val drawSteps = Math.floor(curve.length().toDouble()).toFloat()
+
+        var i = 0
+        while (i < drawSteps) {
+            // Calculate the Bezier (x, y) coordinate for this step.
+            val t = i.toFloat() / drawSteps
+            val tt = t * t
+            val ttt = tt * t
+            val u = 1 - t
+            val uu = u * u
+            val uuu = uu * u
+
+            var x = uuu * curve.startPoint.x
+            x += 3 * uu * t * curve.control1.x
+            x += 3 * u * tt * curve.control2.x
+            x += ttt * curve.endPoint.x
+
+            var y = uuu * curve.startPoint.y
+            y += 3 * uu * t * curve.control1.y
+            y += 3 * u * tt * curve.control2.y
+            y += ttt * curve.endPoint.y
+
+            // Set the incremental stroke width and draw.
+            mStrokeWidth.add(startWidth + ttt * widthDelta)
+            mStrokePoint.add(Point(x, y))
+
+            i++
+        }
+    }
+
+    private fun strokeWidth(velocity: Float): Float {
+        return Math.max(mMaxWidth / (velocity + 1), mMinWidth)
+    }
+
+    private fun getNewPoint(x: Float, y: Float): Point {
+        return Point(x, y)
+    }
 }
