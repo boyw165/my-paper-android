@@ -60,6 +60,10 @@ class SVGDrawable(oneDp: Float) {
         mVelocityFilterWeight = 0.9f
     }
 
+    fun clear() {
+        TODO()
+    }
+
     fun moveTo(x: Float, y: Float) {
         mPath.reset()
         mPath.moveTo(x, y)

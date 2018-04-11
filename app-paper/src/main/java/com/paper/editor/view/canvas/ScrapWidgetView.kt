@@ -42,6 +42,9 @@ open class ScrapWidgetView : IScrapWidgetView {
     private var mParent: IParentWidgetView? = null
     private val mChildren = mutableListOf<ScrapWidgetView>()
 
+    // Sketch
+    private val mDrawable by lazy { SVGDrawable(mContext!!.getOneDp()) }
+
     // Rendering properties.
     private var mX = Float.NaN
     private var mY = Float.NaN
@@ -175,28 +178,17 @@ open class ScrapWidgetView : IScrapWidgetView {
         val (x, y) = mContext!!.mapM2V(nx, ny)
 
         when (event.action) {
-            DrawSVGEvent.Action.DOT_AT -> {
-                val path = Path()
-                path.addCircle(x, y, 5f, Path.Direction.CCW)
-
-                mStrokePaths.add(path)
-            }
             DrawSVGEvent.Action.MOVE -> {
-                val path = Path()
-                path.moveTo(x, y)
-
-                mStrokePaths.add(path)
+                mDrawable.moveTo(x, y)
             }
             DrawSVGEvent.Action.LINE_TO -> {
-                val path = mStrokePaths[mStrokePaths.size - 1]
-                path.lineTo(x, y)
+                mDrawable.lineTo(x, y)
             }
             DrawSVGEvent.Action.CLOSE -> {
-                // DO NOTHING.
-                Log.d(AppConst.TAG, "")
+                mDrawable.close()
             }
             DrawSVGEvent.Action.CLEAR_ALL -> {
-                mStrokePaths.clear()
+                mDrawable.clear()
             }
             else -> {
                 // NOT SUPPORT
