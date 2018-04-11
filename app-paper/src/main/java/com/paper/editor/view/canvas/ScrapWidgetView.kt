@@ -22,11 +22,9 @@ package com.paper.editor.view.canvas
 
 import android.graphics.*
 import android.os.Looper
-import android.util.Log
 import android.view.MotionEvent
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
-import com.paper.AppConst
 import com.paper.editor.data.DrawSVGEvent
 import com.paper.editor.widget.canvas.IScrapWidget
 import com.paper.shared.model.TransformModel
@@ -192,7 +190,7 @@ open class ScrapWidgetView : IScrapWidgetView {
             }
         }
 
-        mParent?.delayedInvalidate()
+        mParent?.invalidate()
     }
 
     private fun onUpdateTransform(xform: TransformModel) {
@@ -213,7 +211,7 @@ open class ScrapWidgetView : IScrapWidgetView {
             invalidateRenderingCache()
         }
 
-        mParent?.delayedInvalidate()
+        mParent?.invalidate()
     }
 
     private fun computeMatrix() {

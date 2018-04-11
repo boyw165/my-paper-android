@@ -25,5 +25,5 @@ package com.paper.editor.view.canvas
  */
 interface IParentWidgetView {
 
-    fun delayedInvalidate()
+    fun invalidate()
 }

@@ -34,7 +34,6 @@ import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.cardinalblue.gesture.MyMotionEvent
-import com.jakewharton.rxbinding2.view.RxView
 import com.paper.AppConst
 import com.paper.R
 import com.paper.editor.data.DrawSVGEvent
@@ -253,9 +252,11 @@ class PaperWidgetView : View,
             mViewPort
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { vp ->
+                    // Would trigger onDraw() call
                     markCanvasMatrixDirty()
-                    delayedInvalidate()
+                    invalidate()
 
+                    // Output to the external world
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
                         canvas = mMSize.value.copy(),
                         viewPort = Rect(vp.left,
@@ -297,7 +298,7 @@ class PaperWidgetView : View,
         scrapView.bindWidget(widget)
         mScrapViews.add(scrapView)
 
-        delayedInvalidate()
+        invalidate()
     }
 
     private fun removeScrap(widget: IScrapWidget) {
@@ -307,7 +308,7 @@ class PaperWidgetView : View,
         scrapView.unbindWidget()
         mScrapViews.remove(scrapView)
 
-        delayedInvalidate()
+        invalidate()
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
@@ -356,15 +357,11 @@ class PaperWidgetView : View,
                       mViewPortMax.width(),
                       mViewPortMax.height())
 
-        delayedInvalidate()
-    }
+        // Backed the canvas Bitmap.
+        mCanvasBitmap?.recycle()
+        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.RGB_565)
+        mProxyCanvas = Canvas(mCanvasBitmap)
 
-    override fun delayedInvalidate() {
-        mUiHandler.removeCallbacks(mInvalidateRunnable)
-        mUiHandler.postDelayed(mInvalidateRunnable, 0)
-    }
-
-    private val mInvalidateRunnable = Runnable {
         invalidate()
     }
 
@@ -396,12 +393,13 @@ class PaperWidgetView : View,
 
         val count = canvas.save()
 
-        // To view canvas world.
+        // Calculate the view port matrix.
         computeCanvasMatrix(scaleM2V)
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         // View might have padding, if so we need to shift canvas to show
         // padding on the screen.
         canvas.translate(ViewCompat.getPaddingStart(this).toFloat(), paddingTop.toFloat())
+        // To view canvas world.
         canvas.concat(mCanvasMatrix)
 
         // Background
@@ -447,7 +445,7 @@ class PaperWidgetView : View,
             }
         }
 
-        delayedInvalidate()
+        invalidate()
     }
 
     override fun takeSnapshot(): Bitmap {
