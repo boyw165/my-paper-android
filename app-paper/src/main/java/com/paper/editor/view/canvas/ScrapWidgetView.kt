@@ -52,7 +52,6 @@ open class ScrapWidgetView : IScrapWidgetView {
     private var mRotationInRadians = Float.NaN
     private var mIsCacheDirty: Boolean = true
     private val mScrapBound = RectF(0f, 0f, 0f, 0f)
-    private val mStrokePaths = mutableListOf<Path>()
     private val mStrokePaint = Paint()
     private val mDebugPaint = Paint()
     private var mIsMatrixDirty = true
@@ -160,9 +159,7 @@ open class ScrapWidgetView : IScrapWidgetView {
         validateRenderingCache()
 
         // Sketch.
-        mStrokePaths.forEach { path ->
-            canvas.drawPath(path, mStrokePaint)
-        }
+        mDrawable.onDraw(canvas)
 
         drawCenter(canvas)
     }

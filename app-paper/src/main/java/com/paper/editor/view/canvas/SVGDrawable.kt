@@ -79,7 +79,6 @@ class SVGDrawable(oneDp: Float) {
     }
 
     fun onDraw(canvas: Canvas) {
-//        canvas.drawPath(mPath, mStrokePaint)
         mStrokePoint.forEachIndexed { index, point ->
             mStrokePaint.strokeWidth = mStrokeWidth[index]
             canvas.drawPoint(point.x, point.y, mStrokePaint)
