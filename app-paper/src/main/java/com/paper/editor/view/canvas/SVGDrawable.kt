@@ -61,16 +61,12 @@ class SVGDrawable(oneDp: Float) {
     }
 
     fun moveTo(x: Float, y: Float) {
-        mStrokePoint.add(Point(x, y))
-
         mPath.reset()
         mPath.moveTo(x, y)
         addPoint(getNewPoint(x, y))
     }
 
     fun lineTo(x: Float, y: Float) {
-        mStrokePoint.add(Point(x, y))
-
         addPoint(getNewPoint(x, y))
     }
 
