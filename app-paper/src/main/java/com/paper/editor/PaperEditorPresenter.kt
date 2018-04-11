@@ -107,6 +107,31 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                 .subscribe { toolID ->
                     // TODO
                 })
+
+        // Undo & redo buttons
+        mDisposablesOnCreate.add(
+            view.onClickUndoButton()
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // TODO
+                    view.showWIP()
+                })
+        mDisposablesOnCreate.add(
+            view.onClickRedoButton()
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // TODO
+                    view.showWIP()
+                })
+
+        // Delete button
+        mDisposablesOnCreate.add(
+            view.onClickDeleteButton()
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // TODO
+                    view.showWIP()
+                })
     }
 
     fun unbindViewOnDestroy() {

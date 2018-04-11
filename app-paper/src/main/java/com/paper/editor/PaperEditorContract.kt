@@ -36,13 +36,19 @@ class PaperEditorContract private constructor() {
 
         fun hideProgressBar()
 
+        fun showWIP()
+
         fun showErrorAlert(error: Throwable)
 
         fun close()
 
         fun onClickCloseButton(): Observable<Any>
 
-        fun onClickDrawButton(): Observable<Boolean>
+        fun onClickUndoButton(): Observable<Any>
+
+        fun onClickRedoButton(): Observable<Any>
+
+        fun onClickDeleteButton(): Observable<Any>
 
         fun onClickMenu(): Observable<Any>
     }
