@@ -47,6 +47,7 @@ class PaperEditorActivity : AppCompatActivity(),
     // View.
     private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
     private val mEditingPanelView by lazy { findViewById<PaperEditPanelView>(R.id.editing_panel) }
+
     private val mProgressBar by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
             .setCancelable(false)
@@ -56,6 +57,13 @@ class PaperEditorActivity : AppCompatActivity(),
     // Back button and signal.
     private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
     private val mClickSysBackSignal = PublishSubject.create<Any>()
+
+    // Undo & redo buttons
+    private val mBtnUndo by lazy { findViewById<View>(R.id.btn_undo) }
+    private val mBtnRedo by lazy { findViewById<View>(R.id.btn_redo) }
+
+    // Delete button
+    private val mBtnDelete by lazy { findViewById<View>(R.id.btn_delete) }
 
     // Repositories.
     // TODO: Inject the repo.
@@ -115,8 +123,16 @@ class PaperEditorActivity : AppCompatActivity(),
                                 RxView.clicks(mBtnClose))
     }
 
-    override fun onClickDrawButton(): Observable<Boolean> {
-        TODO()
+    override fun onClickUndoButton(): Observable<Any> {
+        return RxView.clicks(mBtnUndo)
+    }
+
+    override fun onClickRedoButton(): Observable<Any> {
+        return RxView.clicks(mBtnUndo)
+    }
+
+    override fun onClickDeleteButton(): Observable<Any> {
+        return RxView.clicks(mBtnDelete)
     }
 
     override fun onClickMenu(): Observable<Any> {
@@ -134,6 +150,10 @@ class PaperEditorActivity : AppCompatActivity(),
 
     override fun hideProgressBar() {
         mProgressBar.hide()
+    }
+
+    override fun showWIP() {
+        Toast.makeText(this, R.string.msg_under_construction, Toast.LENGTH_SHORT).show()
     }
 
     override fun showErrorAlert(error: Throwable) {
