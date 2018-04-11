@@ -164,6 +164,7 @@ class PaperWidgetView : View,
     private val mGridPaint = Paint()
     private val mStrokeDrawables = mutableListOf<SVGDrawable>()
     private var mCanvasBitmap: Bitmap? = null
+    private var mProxyCanvas: Canvas? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -387,9 +388,10 @@ class PaperWidgetView : View,
         // Scale from view to model
         val scaleV2M = 1f / scaleM2V
         // Scale contributed by view port.
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
         val mw = mMSize.value.width
         val mh = mMSize.value.height
+        val vw = scaleM2V * mw
+        val vh = scaleM2V * mh
 
         val count = canvas.save()
 
@@ -399,11 +401,19 @@ class PaperWidgetView : View,
         // View might have padding, if so we need to shift canvas to show
         // padding on the screen.
         canvas.translate(ViewCompat.getPaddingStart(this).toFloat(), paddingTop.toFloat())
+
+        mTransformHelper.getValues(mCanvasMatrix)
+        val tx = mTransformHelper.translationX
+        val ty = mTransformHelper.translationY
+        val scaleVP = mTransformHelper.scaleX
+        val degrees = mTransformHelper.rotationInDegrees
+
+        // Manually calculate position and size of the background cross/grids so
+        // that they keep sharp!
+        drawBackground(canvas, vw, vh, tx, ty, scaleVP)
+
         // To view canvas world.
         canvas.concat(mCanvasMatrix)
-
-        // Background
-        drawBackground(canvas, mw, mh, scaleM2V)
 
         // Draw scrap views.
         dispatchDrawScraps(canvas, mScrapViews)
@@ -898,29 +908,45 @@ class PaperWidgetView : View,
                                  mViewPort.hasValue()
 
     private fun drawBackground(canvas: Canvas,
-                               mw: Float,
-                               mh: Float,
-                               scaleM2V: Float) {
-        // FIX: Granularity seems wrong.
-        val scaledCanvasWidth = scaleM2V * mw
-        val scaledCanvasHeight = scaleM2V * mh
-        val cell = Math.min(scaledCanvasWidth, scaledCanvasHeight) / 20
+                               vw: Float,
+                               vh: Float,
+                               tx: Float,
+                               ty: Float,
+                               scaleVP: Float) {
+        if (scaleVP <= 1f) return
 
-        // Boundary.
-        canvas.drawLine(0f, 0f, scaledCanvasWidth, 0f, mGridPaint)
-        canvas.drawLine(scaledCanvasWidth, 0f, scaledCanvasWidth, scaledCanvasHeight, mGridPaint)
-        canvas.drawLine(scaledCanvasWidth, scaledCanvasHeight, 0f, scaledCanvasHeight, mGridPaint)
-        canvas.drawLine(0f, scaledCanvasHeight, 0f, 0f, mGridPaint)
+        val scaledVW = scaleVP * vw
+        val scaledVH = scaleVP * vh
+        val cell = Math.max(scaledVW, scaledVH) / 16
+        val crossHalfW = 7f * mOneDp
 
-        // Grid.
-        var x = 0f
-        while (x < scaledCanvasWidth) {
-            canvas.drawLine(x, 0f, x, scaledCanvasHeight, mGridPaint)
-            x += cell
-        }
-        var y = 0f
-        while (y < scaledCanvasHeight) {
-            canvas.drawLine(0f, y, scaledCanvasWidth, y, mGridPaint)
+        // The closer to base view port, the smaller the alpha is;
+        // So the convex set is:
+        //
+        // Base                 Min
+        // |-------x-------------|
+        // x = (1 - a) * Base + a * Min = scaleVP
+        // thus...
+        //       vpW - baseW
+        // a = --------------
+        //      minW - baseW
+        val alpha = (mViewPort.value.width() - mViewPortBase.width()) /
+                    (mViewPortMin.width() - mViewPortBase.width())
+        mGridPaint.alpha = (alpha * 0xFF).toInt()
+
+        // Cross
+        val left = tx - cell
+        val right = tx + scaledVW + cell
+        val top = ty - cell
+        val bottom = ty + scaledVH + cell
+        var y = top
+        while (y <= bottom) {
+            var x = left
+            while (x <= right) {
+                canvas.drawLine(x - crossHalfW, y, x + crossHalfW, y, mGridPaint)
+                canvas.drawLine(x, y - crossHalfW, x, y + crossHalfW, mGridPaint)
+                x += cell
+            }
             y += cell
         }
     }

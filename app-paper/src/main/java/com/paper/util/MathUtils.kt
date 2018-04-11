@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,19 +18,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper
+package com.paper.util
 
-object AppConst {
+object MathUtils {
 
-    // Common /////////////////////////////////////////////////////////////////
-
-    const val TAG = "paper"
-
-    const val PARAMS_PAPER_ID = "params_paper_id"
-
-    // Paper editor ///////////////////////////////////////////////////////////
-
-    const val VIEW_PORT_MIN_SCALE = 8f
-    const val COLLECT_PATH_WINDOW_MS = 33L
-    const val COLLECT_STROKES_TIMEOUT_MS = 850L
+    fun almostEqual(a: Double,
+                    b: Double,
+                    eps: Double): Boolean {
+        return Math.abs(a - b) < eps
+    }
 }
