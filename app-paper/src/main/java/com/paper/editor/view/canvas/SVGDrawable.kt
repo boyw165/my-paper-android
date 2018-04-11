@@ -24,11 +24,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import com.paper.editor.bezier.Bezier
-import com.paper.editor.bezier.ControlTimedPoints
-import com.paper.editor.bezier.TimedPoint
+import com.paper.editor.data.Bezier
 import com.paper.shared.model.Point
-import java.util.ArrayList
 
 class SVGDrawable(oneDp: Float) {
 
@@ -40,9 +37,7 @@ class SVGDrawable(oneDp: Float) {
     private val mStrokePaint = Paint()
 
     // Bezier
-    private var mPoints: MutableList<TimedPoint> = mutableListOf()
-    private val mControlTimedPointsCached = ControlTimedPoints()
-    private val mPointsCache = ArrayList<TimedPoint>()
+    private var mCachedPoints: MutableList<Point> = mutableListOf()
     private val mBezierCached = Bezier()
     private var mVelocityFilterWeight: Float = 0.toFloat()
     private var mLastWidth: Float = 0.toFloat()
@@ -87,21 +82,16 @@ class SVGDrawable(oneDp: Float) {
     }
 
     // Start of Bezier functions
-    private fun addPoint(newPoint: TimedPoint) {
-        mPoints.add(newPoint)
+    private fun addPoint(newPoint: Point) {
+        mCachedPoints.add(newPoint)
 
-        val pointsCount = mPoints.size
+        val pointsCount = mCachedPoints.size
         if (pointsCount > 3) {
 
-            var tmp = calculateCurveControlPoints(mPoints[0], mPoints[1], mPoints[2])
-            val c2 = tmp.c2
-            recyclePoint(tmp.c1)
+            val (_, c2) = calculateCurveControlPoints(mCachedPoints[0], mCachedPoints[1], mCachedPoints[2])
+            val (c3, _) = calculateCurveControlPoints(mCachedPoints[1], mCachedPoints[2], mCachedPoints[3])
 
-            tmp = calculateCurveControlPoints(mPoints[1], mPoints[2], mPoints[3])
-            val c3 = tmp.c1
-            recyclePoint(tmp.c2)
-
-            val curve = mBezierCached.set(mPoints[1], c2, c3, mPoints[2])
+            val curve = mBezierCached.set(mCachedPoints[1], c2, c3, mCachedPoints[2])
 
             val startPoint = curve.startPoint
             val endPoint = curve.endPoint
@@ -118,28 +108,24 @@ class SVGDrawable(oneDp: Float) {
             // The Bezier's width starts out as last curve's final width, and
             // gradually changes to the stroke width just calculated. The new
             // width calculation is based on the velocity between the Bezier's
-            // start and end mPoints.
+            // start and end mCachedPoints.
             addBezier(curve, mLastWidth, newWidth)
 
             mLastVelocity = velocity
             mLastWidth = newWidth
 
             // Remove the first element from the list,
-            // so that we always have no more than 4 mPoints in mPoints array.
-            recyclePoint(mPoints.removeAt(0))
-
-            recyclePoint(c2)
-            recyclePoint(c3)
-
+            // so that we always have no more than 4 mCachedPoints in mCachedPoints array.
+            mCachedPoints.removeAt(0)
         } else if (pointsCount == 1) {
-            // To reduce the initial lag make it work with 3 mPoints
+            // To reduce the initial lag make it work with 3 mCachedPoints
             // by duplicating the first point
-            val firstPoint = mPoints[0]
-            mPoints.add(getNewPoint(firstPoint.x, firstPoint.y))
+            val firstPoint = mCachedPoints[0]
+            mCachedPoints.add(getNewPoint(firstPoint.x, firstPoint.y))
         }
     }
 
-    private fun calculateCurveControlPoints(s1: TimedPoint, s2: TimedPoint, s3: TimedPoint): ControlTimedPoints {
+    private fun calculateCurveControlPoints(s1: Point, s2: Point, s3: Point): Pair<Point, Point> {
         val dx1 = s1.x - s2.x
         val dy1 = s1.y - s2.y
         val dx2 = s2.x - s3.x
@@ -163,7 +149,7 @@ class SVGDrawable(oneDp: Float) {
         val tx = s2.x - cmX
         val ty = s2.y - cmY
 
-        return mControlTimedPointsCached.set(getNewPoint(m1X + tx, m1Y + ty), getNewPoint(m2X + tx, m2Y + ty))
+        return Pair(getNewPoint(m1X + tx, m1Y + ty), getNewPoint(m2X + tx, m2Y + ty))
     }
 
     private fun addBezier(curve: Bezier, startWidth: Float, endWidth: Float) {
@@ -192,31 +178,17 @@ class SVGDrawable(oneDp: Float) {
 
             // Set the incremental stroke width and draw.
             mStrokeWidth.add(startWidth + ttt * widthDelta)
-            mStrokePoint.add(Point(x,y))
+            mStrokePoint.add(Point(x, y))
 
             i++
         }
     }
 
-    private fun recyclePoint(point: TimedPoint) {
-        mPointsCache.add(point)
-    }
-
     private fun strokeWidth(velocity: Float): Float {
-        return Math.max(mMaxWidth / (velocity + 1), mMinWidth.toFloat())
+        return Math.max(mMaxWidth / (velocity + 1), mMinWidth)
     }
 
-    private fun getNewPoint(x: Float, y: Float): TimedPoint {
-        val mCacheSize = mPointsCache.size
-        val timedPoint: TimedPoint
-        timedPoint = if (mCacheSize == 0) {
-            // Cache is empty, create a new point
-            TimedPoint()
-        } else {
-            // Get point from cache
-            mPointsCache.removeAt(mCacheSize - 1)
-        }
-
-        return timedPoint.set(x, y)
+    private fun getNewPoint(x: Float, y: Float): Point {
+        return Point(x, y)
     }
 }

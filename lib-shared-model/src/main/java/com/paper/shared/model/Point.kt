@@ -31,7 +31,8 @@ data class Point(var x: Float = 0f,
     }
 
     fun velocityFrom(start: Point): Float {
-        return distanceTo(start) / (this.time - start.time)
+        val vec = distanceTo(start) / (this.time - start.time)
+        return if (vec.isNaN()) 0f else vec
     }
 
     fun distanceTo(other: Point): Float {
