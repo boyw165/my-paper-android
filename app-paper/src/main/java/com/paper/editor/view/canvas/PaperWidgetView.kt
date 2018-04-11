@@ -857,6 +857,10 @@ class PaperWidgetView : View,
 
     // Context ////////////////////////////////////////////////////////////////
 
+    override fun getOneDp(): Float {
+        return mOneDp
+    }
+
     override fun getMinStrokeWidth(): Float {
         return mMinStrokeWidth
     }

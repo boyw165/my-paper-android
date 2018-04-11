@@ -30,6 +30,8 @@ interface IPaperContext {
 
     // Rendering //////////////////////////////////////////////////////////////
 
+    fun getOneDp(): Float
+
     fun getMinStrokeWidth(): Float
 
     fun getMaxStrokeWidth(): Float
