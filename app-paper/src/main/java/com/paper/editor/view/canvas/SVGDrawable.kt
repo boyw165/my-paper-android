@@ -20,10 +20,7 @@
 
 package com.paper.editor.view.canvas
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.*
 import com.paper.editor.data.Bezier
 import com.paper.shared.model.Point
 

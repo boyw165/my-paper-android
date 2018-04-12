@@ -203,14 +203,10 @@ open class ScrapWidgetView : IScrapWidgetView {
 
         // Trigger the invalidation will lead to dispatchDraw and onDraw
         // functions
-        invalidate(false)
+        invalidate()
     }
 
-    private fun invalidate(rebuildCache: Boolean) {
-        if (rebuildCache) {
-            invalidateRenderingCache()
-        }
-
+    private fun invalidate() {
         mParent?.invalidate()
     }
 
@@ -231,15 +227,6 @@ open class ScrapWidgetView : IScrapWidgetView {
         // Mark the rendering cache is dirty and later validateRenderingCache()
         // would update the necessary properties for rendering and touching.
         mIsCacheDirty = true
-    }
-
-    private fun validateRenderingCache() {
-        if (!mIsCacheDirty) return
-
-//        rebuildSketchBound()
-//        rebuildSketchPath()
-
-        mIsCacheDirty = false
     }
 
     // Touch //////////////////////////////////////////////////////////////////
