@@ -76,6 +76,11 @@ class PaperWidgetView : View,
      * rotationInDegrees from a [Matrix]
      */
 
+    /**
+     * A signal indicating the layout change.
+     */
+    private val mOnLayoutChangeSignal = BehaviorSubject.createDefault(false)
+
     // Temporary utils.
     private val mTmpPoint = FloatArray(2)
     private val mTmpBound = RectF()
