@@ -21,9 +21,11 @@
 package com.paper.editor.view.canvas
 
 import android.graphics.Canvas
+import android.graphics.Matrix
 import android.view.MotionEvent
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.editor.widget.canvas.IScrapWidget
+import java.util.*
 
 interface IScrapWidgetView {
 
@@ -41,7 +43,14 @@ interface IScrapWidgetView {
 
     // Rendering //////////////////////////////////////////////////////////////
 
-    fun dispatchDraw(canvas: Canvas)
+    // TODO: Do the root canvas care about whether there is any children view
+    // TODO: is dirty?
+
+    // TODO: How to pass the current transform in the recursion call?
+
+    fun dispatchDraw(canvas: Canvas,
+                     previousXforms: Stack<Matrix>,
+                     ifSharpenDrawing: Boolean)
 
     // Touch //////////////////////////////////////////////////////////////////
 

@@ -58,6 +58,7 @@ class PaperWidgetView : View,
 
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapWidgetView>()
+    private var mIfSharpenDrawing = true
 
     // Widget.
     private lateinit var mWidget: IPaperWidget
@@ -94,6 +95,7 @@ class PaperWidgetView : View,
     private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
     private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
     private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
+
     private val mGestureDetector by lazy {
         val detector = GestureDetector(Looper.getMainLooper(),
                                        ViewConfiguration.get(context),
@@ -160,6 +162,7 @@ class PaperWidgetView : View,
     private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
     private var mCanvasBitmap: Bitmap? = null
     private var mProxyCanvas: Canvas? = null
+    private val mMatrixStack = Stack<Matrix>()
 
     // Background & grids
     private val mGridPaint = Paint()
@@ -353,17 +356,27 @@ class PaperWidgetView : View,
         invalidate()
     }
 
-    private fun dispatchDrawScraps(canvas: Canvas,
-                                   scrapViews: List<IScrapWidgetView>) {
-        scrapViews.forEach { scrapView ->
-            scrapView.dispatchDraw(canvas)
-        }
+    override fun requestSharpDrawing() {
+        mIfSharpenDrawing = true
+        invalidate()
     }
 
-    private fun drawTempStrokes(canvas: Canvas,
-                                drawables: List<SVGDrawable>) {
-        drawables.forEach { drawable ->
-            drawable.onDraw(canvas)
+    private fun dispatchDrawScraps(canvas: Canvas,
+                                   scrapViews: List<IScrapWidgetView>,
+                                   ifSharpenDrawing: Boolean) {
+        // Hold canvas matrix.
+        mTmpMatrix.set(mCanvasMatrix)
+
+        mMatrixStack.clear()
+        mMatrixStack.push(mCanvasMatrix)
+
+        scrapViews.forEach { scrapView ->
+            scrapView.dispatchDraw(canvas, mMatrixStack, ifSharpenDrawing)
+        }
+
+        // Ensure no scraps modify the canvas matrix.
+        if (mTmpMatrix != mCanvasMatrix) {
+            throw IllegalStateException("Canvas matrix is changed")
         }
     }
 
@@ -400,19 +413,28 @@ class PaperWidgetView : View,
         // that they keep sharp!
         drawBackground(canvas, vw, vh, tx, ty, scaleVP)
 
-        // To view canvas world.
-        canvas.concat(mCanvasMatrix)
+        // Draw scrap views & temporary sketch
+        if (mIfSharpenDrawing) {
+            dispatchDrawScraps(canvas, mScrapViews, true)
 
-        // Draw scrap views.
-        dispatchDrawScraps(canvas, mScrapViews)
+            mStrokeDrawables.forEach { drawable ->
+                drawable.onDraw(canvas, mCanvasMatrix)
+            }
+        } else {
+            // To view canvas world.
+            canvas.concat(mCanvasMatrix)
 
-        // Draw temporary sketch.
-        drawTempStrokes(canvas, mStrokeDrawables)
+            dispatchDrawScraps(canvas, mScrapViews, false)
+
+            mStrokeDrawables.forEach { drawable ->
+                drawable.onDraw(canvas)
+            }
+        }
+
+        // Turn off the sharpening draw because it's costly.
+        mIfSharpenDrawing = false
 
         canvas.restoreToCount(count)
-
-//        // Display the view-port relative boundary to the model.
-//        drawMeter(canvas, mw, mh)
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
@@ -530,6 +552,10 @@ class PaperWidgetView : View,
                                context: Any?) {
         mGestureHistory.clear()
 
+        // Prevent the following transform applied to the event from do the
+        // sharp rendering.
+        mIfSharpenDrawing = false
+
         mWidget.handleActionBegin()
     }
 
@@ -537,6 +563,10 @@ class PaperWidgetView : View,
                              target: Any?,
                              context: Any?) {
         mWidget.handleActionEnd()
+
+        // Prevent the following transform applied to the event from do the
+        // sharp rendering.
+        requestSharpDrawing()
     }
 
     // Tap Gesture ////////////////////////////////////////////////////////////
