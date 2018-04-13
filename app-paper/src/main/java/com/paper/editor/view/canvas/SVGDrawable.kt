@@ -20,10 +20,7 @@
 
 package com.paper.editor.view.canvas
 
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Path
+import android.graphics.*
 import com.paper.editor.data.Bezier
 import com.paper.shared.model.Point
 
@@ -31,8 +28,10 @@ class SVGDrawable(oneDp: Float) {
 
     private val mOneDp = oneDp
 
-    private val mPath = Path()
+    private val mPointMap = FloatArray(2)
+
     private val mStrokePoint = mutableListOf<Point>()
+    private val mStrokePointTransformed = mutableListOf<Point>()
     private val mStrokeWidth = mutableListOf<Float>()
     private val mStrokePaint = Paint()
 
@@ -46,9 +45,9 @@ class SVGDrawable(oneDp: Float) {
     private var mMaxWidth: Float = 0f
 
     init {
-        mStrokePaint.strokeWidth = mOneDp
+        mStrokePaint.strokeWidth = 10f * mOneDp
         mStrokePaint.color = Color.BLACK
-        mStrokePaint.style = Paint.Style.STROKE
+        mStrokePaint.style = Paint.Style.FILL_AND_STROKE
         mStrokePaint.strokeCap = Paint.Cap.ROUND
 
         mMinWidth = 3f * oneDp
@@ -56,17 +55,27 @@ class SVGDrawable(oneDp: Float) {
         mVelocityFilterWeight = 0.9f
     }
 
+    // Drawing ////////////////////////////////////////////////////////////////
+
     fun clear() {
         TODO()
     }
 
     fun moveTo(x: Float, y: Float) {
-        mPath.reset()
-        mPath.moveTo(x, y)
+//        // Try #1: simple points
+//        mStrokePoint.add(Point(x, y))
+//        mStrokePointTransformed.add(Point(x, y))
+
+        // Try #2: Bezier points
         addPoint(getNewPoint(x, y))
     }
 
     fun lineTo(x: Float, y: Float) {
+//        // Try #1: simple points
+//        mStrokePoint.add(Point(x, y))
+//        mStrokePointTransformed.add(Point(x, y))
+
+        // Try #2: Bezier points
         addPoint(getNewPoint(x, y))
     }
 
@@ -74,10 +83,26 @@ class SVGDrawable(oneDp: Float) {
         // DO NOTHING
     }
 
-    fun onDraw(canvas: Canvas) {
-        mStrokePoint.forEachIndexed { index, point ->
-            mStrokePaint.strokeWidth = mStrokeWidth[index]
-            canvas.drawPoint(point.x, point.y, mStrokePaint)
+    fun onDraw(canvas: Canvas,
+               transform: Matrix? = null) {
+        if (transform != null) {
+            mStrokePointTransformed.forEachIndexed { i, point ->
+                mPointMap[0] = mStrokePoint[i].x
+                mPointMap[1] = mStrokePoint[i].y
+                transform.mapPoints(mPointMap)
+                point.x = mPointMap[0]
+                point.y = mPointMap[1]
+            }
+
+            mStrokePointTransformed.forEachIndexed { i, point ->
+                mStrokePaint.strokeWidth = mStrokeWidth[i]
+                canvas.drawPoint(point.x, point.y, mStrokePaint)
+            }
+        } else {
+            mStrokePoint.forEachIndexed { i, point ->
+                mStrokePaint.strokeWidth = mStrokeWidth[i]
+                canvas.drawPoint(point.x, point.y, mStrokePaint)
+            }
         }
     }
 
@@ -87,7 +112,6 @@ class SVGDrawable(oneDp: Float) {
 
         val pointsCount = mCachedPoints.size
         if (pointsCount > 3) {
-
             val (_, c2) = calculateCurveControlPoints(mCachedPoints[0], mCachedPoints[1], mCachedPoints[2])
             val (c3, _) = calculateCurveControlPoints(mCachedPoints[1], mCachedPoints[2], mCachedPoints[3])
 
@@ -179,6 +203,7 @@ class SVGDrawable(oneDp: Float) {
             // Set the incremental stroke width and draw.
             mStrokeWidth.add(startWidth + ttt * widthDelta)
             mStrokePoint.add(Point(x, y))
+            mStrokePointTransformed.add(Point(x, y))
 
             i++
         }

@@ -22,7 +22,6 @@ package com.paper.editor.view.canvas
 
 import android.content.Context
 import android.graphics.*
-import android.os.Handler
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
@@ -42,7 +41,6 @@ import com.paper.editor.data.GestureRecord
 import com.paper.editor.widget.canvas.IPaperWidget
 import com.paper.editor.widget.canvas.IScrapWidget
 import com.paper.shared.model.Rect
-import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -50,6 +48,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.util.*
 
 class PaperWidgetView : View,
                         IPaperWidgetView,
@@ -59,6 +58,7 @@ class PaperWidgetView : View,
 
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapWidgetView>()
+    private var mIfSharpenDrawing = true
 
     // Widget.
     private lateinit var mWidget: IPaperWidget
@@ -72,12 +72,15 @@ class PaperWidgetView : View,
      * Scale factor from Model world to View world.
      */
     private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
-    private val mTransformM2V = BehaviorSubject.createDefault(TransformModel())
     /**
      * A util for getting translationX, translationY, scaleX, scaleY, and
      * rotationInDegrees from a [Matrix]
      */
-    private val mTransformHelper = TransformUtils()
+
+    /**
+     * A signal indicating the layout change.
+     */
+    private val mOnLayoutChangeSignal = BehaviorSubject.createDefault(false)
 
     // Temporary utils.
     private val mTmpPoint = FloatArray(2)
@@ -85,12 +88,14 @@ class PaperWidgetView : View,
     private val mTmpMatrix = Matrix()
     private val mTmpMatrixInverse = Matrix()
     private val mTmpMatrixStart = Matrix()
+    private val mTransformHelper = TransformUtils()
 
     // Gesture.
     private val mTouchSlop by lazy { resources.getDimension(R.dimen.touch_slop) }
     private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
     private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
     private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
+
     private val mGestureDetector by lazy {
         val detector = GestureDetector(Looper.getMainLooper(),
                                        ViewConfiguration.get(context),
@@ -148,23 +153,22 @@ class PaperWidgetView : View,
      */
     private val mCanvasMatrixInverse = Matrix()
     private var mCanvasMatrixDirty = false
-    // View port paints
-    private val mViewPortPaint = Paint()
-    private val mCanvasBoundPaint = Paint()
     // Output signal related to view port
     private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
-    private val mOnLayoutChangeSignal = PublishSubject.create<Boolean>()
 
     // Rendering resource.
-    private val mUiHandler by lazy { Handler(Looper.getMainLooper()) }
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
     private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
     private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
-    private val mBackgroundPaint = Paint()
-    private val mGridPaint = Paint()
-    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
     private var mCanvasBitmap: Bitmap? = null
     private var mProxyCanvas: Canvas? = null
+    private val mMatrixStack = Stack<Matrix>()
+
+    // Background & grids
+    private val mGridPaint = Paint()
+
+    // Temporary strokes
+    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -173,20 +177,6 @@ class PaperWidgetView : View,
         mGridPaint.color = Color.LTGRAY
         mGridPaint.style = Paint.Style.STROKE
         mGridPaint.strokeWidth = 2f * mOneDp
-
-        mBackgroundPaint.style = Paint.Style.FILL
-        mBackgroundPaint.color = Color.WHITE
-
-        // For showing the relative boundary of view-port and model.
-        mCanvasBoundPaint.color = Color.RED
-        mCanvasBoundPaint.style = Paint.Style.FILL
-        mViewPortPaint.color = Color.GREEN
-        mViewPortPaint.style = Paint.Style.STROKE
-        mViewPortPaint.strokeWidth = 2f * mOneDp
-
-//        // Giving a background would make onDraw() able to be called.
-//        setBackgroundColor(Color.WHITE)
-//        ViewCompat.setElevation(this, 12f * oneDp)
     }
 
     override fun onMeasure(widthSpec: Int,
@@ -366,17 +356,27 @@ class PaperWidgetView : View,
         invalidate()
     }
 
-    private fun dispatchDrawScraps(canvas: Canvas,
-                                   scrapViews: List<IScrapWidgetView>) {
-        scrapViews.forEach { scrapView ->
-            scrapView.dispatchDraw(canvas)
-        }
+    override fun requestSharpDrawing() {
+        mIfSharpenDrawing = true
+        invalidate()
     }
 
-    private fun drawTempStrokes(canvas: Canvas,
-                                drawables: List<SVGDrawable>) {
-        drawables.forEach { drawable ->
-            drawable.onDraw(canvas)
+    private fun dispatchDrawScraps(canvas: Canvas,
+                                   scrapViews: List<IScrapWidgetView>,
+                                   ifSharpenDrawing: Boolean) {
+        // Hold canvas matrix.
+        mTmpMatrix.set(mCanvasMatrix)
+
+        mMatrixStack.clear()
+        mMatrixStack.push(mCanvasMatrix)
+
+        scrapViews.forEach { scrapView ->
+            scrapView.dispatchDraw(canvas, mMatrixStack, ifSharpenDrawing)
+        }
+
+        // Ensure no scraps modify the canvas matrix.
+        if (mTmpMatrix != mCanvasMatrix) {
+            throw IllegalStateException("Canvas matrix is changed")
         }
     }
 
@@ -402,6 +402,7 @@ class PaperWidgetView : View,
         // padding on the screen.
         canvas.translate(ViewCompat.getPaddingStart(this).toFloat(), paddingTop.toFloat())
 
+        // Extract the transform from the canvas matrix.
         mTransformHelper.getValues(mCanvasMatrix)
         val tx = mTransformHelper.translationX
         val ty = mTransformHelper.translationY
@@ -412,19 +413,28 @@ class PaperWidgetView : View,
         // that they keep sharp!
         drawBackground(canvas, vw, vh, tx, ty, scaleVP)
 
-        // To view canvas world.
-        canvas.concat(mCanvasMatrix)
+        // Draw scrap views & temporary sketch
+        if (mIfSharpenDrawing) {
+            dispatchDrawScraps(canvas, mScrapViews, true)
 
-        // Draw scrap views.
-        dispatchDrawScraps(canvas, mScrapViews)
+            mStrokeDrawables.forEach { drawable ->
+                drawable.onDraw(canvas, mCanvasMatrix)
+            }
+        } else {
+            // To view canvas world.
+            canvas.concat(mCanvasMatrix)
 
-        // Draw temporary sketch.
-        drawTempStrokes(canvas, mStrokeDrawables)
+            dispatchDrawScraps(canvas, mScrapViews, false)
+
+            mStrokeDrawables.forEach { drawable ->
+                drawable.onDraw(canvas)
+            }
+        }
+
+        // Turn off the sharpening draw because it's costly.
+        mIfSharpenDrawing = false
 
         canvas.restoreToCount(count)
-
-//        // Display the view-port relative boundary to the model.
-//        drawMeter(canvas, mw, mh)
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
@@ -542,6 +552,10 @@ class PaperWidgetView : View,
                                context: Any?) {
         mGestureHistory.clear()
 
+        // Prevent the following transform applied to the event from do the
+        // sharp rendering.
+        mIfSharpenDrawing = false
+
         mWidget.handleActionBegin()
     }
 
@@ -549,6 +563,10 @@ class PaperWidgetView : View,
                              target: Any?,
                              context: Any?) {
         mWidget.handleActionEnd()
+
+        // Prevent the following transform applied to the event from do the
+        // sharp rendering.
+        requestSharpDrawing()
     }
 
     // Tap Gesture ////////////////////////////////////////////////////////////
@@ -949,28 +967,5 @@ class PaperWidgetView : View,
             }
             y += cell
         }
-    }
-
-    private fun drawMeter(canvas: Canvas,
-                          canvasWidth: Float,
-                          canvasHeight: Float) {
-        if (!mViewPort.hasValue()) return
-
-        val count = canvas.save()
-
-        val ratio = canvasWidth / canvasHeight
-        val bgWidth = Math.min(width, height) / 5f
-        val bgHeight = bgWidth / ratio
-        val scale = bgWidth / canvasWidth
-
-        canvas.clipRect(0f, 0f, bgWidth, bgHeight)
-        canvas.drawRect(0f, 0f, bgWidth, bgHeight, mCanvasBoundPaint)
-        canvas.drawRect(scale * mViewPort.value.left,
-                        scale * mViewPort.value.top,
-                        scale * mViewPort.value.right,
-                        scale * mViewPort.value.bottom,
-                        mViewPortPaint)
-
-        canvas.restoreToCount(count)
     }
 }

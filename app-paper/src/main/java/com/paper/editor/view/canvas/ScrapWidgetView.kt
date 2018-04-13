@@ -31,6 +31,7 @@ import com.paper.shared.model.TransformModel
 import com.paper.util.TransformUtils
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import java.util.*
 
 open class ScrapWidgetView : IScrapWidgetView {
 
@@ -63,6 +64,9 @@ open class ScrapWidgetView : IScrapWidgetView {
      */
     private val mMatrixInverse = Matrix()
     private val mTransformHelper: TransformUtils = TransformUtils()
+
+    private val mSharpeningMatrix = Matrix()
+    private val mSharpeningMatrixInverse = Matrix()
 
     // Gesture.
     private var mIfHandleEvent = false
@@ -135,36 +139,39 @@ open class ScrapWidgetView : IScrapWidgetView {
 
     // Draw ///////////////////////////////////////////////////////
 
-    override fun dispatchDraw(canvas: Canvas) {
+    override fun dispatchDraw(canvas: Canvas,
+                              previousXforms: Stack<Matrix>,
+                              ifSharpenDrawing: Boolean) {
         val count = canvas.save()
 
         computeMatrix()
-        canvas.concat(mMatrix)
 
         // Draw itself
-        onDraw(canvas)
+        if (ifSharpenDrawing) {
+            // Concatenate all the previous transform
+            mSharpeningMatrix.reset()
+            previousXforms.forEach { m ->
+                mSharpeningMatrix.preConcat(m)
+            }
+            mSharpeningMatrix.preConcat(mMatrix)
+            mSharpeningMatrix.invert(mSharpeningMatrixInverse)
+
+            mDrawable.onDraw(canvas, mSharpeningMatrix)
+        } else {
+            canvas.concat(mMatrix)
+            mDrawable.onDraw(canvas)
+        }
 
         // Then children
-        mChildren.forEach { it.dispatchDraw(canvas) }
+        previousXforms.push(mMatrix)
+        mChildren.forEach {
+            it.dispatchDraw(canvas,
+                            previousXforms,
+                            ifSharpenDrawing)
+        }
+        previousXforms.pop()
 
         canvas.restoreToCount(count)
-    }
-
-    private fun onDraw(canvas: Canvas) {
-//        // TEST: Improve performance.
-//        canvas.clipRect(mScrapBound)
-
-        validateRenderingCache()
-
-        // Sketch.
-        mDrawable.onDraw(canvas)
-
-        drawCenter(canvas)
-    }
-
-    private fun drawCenter(canvas: Canvas) {
-        canvas.drawLine(-20f, 0f, 20f, 0f, mDebugPaint)
-        canvas.drawLine(0f, -20f, 0f, 20f, mDebugPaint)
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
@@ -203,14 +210,10 @@ open class ScrapWidgetView : IScrapWidgetView {
 
         // Trigger the invalidation will lead to dispatchDraw and onDraw
         // functions
-        invalidate(false)
+        invalidate()
     }
 
-    private fun invalidate(rebuildCache: Boolean) {
-        if (rebuildCache) {
-            invalidateRenderingCache()
-        }
-
+    private fun invalidate() {
         mParent?.invalidate()
     }
 
@@ -231,15 +234,6 @@ open class ScrapWidgetView : IScrapWidgetView {
         // Mark the rendering cache is dirty and later validateRenderingCache()
         // would update the necessary properties for rendering and touching.
         mIsCacheDirty = true
-    }
-
-    private fun validateRenderingCache() {
-        if (!mIsCacheDirty) return
-
-//        rebuildSketchBound()
-//        rebuildSketchPath()
-
-        mIsCacheDirty = false
     }
 
     // Touch //////////////////////////////////////////////////////////////////
