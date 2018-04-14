@@ -92,25 +92,25 @@ class SketchTranslatorTest {
         Assert.assertEquals(SKETCH_WITH_THREE_DOTS, jsonString)
     }
 
-    //    @Test
-    //    fun deserializeJson_From_IosClient() {
-    //        val gson = GsonBuilder()
-    //            .registerTypeAdapter(SketchModel::class.java, SketchModelTranslator())
-    //            .create()
-    //        val classLoader = javaClass.classLoader
-    //        // The JSON is belong to the sketch (ID is 166170906) from the server.
-    //        val resource = classLoader.getResource("json/sketch_created_from_ios_client.json")
-    //        val file = File(resource.path)
-    //        val model = gson.fromJson(FileReader(file), SketchModel::class.java)
-    //
-    //        // Exactly has 27 strokes.
-    //        Assert.assertEquals(27, model.strokeSize)
-    //
-    //        // Exactly the same x-y pair for the first point of the first path-tuple
-    //        // of the first stroke.
-    //        Assert.assertEquals(0.178925558924675f, model.firstStroke.firstPathTuple.firstPoint.x)
-    //        Assert.assertEquals(0.24099662899971008f, model.firstStroke.firstPathTuple.firstPoint.y)
-    //    }
+//    @Test
+//    fun deserializeJson_From_IosClient() {
+//        val gson = GsonBuilder()
+//            .registerTypeAdapter(SketchModel::class.java, SketchModelTranslator())
+//            .create()
+//        val classLoader = javaClass.classLoader
+//        // The JSON is belong to the sketch (ID is 166170906) from the server.
+//        val resource = classLoader.getResource("json/sketch_created_from_ios_client.json")
+//        val file = File(resource.path)
+//        val model = gson.fromJson(FileReader(file), SketchModel::class.java)
+//
+//        // Exactly has 27 strokes.
+//        Assert.assertEquals(27, model.strokeSize)
+//
+//        // Exactly the same x-y pair for the first point of the first path-tuple
+//        // of the first stroke.
+//        Assert.assertEquals(0.178925558924675f, model.firstStroke.firstPathTuple.firstPoint.x)
+//        Assert.assertEquals(0.24099662899971008f, model.firstStroke.firstPathTuple.firstPoint.y)
+//    }
 
     companion object {
         private val SKETCH_WITH_THREE_DOTS = "{\"strokes\":[{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"M0.18075603,0.25663146 Z\"},{\"color\":\"#FF70C050\",\"width\":0.09569436,\"path\":\"M0.5118275,0.5168306 Z\"},{\"color\":\"#FF3897F0\",\"width\":0.09569436,\"path\":\"M0.8192441,0.74336857 Z\"}]}"
