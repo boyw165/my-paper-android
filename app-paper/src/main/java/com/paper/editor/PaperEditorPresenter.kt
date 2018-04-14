@@ -88,6 +88,13 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                         event.canvas,
                         event.viewPort)
                 })
+        mDisposablesOnCreate.add(
+            editingPanelView
+                .onUpdateViewPortPosition()
+                .observeOn(mUiScheduler)
+                .subscribe { position ->
+                    canvasView.setViewPortPosition(position.x, position.y)
+                })
 
         // Color, stroke width, and edit tool.
         mDisposablesOnCreate.add(

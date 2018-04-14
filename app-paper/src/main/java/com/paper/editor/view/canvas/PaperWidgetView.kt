@@ -47,7 +47,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
-import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 class PaperWidgetView : View,
@@ -715,6 +714,32 @@ class PaperWidgetView : View,
         mViewPort.onNext(RectF(viewPortX, viewPortY,
                                viewPortX + defaultW,
                                viewPortY + defaultH))
+    }
+
+    override fun setViewPortPosition(x: Float, y: Float) {
+        val mw = mMSize.value.width
+        val mh = mMSize.value.height
+
+        mTmpBound.set(x, y,
+                      x + mViewPort.value.width(),
+                      y + mViewPort.value.height())
+
+        // Constraint view port
+        val minWidth = mViewPortMin.width()
+        val minHeight = mViewPortMin.height()
+        val maxWidth = mViewPortMax.width()
+        val maxHeight = mViewPortMax.height()
+        constraintViewPort(mTmpBound,
+                           left = 0f,
+                           top = 0f,
+                           right = mw,
+                           bottom = mh,
+                           minWidth = minWidth,
+                           minHeight = minHeight,
+                           maxWidth = maxWidth,
+                           maxHeight = maxHeight)
+
+        mViewPort.onNext(mTmpBound)
     }
 
     private fun startUpdateViewport() {

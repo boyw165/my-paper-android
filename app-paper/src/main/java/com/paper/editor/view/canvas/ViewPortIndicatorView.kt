@@ -21,33 +21,34 @@
 package com.paper.editor.view.canvas
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.RectF
+import android.gesture.Gesture
+import android.graphics.*
+import android.os.Looper
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
+import com.cardinalblue.gesture.GestureDetector
+import com.cardinalblue.gesture.GesturePolicy
+import com.cardinalblue.gesture.IDragGestureListener
+import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.R
+import com.paper.shared.model.Point
 import com.paper.shared.model.Rect
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 
-class ViewPortIndicatorView : View {
+class ViewPortIndicatorView : View,
+                              IDragGestureListener {
 
-    private var mScaleM2V = Float.NaN
-    private val mCanvasBound = RectF()
-    private val mTmpBound = RectF()
-    private val mViewPortBound = RectF()
-    private val mCanvasPaint = Paint()
-    private val mViewPortPaint = Paint()
     private val mOneDp by lazy { resources.getDimension(R.dimen.one_dp) }
 
-    private val mSetViewPort = BehaviorSubject.create<Any>()
-    private val mOnLayoutFinish = BehaviorSubject.create<Any>()
     private val mDisposables = CompositeDisposable()
 
     constructor(context: Context) : this(context, null)
@@ -93,6 +94,8 @@ class ViewPortIndicatorView : View {
         mDisposables.clear()
     }
 
+    private val mOnLayoutFinish = BehaviorSubject.create<Any>()
+
     override fun onLayout(changed: Boolean,
                           left: Int,
                           top: Int,
@@ -112,6 +115,28 @@ class ViewPortIndicatorView : View {
         }
     }
 
+    // View port //////////////////////////////////////////////////////////////
+
+    private var mScaleM2V = Float.NaN
+
+    private val mCanvasBound = RectF()
+    private val mCanvasPaint = Paint()
+
+    private val mViewPortBound = RectF()
+    private val mViewPortBoundStart = RectF()
+    private val mViewPortPaint = Paint()
+
+    private val mTmpBound = RectF()
+
+    /**
+     * The view port boundary signal. Using the signal is because there is a
+     * reducer observing the layout change and view port change.
+     */
+    private val mSetViewPort = BehaviorSubject.create<Any>()
+
+    /**
+     * For showing the canvas and view-port indicator.
+     */
     fun setCanvasAndViewPort(canvas: Rect,
                              viewPort: Rect) {
         mCanvasBound.set(canvas.left, canvas.top, canvas.right, canvas.bottom)
@@ -120,6 +145,16 @@ class ViewPortIndicatorView : View {
         // Would trigger updateScaleM2V() and onDraw() if layout is done and view
         // port is set.
         mSetViewPort.onNext(true)
+    }
+
+    private val mUpdatePositionSignal = PublishSubject.create<Point>()
+
+    /**
+     * The view recognizes DRAG gesture and will signal new position of
+     * view-port.
+     */
+    fun onUpdateViewPortPosition(): Observable<Point> {
+        return mUpdatePositionSignal
     }
 
     private fun updateScaleM2V() {
@@ -165,5 +200,72 @@ class ViewPortIndicatorView : View {
         return mCanvasBound.width() > 0f && mCanvasBound.height() > 0f &&
                mViewPortBound.width() > 0f && mViewPortBound.height() > 0f &&
                mScaleM2V != Float.NaN
+    }
+
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    private val mGestureDetector: GestureDetector by lazy {
+        val field = GestureDetector(Looper.getMainLooper(),
+                                    ViewConfiguration.get(context),
+                                    resources.getDimension(R.dimen.touch_slop),
+                                    resources.getDimension(R.dimen.tap_slop),
+                                    resources.getDimension(R.dimen.fling_min_vec),
+                                    resources.getDimension(R.dimen.fling_max_vec))
+        field.setPolicy(GesturePolicy.DRAG_ONLY)
+        field.dragGestureListener = this@ViewPortIndicatorView
+        field
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        return mGestureDetector.onTouchEvent(event, null, null)
+    }
+
+    override fun onActionBegin(event: MyMotionEvent,
+                               target: Any?,
+                               context: Any?) {
+        // DO NOTHING.
+    }
+
+    override fun onActionEnd(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        // DO NOTHING.
+    }
+
+    override fun onDragBegin(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        mViewPortBoundStart.set(mViewPortBound)
+    }
+
+    override fun onDrag(event: MyMotionEvent,
+                        target: Any?,
+                        context: Any?,
+                        startPointer: PointF,
+                        stopPointer: PointF) {
+        val dx = stopPointer.x - startPointer.x
+        val dy = stopPointer.y - startPointer.y
+        val x = mViewPortBoundStart.left + dx
+        val y = mViewPortBoundStart.top + dy
+
+        mUpdatePositionSignal.onNext(Point(x, y))
+    }
+
+    override fun onDragFling(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?,
+                             startPointer: PointF,
+                             stopPointer: PointF,
+                             velocityX: Float,
+                             velocityY: Float) {
+        // DO NOTHING.
+    }
+
+    override fun onDragEnd(event: MyMotionEvent,
+                           target: Any?,
+                           context: Any?,
+                           startPointer: PointF,
+                           stopPointer: PointF) {
+        // DO NOTHING.
     }
 }

@@ -33,5 +33,7 @@ interface IPaperWidgetView {
 
     fun takeSnapshot(): Bitmap
 
+    fun setViewPortPosition(x: Float, y: Float)
+
     fun onDrawViewPort(): Observable<DrawViewPortEvent>
 }

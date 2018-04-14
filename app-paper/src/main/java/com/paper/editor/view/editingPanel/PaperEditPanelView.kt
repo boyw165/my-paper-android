@@ -32,6 +32,7 @@ import com.paper.R
 import com.paper.editor.view.canvas.ViewPortIndicatorView
 import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
 import com.paper.observables.SeekBarChangeObservable
+import com.paper.shared.model.Point
 import com.paper.shared.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -127,6 +128,10 @@ class PaperEditPanelView : ConstraintLayout,
     override fun setCanvasAndViewPort(canvas: Rect,
                                       viewPort: Rect) {
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
+    }
+
+    override fun onUpdateViewPortPosition(): Observable<Point> {
+        return mViewPortIndicatorView.onUpdateViewPortPosition()
     }
 
     // Edit tool //////////////////////////////////////////////////////////////
