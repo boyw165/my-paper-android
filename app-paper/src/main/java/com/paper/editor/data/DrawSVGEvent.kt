@@ -24,7 +24,9 @@ import com.paper.shared.model.Point
 
 data class DrawSVGEvent(
     val action: Action,
-    val point: Point = Point()) {
+    val point: Point = Point(),
+    val penColor: Int = 0,
+    val penSize: Float = 0f) {
 
     enum class Action {
         // Creation action.

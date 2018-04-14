@@ -73,14 +73,17 @@
         android:id="@+id/list_color_tickets"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/slider_stroke_width"
+        android:clipToPadding="false"
+        android:paddingEnd="60dp"
+        android:paddingStart="60dp"
+        app:layout_constraintBottom_toTopOf="@+id/slider_stroke_size"
         app:layout_constraintHeight_default="spread"
         app:layout_constraintLeft_toLeftOf="@+id/guide_tertiary_bound"
         app:layout_constraintRight_toRightOf="@+id/guide_tertiary_bound"
         app:layout_constraintTop_toTopOf="@+id/guide_tertiary_bound"/>
 
     <android.support.v7.widget.AppCompatSeekBar
-        android:id="@+id/slider_stroke_width"
+        android:id="@+id/slider_stroke_size"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginEnd="36dp"

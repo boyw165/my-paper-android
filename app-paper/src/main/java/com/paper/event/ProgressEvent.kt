@@ -26,11 +26,11 @@ data class ProgressEvent(val justStart: Boolean = false,
                          val progress: Int = 0) {
     companion object {
 
-        fun start(): ProgressEvent {
+        fun start(progress: Int = 0): ProgressEvent {
             return ProgressEvent(justStart = true,
                                  doing = false,
                                  justStop = false,
-                                 progress = 0)
+                                 progress = progress)
         }
 
         fun doing(progress: Int): ProgressEvent {
@@ -40,7 +40,7 @@ data class ProgressEvent(val justStart: Boolean = false,
                                  progress = progress)
         }
 
-        fun stop(progress: Int): ProgressEvent {
+        fun stop(progress: Int = 100): ProgressEvent {
             return ProgressEvent(justStart = false,
                                  doing = false,
                                  justStop = true,

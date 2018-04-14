@@ -91,7 +91,9 @@ class ScrapWidget(
                                 0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                     action = DrawSVGEvent.Action.MOVE,
                                     point = Point(path.firstPoint.x,
-                                                  path.firstPoint.y)))
+                                                  path.firstPoint.y),
+                                    penColor = stroke.color,
+                                    penSize = stroke.width))
                                 lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                     action = DrawSVGEvent.Action.CLOSE,
                                     point = Point(path.firstPoint.x,

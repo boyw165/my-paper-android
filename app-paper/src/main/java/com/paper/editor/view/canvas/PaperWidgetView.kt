@@ -444,7 +444,9 @@ class PaperWidgetView : View,
 
         when (event.action) {
             DrawSVGEvent.Action.MOVE -> {
-                val drawable = SVGDrawable(oneDp = mOneDp)
+                val drawable = SVGDrawable(context = this@PaperWidgetView,
+                                           penColor = event.penColor,
+                                           penSize = event.penSize)
                 drawable.moveTo(x, y)
 
                 mStrokeDrawables.add(drawable)

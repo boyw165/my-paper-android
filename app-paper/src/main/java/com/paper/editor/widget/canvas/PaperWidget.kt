@@ -34,6 +34,7 @@ import com.paper.shared.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -57,15 +58,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Gesture
     private val mGestureHistory = mutableListOf<GestureRecord>()
-
-    // Drawing
-    private val mStrokes = mutableListOf<SketchStroke>()
-    private val mLineToSignal = PublishSubject.create<Point>()
-    /**
-     * The signal for the external world to know this widget wants to draw SVG.
-     */
-    private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
-    private val mCancelDrawingSignal = PublishSubject.create<Any>()
 
     // Debug
     private val mDebugSignal = PublishSubject.create<String>()
@@ -130,7 +122,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             width = 1f)
         stroke.addPathTuple(PathTuple(x, y))
         // Add to stroke collection
-        mStrokes.add(stroke)
+        mTmpStrokes.add(stroke)
 
         collectStrokesAndCreateScrap()
     }
@@ -148,10 +140,37 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     // Drawing ////////////////////////////////////////////////////////////////
 
     /**
-     * A timeout in milliseconds to collect the temporary strokes as a new
-     * [ScrapModel].
+     * Temporary ...
      */
-    var collectStrokesTimeout = 0L
+    private val mTmpStrokes = mutableListOf<SketchStroke>()
+    /**
+     * Internal drawing signal for throttling touch event.
+     */
+    private val mLineToSignal = BehaviorSubject.create<Point>()
+    /**
+     * Internal signal for cancelling any kinds of drawing stream.
+     */
+    private val mCancelDrawingSignal = PublishSubject.create<Any>()
+    /**
+     * The signal for the external world to know this widget wants to draw SVG.
+     */
+    private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
+    /**
+     * The current stroke color.
+     */
+    private var mPenColor = 0x2C2F3C
+    /**
+     * The current stroke width, where the value is from 0.0 to 1.0.
+     */
+    private var mPenSize = 0.2f
+
+    override fun handleChoosePenColor(color: Int) {
+        mPenColor = color
+    }
+
+    override fun handleUpdatePenSize(size: Float) {
+        mPenSize = size
+    }
 
     override fun handleDragBegin(x: Float,
                                  y: Float) {
@@ -160,15 +179,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Create a new stroke and hold it in the temporary pool.
         val stroke = SketchStroke(
-            color = 0,
+            color = mPenColor,
             isEraser = false,
-            width = 1f)
+            width = mPenSize)
         stroke.addPathTuple(PathTuple(x, y))
-        mStrokes.add(stroke)
-
-        mLineToSignal.onNext(Point(x, y))
-
-        mLineToSignal.throttleFirst(100, TimeUnit.MILLISECONDS)
+        mTmpStrokes.add(stroke)
 
         mLineToSignal
             // FIXME: The window filter would make the SVGDrawable laggy.
@@ -179,20 +194,21 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             .subscribe { p ->
                 stroke.addPathTuple(PathTuple(p.x, p.y))
 
-                Log.d(AppConst.TAG, "draw SVG (%.3f, %.3f)".format(p.x, p.y))
                 // Notify the observer
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
                                                    point = Point(p.x, p.y)))
             }
+        mLineToSignal.onNext(Point(x, y))
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = Point(x, y)))
+                                           point = Point(x, y),
+                                           penColor = mPenColor,
+                                           penSize = mPenSize))
     }
 
     override fun handleDrag(x: Float,
                             y: Float) {
-        Log.d(AppConst.TAG, "line to (%.3f, %.3f)".format(x, y))
         mLineToSignal.onNext(Point(x, y))
     }
 
@@ -201,7 +217,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        val stroke = mStrokes.last()
+        val stroke = mTmpStrokes.last()
         stroke.addPathTuple(PathTuple(x, y))
 
         // Notify the observer
@@ -209,7 +225,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Set a timer and create a Scrap when time is up.
         Observable
-            .timer(collectStrokesTimeout,
+            .timer(AppConst.COLLECT_STROKES_TIMEOUT_MS,
                    TimeUnit.MILLISECONDS,
                    mUiScheduler)
             .takeUntil(mCancelSignal)
@@ -224,7 +240,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         var right = Float.NEGATIVE_INFINITY
         var bottom = Float.NEGATIVE_INFINITY
 
-        mStrokes.forEach { stroke ->
+        mTmpStrokes.forEach { stroke ->
             val bound = stroke.bound
 
             left = Math.min(left, bound.left)
@@ -236,17 +252,17 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         val cx = (left + right) / 2f
         val cy = (top + bottom) / 2f
 
-        mStrokes.forEach { stroke ->
+        mTmpStrokes.forEach { stroke ->
             stroke.offset(-cx, -cy)
         }
 
         val scrapM = ScrapModel()
         scrapM.x = cx
         scrapM.y = cy
-        scrapM.sketch.addAllStroke(mStrokes)
+        scrapM.sketch.addAllStroke(mTmpStrokes)
 
         // Clear widget hold strokes
-        mStrokes.clear()
+        mTmpStrokes.clear()
 
         // Add to Model (will trigger bound View to react)
         mModel.addScrap(scrapM)

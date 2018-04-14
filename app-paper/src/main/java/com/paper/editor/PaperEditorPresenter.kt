@@ -22,7 +22,6 @@ package com.paper.editor
 
 import android.graphics.Bitmap
 import android.os.Environment
-import com.paper.AppConst
 import com.paper.editor.widget.canvas.PaperWidget
 import com.paper.event.ProgressEvent
 import com.paper.shared.model.PaperConsts
@@ -50,10 +49,8 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
     private var mView: PaperEditorContract.View? = null
 
     private val mPaperWidget by lazy {
-        val field = PaperWidget(AndroidSchedulers.mainThread(),
+        PaperWidget(AndroidSchedulers.mainThread(),
                                 Schedulers.io())
-        field.collectStrokesTimeout = AppConst.COLLECT_STROKES_TIMEOUT_MS
-        field
     }
 
     // Progress signal.
@@ -98,7 +95,14 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                 .onChooseColorTicket()
                 .observeOn(mUiScheduler)
                 .subscribe { color ->
-                    // TODO
+                    mPaperWidget.handleChoosePenColor(color)
+                })
+        mDisposablesOnCreate.add(
+            editingPanelView
+                .onUpdatePenSize()
+                .observeOn(mUiScheduler)
+                .subscribe { penSize ->
+                    mPaperWidget.handleUpdatePenSize(penSize)
                 })
         mDisposablesOnCreate.add(
             editingPanelView

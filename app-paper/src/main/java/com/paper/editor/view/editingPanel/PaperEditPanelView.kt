@@ -25,11 +25,13 @@ import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
+import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.editor.view.canvas.ViewPortIndicatorView
 import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
+import com.paper.observables.SeekBarChangeObservable
 import com.paper.shared.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -103,7 +105,7 @@ class PaperEditPanelView : ConstraintLayout,
 
                     // Notify observer
                     val color = event.colorTickets[event.usingIndex]
-                    mSelectedColorTicket.onNext(color)
+                    mChooseColorTicket.onNext(color)
                 })
 
         mWidget.handleStart()
@@ -149,11 +151,22 @@ class PaperEditPanelView : ConstraintLayout,
         ColorTicketListEpoxyController(mWidget = mWidget,
                                        mImgLoader = Glide.with(context))
     }
-    private val mSelectedColorTicket = PublishSubject.create<Int>()
-    private val mStrokeWidthView by lazy { findViewById<RecyclerView>(R.id.list_color_tickets) }
+    private val mChooseColorTicket = PublishSubject.create<Int>()
 
     override fun onChooseColorTicket(): Observable<Int> {
-        return mSelectedColorTicket
+        return mChooseColorTicket
+    }
+
+    private val mStrokeSizeView by lazy { findViewById<SeekBar>(R.id.slider_stroke_size) }
+    private var mUpdatePenSize = 0f
+
+    override fun onUpdatePenSize(): Observable<Float> {
+        return SeekBarChangeObservable(mStrokeSizeView, true)
+            // TODO: Update color and size preview
+            .map { event ->
+                mUpdatePenSize = event.progress.toFloat() / 100f
+                return@map mUpdatePenSize
+            }
     }
 
     // Other //////////////////////////////////////////////////////////////////

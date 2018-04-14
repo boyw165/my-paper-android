@@ -11,7 +11,7 @@
 
     <!-- Paper editor -->
     <dimen name="sketch_min_stroke_width">1dp</dimen>
-    <dimen name="sketch_max_stroke_width">128dp</dimen>
+    <dimen name="sketch_max_stroke_width">16dp</dimen>
 
     <!-- DEBUG -->
     <dimen name="debug_padding">16dp</dimen>

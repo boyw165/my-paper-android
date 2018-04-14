@@ -22,17 +22,19 @@ package com.paper.editor.view.editingPanel
 
 import android.graphics.drawable.ColorDrawable
 import android.view.View
-import android.view.ViewGroup
 import com.airbnb.epoxy.EpoxyModel
 import com.facebook.drawee.view.SimpleDraweeView
 import com.paper.R
 import com.paper.editor.widget.editingPanel.PaperEditPanelWidget
 
-class ColorTicketEpoxyViewModel(
-    private val mColor: Int,
-    private val mWidget: PaperEditPanelWidget,
-    private val mIsUsing: Boolean = false)
+class ColorTicketEpoxyViewModel(color: Int,
+                                widget: PaperEditPanelWidget,
+                                isUsing: Boolean = false)
     : EpoxyModel<View>() {
+
+    private val mColor = color
+    private val mWidget = widget
+    private val mIsUsing = isUsing
 
     private lateinit var mColorView: SimpleDraweeView
     private lateinit var mHighlightedColorView: SimpleDraweeView
@@ -41,26 +43,40 @@ class ColorTicketEpoxyViewModel(
         return R.layout.item_color_ticket
     }
 
-    override fun buildView(parent: ViewGroup?): View {
-        val view = super.buildView(parent)
-
-        mColorView = view.findViewById(R.id.image_view)
-        mHighlightedColorView = view.findViewById(R.id.highlighted_image_view)
-
-        return view
-    }
-
     override fun bind(view: View) {
         super.bind(view)
 
-        view.setOnClickListener {
-            mWidget.handleClickColor(mColor)
-        }
+        mColorView = view.findViewById(R.id.image_view)
+        mHighlightedColorView = view.findViewById(R.id.highlighted_image_view)
 
         mColorView.hierarchy.setPlaceholderImage(ColorDrawable(mColor))
         mColorView.alpha = if (mIsUsing) 0f else 1f
 
         mHighlightedColorView.hierarchy.setPlaceholderImage(ColorDrawable(mColor))
         mHighlightedColorView.alpha = if (mIsUsing) 1f else 0f
+
+        view.setOnClickListener {
+            mWidget.handleClickColor(mColor)
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as ColorTicketEpoxyViewModel
+
+        if (mColor != other.mColor) return false
+        if (mIsUsing != other.mIsUsing) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + mColor
+        result = 31 * result + mIsUsing.hashCode()
+        return result
     }
 }

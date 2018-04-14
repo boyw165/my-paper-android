@@ -33,9 +33,9 @@ class ColorTicketListEpoxyController(
     override fun buildModels(data: UpdateColorTicketsEvent) {
         data.colorTickets.forEachIndexed { i, color ->
             ColorTicketEpoxyViewModel(
-                mColor = color,
-                mWidget = mWidget,
-                mIsUsing = i == data.usingIndex)
+                color = color,
+                widget = mWidget,
+                isUsing = i == data.usingIndex)
                 .id(i)
                 .addTo(this)
         }

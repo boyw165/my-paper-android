@@ -30,6 +30,10 @@ interface IPaperWidget : IBaseWidget<PaperModel> {
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
 
+    fun handleChoosePenColor(color: Int)
+
+    fun handleUpdatePenSize(size: Float)
+
     fun handleActionBegin()
 
     fun handleActionEnd()

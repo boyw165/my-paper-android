@@ -20,13 +20,21 @@
 
 package com.paper.editor.view.canvas
 
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.util.Log
+import com.paper.AppConst
 import com.paper.editor.data.Bezier
 import com.paper.shared.model.Point
 
-class SVGDrawable(oneDp: Float) {
+class SVGDrawable(context: IPaperContext,
+                  penColor: Int = 0,
+                  penSize: Float = 1f) {
 
-    private val mOneDp = oneDp
+    private val mContext = context
+    private val mPenColor = penColor
+    private val mPenSize = penSize
 
     private val mPointMap = FloatArray(2)
 
@@ -45,14 +53,23 @@ class SVGDrawable(oneDp: Float) {
     private var mMaxWidth: Float = 0f
 
     init {
-        mStrokePaint.strokeWidth = 10f * mOneDp
-        mStrokePaint.color = Color.BLACK
+        val paintSize = getPaintSize(mPenSize)
+
+        mStrokePaint.strokeWidth = paintSize
+        mStrokePaint.color = mPenColor
         mStrokePaint.style = Paint.Style.FILL_AND_STROKE
         mStrokePaint.strokeCap = Paint.Cap.ROUND
 
-        mMinWidth = 3f * oneDp
-        mMaxWidth = 9f * oneDp
+        Log.d(AppConst.TAG, "SVGDrawable(size=$mPenSize, color=$mPenColor)")
+
+        mMinWidth = 1f * paintSize
+        mMaxWidth = 2.5f * paintSize
         mVelocityFilterWeight = 0.9f
+    }
+
+    private fun getPaintSize(penSize: Float): Float {
+        return (1 - penSize) * mContext.getMinStrokeWidth() +
+               penSize * mContext.getMaxStrokeWidth()
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
@@ -127,7 +144,7 @@ class SVGDrawable(oneDp: Float) {
 
             // The new width is a function of the velocity. Higher velocities
             // correspond to thinner strokes.
-            val newWidth = strokeWidth(velocity)
+            val newWidth = strokeWidthWith(velocity)
 
             // The Bezier's width starts out as last curve's final width, and
             // gradually changes to the stroke width just calculated. The new
@@ -209,7 +226,7 @@ class SVGDrawable(oneDp: Float) {
         }
     }
 
-    private fun strokeWidth(velocity: Float): Float {
+    private fun strokeWidthWith(velocity: Float): Float {
         return Math.max(mMaxWidth / (velocity + 1), mMinWidth)
     }
 

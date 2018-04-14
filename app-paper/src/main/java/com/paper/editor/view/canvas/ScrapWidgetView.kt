@@ -42,7 +42,7 @@ open class ScrapWidgetView : IScrapWidgetView {
     private val mChildren = mutableListOf<ScrapWidgetView>()
 
     // Sketch
-    private val mDrawable by lazy { SVGDrawable(mContext!!.getOneDp()) }
+    private val mDrawables = mutableListOf<SVGDrawable>()
 
     // Rendering properties.
     private var mX = Float.NaN
@@ -156,10 +156,14 @@ open class ScrapWidgetView : IScrapWidgetView {
             mSharpeningMatrix.preConcat(mMatrix)
             mSharpeningMatrix.invert(mSharpeningMatrixInverse)
 
-            mDrawable.onDraw(canvas, mSharpeningMatrix)
+            mDrawables.forEach { d ->
+                d.onDraw(canvas, mSharpeningMatrix)
+            }
         } else {
             canvas.concat(mMatrix)
-            mDrawable.onDraw(canvas)
+            mDrawables.forEach { d ->
+                d.onDraw(canvas)
+            }
         }
 
         // Then children
@@ -181,16 +185,23 @@ open class ScrapWidgetView : IScrapWidgetView {
 
         when (event.action) {
             DrawSVGEvent.Action.MOVE -> {
-                mDrawable.moveTo(x, y)
+                val d = SVGDrawable(context = mContext!!,
+                                    penColor = event.penColor,
+                                    penSize = event.penSize)
+                d.moveTo(x, y)
+
+                mDrawables.add(d)
             }
             DrawSVGEvent.Action.LINE_TO -> {
-                mDrawable.lineTo(x, y)
+                val d = mDrawables.last()
+                d.lineTo(x, y)
             }
             DrawSVGEvent.Action.CLOSE -> {
-                mDrawable.close()
+                val d = mDrawables.last()
+                d.close()
             }
             DrawSVGEvent.Action.CLEAR_ALL -> {
-                mDrawable.clear()
+                mDrawables.clear()
             }
             else -> {
                 // NOT SUPPORT
