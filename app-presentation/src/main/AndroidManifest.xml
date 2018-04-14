@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="com.paper"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <application
+        android:name=".PaperApplication"
+        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/icon_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/icon_launcher_round"
+        android:screenOrientation="portrait"
+        android:supportsRtl="false"
+        android:theme="@style/AppTheme.CustomToolbar">
+
+        <!-- Splash Screen -->
+        <activity
+            android:name=".SplashScreenActivity"
+            android:theme="@style/AppTheme.SplashScreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <!-- Paper Gallery -->
+        <activity
+            android:name=".PaperGalleryActivity">
+        </activity>
+
+        <!-- Paper Editor -->
+        <activity
+            android:name=".PaperEditorActivity">
+        </activity>
+
+        <!-- Experiments -->
+        <activity android:name=".ExampleOfRxCancelActivity"/>
+        <activity android:name=".ExampleOfConvexHullActivity"/>
+        <activity android:name=".ExampleOfEventDrivenSimulationActivity"/>
+
+        <!-- ContentProvider ///////////////////////////////////////////////-->
+
+        <!-- Paper Database -->
+        <provider
+            android:name="com.paper.model.repository.sqlite.PaperContentProvider"
+            android:authorities="${packageName}"/>
+    </application>
+</manifest>

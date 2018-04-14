@@ -1,0 +1,51 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Google Support Library.
+    api rootProject.ext.dep.supportAppcompatV7
+
+    // Kotlin.
+    api rootProject.ext.dep.kotlinStdlibJre7
+    // RxKotlin.
+    api rootProject.ext.dep.rxKotlin
+    // Rx-Java.
+    api rootProject.ext.dep.rxJava
+
+    // JSON.
+    api rootProject.ext.dep.gson
+
+    // Model
+    api project(path: ':app-model')
+
+    // Unit tests.
+    testImplementation rootProject.ext.dep.testJunit
+    testImplementation rootProject.ext.dep.testMockito
+
+    // Instrumentation tests.
+    androidTestImplementation rootProject.ext.dep.testEspressoCore
+}
