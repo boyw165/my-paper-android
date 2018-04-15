@@ -72,6 +72,7 @@ dependencies {
 
     // Image loader.
     implementation rootProject.ext.dep.glide
+    kapt rootProject.ext.dep.glideAnnotation
     implementation rootProject.ext.dep.fresco
 
     // RecyclerView.
