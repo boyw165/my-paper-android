@@ -24,6 +24,7 @@ import android.graphics.Bitmap
 import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.widget.canvas.IPaperWidget
 import io.reactivex.Observable
+import io.reactivex.Single
 
 interface IPaperWidgetView {
 
@@ -31,7 +32,7 @@ interface IPaperWidgetView {
 
     fun unbindWidget()
 
-    fun takeSnapshot(): Bitmap
+    fun takeSnapshot(): Single<Bitmap>
 
     fun setViewPortPosition(x: Float, y: Float)
 

@@ -14,9 +14,11 @@
 
 package com.paper.model.repository.protocol
 
+import android.graphics.Bitmap
 import com.paper.model.PaperModel
 import io.reactivex.Observable
 import io.reactivex.Single
+import java.io.File
 
 interface IPaperModelRepo {
 
@@ -26,13 +28,15 @@ interface IPaperModelRepo {
 
     fun getPaperById(id: Long): Single<PaperModel>
 
-    fun putPaperById(id: Long, paper: PaperModel)
+    fun putPaperById(id: Long, paper: PaperModel): Single<Boolean>
 
     fun duplicatePaperById(id: Long): Observable<PaperModel>
 
     fun deleteAllPapers(): Observable<Boolean>
 
     fun deletePaperById(id: Long): Observable<Boolean>
+
+    fun putBitmap(bmp: Bitmap): Observable<File>
 
     // For testing data.
 

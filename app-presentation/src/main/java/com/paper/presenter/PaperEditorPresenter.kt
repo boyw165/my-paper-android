@@ -20,12 +20,12 @@
 
 package com.paper.presenter
 
-import android.graphics.Bitmap
-import android.os.Environment
+import android.util.Log
+import com.paper.domain.DomainConst
 import com.paper.domain.widget.canvas.PaperWidget
 import com.paper.domain.event.ProgressEvent
-import com.paper.model.PaperConsts
-import com.paper.model.PaperModel
+import com.paper.domain.widget.LoadPaperFromStore
+import com.paper.domain.widget.SavePaperToStore
 import com.paper.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -33,24 +33,18 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                            private val mUiScheduler: Scheduler,
                            private val mWorkerScheduler: Scheduler) {
 
-    private var mPaperId = PaperConsts.TEMP_ID
-
     // Editor view.
     private var mView: PaperEditorContract.View? = null
 
     private val mPaperWidget by lazy {
         PaperWidget(AndroidSchedulers.mainThread(),
-                                Schedulers.io())
+                    Schedulers.io())
     }
 
     // Progress signal.
@@ -60,25 +54,37 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
     private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposables = CompositeDisposable()
 
-    fun bindViewOnCreate(view: PaperEditorContract.View) {
+    fun bindView(view: PaperEditorContract.View,
+                 id: Long) {
         mView = view
+
+        val canvasView = view.getCanvasView()
+        val editingPanelView = view.getEditingPanelView()
 
         // Close button.
         mDisposablesOnCreate.add(
             mView!!.onClickCloseButton()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .take(1)
-//                .map { mPaperWidget.getPaper() }
-//                .switchMap { paper -> updateThumbnail(paper) }
-//                .switchMap { paper -> commitPaper(paper) }
+                .switchMap {
+                    canvasView
+                        .takeSnapshot()
+                        .compose(SavePaperToStore(
+                            paperWidget = mPaperWidget,
+                            paperRepo = mPaperRepo,
+                            ioScheduler = Schedulers.io()))
+                        .toObservable()
+//                        .startWith { view.showProgressBar(0) }
+//                        .subscribeOn(mUiScheduler)
+//                        .observeOn(mUiScheduler)
+//                        .doOnNext { view.hideProgressBar() }
+                }
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    mView?.close()
+                    view.close()
                 })
 
         // View port indicator.
-        val canvasView = view.getCanvasView()
-        val editingPanelView = view.getEditingPanelView()
         mDisposablesOnCreate.add(
             canvasView
                 .onDrawViewPort()
@@ -143,78 +149,34 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                     // TODO
                     view.showWIP()
                 })
+
+        // Inflate paper model.
+        mDisposables.add(
+            Observable
+                .just(true)
+                .compose(LoadPaperFromStore(
+                    paperID = id,
+                    paperWidget = mPaperWidget,
+                    paperRepo = mPaperRepo,
+                    uiScheduler = AndroidSchedulers.mainThread()))
+                .observeOn(mUiScheduler)
+                .doOnDispose {
+                    // Unbind widget.
+                    mView?.getCanvasView()?.unbindWidget()
+                    Log.d(DomainConst.TAG, "Unbind view from widget")
+                }
+                .observeOn(mUiScheduler)
+                .subscribe { widget ->
+                    // Bind view with the widget.
+                    mView?.getCanvasView()?.bindWidget(widget)
+                    Log.d(DomainConst.TAG, "Bind view with widget")
+                })
     }
 
-    fun unbindViewOnDestroy() {
-        // Unbind widget.
-        mView?.getCanvasView()?.unbindWidget()
-        // Unbind model.
-        mPaperWidget.unbindModel()
-
+    fun unbindView() {
         mDisposablesOnCreate.clear()
         mDisposables.clear()
 
         mView = null
     }
-
-    fun loadPaperById(id: Long) {
-        mPaperId = id
-
-        // Inflate paper model.
-        mDisposables.add(
-            mPaperRepo
-                .getPaperById(id)
-                .toObservable()
-                // TODO: Support progress event.
-                .observeOn(mUiScheduler)
-                .subscribe { paperM ->
-                    // Bind main widget to the model.
-                    mPaperWidget.bindModel(paperM)
-
-                    // And then bind view with the widget.
-                    mView?.getCanvasView()?.bindWidget(mPaperWidget)
-                })
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
-
-    private fun updateThumbnail(paper: PaperModel): Observable<PaperModel> {
-        return Observable
-            .fromCallable {
-                mView?.getCanvasView()?.let { canvasView ->
-                    val dir = File("${Environment.getExternalStorageDirectory()}/paper")
-                    if (!dir.exists()) {
-                        dir.mkdir()
-                    }
-
-                    val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-                    val bmp = canvasView.takeSnapshot()
-                    val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
-                                       "$ts.jpg")
-
-                    FileOutputStream(bmpFile).use { out ->
-                        bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
-                    }
-
-                    paper.thumbnailWidth = bmp.width
-                    paper.thumbnailHeight = bmp.height
-                    paper.thumbnailPath = bmpFile.canonicalPath
-                }
-
-                return@fromCallable paper
-            }
-            .subscribeOn(mWorkerScheduler)
-    }
-
-    private fun commitPaper(paper: PaperModel): Observable<PaperModel> {
-        return Observable
-            .fromCallable {
-                paper.modifiedAt = getCurrentTime()
-                mPaperRepo.putPaperById(paper.id, paper)
-                return@fromCallable paper
-            }
-    }
-
-    private fun getCurrentTime(): Long = System.currentTimeMillis() / 1000
 }

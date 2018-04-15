@@ -91,34 +91,34 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_paper_gallery)
 
         // Paper thumbnail list view.
         mPapersView.adapter = mPapersController.adapter
         mPapersView.setItemTransformer(
             ScaleTransformer.Builder()
-                .setMaxScale(1.05f)
+                .setMaxScale(1.0f)
                 .setMinScale(0.8f)
                 .setPivotX(Pivot.X.CENTER) // CENTER is a default one
                 .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
                 .build())
-        mPapersView.setSlideOnFling(true)
-        mPapersView.setOverScrollEnabled(true)
-        // Determines how much time it takes to change the item on fling, settle
-        // or smoothScroll
-        mPapersView.setItemTransitionTimeMillis(300)
-        mPapersView.addScrollListener { scrollPosition,
+//        mPapersView.setSlideOnFling(true)
+//        mPapersView.setOverScrollEnabled(true)
+//        // Determines how much time it takes to change the item on fling, settle
+//        // or smoothScroll
+//        mPapersView.setItemTransitionTimeMillis(300)
+        mPapersView.addScrollListener { _,
                                         currentPosition,
                                         newPosition,
-                                        currentHolder,
-                                        newCurrent ->
+                                        _, _ ->
             if (currentPosition != newPosition) {
                 mBrowsePositionSignal.onNext(newPosition)
             }
         }
 
         // Presenter.
-        mPresenter.bindViewOnCreate(
+        mPresenter.bindView(
             view = this,
             navigator = this)
     }
@@ -127,7 +127,7 @@ class PaperGalleryActivity : AppCompatActivity(),
         super.onDestroy()
 
         // Presenter.
-        mPresenter.unbindViewOnDestroy()
+        mPresenter.unbind()
 
         // Paper thumbnail list view.
         // Break the reference to the Epoxy controller's adapter so that the
@@ -158,10 +158,6 @@ class PaperGalleryActivity : AppCompatActivity(),
 
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(null)
-    }
-
-    override fun setPaperThumbnailAspectRatio(ratio: Float) {
-        mPapersController.setThumbnailAspectRatio(ratio)
     }
 
     override fun showPaperThumbnails(papers: List<PaperModel>) {
