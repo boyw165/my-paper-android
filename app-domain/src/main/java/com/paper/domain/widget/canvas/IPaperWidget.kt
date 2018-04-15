@@ -24,11 +24,16 @@ import com.paper.domain.event.DrawSVGEvent
 import com.paper.model.PaperModel
 import com.paper.model.Rect
 import io.reactivex.Observable
+import java.io.File
 
 interface IPaperWidget : IBaseWidget<PaperModel> {
 
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
+
+    fun handleSetThumbnail(file: File,
+                           width: Int,
+                           height: Int)
 
     fun handleChoosePenColor(color: Int)
 
@@ -47,6 +52,8 @@ interface IPaperWidget : IBaseWidget<PaperModel> {
     fun handleDragEnd(x: Float, y: Float)
 
     // For output /////////////////////////////////////////////////////////////
+
+    fun getPaper(): PaperModel
 
     fun onSetCanvasSize(): Observable<Rect>
 

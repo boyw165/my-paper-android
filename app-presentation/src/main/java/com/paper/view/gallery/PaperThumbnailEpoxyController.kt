@@ -28,8 +28,6 @@ class PaperThumbnailEpoxyController(
     private val mGlide: RequestManager)
     : TypedEpoxyController<List<PaperModel>>() {
 
-    private var mRatio = 1f
-
     private var mListener: IOnClickPaperThumbnailListener? = null
 
     override fun buildModels(data: List<PaperModel>) {
@@ -45,16 +43,11 @@ class PaperThumbnailEpoxyController(
                               paper.thumbnailPath,
                               paper.thumbnailWidth,
                               paper.thumbnailHeight)
-                .setLayoutRatio(mRatio)
                 .setClickListener(mListener)
                 // Epoxy view-model ID.
-                .id("${paper.uuid}+${paper.modifiedAt}+${paper.thumbnailPath}")
+                .id(paper.uuid.toString())
                 .addTo(this)
         }
-    }
-
-    fun setThumbnailAspectRatio(ratio: Float) {
-        mRatio = ratio
     }
 
     fun setOnClickPaperThumbnailListener(listener: IOnClickPaperThumbnailListener?) {

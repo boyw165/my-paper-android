@@ -43,9 +43,11 @@ import com.paper.domain.widget.canvas.IScrapWidget
 import com.paper.model.Rect
 import com.paper.domain.util.TransformUtils
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import java.util.*
 
@@ -192,7 +194,9 @@ class PaperWidgetView : View,
         Log.d(DomainConst.TAG, "PaperWidgetView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
-        mOnLayoutChangeSignal.onNext(changed)
+        if (changed) {
+            mOnLayoutChangeSignal.onNext(changed)
+        }
     }
 
     override fun bindWidget(widget: IPaperWidget) {
@@ -226,7 +230,7 @@ class PaperWidgetView : View,
         // Canvas size change
         mWidgetDisposables.add(
             Observables.combineLatest(
-                mOnLayoutChangeSignal,
+                mOnLayoutChangeSignal.doOnNext { Log.d(DomainConst.TAG, "onLayoutChange") },
                 widget.onSetCanvasSize())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (changed, size) ->
@@ -469,19 +473,23 @@ class PaperWidgetView : View,
         invalidate()
     }
 
-    override fun takeSnapshot(): Bitmap {
-        TODO()
-//        val bmp = Bitmap.createBitmap((mModelToViewScale * mModelWidth).toInt(),
-//                                      (mModelToViewScale * mModelHeight).toInt(),
-//                                      Bitmap.Config.ARGB_8888)
-//        val canvas = Canvas(bmp)
-//
-//        canvas.drawRect(0f, 0f,
-//                        bmp.width.toFloat(), bmp.height.toFloat(),
-//                        mBackgroundPaint)
-//        mRootContainer.draw(canvas)
-//
-//        return bmp
+    override fun takeSnapshot(): Single<Bitmap> {
+        // TODO: Make sure no transform is on going
+        return Single
+            .fromCallable {
+                val mw = mMSize.value.width
+                val mh = mMSize.value.height
+                val scaleM2V = mScaleM2V.value
+                val bmp = Bitmap.createBitmap((scaleM2V * mw).toInt(),
+                                              (scaleM2V * mh).toInt(),
+                                              Bitmap.Config.RGB_565)
+                val canvas = Canvas(bmp)
+                canvas.drawColor(Color.WHITE)
+                dispatchDrawScraps(canvas, mScrapViews, false)
+
+                return@fromCallable bmp
+            }
+            .subscribeOn(Schedulers.io())
     }
 
     private fun markCanvasMatrixDirty() {

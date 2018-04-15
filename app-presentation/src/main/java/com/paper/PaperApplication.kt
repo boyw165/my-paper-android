@@ -47,9 +47,9 @@ class PaperApplication : MultiDexApplication(),
     // Database.
     private val mPaperRepo: PaperRepo by lazy {
         PaperRepo(packageName,
-                                                    contentResolver,
-                                                    externalCacheDir,
-                                                    getScheduler())
+                  contentResolver,
+                  externalCacheDir,
+                  getScheduler())
     }
 
     override fun getRepo(): IPaperModelRepo {

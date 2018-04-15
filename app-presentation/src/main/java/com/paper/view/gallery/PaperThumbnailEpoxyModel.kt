@@ -29,6 +29,7 @@ import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.paper.R
+import java.io.File
 
 class PaperThumbnailEpoxyModel(
     private var mPaperId: Long)
@@ -37,34 +38,20 @@ class PaperThumbnailEpoxyModel(
     private var mListener: IOnClickPaperThumbnailListener? = null
 
     private var mGlide: RequestManager? = null
-    private var mThumbPath: String? = null
+    private var mThumbFile: File? = null
     private var mThumbWidth = 0
     private var mThumbHeight = 0
 
     // View
     private var mThumbView: ImageView? = null
     private var mThumbViewContainer: ViewGroup? = null
-    private var mLayoutRatio = 1f
 
     override fun getDefaultLayout(): Int {
         return R.layout.item_paper_thumbnail
     }
 
-    override fun buildView(parent: ViewGroup): View {
-        val layout = super.buildView(parent)
-        val params = layout.layoutParams
-
-        // TODO: Constraint size.
-        // Update layout size by fixing height and changing width.
-        params.width = (params.height * mLayoutRatio).toInt()
-
-        return layout
-    }
-
     override fun bind(view: View) {
         super.bind(view)
-
-        val layoutWidth = view.layoutParams.width
 
         if (mThumbView == null) {
             mThumbView = view.findViewById(R.id.image_view)
@@ -73,10 +60,12 @@ class PaperThumbnailEpoxyModel(
             mThumbViewContainer = view.findViewById(R.id.image_view_container)
         }
 
-        // Update thumbnail size by fixing width and changing width.
+        // Update thumbnail size by fixing width and changing the height.
+        val layoutParams = view.layoutParams
+        val layoutWidth = layoutParams.width
         val thumbRatio = mThumbWidth / mThumbHeight
-        mThumbViewContainer?.layoutParams?.width = layoutWidth
-        mThumbViewContainer?.layoutParams?.height = layoutWidth / thumbRatio
+        layoutParams.height = layoutWidth / thumbRatio
+        view.layoutParams = layoutParams
 
         // Click
         view.setOnClickListener {
@@ -84,15 +73,14 @@ class PaperThumbnailEpoxyModel(
         }
 
         // Thumb
-        mGlide?.let { imgLoader ->
-            imgLoader
-                .load(mThumbPath)
-                .apply(RequestOptions
-                           .skipMemoryCacheOf(true)
-                           .priority(Priority.NORMAL)
-                           .diskCacheStrategy(DiskCacheStrategy.NONE)
-                           .dontTransform())
-                .into(mThumbView)
+        mThumbFile?.let { file ->
+            mGlide?.load(file)
+                ?.apply(RequestOptions
+                            .skipMemoryCacheOf(true)
+                            .priority(Priority.NORMAL)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .dontTransform())
+                ?.into(mThumbView)
         }
     }
 
@@ -103,17 +91,12 @@ class PaperThumbnailEpoxyModel(
         view?.setOnClickListener(null)
     }
 
-    fun setLayoutRatio(ratio: Float): PaperThumbnailEpoxyModel {
-        mLayoutRatio = ratio
-        return this
-    }
-
     fun setThumbnail(glide: RequestManager?,
-                     path: String,
+                     file: File?,
                      width: Int,
                      height: Int): PaperThumbnailEpoxyModel {
         mGlide = glide
-        mThumbPath = path
+        mThumbFile = file
         mThumbWidth = width
         mThumbHeight = height
         return this
@@ -122,5 +105,29 @@ class PaperThumbnailEpoxyModel(
     fun setClickListener(listener: IOnClickPaperThumbnailListener?): PaperThumbnailEpoxyModel {
         mListener = listener
         return this
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as PaperThumbnailEpoxyModel
+
+        if (mPaperId != other.mPaperId) return false
+        if (mThumbFile != other.mThumbFile) return false
+        if (mThumbWidth != other.mThumbWidth) return false
+        if (mThumbHeight != other.mThumbHeight) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + mPaperId.hashCode()
+        result = 31 * result + (mThumbFile?.hashCode() ?: 0)
+        result = 31 * result + mThumbWidth
+        result = 31 * result + mThumbHeight
+        return result
     }
 }

@@ -36,6 +36,7 @@ import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.NoSuchElementException
@@ -67,6 +68,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Hold reference.
         mModel = model
+
+        mSetCanvasSize.onNext(Rect(0f, 0f, mModel.width, mModel.height))
 
         mModelDisposables.add(
             model.onAddScrap()
@@ -100,6 +103,20 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mModelDisposables.clear()
 
         Log.d(DomainConst.TAG, "unbind from the model")
+    }
+
+    // Save ///////////////////////////////////////////////////////////////////
+
+    override fun handleSetThumbnail(file: File,
+                                    width: Int,
+                                    height: Int) {
+        mModel.thumbnailPath = file
+        mModel.thumbnailWidth = width
+        mModel.thumbnailHeight = height
+    }
+
+    override fun getPaper(): PaperModel {
+        return mModel
     }
 
     // Gesture ////////////////////////////////////////////////////////////////
@@ -273,8 +290,10 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             action = CLEAR_ALL))
     }
 
+    private val mSetCanvasSize = BehaviorSubject.create<Rect>()
+
     override fun onSetCanvasSize(): Observable<Rect> {
-        return Observable.just(Rect(0f, 0f, mModel.width, mModel.height))
+        return mSetCanvasSize
     }
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {

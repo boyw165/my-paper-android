@@ -23,7 +23,9 @@ package com.paper.model.repository
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.Cursor
+import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -42,6 +44,8 @@ import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.util.*
 
 class PaperRepo(private val mAuthority: String,
@@ -115,52 +119,56 @@ class PaperRepo(private val mAuthority: String,
         return if (id == PaperConsts.TEMP_ID) {
             getTempPaper()
         } else {
-            Single.fromCallable {
-                val uri = Uri.Builder()
-                    .scheme("content")
-                    .authority(mAuthority)
-                    .path("paper/$id")
-                    .build()
+            Single
+                .fromCallable {
+                    val uri = Uri.Builder()
+                        .scheme("content")
+                        .authority(mAuthority)
+                        .path("paper/$id")
+                        .build()
 
-                // Query content provider.
-                val cursor = mResolver.query(
-                    uri,
-                    // projection:
-                    arrayOf(PaperTable.COL_ID,
-                            PaperTable.COL_UUID,
-                            PaperTable.COL_CREATED_AT,
-                            PaperTable.COL_MODIFIED_AT,
-                            PaperTable.COL_WIDTH,
-                            PaperTable.COL_HEIGHT,
-                            PaperTable.COL_CAPTION,
-                            PaperTable.COL_THUMB_PATH,
-                            PaperTable.COL_THUMB_WIDTH,
-                            PaperTable.COL_THUMB_HEIGHT,
-                            PaperTable.COL_SCRAPS),
-                    // selection:
-                    null,
-                    // selection args:
-                    null,
-                    // sort order:
-                    null)
-                if (cursor.count == 0) throw IllegalArgumentException("Cannot find paper, id=$id")
-                if (cursor.count > 1) throw IllegalStateException("Multiple paper id=%id conflict")
+                    // Query content provider.
+                    val cursor = mResolver.query(
+                        uri,
+                        // projection:
+                        arrayOf(PaperTable.COL_ID,
+                                PaperTable.COL_UUID,
+                                PaperTable.COL_CREATED_AT,
+                                PaperTable.COL_MODIFIED_AT,
+                                PaperTable.COL_WIDTH,
+                                PaperTable.COL_HEIGHT,
+                                PaperTable.COL_CAPTION,
+                                PaperTable.COL_THUMB_PATH,
+                                PaperTable.COL_THUMB_WIDTH,
+                                PaperTable.COL_THUMB_HEIGHT,
+                                PaperTable.COL_SCRAPS),
+                        // selection:
+                        null,
+                        // selection args:
+                        null,
+                        // sort order:
+                        null)
+                    if (cursor.count == 0) throw IllegalArgumentException("Cannot find paper, id=$id")
+                    if (cursor.count > 1) throw IllegalStateException("Multiple paper id=%id conflict")
 
-                // Translate cursor.
-                cursor.moveToFirst()
-                val paper = convertCursorToPaper(cursor, true)
-                cursor.close()
+                    // Translate cursor.
+                    cursor.moveToFirst()
+                    val paper = convertCursorToPaper(cursor, true)
+                    cursor.close()
 
-                return@fromCallable paper
-            }
+                    return@fromCallable paper
+                }
+                .subscribeOn(mDbIoScheduler)
         }
     }
 
     override fun putPaperById(id: Long,
-                              paper: PaperModel) {
+                              paper: PaperModel): Single<Boolean> {
+        paper.modifiedAt = getCurrentTime()
+
         // TODO: Delegate to a Service or some component that guarantees the
         // TODO: I/O is atomic.
-        Observable
+        return Single
             .fromCallable {
                 if (id == PaperConsts.TEMP_ID) {
                     val uri = Uri.Builder()
@@ -180,12 +188,9 @@ class PaperRepo(private val mAuthority: String,
                     mResolver.update(uri, convertPaperToValues(paper), null, null)
                 }
 
-                return@fromCallable 100
+                return@fromCallable true
             }
             .subscribeOn(mDbIoScheduler)
-            // FIXME: The insertion might happen after refreshing the list.
-            // FIXME: Solution could be using a single thread scheduler.
-            .subscribe()
     }
 
     override fun duplicatePaperById(id: Long): Observable<PaperModel> {
@@ -203,6 +208,25 @@ class PaperRepo(private val mAuthority: String,
 
     override fun deletePaperById(id: Long): Observable<Boolean> {
         TODO("not implemented")
+    }
+
+    override fun putBitmap(bmp: Bitmap): Observable<File> {
+        return Observable.fromCallable {
+            val dir = File("${Environment.getExternalStorageDirectory()}/paper")
+            if (!dir.exists()) {
+                dir.mkdir()
+            }
+
+            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+            val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
+                               "$ts.jpg")
+
+            FileOutputStream(bmpFile).use { out ->
+                bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+            }
+
+            return@fromCallable bmpFile
+        }
     }
 
     override fun getTestPaper(): Single<PaperModel> {
@@ -258,12 +282,12 @@ class PaperRepo(private val mAuthority: String,
     override fun getTempPaper(): Single<PaperModel> {
         return Single
             .fromCallable {
-//                // Sol#1
-//                return@fromCallable mTempFile
-//                    .bufferedReader()
-//                    .use { reader ->
-//                        mGson.fromJson(reader, PaperModel::class.java)
-//                    }
+                //                // Sol#1
+                //                return@fromCallable mTempFile
+                //                    .bufferedReader()
+                //                    .use { reader ->
+                //                        mGson.fromJson(reader, PaperModel::class.java)
+                //                    }
 
                 // Sol#2
                 // TODO: Assign default portrait size.
@@ -333,7 +357,7 @@ class PaperRepo(private val mAuthority: String,
         values.put(PaperTable.COL_HEIGHT, paper.height)
         values.put(PaperTable.COL_CAPTION, paper.caption)
 
-        values.put(PaperTable.COL_THUMB_PATH, paper.thumbnailPath)
+        values.put(PaperTable.COL_THUMB_PATH, paper.thumbnailPath?.canonicalPath ?: "")
         values.put(PaperTable.COL_THUMB_WIDTH, paper.thumbnailWidth)
         values.put(PaperTable.COL_THUMB_HEIGHT, paper.thumbnailHeight)
 
@@ -369,7 +393,7 @@ class PaperRepo(private val mAuthority: String,
 
         paper.caption = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_CAPTION))
 
-        paper.thumbnailPath = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))
+        paper.thumbnailPath = File(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH)))
         paper.thumbnailWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH))
         paper.thumbnailHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
 

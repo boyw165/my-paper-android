@@ -51,8 +51,8 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
     private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposablesOnResume = CompositeDisposable()
 
-    fun bindViewOnCreate(view: PaperGalleryContract.View,
-                         navigator: PaperGalleryContract.Navigator) {
+    fun bindView(view: PaperGalleryContract.View,
+                 navigator: PaperGalleryContract.Navigator) {
         mView = view
         mNavigator = navigator
 
@@ -127,7 +127,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 })
     }
 
-    fun unbindViewOnDestroy() {
+    fun unbind() {
         mDisposablesOnCreate.clear()
 
         mView = null
@@ -146,11 +146,6 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     mPaperSnapshots.addAll(papers)
 
                     mView?.let { view ->
-                        // Figure out the smallest aspect-ratio.
-                        var min = Float.POSITIVE_INFINITY
-                        papers.forEach { min = Math.min(min, it.width / it.height) }
-
-                        view.setPaperThumbnailAspectRatio(min)
                         view.showPaperThumbnails(papers)
 
                         val position = mPrefs.getInt(PREF_BROWSE_POSITION, 0)

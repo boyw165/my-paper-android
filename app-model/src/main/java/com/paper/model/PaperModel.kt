@@ -22,6 +22,7 @@ package com.paper.model
 
 import io.reactivex.Observable
 import io.reactivex.subjects.ReplaySubject
+import java.io.File
 import java.util.*
 
 class PaperModel(
@@ -37,7 +38,7 @@ class PaperModel(
     var width: Float = 297f
     var height: Float = 210f
 
-    var thumbnailPath: String = ""
+    var thumbnailPath: File? = null
     var thumbnailWidth: Int = 0
     var thumbnailHeight: Int = 0
 

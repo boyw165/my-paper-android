@@ -71,8 +71,8 @@ class PaperEditorActivity : AppCompatActivity(),
     // Presenters and controllers.
     private val mEditorPresenter: PaperEditorPresenter by lazy {
         PaperEditorPresenter(mPaperRepo,
-                                                 AndroidSchedulers.mainThread(),
-                                                 Schedulers.single())
+                             AndroidSchedulers.mainThread(),
+                             Schedulers.single())
     }
 
     override fun onCreate(savedState: Bundle?) {
@@ -83,16 +83,13 @@ class PaperEditorActivity : AppCompatActivity(),
         val paperId = intent.getLongExtra(DomainConst.PARAMS_PAPER_ID, PaperConsts.TEMP_ID)
 
         // Presenter.
-        mEditorPresenter.bindViewOnCreate(this)
-
-        // Load paper.
-        mEditorPresenter.loadPaperById(paperId)
+        mEditorPresenter.bindView(this, paperId)
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        mEditorPresenter.unbindViewOnDestroy()
+        mEditorPresenter.unbindView()
 
 //        // Force to hide the progress-bar.
 //        hideProgressBar()
@@ -127,7 +124,7 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     override fun onClickRedoButton(): Observable<Any> {
-        return RxView.clicks(mBtnUndo)
+        return RxView.clicks(mBtnRedo)
     }
 
     override fun onClickDeleteButton(): Observable<Any> {
