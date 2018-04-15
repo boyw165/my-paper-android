@@ -138,8 +138,6 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-        //        // Paper thumbnail list view.
-        //        mPapersView.adapter = mPapersController.adapter
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(
             object : IOnClickPaperThumbnailListener {
@@ -147,14 +145,16 @@ class PaperGalleryActivity : AppCompatActivity(),
                     mClickPaperSignal.onNext(id)
                 }
             })
-        mPresenter.onResume()
+
+        // Presenter.
+        mPresenter.resume()
     }
 
     override fun onPause() {
         super.onPause()
 
         // Presenter.
-        mPresenter.onPause()
+        mPresenter.pause()
 
         // Paper thumbnail list view controller.
         mPapersController.setOnClickPaperThumbnailListener(null)
@@ -197,7 +197,8 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun onClickNewPaper(): Observable<Any> {
-        return RxView.clicks(mBtnNewPaper)
+        return Observable.merge(RxView.clicks(mBtnNewPaper),
+                                mPapersController.onClickNewButton())
     }
 
     override fun onClickDeleteAllPapers(): Observable<Any> {

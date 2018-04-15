@@ -134,7 +134,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         mNavigator = null
     }
 
-    fun onResume() {
+    fun resume() {
         mDisposablesOnResume.add(
             requestPermissions()
                 .switchMap {
@@ -162,7 +162,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 })
     }
 
-    fun onPause() {
+    fun pause() {
         mDisposablesOnResume.clear()
 
         // Force to hide the progress-bar.
