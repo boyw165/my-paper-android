@@ -32,13 +32,12 @@ import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.domain.DomainConst
-import com.paper.view.gallery.IOnClickPaperThumbnailListener
-import com.paper.view.gallery.PaperThumbnailEpoxyController
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
+import com.paper.model.PaperModel
 import com.paper.presenter.PaperGalleryContract
 import com.paper.presenter.PaperGalleryPresenter
-import com.paper.model.PaperModel
+import com.paper.view.gallery.PaperThumbnailEpoxyController
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
 import com.yarolegovich.discretescrollview.transform.Pivot
@@ -73,10 +72,13 @@ class PaperGalleryActivity : AppCompatActivity(),
             .create()
     }
 
+    // Image loader
+    private val mImgLoader by lazy { Glide.with(this@PaperGalleryActivity) }
+
     // Paper thumbnail list view and controller.
     private val mPapersView by lazy { findViewById<DiscreteScrollView>(R.id.paper_list) }
-    private val mPapersController by lazy {
-        PaperThumbnailEpoxyController(Glide.with(this@PaperGalleryActivity))
+    private val mPapersViewController by lazy {
+        PaperThumbnailEpoxyController(mImgLoader)
     }
 
     // Presenter.
@@ -95,7 +97,7 @@ class PaperGalleryActivity : AppCompatActivity(),
         setContentView(R.layout.activity_paper_gallery)
 
         // Paper thumbnail list view.
-        mPapersView.adapter = mPapersController.adapter
+        mPapersView.adapter = mPapersViewController.adapter
         mPapersView.setItemTransformer(
             ScaleTransformer.Builder()
                 .setMaxScale(1.0f)
@@ -138,14 +140,6 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-        // Paper thumbnail list view controller.
-        mPapersController.setOnClickPaperThumbnailListener(
-            object : IOnClickPaperThumbnailListener {
-                override fun onClickPaperThumbnail(id: Long) {
-                    mClickPaperSignal.onNext(id)
-                }
-            })
-
         // Presenter.
         mPresenter.resume()
     }
@@ -155,13 +149,10 @@ class PaperGalleryActivity : AppCompatActivity(),
 
         // Presenter.
         mPresenter.pause()
-
-        // Paper thumbnail list view controller.
-        mPapersController.setOnClickPaperThumbnailListener(null)
     }
 
     override fun showPaperThumbnails(papers: List<PaperModel>) {
-        mPapersController.setData(papers)
+        mPapersViewController.setData(papers)
     }
 
     override fun showPaperThumbnailAt(position: Int) {
@@ -189,7 +180,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun onClickPaper(): Observable<Long> {
-        return mClickPaperSignal
+        return mPapersViewController.onClickPaper()
     }
 
     override fun onBrowsePaper(): Observable<Int> {
@@ -198,7 +189,7 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     override fun onClickNewPaper(): Observable<Any> {
         return Observable.merge(RxView.clicks(mBtnNewPaper),
-                                mPapersController.onClickNewButton())
+                                mPapersViewController.onClickNewButton())
     }
 
     override fun onClickDeleteAllPapers(): Observable<Any> {

@@ -29,13 +29,12 @@ import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.paper.R
+import io.reactivex.subjects.Subject
 import java.io.File
 
 class PaperThumbnailEpoxyModel(
     private var mPaperId: Long)
     : EpoxyModel<View>() {
-
-    private var mListener: IOnClickPaperThumbnailListener? = null
 
     private var mGlide: RequestManager? = null
     private var mThumbFile: File? = null
@@ -69,7 +68,7 @@ class PaperThumbnailEpoxyModel(
 
         // Click
         view.setOnClickListener {
-            mListener?.onClickPaperThumbnail(mPaperId)
+            mOnClickPaperSignal?.onNext(mPaperId)
         }
 
         // Thumb
@@ -89,22 +88,6 @@ class PaperThumbnailEpoxyModel(
 
         // Click
         view?.setOnClickListener(null)
-    }
-
-    fun setThumbnail(glide: RequestManager?,
-                     file: File?,
-                     width: Int,
-                     height: Int): PaperThumbnailEpoxyModel {
-        mGlide = glide
-        mThumbFile = file
-        mThumbWidth = width
-        mThumbHeight = height
-        return this
-    }
-
-    fun setClickListener(listener: IOnClickPaperThumbnailListener?): PaperThumbnailEpoxyModel {
-        mListener = listener
-        return this
     }
 
     override fun equals(other: Any?): Boolean {
@@ -129,5 +112,25 @@ class PaperThumbnailEpoxyModel(
         result = 31 * result + mThumbWidth
         result = 31 * result + mThumbHeight
         return result
+    }
+
+    fun setThumbnail(glide: RequestManager?,
+                     file: File?,
+                     width: Int,
+                     height: Int): PaperThumbnailEpoxyModel {
+        mGlide = glide
+        mThumbFile = file
+        mThumbWidth = width
+        mThumbHeight = height
+        return this
+    }
+
+    // Click //////////////////////////////////////////////////////////////////
+
+    private var mOnClickPaperSignal: Subject<Long>? = null
+
+    fun onClick(signal: Subject<Long>): PaperThumbnailEpoxyModel {
+        mOnClickPaperSignal = signal
+        return this
     }
 }

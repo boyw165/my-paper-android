@@ -30,8 +30,6 @@ class PaperThumbnailEpoxyController(
     private val mGlide: RequestManager)
     : TypedEpoxyController<List<PaperModel>>() {
 
-    private var mListener: IOnClickPaperThumbnailListener? = null
-
     override fun buildModels(data: List<PaperModel>) {
         TapToCreateEpoxyModel()
             .onClick(mOnClickToCreateSignal)
@@ -42,11 +40,11 @@ class PaperThumbnailEpoxyController(
             val id = paper.id
 
             PaperThumbnailEpoxyModel(id)
+                .onClick(mOnClickPaperSignal)
                 .setThumbnail(mGlide,
                               paper.thumbnailPath,
                               paper.thumbnailWidth,
                               paper.thumbnailHeight)
-                .setClickListener(mListener)
                 // Epoxy view-model ID.
                 .id(paper.uuid.toString())
                 .addTo(this)
@@ -55,8 +53,10 @@ class PaperThumbnailEpoxyController(
 
     // Click //////////////////////////////////////////////////////////////////
 
-    fun setOnClickPaperThumbnailListener(listener: IOnClickPaperThumbnailListener?) {
-        mListener = listener
+    private val mOnClickPaperSignal = PublishSubject.create<Long>()
+
+    fun onClickPaper(): Observable<Long> {
+        return mOnClickPaperSignal
     }
 
     private val mOnClickToCreateSignal = PublishSubject.create<Any>()

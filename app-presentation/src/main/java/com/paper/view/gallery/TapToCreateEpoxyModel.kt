@@ -24,7 +24,6 @@ import android.view.View
 import android.view.ViewGroup
 import com.airbnb.epoxy.EpoxyModel
 import com.paper.R
-import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 
 class TapToCreateEpoxyModel : EpoxyModel<View>() {
@@ -47,7 +46,7 @@ class TapToCreateEpoxyModel : EpoxyModel<View>() {
 
     private var mOnClickSignal: Subject<Any>? = null
 
-    fun onClick(signal: PublishSubject<Any>): TapToCreateEpoxyModel {
+    fun onClick(signal: Subject<Any>): TapToCreateEpoxyModel {
         mOnClickSignal = signal
         return this
     }
