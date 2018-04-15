@@ -31,7 +31,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.paper.model.PaperConsts
+import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.ScrapModel
 import com.paper.model.repository.json.PaperModelTranslator
@@ -129,7 +129,7 @@ class PaperRepo(private val mAuthority: String,
 
     override fun getPaperById(id: Long): Single<PaperModel> {
         // FIXME: Workaround.
-        return if (id == PaperConsts.TEMP_ID) {
+        return if (id == ModelConst.TEMP_ID) {
             getTempPaper()
         } else {
             Single
@@ -183,7 +183,7 @@ class PaperRepo(private val mAuthority: String,
         // TODO: I/O is atomic.
         return Single
             .fromCallable {
-                if (id == PaperConsts.TEMP_ID) {
+                if (id == ModelConst.TEMP_ID) {
                     val uri = Uri.Builder()
                         .scheme("content")
                         .authority(mAuthority)

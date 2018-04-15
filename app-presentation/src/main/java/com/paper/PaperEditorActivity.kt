@@ -34,7 +34,7 @@ import com.paper.view.canvas.PaperWidgetView
 import com.paper.domain.IPaperRepoProvider
 import com.paper.presenter.PaperEditorContract
 import com.paper.presenter.PaperEditorPresenter
-import com.paper.model.PaperConsts
+import com.paper.model.ModelConst
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -80,7 +80,7 @@ class PaperEditorActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_paper_editor)
 
-        val paperId = intent.getLongExtra(DomainConst.PARAMS_PAPER_ID, PaperConsts.TEMP_ID)
+        val paperId = intent.getLongExtra(DomainConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
 
         // Presenter.
         mEditorPresenter.bindView(this, paperId)

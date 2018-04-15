@@ -23,7 +23,7 @@ package com.paper.presenter
 import android.Manifest
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.ISharedPreferenceService
-import com.paper.model.PaperConsts
+import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
@@ -83,12 +83,12 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 //                            mRepo.newTempPaper("")
 //                                .toObservable()
 //                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-//                                .startWith(Pair(PaperConsts.TEMP_ID, ProgressEvent.start()))
+//                                .startWith(Pair(ModelConst.TEMP_ID, ProgressEvent.start()))
 //                        }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    navigator.navigateToPaperEditor(PaperConsts.TEMP_ID)
+                    navigator.navigateToPaperEditor(ModelConst.TEMP_ID)
                     view.hideProgressBar()
                 })
         // Button of existing paper.
@@ -111,7 +111,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 //                            mRepo.newTempPaper("")
 //                                .toObservable()
 //                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-//                                .startWith(Pair(PaperConsts.TEMP_ID, ProgressEvent.start()))
+//                                .startWith(Pair(ModelConst.TEMP_ID, ProgressEvent.start()))
 //                        }
                 }
                 .observeOn(mUiScheduler)

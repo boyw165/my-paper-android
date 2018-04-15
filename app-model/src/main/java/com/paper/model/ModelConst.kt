@@ -1,4 +1,4 @@
-// Copyright Mar 2017-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,7 +20,9 @@
 
 package com.paper.model
 
-object PaperConsts {
+object ModelConst {
+
+    const val TAG = "paper model"
 
     const val TEMP_ID = -1L
 }
