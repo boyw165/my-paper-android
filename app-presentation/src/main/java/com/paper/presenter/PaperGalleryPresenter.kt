@@ -138,11 +138,19 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         mDisposablesOnResume.add(
             requestPermissions()
                 .switchMap {
-                    mRepo.getPaperSnapshotList()
+                    mRepo.getPapers(isSnapshot = true)
                 }
+                .scan(emptyList<PaperModel>(), { oldList, newPaper ->
+                    val newList = oldList.toMutableList()
+
+                    newList.add(newPaper)
+
+                    return@scan newList
+                })
                 .observeOn(mUiScheduler)
                 .subscribe { papers ->
                     // Hold the paper snapshots.
+                    mPaperSnapshots.clear()
                     mPaperSnapshots.addAll(papers)
 
                     mView?.let { view ->
