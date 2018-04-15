@@ -295,12 +295,12 @@ class PaperRepo(private val mAuthority: String,
     override fun getTempPaper(): Single<PaperModel> {
         return Single
             .fromCallable {
-                //                // Sol#1
-                //                return@fromCallable mTempFile
-                //                    .bufferedReader()
-                //                    .use { reader ->
-                //                        mGson.fromJson(reader, PaperModel::class.java)
-                //                    }
+//                // Sol#1
+//                return@fromCallable mTempFile
+//                    .bufferedReader()
+//                    .use { reader ->
+//                        mGson.fromJson(reader, PaperModel::class.java)
+//                    }
 
                 // Sol#2
                 // TODO: Assign default portrait size.

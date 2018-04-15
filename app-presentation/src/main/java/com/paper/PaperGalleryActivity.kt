@@ -46,6 +46,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.TimeUnit
 
 class PaperGalleryActivity : AppCompatActivity(),
                              PaperGalleryContract.View,
@@ -180,16 +181,20 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun onClickPaper(): Observable<Long> {
-        return mPapersViewController.onClickPaper()
+        return mPapersViewController
+            .onClickPaper()
+            .throttleFirst(1000, TimeUnit.MILLISECONDS)
+    }
+
+    override fun onClickNewPaper(): Observable<Any> {
+        return Observable
+            .merge(RxView.clicks(mBtnNewPaper),
+                   mPapersViewController.onClickNewButton())
+            .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
     override fun onBrowsePaper(): Observable<Int> {
         return mBrowsePositionSignal
-    }
-
-    override fun onClickNewPaper(): Observable<Any> {
-        return Observable.merge(RxView.clicks(mBtnNewPaper),
-                                mPapersViewController.onClickNewButton())
     }
 
     override fun onClickDeleteAllPapers(): Observable<Any> {
@@ -235,7 +240,8 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun navigateToPaperEditor(id: Long) {
         startActivity(Intent(this@PaperGalleryActivity,
                              PaperEditorActivity::class.java)
-                          .putExtra(DomainConst.PARAMS_PAPER_ID, id))
+                          .putExtra(AppConst.PARAMS_PAPER_ID, id)
+                          .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
     }
 
     ///////////////////////////////////////////////////////////////////////////

@@ -96,13 +96,13 @@ class PaperWidget(private val mUiScheduler: Scheduler,
                     mRemoveWidgetSignal.onNext(widget)
                 })
 
-        Log.d(DomainConst.TAG, "bind to a model(w=${model.width}, h=${model.height})")
+        Log.d(DomainConst.TAG, "Bind to a model(w=${model.width}, h=${model.height})")
     }
 
     override fun unbindModel() {
         mModelDisposables.clear()
 
-        Log.d(DomainConst.TAG, "unbind from the model")
+        Log.d(DomainConst.TAG, "Unbind from the model")
     }
 
     // Save ///////////////////////////////////////////////////////////////////

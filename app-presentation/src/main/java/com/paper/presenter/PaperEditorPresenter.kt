@@ -151,25 +151,21 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                 })
 
         // Inflate paper model.
-        mDisposables.add(
-            Observable
-                .just(true)
-                .compose(LoadPaperFromStore(
-                    paperID = id,
-                    paperWidget = mPaperWidget,
-                    paperRepo = mPaperRepo,
-                    uiScheduler = AndroidSchedulers.mainThread()))
+        mDisposablesOnCreate.add(
+            LoadPaperFromStore(
+                paperID = id,
+                paperWidget = mPaperWidget,
+                paperRepo = mPaperRepo,
+                uiScheduler = AndroidSchedulers.mainThread())
                 .observeOn(mUiScheduler)
                 .doOnDispose {
                     // Unbind widget.
                     mView?.getCanvasView()?.unbindWidget()
-                    Log.d(DomainConst.TAG, "Unbind view from widget")
                 }
                 .observeOn(mUiScheduler)
                 .subscribe { widget ->
                     // Bind view with the widget.
                     mView?.getCanvasView()?.bindWidget(widget)
-                    Log.d(DomainConst.TAG, "Bind view with widget")
                 })
     }
 

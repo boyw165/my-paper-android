@@ -33,15 +33,16 @@ import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.cardinalblue.gesture.MyMotionEvent
-import com.paper.domain.DomainConst
+import com.paper.AppConst
 import com.paper.R
+import com.paper.domain.DomainConst
+import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawViewPortEvent
-import com.paper.domain.data.GestureRecord
+import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.domain.widget.canvas.IScrapWidget
 import com.paper.model.Rect
-import com.paper.domain.util.TransformUtils
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -182,7 +183,7 @@ class PaperWidgetView : View,
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
-        Log.d(DomainConst.TAG, "PaperWidgetView # onMeasure()")
+        Log.d(AppConst.TAG, "PaperWidgetView # onMeasure()")
         super.onMeasure(widthSpec, heightSpec)
     }
 
@@ -191,7 +192,7 @@ class PaperWidgetView : View,
                           top: Int,
                           right: Int,
                           bottom: Int) {
-        Log.d(DomainConst.TAG, "PaperWidgetView # onLayout(changed=$changed)")
+        Log.d(AppConst.TAG, "PaperWidgetView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
         if (changed) {
@@ -230,13 +231,13 @@ class PaperWidgetView : View,
         // Canvas size change
         mWidgetDisposables.add(
             Observables.combineLatest(
-                mOnLayoutChangeSignal.doOnNext { Log.d(DomainConst.TAG, "onLayoutChange") },
+                mOnLayoutChangeSignal,
                 widget.onSetCanvasSize())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (changed, size) ->
                     if (changed) {
-                        Log.d(DomainConst.TAG, "the layout is done, and canvas " +
-                                               "size is ${size.width} x ${size.height}")
+                        Log.d(AppConst.TAG, "the layout is done, and canvas " +
+                                            "size is ${size.width} x ${size.height}")
                         onUpdateLayoutOrCanvas(size.width,
                                                size.height)
                     }
@@ -268,6 +269,8 @@ class PaperWidgetView : View,
                     Log.d(DomainConst.TAG, message)
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 })
+
+        Log.d(AppConst.TAG, "Bind view with widget")
     }
 
     override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
@@ -280,6 +283,8 @@ class PaperWidgetView : View,
         mScrapViews.forEach { scrapView ->
             scrapView.unbindWidget()
         }
+
+        Log.d(AppConst.TAG, "Unbind view from widget")
     }
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
@@ -527,8 +532,6 @@ class PaperWidgetView : View,
                                         -scaleVP * scaleM2V * vy)
             mCanvasMatrix.invert(mCanvasMatrixInverse)
 
-//            Log.d(DomainConst.TAG, "compute matrix: m=$mCanvasMatrix")
-
             mCanvasMatrixDirty = false
         }
     }
@@ -712,9 +715,9 @@ class PaperWidgetView : View,
                               mh: Float,
                               defaultW: Float,
                               defaultH: Float) {
-//        // Place the view port center in the model world.
-//        val viewPortX = (mw - defaultW) / 2
-//        val viewPortY = (mh - defaultH) / 2
+        //        // Place the view port center in the model world.
+        //        val viewPortX = (mw - defaultW) / 2
+        //        val viewPortY = (mh - defaultH) / 2
 
         // Place the view port left in the model world.
         val viewPortX = 0f
@@ -955,10 +958,11 @@ class PaperWidgetView : View,
             "Already bind to a widget")
     }
 
-    private val isAllSet get() = mScaleM2V.value != Float.NaN &&
-                                 (mMSize.value.width > 0f &&
-                                  mMSize.value.height > 0f) &&
-                                 mViewPort.hasValue()
+    private val isAllSet
+        get() = mScaleM2V.value != Float.NaN &&
+                (mMSize.value.width > 0f &&
+                 mMSize.value.height > 0f) &&
+                mViewPort.hasValue()
 
     private fun drawBackground(canvas: Canvas,
                                vw: Float,
