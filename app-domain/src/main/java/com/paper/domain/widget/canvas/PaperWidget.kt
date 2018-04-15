@@ -185,6 +185,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         stroke.addPathTuple(PathTuple(x, y))
         mTmpStrokes.add(stroke)
 
+        mLineToSignal.onNext(Point(x, y))
+
         mLineToSignal
             // FIXME: The window filter would make the SVGDrawable laggy.
             .throttleFirst(DomainConst.COLLECT_PATH_WINDOW_MS,
@@ -198,7 +200,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
                                                    point = Point(p.x, p.y)))
             }
-        mLineToSignal.onNext(Point(x, y))
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
