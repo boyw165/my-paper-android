@@ -83,7 +83,8 @@ class ScrapWidget(
                         mDrawSVGSignal.onNext(DrawSVGEvent(
                             action = DrawSVGEvent.Action.DOT_AT,
                             point = Point(onlyPath.firstPoint.x,
-                                          onlyPath.firstPoint.y)))
+                                          onlyPath.firstPoint.y,
+                                          onlyPath.firstPoint.time)))
                     } else {
                         val lastIndex = stroke.pathTupleList.lastIndex
                         stroke.pathTupleList.forEachIndexed { i, path ->
@@ -91,17 +92,20 @@ class ScrapWidget(
                                 0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                     action = DrawSVGEvent.Action.MOVE,
                                     point = Point(path.firstPoint.x,
-                                                  path.firstPoint.y),
+                                                  path.firstPoint.y,
+                                                  path.firstPoint.time),
                                     penColor = stroke.color,
                                     penSize = stroke.width))
                                 lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                     action = DrawSVGEvent.Action.CLOSE,
                                     point = Point(path.firstPoint.x,
-                                                  path.firstPoint.y)))
+                                                  path.firstPoint.y,
+                                                  path.firstPoint.time)))
                                 else -> mDrawSVGSignal.onNext(DrawSVGEvent(
                                     action = DrawSVGEvent.Action.LINE_TO,
                                     point = Point(path.firstPoint.x,
-                                                  path.firstPoint.y)))
+                                                  path.firstPoint.y,
+                                                  path.firstPoint.time)))
                             }
                         }
                     }

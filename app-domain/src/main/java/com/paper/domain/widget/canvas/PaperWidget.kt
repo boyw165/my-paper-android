@@ -211,11 +211,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             .takeUntil(mCancelDrawingSignal)
             .observeOn(mUiScheduler)
             .subscribe { p ->
-                stroke.addPathTuple(PathTuple(p.x, p.y))
+                stroke.addPathTuple(PathTuple(p.x, p.y, p.time))
 
                 // Notify the observer
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
-                                                   point = Point(p.x, p.y)))
+                                                   point = Point(p.x, p.y, p.time)))
             }
 
         // Notify the observer

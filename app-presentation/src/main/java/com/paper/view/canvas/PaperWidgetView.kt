@@ -42,6 +42,7 @@ import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.domain.widget.canvas.IScrapWidget
+import com.paper.model.Point
 import com.paper.model.Rect
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -455,19 +456,21 @@ class PaperWidgetView : View,
                 val drawable = SVGDrawable(context = this@PaperWidgetView,
                                            penColor = event.penColor,
                                            penSize = event.penSize)
-                drawable.moveTo(x, y)
+                drawable.moveTo(Point(x, y, event.point.time))
 
                 mStrokeDrawables.add(drawable)
             }
             DrawSVGEvent.Action.LINE_TO -> {
                 val drawable = mStrokeDrawables.last()
-                drawable.lineTo(x, y)
+                drawable.lineTo(Point(x, y, event.point.time))
             }
             DrawSVGEvent.Action.CLOSE -> {
                 val drawable = mStrokeDrawables.last()
                 drawable.close()
             }
             DrawSVGEvent.Action.CLEAR_ALL -> {
+                val drawable = mStrokeDrawables.last()
+                drawable.clear()
                 mStrokeDrawables.clear()
             }
             else -> {

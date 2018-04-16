@@ -26,9 +26,10 @@ import android.view.MotionEvent
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.domain.event.DrawSVGEvent
-import com.paper.domain.widget.canvas.IScrapWidget
-import com.paper.model.TransformModel
 import com.paper.domain.util.TransformUtils
+import com.paper.domain.widget.canvas.IScrapWidget
+import com.paper.model.Point
+import com.paper.model.TransformModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import java.util.*
@@ -188,19 +189,21 @@ open class ScrapWidgetView : IScrapWidgetView {
                 val d = SVGDrawable(context = mContext!!,
                                     penColor = event.penColor,
                                     penSize = event.penSize)
-                d.moveTo(x, y)
+                d.moveTo(Point(x, y, event.point.time))
 
                 mDrawables.add(d)
             }
             DrawSVGEvent.Action.LINE_TO -> {
                 val d = mDrawables.last()
-                d.lineTo(x, y)
+                d.lineTo(Point(x, y, event.point.time))
             }
             DrawSVGEvent.Action.CLOSE -> {
                 val d = mDrawables.last()
                 d.close()
             }
             DrawSVGEvent.Action.CLEAR_ALL -> {
+                val d = mDrawables.last()
+                d.clear()
                 mDrawables.clear()
             }
             else -> {
