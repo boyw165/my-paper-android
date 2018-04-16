@@ -29,6 +29,7 @@ object DomainConst {
     // Paper editor ///////////////////////////////////////////////////////////
 
     const val VIEW_PORT_MIN_SCALE = 8f
+
     const val COLLECT_PATH_WINDOW_MS = 66L
     const val COLLECT_STROKES_TIMEOUT_MS = 850L
 }

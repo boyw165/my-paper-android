@@ -22,9 +22,9 @@ package com.paper.domain.widget.canvas
 
 import android.util.Log
 import com.paper.domain.DomainConst
+import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
-import com.paper.domain.data.GestureRecord
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
@@ -147,7 +147,10 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     // Add & Remove Scrap /////////////////////////////////////////////////////
 
     override fun onAddScrapWidget(): Observable<IScrapWidget> {
-        return mAddWidgetSignal
+        return Observable.merge(
+            // Must clone the list in case concurrent modification
+            Observable.fromIterable(mScrapWidgets.values.toList()),
+            mAddWidgetSignal)
     }
 
     override fun onRemoveScrapWidget(): Observable<IScrapWidget> {

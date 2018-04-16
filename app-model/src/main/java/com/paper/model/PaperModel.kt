@@ -21,7 +21,7 @@
 package com.paper.model
 
 import io.reactivex.Observable
-import io.reactivex.subjects.ReplaySubject
+import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.util.*
 
@@ -46,18 +46,29 @@ class PaperModel(
 
     // Scraps
     private var mScraps = mutableListOf<ScrapModel>()
-    private val mAddScrapSignal = ReplaySubject.create<ScrapModel>()
-    private val mRemoveScrapSignal = ReplaySubject.create<ScrapModel>()
+    private val mAddScrapSignal = PublishSubject.create<ScrapModel>()
+    private val mRemoveScrapSignal = PublishSubject.create<ScrapModel>()
     val scraps: List<ScrapModel>
         get() = mScraps
+
     fun addScrap(scrap: ScrapModel) {
         mScraps.add(scrap)
         mAddScrapSignal.onNext(scrap)
     }
+
     fun removeScrap(scrap: ScrapModel) {
         mScraps.remove(scrap)
         mRemoveScrapSignal.onNext(scrap)
     }
-    fun onAddScrap(): Observable<ScrapModel> = mAddScrapSignal
-    fun onRemoveScrap(): Observable<ScrapModel> = mRemoveScrapSignal
+
+    fun onAddScrap(): Observable<ScrapModel> {
+        return Observable.merge(
+            // Must clone the list in case concurrent modification
+            Observable.fromIterable(mScraps.toList()),
+            mAddScrapSignal)
+    }
+
+    fun onRemoveScrap(): Observable<ScrapModel> {
+        return mRemoveScrapSignal
+    }
 }
