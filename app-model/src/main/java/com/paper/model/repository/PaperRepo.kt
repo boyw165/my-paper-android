@@ -71,6 +71,8 @@ class PaperRepo(private val mAuthority: String,
     override fun getPapers(isSnapshot: Boolean): Observable<PaperModel> {
         return Observable
             .create { downstream: ObservableEmitter<PaperModel> ->
+                var cursor: Cursor? = null
+
                 try {
                     val uri: Uri = Uri.Builder()
                         .scheme("content")
@@ -78,7 +80,7 @@ class PaperRepo(private val mAuthority: String,
                         .path("paper")
                         .build()
                     // Query content provider.
-                    val cursor = mResolver.query(
+                    cursor = mResolver.query(
                         uri,
                         // project:
                         arrayOf(PaperTable.COL_ID,
@@ -110,7 +112,6 @@ class PaperRepo(private val mAuthority: String,
                         } while (cursor.moveToNext() &&
                                  !downstream.isDisposed)
                     }
-                    cursor.close()
                 } catch (error: InterruptedException) {
                     val i = error.stackTrace.indexOfFirst { trace ->
                         trace.className.contains("paper")
@@ -121,6 +122,7 @@ class PaperRepo(private val mAuthority: String,
                         Log.d(ModelConst.TAG, "$className L$lineNo get interrupted")
                     }
                 } finally {
+                    cursor?.close()
                     downstream.onComplete()
                 }
             }
