@@ -20,6 +20,7 @@
 
 package com.paper.presenter
 
+import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.LoadPaperAndBindModel
 import com.paper.domain.widget.SavePaperToStore
@@ -32,9 +33,15 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
-class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
-                           private val mUiScheduler: Scheduler,
-                           private val mWorkerScheduler: Scheduler) {
+class PaperEditorPresenter(paperRepo: IPaperModelRepo,
+                           prefs: ISharedPreferenceService,
+                           uiScheduler: Scheduler,
+                           workerScheduler: Scheduler) {
+
+    private val mPaperRepo = paperRepo
+    private val mPrefs = prefs
+    private val mUiScheduler = uiScheduler
+    private val mWorkerScheduler = workerScheduler
 
     // Editor view.
     private var mView: PaperEditorContract.View? = null

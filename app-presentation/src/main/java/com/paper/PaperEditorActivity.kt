@@ -28,6 +28,7 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IPaperRepoProvider
+import com.paper.domain.ISharedPreferenceService
 import com.paper.model.ModelConst
 import com.paper.presenter.PaperEditorContract
 import com.paper.presenter.PaperEditorPresenter
@@ -53,6 +54,14 @@ class PaperEditorActivity : AppCompatActivity(),
             .create()
     }
 
+    private val mErrorThenFinishDialog by lazy {
+        AlertDialog.Builder(this@PaperEditorActivity)
+            .setCancelable(false)
+            .setTitle(R.string.alert_title)
+            .setPositiveButton(R.string.close) { _, _ -> finish() }
+            .create()
+    }
+
     // Back button and signal.
     private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
     private val mClickSysBackSignal = PublishSubject.create<Any>()
@@ -70,9 +79,10 @@ class PaperEditorActivity : AppCompatActivity(),
 
     // Presenters and controllers.
     private val mEditorPresenter: PaperEditorPresenter by lazy {
-        PaperEditorPresenter(mPaperRepo,
-                             AndroidSchedulers.mainThread(),
-                             Schedulers.single())
+        PaperEditorPresenter(paperRepo = mPaperRepo,
+                             prefs = application as ISharedPreferenceService,
+                             uiScheduler = AndroidSchedulers.mainThread(),
+                             workerScheduler = Schedulers.single())
     }
 
     override fun onCreate(savedState: Bundle?) {
