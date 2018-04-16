@@ -36,6 +36,11 @@ class PathTuple {
                 y: Float) {
         addPoint(x, y)
     }
+    constructor(x: Float,
+                y: Float,
+                time: Long) {
+        addPoint(x, y, time)
+    }
     constructor(other: PathTuple) {
         mPoints.clear()
         other.allPoints.forEach { pt ->
@@ -45,6 +50,10 @@ class PathTuple {
 
     fun addPoint(x: Float, y: Float) {
         mPoints.add(Point(x, y))
+    }
+
+    fun addPoint(x: Float, y: Float, time: Long) {
+        mPoints.add(Point(x, y, time))
     }
 
     // TODO: Copy and return.

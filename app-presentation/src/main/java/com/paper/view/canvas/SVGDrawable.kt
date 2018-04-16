@@ -75,25 +75,35 @@ class SVGDrawable(context: IPaperContext,
     // Drawing ////////////////////////////////////////////////////////////////
 
     fun clear() {
-        TODO()
+        mCachedPoints.clear()
+
+        mStrokePoint.clear()
+        mStrokeWidth.clear()
+        mStrokePointTransformed.clear()
     }
 
-    fun moveTo(x: Float, y: Float) {
+    fun moveTo(point: Point) {
 //        // Try #1: simple points
 //        mStrokePoint.add(Point(x, y))
 //        mStrokePointTransformed.add(Point(x, y))
 
         // Try #2: Bezier points
-        addPoint(getNewPoint(x, y))
+//        addPoint(getNewPoint(x, y))
+
+        // Try #3
+        addPoint(point)
     }
 
-    fun lineTo(x: Float, y: Float) {
+    fun lineTo(point: Point) {
 //        // Try #1: simple points
 //        mStrokePoint.add(Point(x, y))
 //        mStrokePointTransformed.add(Point(x, y))
 
         // Try #2: Bezier points
-        addPoint(getNewPoint(x, y))
+//        addPoint(getNewPoint(x, y))
+
+        // Try #3
+        addPoint(point)
     }
 
     fun close() {
