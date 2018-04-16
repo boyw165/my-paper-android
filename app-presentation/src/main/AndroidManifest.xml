@@ -49,6 +49,7 @@
         <!-- Paper Database -->
         <provider
             android:name="com.paper.model.repository.sqlite.PaperContentProvider"
-            android:authorities="${packageName}"/>
+            android:authorities="${packageName}"
+            android:exported="false"/>
     </application>
 </manifest>

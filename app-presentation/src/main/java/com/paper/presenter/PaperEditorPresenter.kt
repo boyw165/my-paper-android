@@ -20,14 +20,11 @@
 
 package com.paper.presenter
 
-import android.util.Log
-import com.paper.domain.DomainConst
-import com.paper.domain.widget.canvas.PaperWidget
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.LoadPaperFromStore
 import com.paper.domain.widget.SavePaperToStore
+import com.paper.domain.widget.canvas.PaperWidget
 import com.paper.model.repository.protocol.IPaperModelRepo
-import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -60,6 +57,17 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
 
         val canvasView = view.getCanvasView()
         val editingPanelView = view.getEditingPanelView()
+
+        // Progress
+        mDisposablesOnCreate.add(
+            mUpdateProgressSignal
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    when {
+                        event.justStart -> view.showProgressBar(0)
+                        event.justStop -> view.hideProgressBar()
+                    }
+                })
 
         // Close button.
         mDisposablesOnCreate.add(
@@ -151,12 +159,14 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                 })
 
         // Inflate paper model.
+        val loadPaperSrc = LoadPaperFromStore(
+            paperID = id,
+            paperWidget = mPaperWidget,
+            paperRepo = mPaperRepo,
+            uiScheduler = AndroidSchedulers.mainThread())
+            .publish()
         mDisposablesOnCreate.add(
-            LoadPaperFromStore(
-                paperID = id,
-                paperWidget = mPaperWidget,
-                paperRepo = mPaperRepo,
-                uiScheduler = AndroidSchedulers.mainThread())
+            loadPaperSrc
                 .observeOn(mUiScheduler)
                 .doOnDispose {
                     // Unbind widget.
@@ -167,6 +177,15 @@ class PaperEditorPresenter(private val mPaperRepo: IPaperModelRepo,
                     // Bind view with the widget.
                     mView?.getCanvasView()?.bindWidget(widget)
                 })
+        mDisposablesOnCreate.add(
+            loadPaperSrc
+                .map { ProgressEvent.stop() }
+                .startWith(ProgressEvent.start())
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    mUpdateProgressSignal.onNext(event)
+                })
+        loadPaperSrc.connect()
     }
 
     fun unbindView() {

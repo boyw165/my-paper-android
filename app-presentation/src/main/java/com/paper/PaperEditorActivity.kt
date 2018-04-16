@@ -90,8 +90,8 @@ class PaperEditorActivity : AppCompatActivity(),
 
         mEditorPresenter.unbindView()
 
-//        // Force to hide the progress-bar.
-//        hideProgressBar()
+        // Force to hide the progress-bar.
+        hideProgressBar()
     }
 
     override fun onBackPressed() {
@@ -144,7 +144,7 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     override fun hideProgressBar() {
-        mProgressBar.hide()
+        mProgressBar.dismiss()
     }
 
     override fun showWIP() {
