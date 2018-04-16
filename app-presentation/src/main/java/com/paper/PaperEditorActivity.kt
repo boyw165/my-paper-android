@@ -20,6 +20,7 @@
 
 package com.paper
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -92,6 +93,8 @@ class PaperEditorActivity : AppCompatActivity(),
 
         // Force to hide the progress-bar.
         hideProgressBar()
+        // Force to hide the error dialog.
+        mErrorThenFinishDialog.dismiss()
     }
 
     override fun onBackPressed() {
@@ -155,5 +158,10 @@ class PaperEditorActivity : AppCompatActivity(),
         Toast.makeText(this@PaperEditorActivity,
                        error.toString(),
                        Toast.LENGTH_SHORT).show()
+    }
+
+    override fun showErrorAlertThenFinish(error: Throwable) {
+        mErrorThenFinishDialog.setMessage(error.toString())
+        mErrorThenFinishDialog.show()
     }
 }

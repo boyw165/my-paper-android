@@ -40,6 +40,8 @@ class PaperEditorContract private constructor() {
 
         fun showErrorAlert(error: Throwable)
 
+        fun showErrorAlertThenFinish(error: Throwable)
+
         fun close()
 
         fun onClickCloseButton(): Observable<Any>

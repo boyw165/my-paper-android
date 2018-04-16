@@ -20,41 +20,71 @@
 
 package com.paper.domain.widget
 
+import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
+import io.reactivex.subjects.Subject
 
-class LoadPaperFromStore(paperID: Long,
-                         paperWidget: IPaperWidget,
-                         paperRepo: IPaperModelRepo,
-                         uiScheduler: Scheduler)
-    : Observable<IPaperWidget>() {
+// .------.
+// |      | ----> true or false
+// |  ob  |
+// |      | ----> ProgressEvent
+// '------'
+
+/**
+ * An observable to load paper from DB and then bind widget with the model.
+ * True if the model is successfully loaded and binding is done. False means
+ * neither the model loading nor binding works.
+ *
+ * There is also a side-effect that it sends ProgressEvent through the given
+ * progress signal.
+ */
+class LoadPaperAndBindModel(paperID: Long,
+                            paperWidget: IPaperWidget,
+                            paperRepo: IPaperModelRepo,
+                            updateProgressSignal: Subject<ProgressEvent>,
+                            uiScheduler: Scheduler)
+    : Observable<Boolean>() {
 
     private val mPaperID = paperID
 
     private val mPaperWidget = paperWidget
     private val mPaperRepo = paperRepo
 
+    private val mUpdateProgressSignal = updateProgressSignal
+
     private val mUiScheduler = uiScheduler
 
-    override fun subscribeActual(observer: Observer<in IPaperWidget>) {
+    override fun subscribeActual(observer: Observer<in Boolean>) {
         val actualDisposable = mPaperRepo
             .getPaperById(mPaperID)
             .toObservable()
             .observeOn(mUiScheduler)
-            .subscribe { paper ->
+            .subscribe ({ paper ->
                 // Bind widget with data.
                 mPaperWidget.bindModel(paper)
 
-                observer.onNext(mPaperWidget)
-            }
+                observer.onNext(true)
+            }, {
+                observer.onNext(false)
+                observer.onComplete()
+
+                mUpdateProgressSignal.onNext(ProgressEvent.stop())
+            }, {
+                observer.onComplete()
+                mUpdateProgressSignal.onNext(ProgressEvent.stop())
+            })
 
         val d = InnerDisposable(widget = mPaperWidget,
                                 actualDisposable = actualDisposable)
         observer.onSubscribe(d)
+
+        // Right after the subscription, send a START progress event.
+        mUpdateProgressSignal.onNext(ProgressEvent.start())
     }
 
     ///////////////////////////////////////////////////////////////////////////
