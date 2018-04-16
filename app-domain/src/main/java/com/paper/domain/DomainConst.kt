@@ -24,9 +24,7 @@ object DomainConst {
 
     // Common /////////////////////////////////////////////////////////////////
 
-    const val TAG = "paper"
-
-    const val PARAMS_PAPER_ID = "params_paper_id"
+    const val TAG = "paper domain"
 
     // Paper editor ///////////////////////////////////////////////////////////
 

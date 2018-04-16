@@ -23,15 +23,15 @@ package com.paper.domain.widget
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.repository.protocol.IPaperModelRepo
 import io.reactivex.Observable
-import io.reactivex.ObservableSource
-import io.reactivex.ObservableTransformer
+import io.reactivex.Observer
 import io.reactivex.Scheduler
+import io.reactivex.disposables.Disposable
 
 class LoadPaperFromStore(paperID: Long,
                          paperWidget: IPaperWidget,
                          paperRepo: IPaperModelRepo,
                          uiScheduler: Scheduler)
-    : ObservableTransformer<Any, IPaperWidget> {
+    : Observable<IPaperWidget>() {
 
     private val mPaperID = paperID
 
@@ -40,23 +40,44 @@ class LoadPaperFromStore(paperID: Long,
 
     private val mUiScheduler = uiScheduler
 
-    override fun apply(upstream: Observable<Any>): ObservableSource<IPaperWidget> {
-        return upstream.switchMap { applyImpl() }
-    }
-
-    private fun applyImpl(): Observable<IPaperWidget> {
-        return mPaperRepo
+    override fun subscribeActual(observer: Observer<in IPaperWidget>) {
+        val actualDisposable = mPaperRepo
             .getPaperById(mPaperID)
+            .toObservable()
             .observeOn(mUiScheduler)
-            .map { paper ->
+            .subscribe { paper ->
                 // Bind widget with data.
                 mPaperWidget.bindModel(paper)
-                return@map mPaperWidget
+
+                observer.onNext(mPaperWidget)
             }
-            .doOnDispose {
-                // Unbind widget from data.
-                mPaperWidget.unbindModel()
-            }
-            .toObservable()
+
+        val d = InnerDisposable(widget = mPaperWidget,
+                                actualDisposable = actualDisposable)
+        observer.onSubscribe(d)
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    class InnerDisposable(widget: IPaperWidget,
+                          actualDisposable: Disposable) : Disposable {
+
+        private var mDisposed = false
+
+        private val mPaperWidget = widget
+        private val mActualDisposable = actualDisposable
+
+        override fun isDisposed(): Boolean {
+            return mDisposed
+        }
+
+        override fun dispose() {
+            mActualDisposable.dispose()
+
+            mPaperWidget.unbindModel()
+
+            mDisposed = true
+        }
     }
 }

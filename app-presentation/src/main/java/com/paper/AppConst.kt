@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,9 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view.gallery
+package com.paper
 
-interface IOnClickPaperThumbnailListener {
+object AppConst {
 
-    fun onClickPaperThumbnail(id: Long)
+    const val TAG = "paper presentation"
+
+    const val PARAMS_PAPER_ID = "params_paper_id"
 }

@@ -23,7 +23,7 @@ package com.paper.presenter
 import android.Manifest
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.ISharedPreferenceService
-import com.paper.model.PaperConsts
+import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.repository.protocol.IPaperModelRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
@@ -83,12 +83,12 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 //                            mRepo.newTempPaper("")
 //                                .toObservable()
 //                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-//                                .startWith(Pair(PaperConsts.TEMP_ID, ProgressEvent.start()))
+//                                .startWith(Pair(ModelConst.TEMP_ID, ProgressEvent.start()))
 //                        }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    navigator.navigateToPaperEditor(PaperConsts.TEMP_ID)
+                    navigator.navigateToPaperEditor(ModelConst.TEMP_ID)
                     view.hideProgressBar()
                 })
         // Button of existing paper.
@@ -111,7 +111,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 //                            mRepo.newTempPaper("")
 //                                .toObservable()
 //                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-//                                .startWith(Pair(PaperConsts.TEMP_ID, ProgressEvent.start()))
+//                                .startWith(Pair(ModelConst.TEMP_ID, ProgressEvent.start()))
 //                        }
                 }
                 .observeOn(mUiScheduler)
@@ -134,15 +134,23 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         mNavigator = null
     }
 
-    fun onResume() {
+    fun resume() {
         mDisposablesOnResume.add(
             requestPermissions()
                 .switchMap {
-                    mRepo.getPaperSnapshotList()
+                    mRepo.getPapers(isSnapshot = true)
                 }
+                .scan(emptyList<PaperModel>(), { oldList, newPaper ->
+                    val newList = oldList.toMutableList()
+
+                    newList.add(newPaper)
+
+                    return@scan newList
+                })
                 .observeOn(mUiScheduler)
                 .subscribe { papers ->
                     // Hold the paper snapshots.
+                    mPaperSnapshots.clear()
                     mPaperSnapshots.addAll(papers)
 
                     mView?.let { view ->
@@ -154,7 +162,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 })
     }
 
-    fun onPause() {
+    fun pause() {
         mDisposablesOnResume.clear()
 
         // Force to hide the progress-bar.

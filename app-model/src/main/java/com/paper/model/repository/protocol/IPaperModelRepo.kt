@@ -24,7 +24,7 @@ interface IPaperModelRepo {
 
     // For persistent store.
 
-    fun getPaperSnapshotList(): Observable<List<PaperModel>>
+    fun getPapers(isSnapshot: Boolean): Observable<PaperModel>
 
     fun getPaperById(id: Long): Single<PaperModel>
 

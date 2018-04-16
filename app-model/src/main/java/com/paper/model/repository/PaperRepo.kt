@@ -31,7 +31,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.paper.model.PaperConsts
+import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.ScrapModel
 import com.paper.model.repository.json.PaperModelTranslator
@@ -41,6 +41,7 @@ import com.paper.model.repository.protocol.IPaperModelRepo
 import com.paper.model.repository.sqlite.PaperTable
 import com.paper.model.sketch.SketchModel
 import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import java.io.File
@@ -67,56 +68,68 @@ class PaperRepo(private val mAuthority: String,
             .create()
     }
 
-    override fun getPaperSnapshotList(): Observable<List<PaperModel>> {
+    override fun getPapers(isSnapshot: Boolean): Observable<PaperModel> {
         return Observable
-            .fromCallable {
-                val uri: Uri = Uri.Builder()
-                    .scheme("content")
-                    .authority(mAuthority)
-                    .path("paper")
-                    .build()
-                // Query content provider.
-                val cursor = mResolver.query(
-                    uri,
-                    // project:
-                    arrayOf(PaperTable.COL_ID,
-                            PaperTable.COL_UUID,
-                            PaperTable.COL_CREATED_AT,
-                            PaperTable.COL_MODIFIED_AT,
-                            PaperTable.COL_WIDTH,
-                            PaperTable.COL_HEIGHT,
-                            PaperTable.COL_CAPTION,
-                            PaperTable.COL_THUMB_PATH,
-                            PaperTable.COL_THUMB_WIDTH,
-                            PaperTable.COL_THUMB_HEIGHT),
-                    // selection:
-                    null,
-                    // selection args:
-                    null,
-                    // sort order:
-                    "${PaperTable.COL_CREATED_AT} DESC")
+            .create { downstream: ObservableEmitter<PaperModel> ->
+                try {
+                    val uri: Uri = Uri.Builder()
+                        .scheme("content")
+                        .authority(mAuthority)
+                        .path("paper")
+                        .build()
+                    // Query content provider.
+                    val cursor = mResolver.query(
+                        uri,
+                        // project:
+                        arrayOf(PaperTable.COL_ID,
+                                PaperTable.COL_UUID,
+                                PaperTable.COL_CREATED_AT,
+                                PaperTable.COL_MODIFIED_AT,
+                                PaperTable.COL_WIDTH,
+                                PaperTable.COL_HEIGHT,
+                                PaperTable.COL_CAPTION,
+                                PaperTable.COL_THUMB_PATH,
+                                PaperTable.COL_THUMB_WIDTH,
+                                PaperTable.COL_THUMB_HEIGHT),
+                        // selection:
+                        null,
+                        // selection args:
+                        null,
+                        // sort order:
+                        "${PaperTable.COL_CREATED_AT} DESC")
 
-                // TODO: Refer to anko-sqlite,
-                // TODO: https://github.com/Kotlin/anko/wiki/Anko-SQLite
+                    // TODO: Refer to anko-sqlite,
+                    // TODO: https://github.com/Kotlin/anko/wiki/Anko-SQLite
 
-                // Translate cursor.
-                cursor.moveToFirst()
-                val papers = (1..cursor.count).map {
-                    val paper = convertCursorToPaper(cursor, false)
-                    cursor.moveToNext()
-                    paper
+                    // Translate cursor.
+                    if (cursor.moveToFirst() &&
+                        !downstream.isDisposed) {
+                        do {
+                            val paper = convertCursorToPaper(cursor, false)
+                            downstream.onNext(paper)
+                        } while (cursor.moveToNext() &&
+                                 !downstream.isDisposed)
+                    }
+                    cursor.close()
+                } catch (error: InterruptedException) {
+                    val i = error.stackTrace.indexOfFirst { trace ->
+                        trace.className.contains("paper")
+                    }
+                    if (i >= 0) {
+                        val className = error.stackTrace[i].className
+                        val lineNo = error.stackTrace[i].lineNumber
+                        Log.d(ModelConst.TAG, "$className L$lineNo get interrupted")
+                    }
+                } finally {
+                    downstream.onComplete()
                 }
-                cursor.close()
-
-                // Return..
-                papers
             }
             .subscribeOn(mDbIoScheduler)
     }
 
     override fun getPaperById(id: Long): Single<PaperModel> {
         // FIXME: Workaround.
-        return if (id == PaperConsts.TEMP_ID) {
+        return if (id == ModelConst.TEMP_ID) {
             getTempPaper()
         } else {
             Single
@@ -170,7 +183,7 @@ class PaperRepo(private val mAuthority: String,
         // TODO: I/O is atomic.
         return Single
             .fromCallable {
-                if (id == PaperConsts.TEMP_ID) {
+                if (id == ModelConst.TEMP_ID) {
                     val uri = Uri.Builder()
                         .scheme("content")
                         .authority(mAuthority)
@@ -282,12 +295,12 @@ class PaperRepo(private val mAuthority: String,
     override fun getTempPaper(): Single<PaperModel> {
         return Single
             .fromCallable {
-                //                // Sol#1
-                //                return@fromCallable mTempFile
-                //                    .bufferedReader()
-                //                    .use { reader ->
-                //                        mGson.fromJson(reader, PaperModel::class.java)
-                //                    }
+//                // Sol#1
+//                return@fromCallable mTempFile
+//                    .bufferedReader()
+//                    .use { reader ->
+//                        mGson.fromJson(reader, PaperModel::class.java)
+//                    }
 
                 // Sol#2
                 // TODO: Assign default portrait size.

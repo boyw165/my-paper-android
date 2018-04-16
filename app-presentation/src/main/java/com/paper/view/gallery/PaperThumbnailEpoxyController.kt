@@ -23,15 +23,16 @@ package com.paper.view.gallery
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.model.PaperModel
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 
 class PaperThumbnailEpoxyController(
     private val mGlide: RequestManager)
     : TypedEpoxyController<List<PaperModel>>() {
 
-    private var mListener: IOnClickPaperThumbnailListener? = null
-
     override fun buildModels(data: List<PaperModel>) {
         TapToCreateEpoxyModel()
+            .onClick(mOnClickToCreateSignal)
             .id(0)
             .addTo(this)
 
@@ -39,18 +40,28 @@ class PaperThumbnailEpoxyController(
             val id = paper.id
 
             PaperThumbnailEpoxyModel(id)
+                .onClick(mOnClickPaperSignal)
                 .setThumbnail(mGlide,
                               paper.thumbnailPath,
                               paper.thumbnailWidth,
                               paper.thumbnailHeight)
-                .setClickListener(mListener)
                 // Epoxy view-model ID.
                 .id(paper.uuid.toString())
                 .addTo(this)
         }
     }
 
-    fun setOnClickPaperThumbnailListener(listener: IOnClickPaperThumbnailListener?) {
-        mListener = listener
+    // Click //////////////////////////////////////////////////////////////////
+
+    private val mOnClickPaperSignal = PublishSubject.create<Long>()
+
+    fun onClickPaper(): Observable<Long> {
+        return mOnClickPaperSignal
+    }
+
+    private val mOnClickToCreateSignal = PublishSubject.create<Any>()
+
+    fun onClickNewButton(): Observable<Any> {
+        return mOnClickToCreateSignal
     }
 }

@@ -27,7 +27,7 @@ import java.util.*
 
 class PaperModel(
     // The SQLite ID.
-    val id: Long = PaperConsts.TEMP_ID,
+    val id: Long = ModelConst.TEMP_ID,
     // The global ID.
     val uuid: UUID = UUID.randomUUID(),
     val createdAt: Long = 0L) {
