@@ -25,7 +25,7 @@ import com.paper.domain.event.ProgressEvent
 import com.paper.domain.ISharedPreferenceService
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.IPaperRepo
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -34,7 +34,7 @@ import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
 class PaperGalleryPresenter(private val mPermission: RxPermissions,
-                            private val mRepo: IPaperModelRepo,
+                            private val mRepo: IPaperRepo,
                             private val mPrefs: ISharedPreferenceService,
                             private val mUiScheduler: Scheduler,
                             private val mWorkerScheduler: Scheduler) {

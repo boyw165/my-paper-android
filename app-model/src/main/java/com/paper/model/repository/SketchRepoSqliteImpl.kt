@@ -20,17 +20,16 @@ import android.database.Cursor
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.SketchModelTranslator
-import com.paper.model.repository.protocol.ISketchModelRepo
 import com.paper.model.repository.sqlite.SketchTable
 import com.paper.model.sketch.SketchModel
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import java.io.File
 
-class SketchRepo(authority: String,
-                 resolver: ContentResolver,
-                 cacheDirFile: File,
-                 ioScheduler: Scheduler) : ISketchModelRepo {
+class SketchRepoSqliteImpl(authority: String,
+                           resolver: ContentResolver,
+                           cacheDirFile: File,
+                           ioScheduler: Scheduler) : ISketchRepo {
 
     // Given...
     private val mAuthority: String = authority

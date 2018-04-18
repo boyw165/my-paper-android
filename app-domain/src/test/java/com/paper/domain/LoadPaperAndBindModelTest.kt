@@ -24,7 +24,7 @@ import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.LoadPaperAndBindModel
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.PaperModel
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.IPaperRepo
 import io.reactivex.Single
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
@@ -38,7 +38,7 @@ class LoadPaperAndBindModelTest {
 
     @Test
     fun getFalseIfErrorFromRepo() {
-        val mockedRepo = Mockito.mock(IPaperModelRepo::class.java)
+        val mockedRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
             .thenReturn(Single.error(RuntimeException("Mocked repo!")))
@@ -69,7 +69,7 @@ class LoadPaperAndBindModelTest {
     @Test
     fun widgetShouldBindModelIfRepoWorks() {
         val mockedModel = PaperModel()
-        val mockedRepo = Mockito.mock(IPaperModelRepo::class.java)
+        val mockedRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
             .thenReturn(Single.just(mockedModel))

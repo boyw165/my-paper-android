@@ -22,7 +22,7 @@ package com.paper.domain.widget
 
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.canvas.IPaperWidget
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Scheduler
@@ -45,7 +45,7 @@ import io.reactivex.subjects.Subject
  */
 class LoadPaperAndBindModel(paperID: Long,
                             paperWidget: IPaperWidget,
-                            paperRepo: IPaperModelRepo,
+                            paperRepo: IPaperRepo,
                             updateProgressSignal: Subject<ProgressEvent>,
                             uiScheduler: Scheduler)
     : Observable<Boolean>() {

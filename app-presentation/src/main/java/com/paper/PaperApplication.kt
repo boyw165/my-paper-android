@@ -26,8 +26,8 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.IDatabaseIOSchedulerProvider
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
-import com.paper.model.repository.PaperRepo
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.PaperRepoSqliteImpl
+import com.paper.model.repository.IPaperRepo
 import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler
 
@@ -45,14 +45,14 @@ class PaperApplication : MultiDexApplication(),
     // Repository and scheduler ///////////////////////////////////////////////
 
     // Database.
-    private val mPaperRepo: PaperRepo by lazy {
-        PaperRepo(packageName,
-                  contentResolver,
-                  externalCacheDir,
-                  getScheduler())
+    private val mPaperRepo: PaperRepoSqliteImpl by lazy {
+        PaperRepoSqliteImpl(packageName,
+                            contentResolver,
+                            externalCacheDir,
+                            getScheduler())
     }
 
-    override fun getRepo(): IPaperModelRepo {
+    override fun getRepo(): IPaperRepo {
         return mPaperRepo
     }
 
@@ -87,5 +87,16 @@ class PaperApplication : MultiDexApplication(),
 
     override fun getInt(key: String, defaultValue: Int): Int {
         return mPreferences.getInt(key, defaultValue)
+    }
+
+    override fun putFloat(key: String, value: Float) {
+        mPreferences
+            .edit()
+            .putFloat(key, value)
+            .apply()
+    }
+
+    override fun getFloat(key: String, defaultValue: Float): Float {
+        return mPreferences.getFloat(key, defaultValue)
     }
 }

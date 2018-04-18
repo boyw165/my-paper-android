@@ -37,7 +37,6 @@ import com.paper.model.ScrapModel
 import com.paper.model.repository.json.PaperModelTranslator
 import com.paper.model.repository.json.ScrapModelTranslator
 import com.paper.model.repository.json.SketchModelTranslator
-import com.paper.model.repository.protocol.IPaperModelRepo
 import com.paper.model.repository.sqlite.PaperTable
 import com.paper.model.sketch.SketchModel
 import io.reactivex.Observable
@@ -49,10 +48,10 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PaperRepo(private val mAuthority: String,
-                private val mResolver: ContentResolver,
-                private val mCacheDirFile: File,
-                private val mDbIoScheduler: Scheduler) : IPaperModelRepo {
+class PaperRepoSqliteImpl(private val mAuthority: String,
+                          private val mResolver: ContentResolver,
+                          private val mCacheDirFile: File,
+                          private val mDbIoScheduler: Scheduler) : IPaperRepo {
 
     private val mTempFile by lazy { File(mCacheDirFile, "$mAuthority.temp_paper") }
 

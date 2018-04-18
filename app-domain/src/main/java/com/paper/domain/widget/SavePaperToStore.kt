@@ -23,7 +23,7 @@ package com.paper.domain.widget
 import android.graphics.Bitmap
 import android.os.Environment
 import com.paper.domain.widget.canvas.IPaperWidget
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.IPaperRepo
 import io.reactivex.*
 import java.io.File
 import java.io.FileOutputStream
@@ -31,7 +31,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class SavePaperToStore(paperWidget: IPaperWidget,
-                       paperRepo: IPaperModelRepo,
+                       paperRepo: IPaperRepo,
                        ioScheduler: Scheduler)
     : SingleTransformer<Bitmap, Boolean> {
 

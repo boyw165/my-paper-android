@@ -12,53 +12,39 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package com.paper.model.repository.protocol
+package com.paper.model.repository
 
-import android.graphics.Bitmap
-import com.paper.model.PaperModel
+import com.paper.model.sketch.SketchModel
 import io.reactivex.Observable
-import io.reactivex.Single
-import java.io.File
 
-interface IPaperModelRepo {
+interface ISketchRepo {
 
     // For persistent store.
 
-    fun getPapers(isSnapshot: Boolean): Observable<PaperModel>
-
-    fun getPaperById(id: Long): Single<PaperModel>
-
-    fun putPaperById(id: Long, paper: PaperModel): Single<Boolean>
-
-    fun duplicatePaperById(id: Long): Observable<PaperModel>
-
-    fun deleteAllPapers(): Observable<Boolean>
+    fun getSketchById(id: Long): Observable<SketchModel>
 
     fun deletePaperById(id: Long): Observable<Boolean>
 
-    fun putBitmap(bmp: Bitmap): Observable<File>
-
-    // For testing data.
-
-    fun getTestPaper(): Single<PaperModel>
-
     // For temporary store.
 
-    fun hasTempPaper(): Observable<Boolean>
+    fun hasTempSketch(): Observable<Boolean>
 
-    fun getTempPaper(): Single<PaperModel>
-
-    /**
-     * There is only one inventory for the temporary paper.
-     */
-    fun newTempPaper(caption: String): Single<PaperModel>
+    fun getTempSketch(): Observable<SketchModel>
 
     /**
      * There is only one inventory for the temporary paper.
      */
-    fun newTempPaper(other: PaperModel): Observable<PaperModel>
+    fun newTempSketch(width: Int, height: Int): Observable<SketchModel>
 
-    fun removeTempPaper(): Observable<Boolean>
+    /**
+     * There is only one inventory for the temporary paper.
+     */
+    fun newTempSketch(other: SketchModel): Observable<SketchModel>
 
-    fun commitTempPaper(): Observable<PaperModel>
+    /**
+     * There is only one inventory for the temporary paper.
+     */
+    fun saveTempSketch(other: SketchModel): Observable<SketchModel>
+
+    fun commitTempSketch(): Observable<SketchModel>
 }
