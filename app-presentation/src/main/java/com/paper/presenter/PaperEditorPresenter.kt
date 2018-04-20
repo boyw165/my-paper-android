@@ -20,12 +20,15 @@
 
 package com.paper.presenter
 
+import android.util.Log
+import com.paper.AppConst
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.LoadPaperAndBindModel
 import com.paper.domain.widget.SavePaperToStore
 import com.paper.domain.widget.canvas.PaperWidget
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.IPaperRepo
+import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -33,7 +36,7 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
-class PaperEditorPresenter(paperRepo: IPaperModelRepo,
+class PaperEditorPresenter(paperRepo: IPaperRepo,
                            prefs: ISharedPreferenceService,
                            uiScheduler: Scheduler,
                            workerScheduler: Scheduler) {

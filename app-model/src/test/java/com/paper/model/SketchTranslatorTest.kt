@@ -1,4 +1,4 @@
-package com.paper.model.repository.json
+package com.paper.model
 
 // Copyright Mar 2017-present boyw165@gmail.com
 //
@@ -21,13 +21,12 @@ package com.paper.model.repository.json
 // DEALINGS IN THE SOFTWARE.
 
 import com.google.gson.GsonBuilder
+import com.paper.model.repository.json.SketchModelTranslator
 import com.paper.model.sketch.SketchModel
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
-import java.io.File
-import java.io.FileReader
 
 @RunWith(MockitoJUnitRunner::class)
 class SketchTranslatorTest {

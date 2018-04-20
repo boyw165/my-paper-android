@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.model
 
-import com.paper.model.repository.IPaperRepo
+object Color {
 
-interface IPaperRepoProvider {
-
-    fun getRepo(): IPaperRepo
+    fun parseColor(colorString: String): Int {
+        if (colorString[0] == '#') {
+            // Use a long to avoid rollovers on #ffXXXXXX
+            var color = java.lang.Long.parseLong(colorString.substring(1), 16)
+            if (colorString.length == 7) {
+                // Set the alpha value
+                color = color or -0x1000000
+            } else if (colorString.length != 9) {
+                throw IllegalArgumentException("Unknown color")
+            }
+            return color.toInt()
+        } else {
+            throw IllegalArgumentException("Unknown color")
+        }
+    }
 }

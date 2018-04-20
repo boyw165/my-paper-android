@@ -22,14 +22,16 @@ package com.paper
 
 import android.content.Context
 import android.support.multidex.MultiDexApplication
+import android.util.Log
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.IDatabaseIOSchedulerProvider
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
-import com.paper.model.repository.PaperRepo
-import com.paper.model.repository.protocol.IPaperModelRepo
+import com.paper.model.repository.PaperRepoSqliteImpl
+import com.paper.model.repository.IPaperRepo
 import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler
+import io.reactivex.plugins.RxJavaPlugins
 
 class PaperApplication : MultiDexApplication(),
                          IDatabaseIOSchedulerProvider,
@@ -40,19 +42,24 @@ class PaperApplication : MultiDexApplication(),
         super.onCreate()
 
         Fresco.initialize(this)
+
+        // RxJava
+        RxJavaPlugins.setErrorHandler { err ->
+            err.printStackTrace()
+        }
     }
 
     // Repository and scheduler ///////////////////////////////////////////////
 
     // Database.
-    private val mPaperRepo: PaperRepo by lazy {
-        PaperRepo(packageName,
-                  contentResolver,
-                  externalCacheDir,
-                  getScheduler())
+    private val mPaperRepo: PaperRepoSqliteImpl by lazy {
+        PaperRepoSqliteImpl(packageName,
+                            contentResolver,
+                            externalCacheDir,
+                            getScheduler())
     }
 
-    override fun getRepo(): IPaperModelRepo {
+    override fun getRepo(): IPaperRepo {
         return mPaperRepo
     }
 
@@ -87,5 +94,16 @@ class PaperApplication : MultiDexApplication(),
 
     override fun getInt(key: String, defaultValue: Int): Int {
         return mPreferences.getInt(key, defaultValue)
+    }
+
+    override fun putFloat(key: String, value: Float) {
+        mPreferences
+            .edit()
+            .putFloat(key, value)
+            .apply()
+    }
+
+    override fun getFloat(key: String, defaultValue: Float): Float {
+        return mPreferences.getFloat(key, defaultValue)
     }
 }

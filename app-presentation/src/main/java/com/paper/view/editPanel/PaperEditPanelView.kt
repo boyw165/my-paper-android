@@ -109,7 +109,7 @@ class PaperEditPanelView : ConstraintLayout,
                     mChooseColorTicket.onNext(color)
                 })
 
-        mWidget.handleStart()
+        mWidget.start()
     }
 
     override fun onDetachedFromWindow() {
@@ -117,7 +117,7 @@ class PaperEditPanelView : ConstraintLayout,
 
         mDisposables.clear()
 
-        mWidget.handleStop()
+        mWidget.stop()
     }
 
     // View port indicator ////////////////////////////////////////////////////

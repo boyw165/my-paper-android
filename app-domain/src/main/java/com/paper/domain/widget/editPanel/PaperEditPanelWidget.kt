@@ -36,7 +36,7 @@ class PaperEditPanelWidget(
 
     // Lifecycle //////////////////////////////////////////////////////////////
 
-    fun handleStart() {
+    fun start() {
         ensureNoLeakingSubscription()
 
         // Prepare initial tools and select the pen by default.
@@ -54,7 +54,7 @@ class PaperEditPanelWidget(
             usingIndex = mColorIndex))
     }
 
-    fun handleStop() {
+    fun stop() {
         mDisposables.clear()
     }
 
