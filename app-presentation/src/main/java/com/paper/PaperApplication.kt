@@ -22,6 +22,7 @@ package com.paper
 
 import android.content.Context
 import android.support.multidex.MultiDexApplication
+import android.util.Log
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.IDatabaseIOSchedulerProvider
 import com.paper.domain.IPaperRepoProvider
@@ -30,6 +31,7 @@ import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler
+import io.reactivex.plugins.RxJavaPlugins
 
 class PaperApplication : MultiDexApplication(),
                          IDatabaseIOSchedulerProvider,
@@ -40,6 +42,11 @@ class PaperApplication : MultiDexApplication(),
         super.onCreate()
 
         Fresco.initialize(this)
+
+        // RxJava
+        RxJavaPlugins.setErrorHandler { err ->
+            err.printStackTrace()
+        }
     }
 
     // Repository and scheduler ///////////////////////////////////////////////
