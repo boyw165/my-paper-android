@@ -48,7 +48,7 @@ class PenColorRepoFileImplTest {
         testScheduler.triggerActions()
 
         testObserver.assertValue { colors ->
-            var theSame = false
+            var theSame = true
             colors.forEachIndexed { i, color ->
                 theSame = theSame && (color == IPenColorRepo.DEFAULT_COLORS[i])
             }
