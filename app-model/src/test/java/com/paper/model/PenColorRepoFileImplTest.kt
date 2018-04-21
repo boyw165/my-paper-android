@@ -24,13 +24,19 @@ import com.paper.model.repository.IPenColorRepo
 import io.reactivex.observers.TestObserver
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.TestScheduler
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner::class)
 class PenColorRepoFileImplTest {
+
+    @Before
+    fun prepare() {
+    }
 
     @Test
     fun readDefaultColors() {
@@ -95,7 +101,7 @@ class PenColorRepoFileImplTest {
             .map { (a, b) -> a && b }
             .subscribe(testObserver)
 
-        testScheduler.triggerActions()
+        testScheduler.advanceTimeBy(1, TimeUnit.DAYS)
         testObserver.assertValue(true)
     }
 

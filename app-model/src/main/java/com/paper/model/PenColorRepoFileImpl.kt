@@ -20,8 +20,10 @@
 
 package com.paper.model
 
+import android.util.Log
 import com.google.gson.*
 import com.paper.model.PenColorRepoFileImpl.ColorData
+import com.paper.model.observables.WriteStringToFileObservable
 import com.paper.model.repository.IPenColorRepo
 import io.reactivex.Maybe
 import io.reactivex.Observable
@@ -34,6 +36,7 @@ import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.lang.reflect.Type
+import java.util.concurrent.TimeUnit
 
 class PenColorRepoFileImpl(dir: File,
                            ioScheduler: Scheduler? = null)
@@ -67,7 +70,7 @@ class PenColorRepoFileImpl(dir: File,
         val clone = colors.toList()
         mPenColors.onNext(clone)
 
-        return flushMemoryCacheToDisk()
+        return writeToDisk()
     }
 
     override fun getChosenPenColor(): Observable<Int> {
@@ -86,7 +89,7 @@ class PenColorRepoFileImpl(dir: File,
     override fun putChosenPenColor(color: Int): Single<Boolean> {
         mChosenPenColor.onNext(color)
 
-        return flushMemoryCacheToDisk()
+        return writeToDisk()
     }
 
     private fun readFromFile(): Observable<ColorData> {
@@ -108,26 +111,31 @@ class PenColorRepoFileImpl(dir: File,
             .toObservable()
     }
 
-    private fun flushMemoryCacheToDisk(): Single<Boolean> {
-        return Observables.combineLatest(
-            mPenColors,
-            mChosenPenColor)
+    private fun writeToDisk(): Single<Boolean> {
+        return Observables
+            .combineLatest(
+                mPenColors,
+                mChosenPenColor)
             .observeOn(mIoScheduler)
-            .map { (colors, chosenColor) ->
-                val data = ColorData(
-                    colors = colors,
-                    chosenColor = chosenColor)
-                val json = mGson.toJson(data)
-
-                if (!mFile.exists()) {
-                    mFile.createNewFile()
-                }
-
-                FileWriter(mFile).use { writer ->
-                    writer.write(json)
-                }
-
-                return@map true
+            .debounce(1000, TimeUnit.MILLISECONDS, mIoScheduler)
+            .switchMap { (colors, chosenColor) ->
+                return@switchMap Single
+                    .fromCallable {
+                        val data = ColorData(
+                            colors = colors,
+                            chosenColor = chosenColor)
+                        mGson.toJson(data)
+                    }
+                    .subscribeOn(mIoScheduler)
+                    .toObservable()
+                    .switchMap { json ->
+                        WriteStringToFileObservable(
+                            file = mFile,
+                            txt = json)
+                            .subscribeOn(mIoScheduler)
+                            .filter { progress -> progress == 100 }
+                            .map { true }
+                    }
             }
             .firstOrError()
     }

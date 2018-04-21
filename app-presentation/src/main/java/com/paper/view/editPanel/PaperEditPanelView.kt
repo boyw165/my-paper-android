@@ -21,6 +21,7 @@
 package com.paper.view.editPanel
 
 import android.content.Context
+import android.os.Environment
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -28,9 +29,11 @@ import android.util.AttributeSet
 import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
+import com.paper.BuildConfig
 import com.paper.R
 import com.paper.view.canvas.ViewPortIndicatorView
 import com.paper.domain.widget.editPanel.PaperEditPanelWidget
+import com.paper.model.PenColorRepoFileImpl
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.model.Point
 import com.paper.model.Rect
@@ -51,6 +54,7 @@ class PaperEditPanelView : ConstraintLayout,
     // The business login/view-model
     private val mWidget by lazy {
         PaperEditPanelWidget(
+            PenColorRepoFileImpl(context.getExternalFilesDir(context.packageName)),
             AndroidSchedulers.mainThread(),
             Schedulers.io())
     }
