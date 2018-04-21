@@ -20,18 +20,29 @@
 
 package com.paper.domain.widget.editPanel
 
+import android.util.Log
+import com.paper.domain.DomainConst
 import com.paper.domain.event.UpdateColorTicketsEvent
 import com.paper.domain.event.UpdateEditingToolsEvent
+import com.paper.model.repository.ICommonPenPrefsRepo
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
 class PaperEditPanelWidget(
-    private val mUiScheduler: Scheduler,
-    private val mWorkerScheduler: Scheduler) {
+    penColorRepo: ICommonPenPrefsRepo,
+    uiScheduler: Scheduler,
+    workerScheduler: Scheduler) {
 
+    private val mCommonPenPrefsRepo = penColorRepo
+
+    private val mUiScheduler = uiScheduler
+    private val mWorkerScheduler = workerScheduler
+
+    private val mCancelSignal = PublishSubject.create<Any>()
     private val mDisposables = CompositeDisposable()
 
     // Lifecycle //////////////////////////////////////////////////////////////
@@ -47,11 +58,28 @@ class PaperEditPanelWidget(
             usingIndex = mToolIndex))
 
         // Prepare initial color tickets
-        val colors = getColorTickets()
-        mColorIndex = colors.indexOf(ColorTicketFactory.DEFAULT_COLOR_2)
-        mColorTickets.onNext(UpdateColorTicketsEvent(
-            colorTickets = colors,
-            usingIndex = mColorIndex))
+        mDisposables.add(
+            Observables
+                .combineLatest(
+                    mCommonPenPrefsRepo.getPenColors(),
+                    mCommonPenPrefsRepo.getChosenPenColor())
+                .subscribe { (colors, chosenColor) ->
+                    val index = colors.indexOf(chosenColor)
+
+                    // Export the signal as onUpdatePenColorList()
+                    mColorTicketsSignal.onNext(UpdateColorTicketsEvent(
+                        colorTickets = colors,
+                        usingIndex = index))
+                })
+
+        // Prepare initial pen size
+        mDisposables.add(
+            mCommonPenPrefsRepo
+                .getPenSize()
+                .subscribe { penSize ->
+                    // Export the signal as onUpdatePenSize()
+                    mPenSizeSignal.onNext(penSize)
+                })
     }
 
     fun stop() {
@@ -104,31 +132,41 @@ class PaperEditPanelWidget(
             EditingToolFactory.TOOL_SCISSOR)
     }
 
-    // Color & stroke width ///////////////////////////////////////////////////
+    // Pen Color & size //////////////////////////////////////////////////////
 
-    private var mColorIndex = -1
-    private val mColorTickets = PublishSubject.create<UpdateColorTicketsEvent>()
+    private val mColorTicketsSignal = PublishSubject.create<UpdateColorTicketsEvent>()
 
     fun handleClickColor(color: Int) {
-        val colors = getColorTickets()
-        val usingIndex = colors.indexOf(color)
+        Log.d(DomainConst.TAG, "choose color=${Integer.toHexString(color)}")
+        mCancelSignal.onNext(0)
 
-        mColorTickets.onNext(UpdateColorTicketsEvent(
-            colorTickets = colors,
-            usingIndex = usingIndex))
+        mDisposables.add(
+            mCommonPenPrefsRepo
+                .putChosenPenColor(color)
+                .toObservable()
+                .takeUntil(mCancelSignal)
+                .subscribe())
     }
 
-    fun onUpdateColorTicketList(): Observable<UpdateColorTicketsEvent> {
-        return mColorTickets
+    fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent> {
+        return mColorTicketsSignal
     }
 
-    private fun getColorTickets(): List<Int> {
-        return listOf(
-            ColorTicketFactory.DEFAULT_COLOR_1,
-            ColorTicketFactory.DEFAULT_COLOR_2,
-            ColorTicketFactory.DEFAULT_COLOR_3,
-            ColorTicketFactory.DEFAULT_COLOR_4,
-            ColorTicketFactory.DEFAULT_COLOR_5,
-            ColorTicketFactory.DEFAULT_COLOR_6)
+    private val mPenSizeSignal = PublishSubject.create<Float>()
+
+    fun handleChangePenSize(size: Float) {
+        Log.d(DomainConst.TAG, "change pen size=$size")
+        mCancelSignal.onNext(0)
+
+        mDisposables.add(
+            mCommonPenPrefsRepo
+                .putPenSize(size)
+                .toObservable()
+                .takeUntil(mCancelSignal)
+                .subscribe())
+    }
+
+    fun onUpdatePenSize(): Observable<Float> {
+        return mPenSizeSignal
     }
 }

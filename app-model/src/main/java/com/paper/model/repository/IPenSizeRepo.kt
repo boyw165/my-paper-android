@@ -18,14 +18,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editPanel
+package com.paper.model.repository
 
-object ColorTicketFactory {
+import io.reactivex.Observable
+import io.reactivex.Single
 
-    const val DEFAULT_COLOR_1 = 0xFFE75058.toInt()
-    const val DEFAULT_COLOR_2 = 0xFFDDB543.toInt()
-    const val DEFAULT_COLOR_3 = 0xFFE5D5C8.toInt()
-    const val DEFAULT_COLOR_4 = 0xFFC79E80.toInt()
-    const val DEFAULT_COLOR_5 = 0xFF848F94.toInt()
-    const val DEFAULT_COLOR_6 = 0xFF010101.toInt()
+interface IPenSizeRepo {
+
+
 }

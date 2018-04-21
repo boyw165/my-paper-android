@@ -31,6 +31,7 @@ import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.view.canvas.ViewPortIndicatorView
 import com.paper.domain.widget.editPanel.PaperEditPanelWidget
+import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.model.Point
 import com.paper.model.Rect
@@ -51,6 +52,7 @@ class PaperEditPanelView : ConstraintLayout,
     // The business login/view-model
     private val mWidget by lazy {
         PaperEditPanelWidget(
+            CommonPenPrefsRepoFileImpl(context.getExternalFilesDir(context.packageName)),
             AndroidSchedulers.mainThread(),
             Schedulers.io())
     }
@@ -96,9 +98,9 @@ class PaperEditPanelView : ConstraintLayout,
                     Toast.makeText(context, R.string.msg_under_construction, Toast.LENGTH_SHORT).show()
                 })
 
-        // Color tickets
+        // Pen colors
         mDisposables.add(
-            mWidget.onUpdateColorTicketList()
+            mWidget.onUpdatePenColorList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     // Update view
@@ -106,7 +108,29 @@ class PaperEditPanelView : ConstraintLayout,
 
                     // Notify observer
                     val color = event.colorTickets[event.usingIndex]
-                    mChooseColorTicket.onNext(color)
+                    mChooseColorSignal.onNext(color)
+                })
+
+        // Pen size
+        mDisposables.add(
+            SeekBarChangeObservable(mPenSizeView)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { event ->
+                    if (event.fromUser) {
+                        val penSize = event.progress.toFloat() / 100f
+
+                        mWidget.handleChangePenSize(penSize)
+                    }
+                })
+        mDisposables.add(
+            mWidget.onUpdatePenSize()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { penSize ->
+                    // Update view
+                    mPenSizeView.progress = (penSize * 100f).toInt()
+
+                    // Notify observer, see onUpdatePenSize()
+                    mPenSizeSignal.onNext(penSize)
                 })
 
         mWidget.start()
@@ -139,7 +163,7 @@ class PaperEditPanelView : ConstraintLayout,
     private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
     private val mToolListViewController by lazy {
         ToolListEpoxyController(mWidget = mWidget,
-                                                         mImgLoader = Glide.with(context))
+                                mImgLoader = Glide.with(context))
     }
     private val mSelectedEditTool = PublishSubject.create<Int>()
 
@@ -147,30 +171,25 @@ class PaperEditPanelView : ConstraintLayout,
         return mSelectedEditTool
     }
 
-    // Color & stroke width ///////////////////////////////////////////////////
+    // Pen color & pen size ///////////////////////////////////////////////////
 
-    // Color & stroke width
+    // The color list view and view controller
     private val mColorTicketsView by lazy { findViewById<RecyclerView>(R.id.list_color_tickets) }
     private val mColorTicketsViewController by lazy {
         ColorTicketListEpoxyController(mWidget = mWidget,
-                                                                mImgLoader = Glide.with(context))
+                                       mImgLoader = Glide.with(context))
     }
-    private val mChooseColorTicket = PublishSubject.create<Int>()
+    private val mChooseColorSignal = PublishSubject.create<Int>()
 
     override fun onChooseColorTicket(): Observable<Int> {
-        return mChooseColorTicket
+        return mChooseColorSignal
     }
 
-    private val mStrokeSizeView by lazy { findViewById<SeekBar>(R.id.slider_stroke_size) }
-    private var mUpdatePenSize = 0f
+    private val mPenSizeView by lazy { findViewById<SeekBar>(R.id.slider_stroke_size) }
+    private val mPenSizeSignal = PublishSubject.create<Float>()
 
     override fun onUpdatePenSize(): Observable<Float> {
-        return SeekBarChangeObservable(mStrokeSizeView, true)
-            // TODO: Update color and size preview
-            .map { event ->
-                mUpdatePenSize = event.progress.toFloat() / 100f
-                return@map mUpdatePenSize
-            }
+        return mPenSizeSignal
     }
 
     // Other //////////////////////////////////////////////////////////////////
