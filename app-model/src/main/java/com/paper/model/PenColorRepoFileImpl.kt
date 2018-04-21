@@ -20,7 +20,6 @@
 
 package com.paper.model
 
-import android.util.Log
 import com.google.gson.*
 import com.paper.model.PenColorRepoFileImpl.ColorData
 import com.paper.model.observables.WriteStringToFileObservable
@@ -34,7 +33,6 @@ import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import java.io.File
 import java.io.FileReader
-import java.io.FileWriter
 import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 
@@ -97,9 +95,13 @@ class PenColorRepoFileImpl(dir: File,
             .fromCallable {
                 if (mFile.exists()) {
                     FileReader(mFile).use { reader ->
-                        return@fromCallable mGson.fromJson(
+                        val data = mGson.fromJson(
                             reader,
                             ColorData::class.java)
+                        val newData = data.copy(
+                            colors = IPenColorRepo.DEFAULT_COLORS)
+
+                        return@fromCallable newData
                     }
                 } else {
                     return@fromCallable ColorData(

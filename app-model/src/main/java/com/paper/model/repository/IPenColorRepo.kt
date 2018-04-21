@@ -27,12 +27,47 @@ import io.reactivex.Single
 interface IPenColorRepo {
 
     companion object {
-        val DEFAULT_COLORS = listOf(Color.parseColor("#E75058"),
+        val DEFAULT_COLORS = listOf(Color.parseColor("#010101"),
+                                    Color.parseColor("#E75058"),
                                     Color.parseColor("#DDB543"),
                                     Color.parseColor("#E5D5C8"),
                                     Color.parseColor("#C79E80"),
                                     Color.parseColor("#848F94"),
-                                    Color.parseColor("#010101"))
+                                    // separator
+                                    Color.parseColor("#543632"),
+                                    Color.parseColor("#B0413D"),
+                                    Color.parseColor("#625E3D"),
+                                    Color.parseColor("#C7B18A"),
+                                    Color.parseColor("#DDE4B9"),
+                                    Color.parseColor("#394A5F"),
+                                    // separator
+                                    Color.parseColor("#4C757E"),
+                                    Color.parseColor("#555146"),
+                                    Color.parseColor("#A69842"),
+                                    Color.parseColor("#F3E195"),
+                                    Color.parseColor("#E7B14B"),
+                                    Color.parseColor("#CD6D59"),
+                                    // User determined ones start from here!
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    // separator
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    // separator
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"),
+                                    Color.parseColor("#666B6D"))
         val DEFAULT_CHOSEN_COLOR = DEFAULT_COLORS[1]
     }
 
