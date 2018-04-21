@@ -18,12 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.repository
 
 import com.google.gson.*
-import com.paper.model.PenColorRepoFileImpl.ColorData
+import com.paper.model.Color
 import com.paper.model.observables.WriteStringToFileObservable
-import com.paper.model.repository.IPenColorRepo
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -36,20 +35,21 @@ import java.io.FileReader
 import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 
-class PenColorRepoFileImpl(dir: File,
-                           ioScheduler: Scheduler? = null)
-    : IPenColorRepo,
-      JsonSerializer<ColorData>,
-      JsonDeserializer<ColorData> {
+class CommonPenPrefsRepoFileImpl(dir: File,
+                                 ioScheduler: Scheduler? = null)
+    : ICommonPenPrefsRepo,
+      JsonSerializer<CommonPenPrefsRepoFileImpl.PrefsData>,
+      JsonDeserializer<CommonPenPrefsRepoFileImpl.PrefsData> {
 
-    private val mFile = File(dir, "pen_color.json")
+    private val mFile = File(dir, "pen_prefs.json")
     private val mGson = GsonBuilder()
-        .registerTypeAdapter(ColorData::class.java, this)
+        .registerTypeAdapter(PrefsData::class.java, this)
         .create()
     private val mIoScheduler = ioScheduler ?: SingleScheduler()
 
     private val mPenColors = BehaviorSubject.create<List<Int>>()
     private val mChosenPenColor = BehaviorSubject.create<Int>()
+    private val mPenSize = BehaviorSubject.create<Float>()
 
     override fun getPenColors(): Observable<List<Int>> {
         return Observables.combineLatest(
@@ -57,11 +57,11 @@ class PenColorRepoFileImpl(dir: File,
             // You want the result of reading file sent to the subject also want
             // to be able to cancel the reading operation.
             readFromFile()
-                .map { (colors, _) ->
+                .map { (colors, _, _) ->
                     mPenColors.onNext(colors)
                     true
                 })
-            .map { (colors, _) -> colors }
+            .map { it.first }
     }
 
     override fun putPenColors(colors: List<Int>): Single<Boolean> {
@@ -77,11 +77,11 @@ class PenColorRepoFileImpl(dir: File,
             // You want the result of reading file sent to the subject also want
             // to be able to cancel the reading operation.
             readFromFile()
-                .map { (_, chosenColor) ->
+                .map { (_, chosenColor, _) ->
                     mChosenPenColor.onNext(chosenColor)
                     true
                 })
-            .map { (chosenColor, _) -> chosenColor }
+            .map { it.first }
     }
 
     override fun putChosenPenColor(color: Int): Single<Boolean> {
@@ -90,23 +90,39 @@ class PenColorRepoFileImpl(dir: File,
         return writeToDisk()
     }
 
-    private fun readFromFile(): Observable<ColorData> {
+    override fun getPenSize(): Observable<Float> {
+        return Observables.combineLatest(
+            mPenSize,
+            // You want the result of reading file sent to the subject also want
+            // to be able to cancel the reading operation.
+            readFromFile()
+                .map { (_, _, penSize) ->
+                    mPenSize.onNext(penSize)
+                    true
+                })
+            .map { it.first }
+    }
+
+    override fun putPenSize(size: Float): Single<Boolean> {
+        mPenSize.onNext(size)
+
+        return writeToDisk()
+    }
+
+    private fun readFromFile(): Observable<PrefsData> {
         return Maybe
             .fromCallable {
                 if (mFile.exists()) {
                     FileReader(mFile).use { reader ->
-                        val data = mGson.fromJson(
+                        return@fromCallable mGson.fromJson(
                             reader,
-                            ColorData::class.java)
-                        val newData = data.copy(
-                            colors = IPenColorRepo.DEFAULT_COLORS)
-
-                        return@fromCallable newData
+                            PrefsData::class.java)
                     }
                 } else {
-                    return@fromCallable ColorData(
-                        colors = IPenColorRepo.DEFAULT_COLORS,
-                        chosenColor = IPenColorRepo.DEFAULT_CHOSEN_COLOR)
+                    return@fromCallable PrefsData(
+                        colors = ICommonPenPrefsRepo.DEFAULT_COLORS,
+                        chosenColor = ICommonPenPrefsRepo.DEFAULT_CHOSEN_COLOR,
+                        penSize = ICommonPenPrefsRepo.DEFAULT_PEN_SIZE)
                 }
             }
             .subscribeOn(mIoScheduler)
@@ -117,15 +133,17 @@ class PenColorRepoFileImpl(dir: File,
         return Observables
             .combineLatest(
                 mPenColors,
-                mChosenPenColor)
+                mChosenPenColor,
+                mPenSize)
             .observeOn(mIoScheduler)
             .debounce(1000, TimeUnit.MILLISECONDS, mIoScheduler)
-            .switchMap { (colors, chosenColor) ->
+            .switchMap { (colors, chosenColor, penSize) ->
                 return@switchMap Single
                     .fromCallable {
-                        val data = ColorData(
+                        val data = PrefsData(
                             colors = colors,
-                            chosenColor = chosenColor)
+                            chosenColor = chosenColor,
+                            penSize = penSize)
                         mGson.toJson(data)
                     }
                     .subscribeOn(mIoScheduler)
@@ -144,7 +162,7 @@ class PenColorRepoFileImpl(dir: File,
 
     // JSON translation ///////////////////////////////////////////////////////
 
-    override fun serialize(src: ColorData,
+    override fun serialize(src: PrefsData,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -156,29 +174,47 @@ class PenColorRepoFileImpl(dir: File,
 
         root.add("colors", colorArray)
         root.addProperty("chosenColor", "#${Integer.toHexString(src.chosenColor)}")
+        root.addProperty("penSize", src.penSize)
 
         return root
     }
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): ColorData {
+                             context: JsonDeserializationContext): PrefsData {
         val root = json.asJsonObject
 
         val colors = mutableListOf<Int>()
-        root["colors"].asJsonArray.forEach { el ->
-            colors.add(Color.parseColor(el.asString))
+        if (root.has("colors")) {
+            root["colors"].asJsonArray.forEach { el ->
+                colors.add(Color.parseColor(el.asString))
+            }
+        } else {
+            colors.addAll(ICommonPenPrefsRepo.DEFAULT_COLORS)
         }
-        val chosenColor = Color.parseColor(root["chosenColor"].asString)
 
-        return ColorData(
+        val chosenColor = if (root.has("chosenColor")) {
+            Color.parseColor(root["chosenColor"].asString)
+        } else {
+            ICommonPenPrefsRepo.DEFAULT_CHOSEN_COLOR
+        }
+
+        val penSize = if (root.has("penSize")) {
+            root["penSize"].asFloat
+        } else {
+            ICommonPenPrefsRepo.DEFAULT_PEN_SIZE
+        }
+
+        return PrefsData(
             colors = colors,
-            chosenColor = chosenColor)
+            chosenColor = chosenColor,
+            penSize = penSize)
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    data class ColorData(val colors: List<Int>,
-                         val chosenColor: Int)
+    data class PrefsData(val colors: List<Int>,
+                         val chosenColor: Int,
+                         val penSize: Float)
 }

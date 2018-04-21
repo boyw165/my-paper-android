@@ -20,11 +20,11 @@ package com.paper.model
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-import com.paper.model.repository.IPenColorRepo
+import com.paper.model.repository.CommonPenPrefsRepoFileImpl
+import com.paper.model.repository.ICommonPenPrefsRepo
 import io.reactivex.observers.TestObserver
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.TestScheduler
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
@@ -32,18 +32,14 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner::class)
-class PenColorRepoFileImplTest {
-
-    @Before
-    fun prepare() {
-    }
+class CommonPenPrefsRepoFileImplTest {
 
     @Test
     fun readDefaultColors() {
         val dir = File("json")
 
         val testScheduler = TestScheduler()
-        val tester = PenColorRepoFileImpl(
+        val tester = CommonPenPrefsRepoFileImpl(
             dir = dir,
             ioScheduler = testScheduler)
 
@@ -56,7 +52,7 @@ class PenColorRepoFileImplTest {
         testObserver.assertValue { colors ->
             var theSame = true
             colors.forEachIndexed { i, color ->
-                theSame = theSame && (color == IPenColorRepo.DEFAULT_COLORS[i])
+                theSame = theSame && (color == ICommonPenPrefsRepo.DEFAULT_COLORS[i])
             }
             return@assertValue theSame
         }
@@ -67,7 +63,7 @@ class PenColorRepoFileImplTest {
         val dir = File("json")
 
         val testScheduler = TestScheduler()
-        val tester = PenColorRepoFileImpl(
+        val tester = CommonPenPrefsRepoFileImpl(
             dir = dir,
             ioScheduler = testScheduler)
 
@@ -77,7 +73,7 @@ class PenColorRepoFileImplTest {
 
         testScheduler.triggerActions()
 
-        testObserver.assertValue(IPenColorRepo.DEFAULT_CHOSEN_COLOR)
+        testObserver.assertValue(ICommonPenPrefsRepo.DEFAULT_CHOSEN_COLOR)
     }
 
     @Test
@@ -85,7 +81,7 @@ class PenColorRepoFileImplTest {
         val dir = File("/tmp")
 
         val testScheduler = TestScheduler()
-        val tester = PenColorRepoFileImpl(
+        val tester = CommonPenPrefsRepoFileImpl(
             dir = dir,
             ioScheduler = testScheduler)
 
@@ -97,8 +93,10 @@ class PenColorRepoFileImplTest {
                                            Color.parseColor("#333333")))
                     .toObservable(),
                 tester.putChosenPenColor(Color.parseColor("#222222"))
+                    .toObservable(),
+                tester.putPenSize(0.2f)
                     .toObservable())
-            .map { (a, b) -> a && b }
+            .map { it.first && it.second && it.third }
             .subscribe(testObserver)
 
         testScheduler.advanceTimeBy(1, TimeUnit.DAYS)
@@ -106,23 +104,23 @@ class PenColorRepoFileImplTest {
     }
 
     @Test
-    fun putColorsAndReadAgain_shouldBeTheSame() {
+    fun putAndGetAgain_shouldBeTheSame() {
         val dir = File("/tmp")
 
         val testScheduler = TestScheduler()
-        val tester = PenColorRepoFileImpl(
+        val tester = CommonPenPrefsRepoFileImpl(
             dir = dir,
             ioScheduler = testScheduler)
 
         Observables
             .combineLatest(
-                tester.putPenColors(listOf(Color.parseColor("#111111"),
-                                           Color.parseColor("#222222"),
-                                           Color.parseColor("#333333")))
+                tester.putPenColors(ICommonPenPrefsRepo.DEFAULT_COLORS)
                     .toObservable(),
-                tester.putChosenPenColor(Color.parseColor("#222222"))
+                tester.putChosenPenColor(ICommonPenPrefsRepo.DEFAULT_CHOSEN_COLOR)
+                    .toObservable(),
+                tester.putPenSize(0.2f)
                     .toObservable())
-            .map { (a, b) -> a && b }
+            .map { it.first && it.second && it.third }
             .subscribe()
         testScheduler.triggerActions()
 
@@ -132,9 +130,11 @@ class PenColorRepoFileImplTest {
 
         testScheduler.triggerActions()
         testObserver.assertValue { colors ->
-            colors[0] == Color.parseColor("#111111") &&
-            colors[1] == Color.parseColor("#222222") &&
-            colors[2] == Color.parseColor("#333333")
+            var theSame = true
+            colors.forEachIndexed { i, color ->
+                theSame = theSame && (color == ICommonPenPrefsRepo.DEFAULT_COLORS[i])
+            }
+            return@assertValue theSame
         }
     }
 }

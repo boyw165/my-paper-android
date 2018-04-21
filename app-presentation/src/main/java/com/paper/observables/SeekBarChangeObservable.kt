@@ -25,32 +25,30 @@ package com.paper.observables
 import android.os.Looper
 import android.widget.SeekBar
 
-import com.paper.domain.event.ProgressEvent
+import com.paper.domain.event.ProgressBarEvent
 
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.android.MainThreadDisposable
 
 /**
- * An observable wrapper for [SeekBar]. It emits the [ProgressEvent] to
+ * An observable wrapper for [SeekBar]. It emits the [ProgressBarEvent] to
  * downstream to indicate the progress of the seek-bar, also the start-doing-stop
  * touch information.
  */
-class SeekBarChangeObservable(view: SeekBar,
-                              byUserOnly: Boolean = false)
-    : Observable<ProgressEvent>() {
+class SeekBarChangeObservable(view: SeekBar)
+    : Observable<ProgressBarEvent>() {
 
     private val mView = view
-    private val mByUserOnly = byUserOnly
 
-    override fun subscribeActual(observer: Observer<in ProgressEvent>) {
+    override fun subscribeActual(observer: Observer<in ProgressBarEvent>) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             observer.onError(IllegalStateException(
                 "Expected to be called on the main thread but was " +
                 Thread.currentThread().name))
         }
 
-        val listener = Listener(mView, mByUserOnly, observer)
+        val listener = Listener(mView, observer)
         mView.setOnSeekBarChangeListener(listener)
         observer.onSubscribe(listener)
     }
@@ -59,38 +57,34 @@ class SeekBarChangeObservable(view: SeekBar,
     // Clazz //////////////////////////////////////////////////////////////////
 
     internal class Listener(view: SeekBar,
-                            byUserOnly: Boolean,
-                            private val observer: Observer<in ProgressEvent>)
+                            private val observer: Observer<in ProgressBarEvent>)
         : MainThreadDisposable(),
           SeekBar.OnSeekBarChangeListener {
 
         private val mView = view
-        private val mByUserOnly = byUserOnly
 
         override fun onProgressChanged(seekBar: SeekBar,
                                        progress: Int,
                                        fromUser: Boolean) {
 
             if (!isDisposed) {
-                if (mByUserOnly) {
-                    if (mByUserOnly == fromUser) {
-                        observer.onNext(ProgressEvent.doing(progress))
-                    }
+                if (fromUser) {
+                    observer.onNext(ProgressBarEvent.fromUser(progress))
                 } else {
-                    observer.onNext(ProgressEvent.doing(progress))
+                    observer.onNext(ProgressBarEvent.fromProgram(progress))
                 }
             }
         }
 
         override fun onStartTrackingTouch(seekBar: SeekBar) {
             if (!isDisposed) {
-                observer.onNext(ProgressEvent.start(mView.progress))
+                observer.onNext(ProgressBarEvent.fromUser(mView.progress))
             }
         }
 
         override fun onStopTrackingTouch(seekBar: SeekBar) {
             if (!isDisposed) {
-                observer.onNext(ProgressEvent.stop(mView.progress))
+                observer.onNext(ProgressBarEvent.fromUser(mView.progress))
             }
         }
 
