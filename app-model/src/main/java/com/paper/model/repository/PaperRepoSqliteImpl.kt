@@ -34,11 +34,8 @@ import com.google.gson.JsonObject
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.ScrapModel
-import com.paper.model.repository.json.PaperModelTranslator
 import com.paper.model.repository.json.ScrapModelTranslator
-import com.paper.model.repository.json.SketchModelTranslator
 import com.paper.model.repository.sqlite.PaperTable
-import com.paper.model.sketch.SketchModel
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.Scheduler
@@ -58,12 +55,8 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
     // JSON translator.
     private val mGson: Gson by lazy {
         GsonBuilder()
-            .registerTypeAdapter(PaperModel::class.java,
-                                 PaperModelTranslator())
             .registerTypeAdapter(ScrapModel::class.java,
                                  ScrapModelTranslator())
-            .registerTypeAdapter(SketchModel::class.java,
-                                 SketchModelTranslator())
             .create()
     }
 
