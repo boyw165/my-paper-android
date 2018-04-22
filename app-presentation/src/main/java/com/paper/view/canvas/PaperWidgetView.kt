@@ -25,7 +25,6 @@ import android.graphics.*
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -96,7 +95,7 @@ class PaperWidgetView : View,
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
-        Log.d(AppConst.TAG, "PaperWidgetView # onMeasure()")
+        println("${AppConst.TAG}: PaperWidgetView # onMeasure()")
         super.onMeasure(widthSpec, heightSpec)
     }
 
@@ -105,7 +104,7 @@ class PaperWidgetView : View,
                           top: Int,
                           right: Int,
                           bottom: Int) {
-        Log.d(AppConst.TAG, "PaperWidgetView # onLayout(changed=$changed)")
+        println("${AppConst.TAG}: PaperWidgetView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
         if (changed) {
@@ -151,7 +150,7 @@ class PaperWidgetView : View,
                     if (changed &&
                         size.width > 0 &&
                         size.height > 0) {
-                        Log.d(AppConst.TAG, "the layout is done, and canvas " +
+                        println("${AppConst.TAG}: the layout is done, and canvas " +
                                             "size is ${size.width} x ${size.height}")
                         onUpdateLayoutOrCanvas(size.width,
                                                size.height)
@@ -180,11 +179,10 @@ class PaperWidgetView : View,
                 .onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
-                    Log.d(DomainConst.TAG, message)
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 })
 
-        Log.d(AppConst.TAG, "Bind view with widget")
+        println("${AppConst.TAG}: Bind paper widget \"View\" with paper \"Widget\"")
     }
 
     override fun unbindWidget() {
@@ -194,7 +192,7 @@ class PaperWidgetView : View,
             scrapView.unbindWidget()
         }
 
-        Log.d(AppConst.TAG, "Unbind view from widget")
+        println("${AppConst.TAG}: Unbind paper widget \"View\" from paper \"Widget\"")
     }
 
     // Add / Remove Scraps /////////////////////////////////////////////////////

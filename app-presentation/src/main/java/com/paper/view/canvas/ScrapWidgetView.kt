@@ -25,6 +25,7 @@ import android.os.Looper
 import android.view.MotionEvent
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
+import com.paper.AppConst
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.canvas.IScrapWidget
@@ -102,6 +103,8 @@ open class ScrapWidgetView : IScrapWidgetView {
                 .subscribe { xform ->
                     onUpdateTransform(xform)
                 })
+
+        println("${AppConst.TAG}: Bind scrap widget \"View\" with a scrap \"Widget\"")
     }
 
     override fun unbindWidget() {
@@ -110,6 +113,8 @@ open class ScrapWidgetView : IScrapWidgetView {
         mParent = null
 
         mDisposables.clear()
+
+        println("${AppConst.TAG}: Unbind scrap widget \"View\" from a scrap \"Widget\"")
     }
 
     override fun addChild(child: IScrapWidgetView) {
