@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,12 +18,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.sketch
+package com.paper.domain.useCase
 
-/**
- * A path tuple represents a path node. It may contains more than one x-y
- * pair in order to draw Bezier curve. A x-y pair is called TuplePoint.
- */
-data class PathPoint(var x: Float,
-                     var y: Float,
-                     val time: Long)
+import android.graphics.Bitmap
+import com.paper.model.PaperModel
+import com.paper.model.repository.IPaperRepo
+import io.reactivex.Single
+import io.reactivex.SingleSource
+import io.reactivex.SingleTransformer
+
+class SavePaperToStore(paper: PaperModel,
+                       paperRepo: IPaperRepo)
+    : SingleTransformer<Bitmap, Boolean> {
+
+    private val mPaper = paper
+    private val mPaperRepo = paperRepo
+
+    override fun apply(upstream: Single<Bitmap>): SingleSource<Boolean> {
+        return upstream
+            .flatMap { bmp ->
+                mPaperRepo
+                    .putBitmap(bmp)
+                    .flatMap { bmpFile ->
+                        mPaper.thumbnailPath = bmpFile
+                        mPaper.thumbnailWidth = bmp.width
+                        mPaper.thumbnailHeight = bmp.height
+
+                        mPaperRepo.putPaperById(mPaper.id, mPaper)
+                    }
+            }
+    }
+}

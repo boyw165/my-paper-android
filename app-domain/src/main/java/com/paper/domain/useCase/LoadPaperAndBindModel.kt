@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,7 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget
+package com.paper.domain.useCase
 
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.canvas.IPaperWidget
@@ -80,7 +82,7 @@ class LoadPaperAndBindModel(paperID: Long,
             })
 
         val d = InnerDisposable(widget = mPaperWidget,
-                                actualDisposable = actualDisposable)
+                                                                               actualDisposable = actualDisposable)
         observer.onSubscribe(d)
 
         // Right after the subscription, send a START progress event.

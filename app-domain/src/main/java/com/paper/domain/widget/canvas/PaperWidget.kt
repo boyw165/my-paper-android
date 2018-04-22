@@ -24,11 +24,11 @@ import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
+import com.paper.domain.useCase.SketchToDrawSVGEvent
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
-import com.paper.model.sketch.PathPoint
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -36,7 +36,6 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.NoSuchElementException
 
 class PaperWidget(private val mUiScheduler: Scheduler,
@@ -65,7 +64,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Hold reference.
         mModel = model
 
-        mSetCanvasSize.onNext(Rect(0f, 0f, mModel.width, mModel.height))
+        // Canvas size
+        mSetCanvasSize.onNext(Rect(0f, 0f, model.width, model.height))
 
         // Add or remove scrap
         mModelDisposables.add(
@@ -166,7 +166,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             color = mPenColor,
             isEraser = false,
             width = mPenSize)
-        mTmpStroke.addPathTuple(PathPoint(x, y, 0))
+        mTmpStroke.addPath(Point(x, y, 0))
 
         mLineToSignal.onNext(Point(x, y))
 
@@ -177,7 +177,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             .takeUntil(mCancelDrawingSignal)
             .observeOn(mUiScheduler)
             .subscribe { p ->
-                mTmpStroke.addPathTuple(PathPoint(p.x, p.y, p.time))
+                mTmpStroke.addPath(Point(p.x, p.y, p.time))
 
                 // Notify the observer
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
@@ -201,7 +201,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        mTmpStroke.addPathTuple(PathPoint(x, y, 0))
+        mTmpStroke.addPath(Point(x, y, 0))
         mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer
@@ -215,7 +215,12 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     }
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {
-        return mDrawSVGSignal
+        return Observable
+            .merge(
+                mDrawSVGSignal,
+                // For the first time subscription, send events one by one!
+                SketchToDrawSVGEvent(mModel.sketch)
+                    .subscribeOn(mWorkerScheduler))
     }
 
     // Gesture ////////////////////////////////////////////////////////////////
@@ -234,13 +239,13 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             color = 0,
             isEraser = false,
             width = 1f)
-        mTmpStroke.addPathTuple(PathPoint(x, y, 0))
+        mTmpStroke.addPath(Point(x, y, 0))
 
         mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = Point(x, y),
+                                           point = Point(x, y, 0),
                                            penColor = mPenColor,
                                            penSize = mPenSize))
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
