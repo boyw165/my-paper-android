@@ -247,17 +247,17 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
 
 //                val stroke1 = SketchStroke()
 //                stroke1.setWidth(0.2f)
-//                stroke1.addPathTuple(PathTuple(0f, 0f))
-//                stroke1.addPathTuple(PathTuple(1f, 0.2f))
-//                stroke1.addPathTuple(PathTuple(0.2f, 0.6f))
+//                stroke1.addPathTuple(PathPoint(0f, 0f))
+//                stroke1.addPathTuple(PathPoint(1f, 0.2f))
+//                stroke1.addPathTuple(PathPoint(0.2f, 0.6f))
 //
 //                val stroke2 = SketchStroke()
 //                stroke2.setWidth(0.2f)
-//                stroke1.addPathTuple(PathTuple(0f, 0f))
-//                stroke2.addPathTuple(PathTuple(1f, 0.1f))
-//                stroke2.addPathTuple(PathTuple(0.8f, 0.3f))
-//                stroke2.addPathTuple(PathTuple(0.2f, 0.6f))
-//                stroke2.addPathTuple(PathTuple(0f, 0.9f))
+//                stroke1.addPathTuple(PathPoint(0f, 0f))
+//                stroke2.addPathTuple(PathPoint(1f, 0.1f))
+//                stroke2.addPathTuple(PathPoint(0.8f, 0.3f))
+//                stroke2.addPathTuple(PathPoint(0.2f, 0.6f))
+//                stroke2.addPathTuple(PathPoint(0f, 0.9f))
 //
 //                // Add testing scraps.
 //                val scrap1 = ScrapModel()

@@ -23,7 +23,7 @@ package com.paper.model
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.SketchStrokeJSONTranslator
-import com.paper.model.sketch.PathTuple
+import com.paper.model.sketch.PathPoint
 import com.paper.model.sketch.SketchStroke
 import org.junit.Assert
 import org.junit.Test
@@ -83,8 +83,8 @@ class PaperJSONTranslatorTest {
         paper.addStrokeToSketch(SketchStroke(color = Color.parseColor("#123456"),
                                              width = 0.5f,
                                              isEraser = false)
-                                    .addPathTuple(PathTuple(0f, 0f))
-                                    .addPathTuple(PathTuple(1f, 1f)))
+                                    .addPathTuple(PathPoint(0f, 0f))
+                                    .addPathTuple(PathPoint(1f, 1f)))
 
         Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"M0.0,0.0 L1.0,1.0 Z\"}],\"scraps\":[]}",
                             translator.toJson(paper, PaperModel::class.java))

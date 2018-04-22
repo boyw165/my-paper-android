@@ -39,7 +39,7 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         root.addProperty("width", src.width)
 
         // Save via SVG format
-        val svgTransJson = SVGTranslator.toSVG(src.pathTupleList)
+        val svgTransJson = SVGTranslator.toSVG(src.pathPointList)
         root.addProperty("path", svgTransJson)
 
         return root
