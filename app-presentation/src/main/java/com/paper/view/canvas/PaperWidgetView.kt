@@ -93,72 +93,6 @@ class PaperWidgetView : View,
     private val mTmpMatrixStart = Matrix()
     private val mTransformHelper = TransformUtils()
 
-    // Gesture.
-    private val mTouchSlop by lazy { resources.getDimension(R.dimen.touch_slop) }
-    private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
-    private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
-    private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
-
-    private val mGestureDetector by lazy {
-        val detector = GestureDetector(Looper.getMainLooper(),
-                                       ViewConfiguration.get(context),
-                                       mTouchSlop,
-                                       mTapSlop,
-                                       mMinFlingVec,
-                                       mMaxFlingVec)
-
-        // Set mapper as the listener.
-        detector.tapGestureListener = this@PaperWidgetView
-        detector.dragGestureListener = this@PaperWidgetView
-        detector.pinchGestureListener = this@PaperWidgetView
-
-        return@lazy detector
-    }
-    private var mIfHandleAction = false
-    private var mIfHandleDrag = false
-    private val mGestureHistory = mutableListOf<GestureRecord>()
-
-    // View port & canvas matrix
-    /**
-     * The view-port boundary in the model world.
-     */
-    private val mViewPort = BehaviorSubject.create<RectF>()
-    /**
-     * Minimum size of [mViewPort].
-     */
-    private val mViewPortMin = RectF()
-    /**
-     * Maximum size of [mViewPort].
-     */
-    private val mViewPortMax = RectF()
-    /**
-     * The initial view port size that is used to compute the scale factor from
-     * Model to View, which is [mScaleM2V].
-     */
-    private val mViewPortBase = RectF()
-    /**
-     * The matrix used for mapping a point from the canvas world to view port
-     * world in the View perspective.
-     *
-     * @sample
-     * .---------------.
-     * |               | ----> View canvas
-     * |       .---.   |
-     * |       | V | --------> View port
-     * |       | P |   |
-     * |       '---'   |
-     * '---------------'
-     */
-    private val mCanvasMatrix = Matrix()
-    /**
-     * The inverse matrix of [mCanvasMatrixInverse], which is used to mapping a
-     * point from view port world to canvas world in the View perspective.
-     */
-    private val mCanvasMatrixInverse = Matrix()
-    private var mCanvasMatrixDirty = false
-    // Output signal related to view port
-    private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
-
     // Rendering resource.
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
     private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
@@ -252,9 +186,8 @@ class PaperWidgetView : View,
                 .subscribe { vp ->
                     // Would trigger onDraw() call
                     markCanvasMatrixDirty()
-                    invalidate()
 
-                    // Output to the external world
+                    // Notify any external observers
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
                         canvas = mMSize.value.copy(),
                         viewPort = Rect(vp.left,
@@ -274,10 +207,6 @@ class PaperWidgetView : View,
                 })
 
         Log.d(AppConst.TAG, "Bind view with widget")
-    }
-
-    override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
-        return mDrawViewPortSignal
     }
 
     override fun unbindWidget() {
@@ -314,6 +243,27 @@ class PaperWidgetView : View,
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
+
+    /**
+     * The matrix used for mapping a point from the canvas world to view port
+     * world in the View perspective.
+     *
+     * @sample
+     * .---------------.
+     * |               | ----> View canvas
+     * |       .---.   |
+     * |       | V | --------> View port
+     * |       | P |   |
+     * |       '---'   |
+     * '---------------'
+     */
+    private val mCanvasMatrix = Matrix()
+    /**
+     * The inverse matrix of [mCanvasMatrixInverse], which is used to mapping a
+     * point from view port world to canvas world in the View perspective.
+     */
+    private val mCanvasMatrixInverse = Matrix()
+    private var mCanvasMatrixDirty = false
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -504,6 +454,78 @@ class PaperWidgetView : View,
 
     private fun markCanvasMatrixDirty() {
         mCanvasMatrixDirty = true
+
+        invalidate()
+    }
+
+    // View port //////////////////////////////////////////////////////////////
+
+    /**
+     * The view-port boundary in the model world.
+     */
+    private val mViewPort = BehaviorSubject.create<RectF>()
+    /**
+     * Minimum size of [mViewPort].
+     */
+    private val mViewPortMin = RectF()
+    /**
+     * Maximum size of [mViewPort].
+     */
+    private val mViewPortMax = RectF()
+    /**
+     * The initial view port size that is used to compute the scale factor from
+     * Model to View, which is [mScaleM2V].
+     */
+    private val mViewPortBase = RectF()
+    /**
+     * The signal for external observers
+     */
+    private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
+
+    override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
+        return mDrawViewPortSignal
+    }
+
+    private fun resetViewPort(mw: Float,
+                              mh: Float,
+                              defaultW: Float,
+                              defaultH: Float) {
+//        // Place the view port center in the model world.
+//        val viewPortX = (mw - defaultW) / 2
+//        val viewPortY = (mh - defaultH) / 2
+
+        // Place the view port left in the model world.
+        val viewPortX = 0f
+        val viewPortY = 0f
+        mViewPort.onNext(RectF(viewPortX, viewPortY,
+                               viewPortX + defaultW,
+                               viewPortY + defaultH))
+    }
+
+    override fun setViewPortPosition(x: Float, y: Float) {
+        val mw = mMSize.value.width
+        val mh = mMSize.value.height
+
+        mTmpBound.set(x, y,
+                      x + mViewPort.value.width(),
+                      y + mViewPort.value.height())
+
+        // Constraint view port
+        val minWidth = mViewPortMin.width()
+        val minHeight = mViewPortMin.height()
+        val maxWidth = mViewPortMax.width()
+        val maxHeight = mViewPortMax.height()
+        constraintViewPort(mTmpBound,
+                           left = 0f,
+                           top = 0f,
+                           right = mw,
+                           bottom = mh,
+                           minWidth = minWidth,
+                           minHeight = minHeight,
+                           maxWidth = maxWidth,
+                           maxHeight = maxHeight)
+
+        mViewPort.onNext(mTmpBound)
     }
 
     /**
@@ -541,7 +563,185 @@ class PaperWidgetView : View,
         }
     }
 
+    private fun startUpdateViewport() {
+        // Hold necessary starting states.
+        mTmpMatrixStart.set(mCanvasMatrix)
+    }
+
+    // TODO: Make the view-port code a component.
+    private fun onUpdateViewport(startPointers: Array<PointF>,
+                                 stopPointers: Array<PointF>) {
+        val mw = mMSize.value.width
+        val mh = mMSize.value.height
+        val scaleM2V = mScaleM2V.value
+
+        // Compute new canvas matrix.
+        val transform = TransformUtils.getTransformFromPointers(
+            startPointers, stopPointers)
+        val dx = transform[TransformUtils.DELTA_X]
+        val dy = transform[TransformUtils.DELTA_Y]
+        val dScale = transform[TransformUtils.DELTA_SCALE_X]
+        val px = transform[TransformUtils.PIVOT_X]
+        val py = transform[TransformUtils.PIVOT_Y]
+        mTmpMatrix.set(mTmpMatrixStart)
+        mTmpMatrix.postScale(dScale, dScale, px, py)
+        mTmpMatrix.postTranslate(dx, dy)
+        mTmpMatrix.invert(mTmpMatrixInverse)
+
+        // Compute new view port bound in the view world:
+        // .-------------------------.
+        // |          .---.          |
+        // | View     | V |          |
+        // | Canvas   | P |          |
+        // |          '---'          |
+        // |                         |
+        // '-------------------------'
+        mTransformHelper.getValues(mTmpMatrix)
+        val tx = mTransformHelper.translationX
+        val ty = mTransformHelper.translationY
+        val scaleVP = mTransformHelper.scaleX
+        val vx = -tx / scaleVP / scaleM2V
+        val vy = -ty / scaleVP / scaleM2V
+        val vw = mViewPortMax.width() / scaleVP
+        val vh = mViewPortMax.height() / scaleVP
+        mTmpBound.set(vx, vy, vx + vw, vy + vh)
+
+        // Constraint view port
+        val minWidth = mViewPortMin.width()
+        val minHeight = mViewPortMin.height()
+        val maxWidth = mViewPortMax.width()
+        val maxHeight = mViewPortMax.height()
+        constraintViewPort(mTmpBound,
+                           left = 0f,
+                           top = 0f,
+                           right = mw,
+                           bottom = mh,
+                           minWidth = minWidth,
+                           minHeight = minHeight,
+                           maxWidth = maxWidth,
+                           maxHeight = maxHeight)
+
+        // Apply final view port boundary
+        mViewPort.onNext(RectF(mTmpBound))
+    }
+
+    private fun stopUpdateViewport() {
+        // TODO: Upsample?
+    }
+
+    private fun constraintViewPort(viewPort: RectF,
+                                   left: Float,
+                                   top: Float,
+                                   right: Float,
+                                   bottom: Float,
+                                   minWidth: Float,
+                                   minHeight: Float,
+                                   maxWidth: Float,
+                                   maxHeight: Float) {
+        // In width...
+        if (viewPort.width() < minWidth) {
+            val cx = viewPort.centerX()
+            viewPort.left = cx - minWidth / 2f
+            viewPort.right = cx + minWidth / 2f
+        } else if (viewPort.width() > maxWidth) {
+            val cx = viewPort.centerX()
+            viewPort.left = cx - maxWidth / 2f
+            viewPort.right = cx + maxWidth / 2f
+        }
+        // In height...
+        if (viewPort.height() < minHeight) {
+            val cy = viewPort.centerY()
+            viewPort.top = cy - minHeight / 2f
+            viewPort.bottom = cy + minHeight / 2f
+        } else if (viewPort.height() > maxHeight) {
+            val cy = viewPort.centerY()
+            viewPort.top = cy - maxHeight / 2f
+            viewPort.bottom = cy + maxHeight / 2f
+        }
+        // In x...
+        val viewPortWidth = viewPort.width()
+        if (viewPort.left < left) {
+            viewPort.left = left
+            viewPort.right = viewPort.left + viewPortWidth
+        } else if (viewPort.right > right) {
+            viewPort.right = right
+            viewPort.left = viewPort.right - viewPortWidth
+        }
+        // In y...
+        val viewPortHeight = viewPort.height()
+        if (viewPort.top < top) {
+            viewPort.top = top
+            viewPort.bottom = viewPort.top + viewPortHeight
+        } else if (viewPort.bottom > bottom) {
+            viewPort.bottom = bottom
+            viewPort.top = viewPort.bottom - viewPortHeight
+        }
+    }
+
+    /**
+     * Convert the point from View (view port) world to Model world.
+     */
+    private fun toModelWorld(x: Float,
+                             y: Float): FloatArray {
+        // View might have padding, if so we need to subtract the padding to get
+        // the position in the real view port.
+        mTmpPoint[0] = x - ViewCompat.getPaddingStart(this)
+        mTmpPoint[1] = y - this.paddingTop
+
+        // Map the point from screen (view port) to the view canvas world.
+        mCanvasMatrixInverse.mapPoints(mTmpPoint)
+
+        // The point is still in the View world, we still need to map it to the
+        // Model world.
+        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
+        val scaleM2V = mScaleM2V.value
+        mTmpPoint[0] = mTmpPoint[0] / scaleVP / scaleM2V
+        mTmpPoint[1] = mTmpPoint[1] / scaleVP / scaleM2V
+
+        return mTmpPoint
+    }
+
+    /**
+     * Convert the point from Model world to View canvas world.
+     */
+    private fun toViewWorld(x: Float,
+                            y: Float): FloatArray {
+        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
+        val scaleM2V = mScaleM2V.value
+
+        // Map the point from Model world to View world.
+        mTmpPoint[0] = scaleVP * scaleM2V * x
+        mTmpPoint[1] = scaleVP * scaleM2V * y
+
+        return mTmpPoint
+    }
+
     // Common Gesture /////////////////////////////////////////////////////////
+
+    // Gesture.
+    private val mTouchSlop by lazy { resources.getDimension(R.dimen.touch_slop) }
+    private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
+    private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
+    private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
+
+    private val mGestureDetector by lazy {
+        val detector = GestureDetector(Looper.getMainLooper(),
+                                       ViewConfiguration.get(context),
+                                       mTouchSlop,
+                                       mTapSlop,
+                                       mMinFlingVec,
+                                       mMaxFlingVec)
+
+        // Set mapper as the listener.
+        detector.tapGestureListener = this@PaperWidgetView
+        detector.dragGestureListener = this@PaperWidgetView
+        detector.pinchGestureListener = this@PaperWidgetView
+
+        return@lazy detector
+    }
+    private var mIfHandleAction = false
+    private var mIfHandleDrag = false
+    private val mGestureHistory = mutableListOf<GestureRecord>()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // Interpret the event iff scale, canvas size is ready at ACTION_DOWN.
@@ -714,205 +914,22 @@ class PaperWidgetView : View,
         stopUpdateViewport()
     }
 
-    // View port //////////////////////////////////////////////////////////////
+    // Context ////////////////////////////////////////////////////////////////
 
-    private fun resetViewPort(mw: Float,
-                              mh: Float,
-                              defaultW: Float,
-                              defaultH: Float) {
-        //        // Place the view port center in the model world.
-        //        val viewPortX = (mw - defaultW) / 2
-        //        val viewPortY = (mh - defaultH) / 2
-
-        // Place the view port left in the model world.
-        val viewPortX = 0f
-        val viewPortY = 0f
-        mViewPort.onNext(RectF(viewPortX, viewPortY,
-                               viewPortX + defaultW,
-                               viewPortY + defaultH))
-    }
-
-    override fun setViewPortPosition(x: Float, y: Float) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
-
-        mTmpBound.set(x, y,
-                      x + mViewPort.value.width(),
-                      y + mViewPort.value.height())
-
-        // Constraint view port
-        val minWidth = mViewPortMin.width()
-        val minHeight = mViewPortMin.height()
-        val maxWidth = mViewPortMax.width()
-        val maxHeight = mViewPortMax.height()
-        constraintViewPort(mTmpBound,
-                           left = 0f,
-                           top = 0f,
-                           right = mw,
-                           bottom = mh,
-                           minWidth = minWidth,
-                           minHeight = minHeight,
-                           maxWidth = maxWidth,
-                           maxHeight = maxHeight)
-
-        mViewPort.onNext(mTmpBound)
-    }
-
-    private fun startUpdateViewport() {
-        // Hold necessary starting states.
-        mTmpMatrixStart.set(mCanvasMatrix)
-    }
-
-    // TODO: Make the view-port code a component.
-    private fun onUpdateViewport(startPointers: Array<PointF>,
-                                 stopPointers: Array<PointF>) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
-        val scaleM2V = mScaleM2V.value
-
-        // Compute new canvas matrix.
-        val transform = TransformUtils.getTransformFromPointers(
-            startPointers, stopPointers)
-        val dx = transform[TransformUtils.DELTA_X]
-        val dy = transform[TransformUtils.DELTA_Y]
-        val dScale = transform[TransformUtils.DELTA_SCALE_X]
-        val px = transform[TransformUtils.PIVOT_X]
-        val py = transform[TransformUtils.PIVOT_Y]
-        mTmpMatrix.set(mTmpMatrixStart)
-        mTmpMatrix.postScale(dScale, dScale, px, py)
-        mTmpMatrix.postTranslate(dx, dy)
-        mTmpMatrix.invert(mTmpMatrixInverse)
-
-        // Compute new view port bound in the view world:
-        // .-------------------------.
-        // |          .---.          |
-        // | View     | V |          |
-        // | Canvas   | P |          |
-        // |          '---'          |
-        // |                         |
-        // '-------------------------'
-        mTransformHelper.getValues(mTmpMatrix)
-        val tx = mTransformHelper.translationX
-        val ty = mTransformHelper.translationY
-        val scaleVP = mTransformHelper.scaleX
-        val vx = -tx / scaleVP / scaleM2V
-        val vy = -ty / scaleVP / scaleM2V
-        val vw = mViewPortMax.width() / scaleVP
-        val vh = mViewPortMax.height() / scaleVP
-        mTmpBound.set(vx, vy, vx + vw, vy + vh)
-
-        // Constraint view port
-        val minWidth = mViewPortMin.width()
-        val minHeight = mViewPortMin.height()
-        val maxWidth = mViewPortMax.width()
-        val maxHeight = mViewPortMax.height()
-        constraintViewPort(mTmpBound,
-                           left = 0f,
-                           top = 0f,
-                           right = mw,
-                           bottom = mh,
-                           minWidth = minWidth,
-                           minHeight = minHeight,
-                           maxWidth = maxWidth,
-                           maxHeight = maxHeight)
-
-        // Apply final view port boundary
-        mViewPort.onNext(RectF(mTmpBound))
-    }
-
-    private fun stopUpdateViewport() {
-        // TODO: Upsample?
-    }
-
-    private fun constraintViewPort(viewPort: RectF,
-                                   left: Float,
-                                   top: Float,
-                                   right: Float,
-                                   bottom: Float,
-                                   minWidth: Float,
-                                   minHeight: Float,
-                                   maxWidth: Float,
-                                   maxHeight: Float) {
-        // In width...
-        if (viewPort.width() < minWidth) {
-            val cx = viewPort.centerX()
-            viewPort.left = cx - minWidth / 2f
-            viewPort.right = cx + minWidth / 2f
-        } else if (viewPort.width() > maxWidth) {
-            val cx = viewPort.centerX()
-            viewPort.left = cx - maxWidth / 2f
-            viewPort.right = cx + maxWidth / 2f
-        }
-        // In height...
-        if (viewPort.height() < minHeight) {
-            val cy = viewPort.centerY()
-            viewPort.top = cy - minHeight / 2f
-            viewPort.bottom = cy + minHeight / 2f
-        } else if (viewPort.height() > maxHeight) {
-            val cy = viewPort.centerY()
-            viewPort.top = cy - maxHeight / 2f
-            viewPort.bottom = cy + maxHeight / 2f
-        }
-        // In x...
-        val viewPortWidth = viewPort.width()
-        if (viewPort.left < left) {
-            viewPort.left = left
-            viewPort.right = viewPort.left + viewPortWidth
-        } else if (viewPort.right > right) {
-            viewPort.right = right
-            viewPort.left = viewPort.right - viewPortWidth
-        }
-        // In y...
-        val viewPortHeight = viewPort.height()
-        if (viewPort.top < top) {
-            viewPort.top = top
-            viewPort.bottom = viewPort.top + viewPortHeight
-        } else if (viewPort.bottom > bottom) {
-            viewPort.bottom = bottom
-            viewPort.top = viewPort.bottom - viewPortHeight
-        }
-    }
-
-    /**
-     * Convert the point from View (view port) world to Model world.
-     */
-    private fun toModelWorld(x: Float,
-                             y: Float): FloatArray {
-        // View might have padding, if so we need to subtract the padding to get
-        // the position in the real view port.
-        mTmpPoint[0] = x - ViewCompat.getPaddingStart(this)
-        mTmpPoint[1] = y - this.paddingTop
-
-        // Map the point from screen (view port) to the view canvas world.
-        mCanvasMatrixInverse.mapPoints(mTmpPoint)
-
-        // The point is still in the View world, we still need to map it to the
-        // Model world.
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
-        val scaleM2V = mScaleM2V.value
-        mTmpPoint[0] = mTmpPoint[0] / scaleVP / scaleM2V
-        mTmpPoint[1] = mTmpPoint[1] / scaleVP / scaleM2V
-
-        return mTmpPoint
-    }
-
-    /**
-     * Convert the point from Model world to View canvas world.
-     */
-    private fun toViewWorld(x: Float,
-                            y: Float): FloatArray {
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
-        val scaleM2V = mScaleM2V.value
-
-        // Map the point from Model world to View world.
-        mTmpPoint[0] = scaleVP * scaleM2V * x
-        mTmpPoint[1] = scaleVP * scaleM2V * y
-
-        return mTmpPoint
+    override fun getOneDp(): Float {
+        return mOneDp
     }
 
     override fun getViewConfiguration(): ViewConfiguration {
         return ViewConfiguration.get(context)
+    }
+
+    override fun getMinStrokeWidth(): Float {
+        return mMinStrokeWidth
+    }
+
+    override fun getMaxStrokeWidth(): Float {
+        return mMaxStrokeWidth
     }
 
     override fun getTouchSlop(): Float {
@@ -929,20 +946,6 @@ class PaperWidgetView : View,
 
     override fun getMaxFlingVec(): Float {
         return mMaxFlingVec
-    }
-
-    // Context ////////////////////////////////////////////////////////////////
-
-    override fun getOneDp(): Float {
-        return mOneDp
-    }
-
-    override fun getMinStrokeWidth(): Float {
-        return mMinStrokeWidth
-    }
-
-    override fun getMaxStrokeWidth(): Float {
-        return mMaxStrokeWidth
     }
 
     override fun mapM2V(x: Float, y: Float): FloatArray {
