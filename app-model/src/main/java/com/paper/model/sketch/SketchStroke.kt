@@ -56,13 +56,15 @@ data class SketchStroke(
         mPathTupleList.clear()
     }
 
-    fun addPathTuple(pathTuple: PathTuple) {
+    fun addPathTuple(pathTuple: PathTuple): SketchStroke {
         val point = pathTuple.getPointAt(0)
 
         // Calculate new boundary.
         calculateBound(point.x, point.y)
 
         mPathTupleList.add(pathTuple)
+
+        return this
     }
 
     fun addAllPathTuple(pathTupleList: List<PathTuple>): SketchStroke {
