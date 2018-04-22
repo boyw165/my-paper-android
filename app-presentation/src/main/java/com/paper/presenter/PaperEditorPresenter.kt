@@ -81,19 +81,19 @@ class PaperEditorPresenter(paperRepo: IPaperRepo,
             mView!!.onClickCloseButton()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .take(1)
-                .switchMap {
-                    canvasView
-                        .takeSnapshot()
-                        .compose(SavePaperToStore(
-                            paperWidget = mPaperWidget,
-                            paperRepo = mPaperRepo,
-                            ioScheduler = Schedulers.io()))
-                        .toObservable()
-//                        .startWith { view.showProgressBar(0) }
-//                        .subscribeOn(mUiScheduler)
-//                        .observeOn(mUiScheduler)
-//                        .doOnNext { view.hideProgressBar() }
-                }
+//                .switchMap {
+//                    canvasView
+//                        .takeSnapshot()
+//                        .compose(SavePaperToStore(
+//                            paperWidget = mPaperWidget,
+//                            paperRepo = mPaperRepo,
+//                            ioScheduler = Schedulers.io()))
+//                        .toObservable()
+////                        .startWith { view.showProgressBar(0) }
+////                        .subscribeOn(mUiScheduler)
+////                        .observeOn(mUiScheduler)
+////                        .doOnNext { view.hideProgressBar() }
+//                }
                 .observeOn(mUiScheduler)
                 .subscribe {
                     view.close()
