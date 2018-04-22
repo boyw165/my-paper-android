@@ -93,6 +93,8 @@ ext {
             // Leak Detection.
             leakcanary             : 'com.squareup.leakcanary:leakcanary-android:1.5.1',
             leakcanaryNoOp         : 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1',
+            // IO, Cache
+            diskLruCache           : 'com.jakewharton:disklrucache:2.0.2',
             // Custom View.
             airbnbEpoxy            : 'com.airbnb.android:epoxy:2.7.3',
             airbnbEpoxyAnnotation  : 'com.airbnb.android:epoxy-processor:2.7.3',

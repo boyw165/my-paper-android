@@ -75,6 +75,9 @@ dependencies {
     kapt rootProject.ext.dep.glideAnnotation
     implementation rootProject.ext.dep.fresco
 
+    // IO, Cache
+    implementation rootProject.ext.dep.diskLruCache
+
     // RecyclerView.
     implementation rootProject.ext.dep.airbnbEpoxy
     implementation rootProject.ext.dep.discreteScrollView
