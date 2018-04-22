@@ -36,7 +36,7 @@ interface IPaperRepo {
 
     fun deletePaperById(id: Long): Observable<Boolean>
 
-    fun putBitmap(bmp: Bitmap): Observable<File>
+    fun putBitmap(bmp: Bitmap): Single<File>
 
     // For testing data.
 

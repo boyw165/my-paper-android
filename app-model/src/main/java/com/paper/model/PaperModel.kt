@@ -49,6 +49,9 @@ class PaperModel(
 
     private val mSketch = mutableListOf<SketchStroke>()
 
+    val sketch: List<SketchStroke>
+        get() = mSketch.toList()
+
     fun addStrokeToSketch(stroke: SketchStroke) {
         mSketch.add(stroke)
     }

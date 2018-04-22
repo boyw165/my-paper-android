@@ -105,22 +105,9 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Save ///////////////////////////////////////////////////////////////////
 
-    override fun handleSetThumbnail(file: File,
-                                    width: Int,
-                                    height: Int) {
-        mModel.thumbnailPath = file
-        mModel.thumbnailWidth = width
-        mModel.thumbnailHeight = height
-    }
-
     override fun getPaper(): PaperModel {
         return mModel
     }
-
-    // Add & Remove Stroke ////////////////////////////////////////////////////
-
-
-
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
 

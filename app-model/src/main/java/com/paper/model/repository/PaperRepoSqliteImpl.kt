@@ -27,19 +27,17 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.ScrapModel
-import com.paper.model.repository.json.ScrapModelTranslator
+import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.repository.json.SketchStrokeJSONTranslator
 import com.paper.model.repository.sqlite.PaperTable
+import com.paper.model.sketch.SketchStroke
+import io.reactivex.*
 import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
-import io.reactivex.Scheduler
-import io.reactivex.Single
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -53,10 +51,14 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
     private val mTempFile by lazy { File(mCacheDirFile, "$mAuthority.temp_paper") }
 
     // JSON translator.
-    private val mGson: Gson by lazy {
+    private val mTranslator by lazy {
         GsonBuilder()
+            .registerTypeAdapter(PaperModel::class.java,
+                                 PaperJSONTranslator())
+            .registerTypeAdapter(SketchStroke::class.java,
+                                 SketchStrokeJSONTranslator())
             .registerTypeAdapter(ScrapModel::class.java,
-                                 ScrapModelTranslator())
+                                 ScrapJSONTranslator())
             .create()
     }
 
@@ -217,23 +219,25 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
         TODO("not implemented")
     }
 
-    override fun putBitmap(bmp: Bitmap): Observable<File> {
-        return Observable.fromCallable {
-            val dir = File("${Environment.getExternalStorageDirectory()}/paper")
-            if (!dir.exists()) {
-                dir.mkdir()
+    override fun putBitmap(bmp: Bitmap): Single<File> {
+        return Single
+            .fromCallable {
+                val dir = File("${Environment.getExternalStorageDirectory()}/paper")
+                if (!dir.exists()) {
+                    dir.mkdir()
+                }
+
+                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+                val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
+                                   "$ts.jpg")
+
+                FileOutputStream(bmpFile).use { out ->
+                    bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+
+                return@fromCallable bmpFile
             }
-
-            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-            val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
-                               "$ts.jpg")
-
-            FileOutputStream(bmpFile).use { out ->
-                bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
-            }
-
-            return@fromCallable bmpFile
-        }
+            .subscribeOn(mDbIoScheduler)
     }
 
     override fun getTestPaper(): Single<PaperModel> {
@@ -241,37 +245,37 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
             .fromCallable {
                 val paper = PaperModel()
 
-                //                val stroke1 = SketchStroke()
-                //                stroke1.setWidth(0.2f)
-                //                stroke1.addPathTuple(PathTuple(0f, 0f))
-                //                stroke1.addPathTuple(PathTuple(1f, 0.2f))
-                //                stroke1.addPathTuple(PathTuple(0.2f, 0.6f))
-                //
-                //                val stroke2 = SketchStroke()
-                //                stroke2.setWidth(0.2f)
-                //                stroke1.addPathTuple(PathTuple(0f, 0f))
-                //                stroke2.addPathTuple(PathTuple(1f, 0.1f))
-                //                stroke2.addPathTuple(PathTuple(0.8f, 0.3f))
-                //                stroke2.addPathTuple(PathTuple(0.2f, 0.6f))
-                //                stroke2.addPathTuple(PathTuple(0f, 0.9f))
-                //
-                //                // Add testing scraps.
-                //                val scrap1 = ScrapModel()
-                //                scrap1.x = 0f
-                //                scrap1.y = 0f
-                //                scrap1.width = 0.5f
-                //                scrap1.height = 0.5f
-                //                scrap1.sketch = SketchModel()
-                //                scrap1.sketch?.addStroke(stroke1)
-                //
-                //                val scrap2 = ScrapModel()
-                //                scrap2.x = 0.2f
-                //                scrap2.y = 0.3f
-                //                scrap2.sketch = SketchModel()
-                //                scrap2.sketch?.addStroke(stroke2)
-                //
-                //                paper.scraps.addPathTuple(scrap1)
-                //                paper.scraps.addPathTuple(scrap2)
+//                val stroke1 = SketchStroke()
+//                stroke1.setWidth(0.2f)
+//                stroke1.addPathTuple(PathTuple(0f, 0f))
+//                stroke1.addPathTuple(PathTuple(1f, 0.2f))
+//                stroke1.addPathTuple(PathTuple(0.2f, 0.6f))
+//
+//                val stroke2 = SketchStroke()
+//                stroke2.setWidth(0.2f)
+//                stroke1.addPathTuple(PathTuple(0f, 0f))
+//                stroke2.addPathTuple(PathTuple(1f, 0.1f))
+//                stroke2.addPathTuple(PathTuple(0.8f, 0.3f))
+//                stroke2.addPathTuple(PathTuple(0.2f, 0.6f))
+//                stroke2.addPathTuple(PathTuple(0f, 0.9f))
+//
+//                // Add testing scraps.
+//                val scrap1 = ScrapModel()
+//                scrap1.x = 0f
+//                scrap1.y = 0f
+//                scrap1.width = 0.5f
+//                scrap1.height = 0.5f
+//                scrap1.sketch = SketchModel()
+//                scrap1.sketch?.addStroke(stroke1)
+//
+//                val scrap2 = ScrapModel()
+//                scrap2.x = 0.2f
+//                scrap2.y = 0.3f
+//                scrap2.sketch = SketchModel()
+//                scrap2.sketch?.addStroke(stroke2)
+//
+//                paper.scraps.addPathTuple(scrap1)
+//                paper.scraps.addPathTuple(scrap2)
 
                 return@fromCallable paper
             }
@@ -293,7 +297,7 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
 //                return@fromCallable mTempFile
 //                    .bufferedReader()
 //                    .use { reader ->
-//                        mGson.fromJson(reader, PaperModel::class.java)
+//                        mTranslator.fromJson(reader, PaperModel::class.java)
 //                    }
 
                 // Sol#2
@@ -316,7 +320,7 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                 newPaper.modifiedAt = timestamp
                 newPaper.caption = caption
 
-                val json = mGson.toJson(newPaper)
+                val json = mTranslator.toJson(newPaper)
                 // TODO: Open an external file and write json to it.
                 mTempFile
                     .bufferedWriter()
@@ -368,19 +372,9 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
         values.put(PaperTable.COL_THUMB_WIDTH, paper.thumbnailWidth)
         values.put(PaperTable.COL_THUMB_HEIGHT, paper.thumbnailHeight)
 
-        // Scraps.
-        paper.scraps.let { scraps ->
-            val json = JsonObject()
-            val jsonScraps = JsonArray()
-
-            json.add(PaperTable.COL_DATA, jsonScraps)
-            scraps.forEach { scrap ->
-                jsonScraps.add(mGson.toJsonTree(scrap))
-            }
-
-            values.put(PaperTable.COL_SCRAPS, json.toString())
-            Log.d("xyz", json.toString())
-        }
+        // The rest part of Paper is converted to JSON
+        val json = mTranslator.toJson(paper)
+        values.put(PaperTable.COL_DATA, json)
 
         return values
     }
@@ -405,12 +399,12 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
         paper.thumbnailHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
 
         if (fullyRead) {
-            // Scraps
-            val jsonString = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_SCRAPS))
-            val json = mGson.fromJson(jsonString, JsonObject::class.java)
-            json.get(PaperTable.COL_DATA).asJsonArray.forEach { element ->
-                paper.addScrap(mGson.fromJson(element, ScrapModel::class.java))
-            }
+            val paperDetail = mTranslator.fromJson(
+                cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
+                PaperModel::class.java)
+
+            paperDetail.sketch.forEach { paper.addStrokeToSketch(it) }
+            paperDetail.scraps.forEach { paper.addScrap(it) }
         }
 
         return paper

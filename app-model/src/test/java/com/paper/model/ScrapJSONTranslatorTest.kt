@@ -1,6 +1,7 @@
-package com.paper.model
-
-// Copyright Mar 2017-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: djken0106@gmail.com,
+//         boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,22 +21,20 @@ package com.paper.model
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-import com.google.gson.GsonBuilder
-import com.paper.model.repository.json.ScrapModelTranslator
-import com.paper.model.sketch.PathTuple
-import com.paper.model.sketch.SketchStroke
-import org.junit.Assert
-import org.junit.Test
+package com.paper.model
+
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner::class)
-class ScrapModelTranslatorTest {
+class ScrapJSONTranslatorTest {
+
+    private val SKETCH_WITH_THREE_DOTS = "{\"strokes\":[{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"M0.18075603,0.25663146 Z\"},{\"color\":\"#FF70C050\",\"width\":0.09569436,\"path\":\"M0.5118275,0.5168306 Z\"},{\"color\":\"#FF3897F0\",\"width\":0.09569436,\"path\":\"M0.8192441,0.74336857 Z\"}]}"
 
 //    @Test
 //    fun serializeDummyScrap() {
 //        val translator = GsonBuilder()
-//            .registerTypeAdapter(ScrapModel::class.java, ScrapModelTranslator())
+//            .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
 //            .create()
 //
 //        val model = ScrapModel()
@@ -110,9 +109,5 @@ class ScrapModelTranslatorTest {
 //        // Two strings should be the same.
 //        Assert.assertEquals(SKETCH_WITH_THREE_DOTS, jsonString)
 //    }
-
-    companion object {
-        private val SKETCH_WITH_THREE_DOTS = "{\"strokes\":[{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"M0.18075603,0.25663146 Z\"},{\"color\":\"#FF70C050\",\"width\":0.09569436,\"path\":\"M0.5118275,0.5168306 Z\"},{\"color\":\"#FF3897F0\",\"width\":0.09569436,\"path\":\"M0.8192441,0.74336857 Z\"}]}"
-    }
 }
 

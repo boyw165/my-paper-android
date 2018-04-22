@@ -18,34 +18,32 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget
+package com.paper.model
 
-import android.graphics.Bitmap
-import com.paper.model.PaperModel
-import com.paper.model.repository.IPaperRepo
-import io.reactivex.Single
-import io.reactivex.SingleSource
-import io.reactivex.SingleTransformer
+import com.google.gson.GsonBuilder
+import com.paper.model.repository.json.SketchStrokeJSONTranslator
+import com.paper.model.sketch.SketchStroke
+import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-class SavePaperToStore(paper: PaperModel,
-                       paperRepo: IPaperRepo)
-    : SingleTransformer<Bitmap, Boolean> {
+@RunWith(MockitoJUnitRunner::class)
+class SketchStrokeJSONTranslatorTest {
 
-    private val mPaper = paper
-    private val mPaperRepo = paperRepo
+    private val SKETCH_STROKE_1 = "{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"M0.18075603,0.25663146 Z\"}"
 
-    override fun apply(upstream: Single<Bitmap>): SingleSource<Boolean> {
-        return upstream
-            .flatMap { bmp ->
-                mPaperRepo
-                    .putBitmap(bmp)
-                    .flatMap { bmpFile ->
-                        mPaper.thumbnailPath = bmpFile
-                        mPaper.thumbnailWidth = bmp.width
-                        mPaper.thumbnailHeight = bmp.height
+    @Test
+    fun deserializeDummyScrap() {
+        val translator = GsonBuilder()
+            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
+            .create()
 
-                        mPaperRepo.putPaperById(mPaper.id, mPaper)
-                    }
-            }
+        val sketchStroke = translator.fromJson(SKETCH_STROKE_1, SketchStroke::class.java)
+
+        Assert.assertEquals(Color.parseColor("#FFED4956"), sketchStroke.color)
+        Assert.assertEquals(0.09569436f, sketchStroke.width)
+        Assert.assertEquals(1, sketchStroke.pathTupleSize())
     }
 }
+
