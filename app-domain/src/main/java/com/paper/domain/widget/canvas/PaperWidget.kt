@@ -140,10 +140,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    /**
-     * Temporary ...
-     */
-    private val mTmpStrokes = mutableListOf<SketchStroke>()
+    private lateinit var mTmpStroke: SketchStroke
     /**
      * Internal drawing signal for throttling touch event.
      */
@@ -179,12 +176,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mCancelSignal.onNext(0)
 
         // Create a new stroke and hold it in the temporary pool.
-        val stroke = SketchStroke(
+        mTmpStroke = SketchStroke(
             color = mPenColor,
             isEraser = false,
             width = mPenSize)
-        stroke.addPathTuple(PathTuple(x, y))
-        mTmpStrokes.add(stroke)
+        mTmpStroke.addPathTuple(PathTuple(x, y))
 
         mLineToSignal.onNext(Point(x, y))
 
@@ -195,7 +191,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             .takeUntil(mCancelDrawingSignal)
             .observeOn(mUiScheduler)
             .subscribe { p ->
-                stroke.addPathTuple(PathTuple(p.x, p.y, p.time))
+                mTmpStroke.addPathTuple(PathTuple(p.x, p.y, p.time))
 
                 // Notify the observer
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
@@ -219,59 +215,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        val stroke = mTmpStrokes.last()
-        stroke.addPathTuple(PathTuple(x, y))
+        mTmpStroke.addPathTuple(PathTuple(x, y))
+        mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
-
-        // Set a timer and create a Scrap when time is up.
-        Observable
-            .timer(DomainConst.COLLECT_STROKES_TIMEOUT_MS,
-                   TimeUnit.MILLISECONDS,
-                   mUiScheduler)
-            .takeUntil(mCancelSignal)
-            .subscribe {
-                collectStrokesAndCreateScrap()
-            }
-    }
-
-    private fun collectStrokesAndCreateScrap() {
-        var left = Float.POSITIVE_INFINITY
-        var top = Float.POSITIVE_INFINITY
-        var right = Float.NEGATIVE_INFINITY
-        var bottom = Float.NEGATIVE_INFINITY
-
-        mTmpStrokes.forEach { stroke ->
-            val bound = stroke.bound
-
-            left = Math.min(left, bound.left)
-            top = Math.min(top, bound.top)
-            right = Math.max(right, bound.right)
-            bottom = Math.max(bottom, bound.bottom)
-        }
-
-        val cx = (left + right) / 2f
-        val cy = (top + bottom) / 2f
-
-        mTmpStrokes.forEach { stroke ->
-            stroke.offset(-cx, -cy)
-        }
-
-        val scrapM = ScrapModel()
-        scrapM.x = cx
-        scrapM.y = cy
-        scrapM.sketch.addAllStroke(mTmpStrokes)
-
-        // Clear widget hold strokes
-        mTmpStrokes.clear()
-
-        // Add to Model (will trigger bound View to react)
-        mModel.addScrap(scrapM)
-
-        // Notify view to clear strokes
-        mDrawSVGSignal.onNext(DrawSVGEvent(
-            action = CLEAR_ALL))
     }
 
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()
@@ -296,17 +244,20 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     override fun handleTap(x: Float, y: Float) {
         // Draw a DOT!!!
-        val w = (Math.random()).toFloat()
-        val h = (Math.random()).toFloat()
-        val stroke = SketchStroke(
+        mTmpStroke = SketchStroke(
             color = 0,
             isEraser = false,
             width = 1f)
-        stroke.addPathTuple(PathTuple(x, y))
-        // Add to stroke collection
-        mTmpStrokes.add(stroke)
+        mTmpStroke.addPathTuple(PathTuple(x, y))
 
-        collectStrokesAndCreateScrap()
+        mModel.addStrokeToSketch(mTmpStroke)
+
+        // Notify the observer
+        mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
+                                           point = Point(x, y),
+                                           penColor = mPenColor,
+                                           penSize = mPenSize))
+        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
     }
 
     // Debug //////////////////////////////////////////////////////////////////

@@ -37,6 +37,7 @@ class SVGDrawable(context: IPaperContext,
 
     private val mPointMap = FloatArray(2)
 
+    private var mConsumedPointCount = 0
     private val mStrokePoint = mutableListOf<Point>()
     private val mStrokePointTransformed = mutableListOf<Point>()
     private val mStrokeWidth = mutableListOf<Float>()
@@ -125,10 +126,15 @@ class SVGDrawable(context: IPaperContext,
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
         } else {
-            mStrokePoint.forEachIndexed { i, point ->
+            // Only draw those points not consumed
+            val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
+            newPoints.forEachIndexed { i, point ->
                 mStrokePaint.strokeWidth = mStrokeWidth[i]
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
+
+            // Update consumed number
+            mConsumedPointCount = mStrokePoint.size
         }
     }
 
