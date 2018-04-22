@@ -68,19 +68,6 @@ class PaperWidgetView : View,
     private val mWidgetDisposables = CompositeDisposable()
 
     /**
-     * Model canvas size.
-     */
-    private val mMSize = BehaviorSubject.createDefault(Rect())
-    /**
-     * Scale factor from Model world to View world.
-     */
-    private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
-    /**
-     * A util for getting translationX, translationY, scaleX, scaleY, and
-     * rotationInDegrees from a [Matrix]
-     */
-
-    /**
      * A signal indicating the layout change.
      */
     private val mOnLayoutChangeSignal = BehaviorSubject.createDefault(false)
@@ -91,21 +78,12 @@ class PaperWidgetView : View,
     private val mTmpMatrix = Matrix()
     private val mTmpMatrixInverse = Matrix()
     private val mTmpMatrixStart = Matrix()
+
+    /**
+     * A util for getting translationX, translationY, scaleX, scaleY, and
+     * rotationInDegrees from a [Matrix]
+     */
     private val mTransformHelper = TransformUtils()
-
-    // Rendering resource.
-    private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
-    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
-    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
-    private var mCanvasBitmap: Bitmap? = null
-    private var mProxyCanvas: Canvas? = null
-    private val mMatrixStack = Stack<Matrix>()
-
-    // Background & grids
-    private val mGridPaint = Paint()
-
-    // Temporary strokes
-    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -245,6 +223,15 @@ class PaperWidgetView : View,
     // Drawing ////////////////////////////////////////////////////////////////
 
     /**
+     * Model canvas size.
+     */
+    private val mMSize = BehaviorSubject.createDefault(Rect())
+    /**
+     * Scale factor from Model world to View world.
+     */
+    private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
+
+    /**
      * The matrix used for mapping a point from the canvas world to view port
      * world in the View perspective.
      *
@@ -264,6 +251,21 @@ class PaperWidgetView : View,
      */
     private val mCanvasMatrixInverse = Matrix()
     private var mCanvasMatrixDirty = false
+
+    // Rendering resource.
+    private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
+    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
+    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
+    private val mMatrixStack = Stack<Matrix>()
+
+    private var mCanvasBitmap: Bitmap? = null
+    private var mProxyCanvas: Canvas? = null
+
+    // Background & grids
+    private val mGridPaint = Paint()
+
+    // Temporary strokes
+    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -368,7 +370,6 @@ class PaperWidgetView : View,
         val tx = mTransformHelper.translationX
         val ty = mTransformHelper.translationY
         val scaleVP = mTransformHelper.scaleX
-        val degrees = mTransformHelper.rotationInDegrees
 
         // Manually calculate position and size of the background cross/grids so
         // that they keep sharp!
