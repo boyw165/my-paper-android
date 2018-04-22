@@ -118,32 +118,15 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         return mModel
     }
 
-    // Gesture ////////////////////////////////////////////////////////////////
+    // Add & Remove Stroke ////////////////////////////////////////////////////
 
-    override fun handleActionBegin() {
-    }
 
-    override fun handleActionEnd() {
-        // Brutally stop the drawing filter.
-        mCancelDrawingSignal.onNext(0)
-    }
 
-    override fun handleTap(x: Float, y: Float) {
-        // Draw a DOT!!!
-        val w = (Math.random()).toFloat()
-        val h = (Math.random()).toFloat()
-        val stroke = SketchStroke(
-            color = 0,
-            isEraser = false,
-            width = 1f)
-        stroke.addPathTuple(PathTuple(x, y))
-        // Add to stroke collection
-        mTmpStrokes.add(stroke)
-
-        collectStrokesAndCreateScrap()
-    }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
+
+    private val mAddWidgetSignal = PublishSubject.create<IScrapWidget>()
+    private val mRemoveWidgetSignal = PublishSubject.create<IScrapWidget>()
 
     override fun onAddScrapWidget(): Observable<IScrapWidget> {
         return Observable.merge(
@@ -300,6 +283,31 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {
         return mDrawSVGSignal
+    }
+
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    override fun handleActionBegin() {
+    }
+
+    override fun handleActionEnd() {
+        // Brutally stop the drawing filter.
+        mCancelDrawingSignal.onNext(0)
+    }
+
+    override fun handleTap(x: Float, y: Float) {
+        // Draw a DOT!!!
+        val w = (Math.random()).toFloat()
+        val h = (Math.random()).toFloat()
+        val stroke = SketchStroke(
+            color = 0,
+            isEraser = false,
+            width = 1f)
+        stroke.addPathTuple(PathTuple(x, y))
+        // Add to stroke collection
+        mTmpStrokes.add(stroke)
+
+        collectStrokesAndCreateScrap()
     }
 
     // Debug //////////////////////////////////////////////////////////////////
