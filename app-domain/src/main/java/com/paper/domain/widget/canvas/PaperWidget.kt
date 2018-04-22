@@ -53,8 +53,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Scrap controllers
     private val mScrapWidgets = hashMapOf<UUID, IScrapWidget>()
-    private val mAddWidgetSignal = PublishSubject.create<IScrapWidget>()
-    private val mRemoveWidgetSignal = PublishSubject.create<IScrapWidget>()
 
     // Gesture
     private val mGestureHistory = mutableListOf<GestureRecord>()
