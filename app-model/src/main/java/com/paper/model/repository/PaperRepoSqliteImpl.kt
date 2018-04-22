@@ -150,7 +150,7 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                                 PaperTable.COL_THUMB_PATH,
                                 PaperTable.COL_THUMB_WIDTH,
                                 PaperTable.COL_THUMB_HEIGHT,
-                                PaperTable.COL_SCRAPS),
+                                PaperTable.COL_DATA),
                         // selection:
                         null,
                         // selection args:

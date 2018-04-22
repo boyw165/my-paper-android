@@ -35,8 +35,8 @@ object PaperTable {
     const val COL_WIDTH: String = "width"
     const val COL_HEIGHT: String = "height"
     const val COL_CAPTION: String = "caption"
+    const val COL_TAG: String = "tag"
     const val COL_THUMB_PATH: String = "thumb_path"
     const val COL_THUMB_WIDTH: String = "thumb_width"
     const val COL_THUMB_HEIGHT: String = "thumb_height"
-    const val COL_SCRAPS: String = "scraps"
 }

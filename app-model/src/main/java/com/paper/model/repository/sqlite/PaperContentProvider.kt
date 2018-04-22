@@ -73,11 +73,12 @@ class PaperContentProvider : ContentProvider(),
             "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_WIDTH} REAL NOT NULL $COMMA" +
             "${PaperTable.COL_HEIGHT} REAL NOT NULL $COMMA" +
-            "${PaperTable.COL_CAPTION} STRING NOT NULL $COMMA" +
+            "${PaperTable.COL_CAPTION} STRING $COMMA" +
+            "${PaperTable.COL_TAG} STRING $COMMA" +
             "${PaperTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_SCRAPS} STRING NOT NULL"
+            "${PaperTable.COL_DATA} STRING"
 
         // Normal table.
         db.execSQL("create table ${PaperTable.TABLE_NAME} ($sharedCommand)")
