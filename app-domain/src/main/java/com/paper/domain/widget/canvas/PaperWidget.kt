@@ -68,6 +68,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         mSetCanvasSize.onNext(Rect(0f, 0f, mModel.width, mModel.height))
 
+        // Add or remove scrap
         mModelDisposables.add(
             model.onAddScrap()
                 .observeOn(mUiScheduler)
