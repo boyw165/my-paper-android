@@ -21,7 +21,7 @@
 package com.paper.domain
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.LoadPaperAndBindModel
+import com.paper.domain.useCase.LoadPaperAndBindModel
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.PaperModel
 import com.paper.model.repository.IPaperRepo

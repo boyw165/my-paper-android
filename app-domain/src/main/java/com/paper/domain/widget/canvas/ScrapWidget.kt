@@ -22,7 +22,7 @@ package com.paper.domain.widget.canvas
 
 import com.paper.domain.DomainConst
 import com.paper.domain.event.DrawSVGEvent
-import com.paper.model.Point
+import com.paper.domain.useCase.SketchToDrawSVGEvent
 import com.paper.model.ScrapModel
 import com.paper.model.TransformModel
 import io.reactivex.Observable
@@ -31,7 +31,6 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class ScrapWidget(
     private val mUiScheduler: Scheduler,
@@ -76,48 +75,12 @@ class ScrapWidget(
     // Drawing ////////////////////////////////////////////////////////////////
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {
-        // FIXME: It's dangerous that any new draw event is created before this
-        // FIXME: initialization finishes.
-        Observable
-            .timer(1, TimeUnit.MILLISECONDS, mUiScheduler)
-            .takeUntil(mCancelSignal)
-            .subscribe {
-                mModel.sketch.forEach { stroke ->
-                    if (stroke.firstPathPoint == stroke.lastPathPoint) {
-                        val onlyPath = stroke.lastPathPoint
-                        mDrawSVGSignal.onNext(DrawSVGEvent(
-                            action = DrawSVGEvent.Action.DOT_AT,
-                            point = Point(onlyPath.x,
-                                          onlyPath.y,
-                                          onlyPath.time)))
-                    } else {
-                        val lastIndex = stroke.pathPointList.lastIndex
-                        stroke.pathPointList.forEachIndexed { i, path ->
-                            when (i) {
-                                0 -> mDrawSVGSignal.onNext(DrawSVGEvent(
-                                    action = DrawSVGEvent.Action.MOVE,
-                                    point = Point(path.x,
-                                                  path.y,
-                                                  path.time),
-                                    penColor = stroke.color,
-                                    penSize = stroke.width))
-                                lastIndex -> mDrawSVGSignal.onNext(DrawSVGEvent(
-                                    action = DrawSVGEvent.Action.CLOSE,
-                                    point = Point(path.x,
-                                                  path.y,
-                                                  path.time)))
-                                else -> mDrawSVGSignal.onNext(DrawSVGEvent(
-                                    action = DrawSVGEvent.Action.LINE_TO,
-                                    point = Point(path.x,
-                                                  path.y,
-                                                  path.time)))
-                            }
-                        }
-                    }
-                }
-            }
-
-        return mDrawSVGSignal
+        return Observable
+            .merge(
+                mDrawSVGSignal,
+                // For the first time subscription, send events one by one!
+                SketchToDrawSVGEvent(mModel.sketch)
+                    .subscribeOn(mWorkerScheduler))
     }
 
     // Touch //////////////////////////////////////////////////////////////////

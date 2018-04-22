@@ -455,15 +455,13 @@ class PaperWidgetView : View,
         // TODO: Make sure no transform is on going
         return Single
             .fromCallable {
-                val mw = mMSize.value.width
-                val mh = mMSize.value.height
-                val scaleM2V = mScaleM2V.value
-                val bmp = Bitmap.createBitmap((scaleM2V * mw).toInt(),
-                                              (scaleM2V * mh).toInt(),
+                // FIXME: Quick close might crash because mBitmap is not present!
+                val bmp = Bitmap.createBitmap(mBitmap!!.width,
+                                              mBitmap!!.height,
                                               Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bmp)
                 canvas.drawColor(Color.WHITE)
-                dispatchDrawScraps(canvas, mScrapViews, false)
+                canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
                 return@fromCallable bmp
             }

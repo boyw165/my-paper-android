@@ -39,7 +39,7 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         root.addProperty("width", src.width)
 
         // Save via SVG format
-        val svgTransJson = SVGTranslator.toSVG(src.pathPointList)
+        val svgTransJson = SVGTranslator.toSVG(src.pointList)
         root.addProperty("path", svgTransJson)
 
         return root
@@ -54,7 +54,7 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         // Parse path-tuple
         val pathString = root.get("path").asString
         // Add tuplePath to the stroke.
-        model.addAllPathTuple(SVGTranslator.fromSVG(pathString))
+        model.addAllPath(SVGTranslator.fromSVG(pathString))
 
         // Stroke color, #ARGB
         val colorTicket = root.get("color").asString

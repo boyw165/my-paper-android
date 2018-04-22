@@ -43,7 +43,7 @@ class SketchStrokeJSONTranslatorTest {
 
         Assert.assertEquals(Color.parseColor("#FFED4956"), sketchStroke.color)
         Assert.assertEquals(0.09569436f, sketchStroke.width)
-        Assert.assertEquals(1, sketchStroke.pathTupleSize())
+        Assert.assertEquals(1, sketchStroke.pointList.size)
     }
 }
 

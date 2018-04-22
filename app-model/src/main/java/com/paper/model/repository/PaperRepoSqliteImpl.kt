@@ -247,17 +247,17 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
 
 //                val stroke1 = SketchStroke()
 //                stroke1.setWidth(0.2f)
-//                stroke1.addPathTuple(PathPoint(0f, 0f))
-//                stroke1.addPathTuple(PathPoint(1f, 0.2f))
-//                stroke1.addPathTuple(PathPoint(0.2f, 0.6f))
+//                stroke1.addPath(Point(0f, 0f))
+//                stroke1.addPath(Point(1f, 0.2f))
+//                stroke1.addPath(Point(0.2f, 0.6f))
 //
 //                val stroke2 = SketchStroke()
 //                stroke2.setWidth(0.2f)
-//                stroke1.addPathTuple(PathPoint(0f, 0f))
-//                stroke2.addPathTuple(PathPoint(1f, 0.1f))
-//                stroke2.addPathTuple(PathPoint(0.8f, 0.3f))
-//                stroke2.addPathTuple(PathPoint(0.2f, 0.6f))
-//                stroke2.addPathTuple(PathPoint(0f, 0.9f))
+//                stroke1.addPath(Point(0f, 0f))
+//                stroke2.addPath(Point(1f, 0.1f))
+//                stroke2.addPath(Point(0.8f, 0.3f))
+//                stroke2.addPath(Point(0.2f, 0.6f))
+//                stroke2.addPath(Point(0f, 0.9f))
 //
 //                // Add testing scraps.
 //                val scrap1 = ScrapModel()
@@ -274,8 +274,8 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
 //                scrap2.sketch = SketchModel()
 //                scrap2.sketch?.addStroke(stroke2)
 //
-//                paper.scraps.addPathTuple(scrap1)
-//                paper.scraps.addPathTuple(scrap2)
+//                paper.scraps.addPath(scrap1)
+//                paper.scraps.addPath(scrap2)
 
                 return@fromCallable paper
             }

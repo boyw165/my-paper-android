@@ -20,11 +20,12 @@
 
 package com.paper.model.sketch
 
+import com.paper.model.Point
 import com.paper.model.Rect
 
 /**
  * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
- * stroke contains tuple(s), [PathPoint]. A tuple represents a node of
+ * stroke contains tuple(s), [Point]. A tuple represents a node of
  * a path segment and contains at least one point, [Point]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
@@ -34,9 +35,9 @@ data class SketchStroke(
     var width: Float = 0.toFloat(),
     var isEraser: Boolean = false) {
 
-    private val mPathPointList = mutableListOf<PathPoint>()
+    private val mPointList = mutableListOf<Point>()
 
-    val pathPointList: List<PathPoint> get() = mPathPointList
+    val pointList: List<Point> get() = mPointList.toList()
 
     private val mBound = Rect(java.lang.Float.MAX_VALUE,
                               java.lang.Float.MAX_VALUE,
@@ -44,41 +45,29 @@ data class SketchStroke(
                               java.lang.Float.MIN_VALUE)
     val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
-    val firstPathPoint: PathPoint
-        get() = mPathPointList.first()
-
-    val lastPathPoint: PathPoint
-        get() = mPathPointList.last()
-
-    fun pathTupleSize(): Int = mPathPointList.size
-
-    fun clearAllPathTuple() {
-        mPathPointList.clear()
-    }
-
-    fun addPathTuple(p: PathPoint): SketchStroke {
+    fun addPath(p: Point): SketchStroke {
 
         // Calculate new boundary.
         calculateBound(p.x, p.y)
 
-        mPathPointList.add(p)
+        mPointList.add(p)
 
         return this
     }
 
-    fun addAllPathTuple(pathPointList: List<PathPoint>): SketchStroke {
+    fun addAllPath(PointList: List<Point>): SketchStroke {
         // Calculate new boundary.
-        for (p in pathPointList) {
+        for (p in PointList) {
             calculateBound(p.x, p.y)
         }
 
-        this.mPathPointList.addAll(pathPointList)
+        this.mPointList.addAll(PointList)
 
         return this
     }
 
     fun offset(offsetX: Float, offsetY: Float) {
-        mPathPointList.forEach { p ->
+        mPointList.forEach { p ->
             p.x += offsetX
             p.y += offsetY
         }
@@ -88,7 +77,7 @@ data class SketchStroke(
         return "stroke{" +
                ", color=" + color +
                ", width=" + width +
-               ", mPathPointList=" + mPathPointList +
+               ", mPointList=" + mPointList +
                '}'
     }
 
