@@ -48,8 +48,10 @@ class PaperModel(
     private var mScraps = mutableListOf<ScrapModel>()
     private val mAddScrapSignal = PublishSubject.create<ScrapModel>()
     private val mRemoveScrapSignal = PublishSubject.create<ScrapModel>()
+
+    // Must clone the list in case concurrent modification
     val scraps: List<ScrapModel>
-        get() = mScraps
+        get() = mScraps.toList()
 
     fun addScrap(scrap: ScrapModel) {
         mScraps.add(scrap)
@@ -63,8 +65,7 @@ class PaperModel(
 
     fun onAddScrap(): Observable<ScrapModel> {
         return Observable.merge(
-            // Must clone the list in case concurrent modification
-            Observable.fromIterable(mScraps.toList()),
+            Observable.fromIterable(scraps),
             mAddScrapSignal)
     }
 
