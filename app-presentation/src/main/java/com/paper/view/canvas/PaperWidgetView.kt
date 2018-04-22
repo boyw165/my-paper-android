@@ -256,8 +256,15 @@ class PaperWidgetView : View,
     private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
     private val mMatrixStack = Stack<Matrix>()
 
-    private var mCanvasBitmap: Bitmap? = null
-    private var mProxyCanvas: Canvas? = null
+    /**
+     * The Bitmap in which the sketch and the scraps are drawn to.
+     */
+    private var mBitmap: Bitmap? = null
+    private val mBitmapPaint = Paint()
+    /**
+     * The canvas used in the [dispatchDrawScraps] call.
+     */
+    private lateinit var mBitmapCanvas: Canvas
 
     // Background & grids
     private val mGridPaint = Paint()
@@ -290,6 +297,7 @@ class PaperWidgetView : View,
         val maxScale = Math.min(canvasWidth / spaceWidth,
                                 canvasHeight / spaceHeight)
         val minScale = maxScale / DomainConst.VIEW_PORT_MIN_SCALE
+        val scaleM2V = 1f / maxScale
         mViewPortMax.set(0f, 0f, maxScale * spaceWidth, maxScale * spaceHeight)
         mViewPortMin.set(0f, 0f, minScale * spaceWidth, minScale * spaceHeight)
         mViewPortBase.set(mViewPortMax)
@@ -300,7 +308,7 @@ class PaperWidgetView : View,
         // Initially the model-to-view scale is derived by the scale
         // from min view port boundary to the view boundary.
         // Check out the figure above :D
-        mScaleM2V.onNext(1f / maxScale)
+        mScaleM2V.onNext(scaleM2V)
 
         // Determine the default view-port (makes sense when view
         // layout is changed).
@@ -310,9 +318,13 @@ class PaperWidgetView : View,
                       mViewPortMax.height())
 
         // Backed the canvas Bitmap.
-        mCanvasBitmap?.recycle()
-        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
-        mProxyCanvas = Canvas(mCanvasBitmap)
+        val mw = mMSize.value.width
+        val mh = mMSize.value.height
+        val vw = scaleM2V * mw
+        val vh = scaleM2V * mh
+        mBitmap?.recycle()
+        mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
+        mBitmapCanvas = Canvas(mBitmap)
 
         invalidate()
     }
@@ -328,6 +340,7 @@ class PaperWidgetView : View,
         // Hold canvas matrix.
         mTmpMatrix.set(mCanvasMatrix)
 
+        // Prepare the transform stack for later sharp rendering.
         mMatrixStack.clear()
         mMatrixStack.push(mCanvasMatrix)
 
@@ -373,9 +386,9 @@ class PaperWidgetView : View,
         // that they keep sharp!
         drawBackground(canvas, vw, vh, tx, ty, scaleVP)
 
-        // Draw scrap views & temporary sketch
+        // Draw sketch and scraps
         if (mIfSharpenDrawing) {
-            dispatchDrawScraps(canvas, mScrapViews, true)
+            dispatchDrawScraps(mBitmapCanvas, mScrapViews, true)
 
             mStrokeDrawables.forEach { drawable ->
                 drawable.onDraw(canvas, mCanvasMatrix)
@@ -384,12 +397,18 @@ class PaperWidgetView : View,
             // To view canvas world.
             canvas.concat(mCanvasMatrix)
 
-            dispatchDrawScraps(canvas, mScrapViews, false)
+            // TODO: Both scraps and sketch need to explicitly define the z-order
+            // TODO: so that the paper knows how to render them in the correct
+            // TODO: order.
+
+            dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
 
             mStrokeDrawables.forEach { drawable ->
-                drawable.onDraw(canvas)
+                drawable.onDraw(mBitmapCanvas)
             }
         }
+
+        canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
         // Turn off the sharpening draw because it's costly.
         mIfSharpenDrawing = false
