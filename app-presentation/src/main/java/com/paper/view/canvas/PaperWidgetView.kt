@@ -313,7 +313,7 @@ class PaperWidgetView : View,
 
         // Backed the canvas Bitmap.
         mCanvasBitmap?.recycle()
-        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.RGB_565)
+        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
         mProxyCanvas = Canvas(mCanvasBitmap)
 
         invalidate()
@@ -443,7 +443,7 @@ class PaperWidgetView : View,
                 val scaleM2V = mScaleM2V.value
                 val bmp = Bitmap.createBitmap((scaleM2V * mw).toInt(),
                                               (scaleM2V * mh).toInt(),
-                                              Bitmap.Config.RGB_565)
+                                              Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bmp)
                 canvas.drawColor(Color.WHITE)
                 dispatchDrawScraps(canvas, mScrapViews, false)
