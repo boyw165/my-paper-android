@@ -20,7 +20,6 @@
 
 package com.paper.domain.widget.editPanel
 
-import android.util.Log
 import com.paper.domain.DomainConst
 import com.paper.domain.event.UpdateColorTicketsEvent
 import com.paper.domain.event.UpdateEditingToolsEvent
@@ -137,7 +136,7 @@ class PaperEditPanelWidget(
     private val mColorTicketsSignal = PublishSubject.create<UpdateColorTicketsEvent>()
 
     fun handleClickColor(color: Int) {
-        Log.d(DomainConst.TAG, "choose color=${Integer.toHexString(color)}")
+        println("${DomainConst.TAG}: choose color=${Integer.toHexString(color)}")
         mCancelSignal.onNext(0)
 
         mDisposables.add(
@@ -155,7 +154,7 @@ class PaperEditPanelWidget(
     private val mPenSizeSignal = PublishSubject.create<Float>()
 
     fun handleChangePenSize(size: Float) {
-        Log.d(DomainConst.TAG, "change pen size=$size")
+        println("${DomainConst.TAG}: change pen size=$size")
         mCancelSignal.onNext(0)
 
         mDisposables.add(

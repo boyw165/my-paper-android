@@ -25,7 +25,6 @@ import android.graphics.*
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -68,19 +67,6 @@ class PaperWidgetView : View,
     private val mWidgetDisposables = CompositeDisposable()
 
     /**
-     * Model canvas size.
-     */
-    private val mMSize = BehaviorSubject.createDefault(Rect())
-    /**
-     * Scale factor from Model world to View world.
-     */
-    private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
-    /**
-     * A util for getting translationX, translationY, scaleX, scaleY, and
-     * rotationInDegrees from a [Matrix]
-     */
-
-    /**
      * A signal indicating the layout change.
      */
     private val mOnLayoutChangeSignal = BehaviorSubject.createDefault(false)
@@ -91,87 +77,12 @@ class PaperWidgetView : View,
     private val mTmpMatrix = Matrix()
     private val mTmpMatrixInverse = Matrix()
     private val mTmpMatrixStart = Matrix()
+
+    /**
+     * A util for getting translationX, translationY, scaleX, scaleY, and
+     * rotationInDegrees from a [Matrix]
+     */
     private val mTransformHelper = TransformUtils()
-
-    // Gesture.
-    private val mTouchSlop by lazy { resources.getDimension(R.dimen.touch_slop) }
-    private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
-    private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
-    private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
-
-    private val mGestureDetector by lazy {
-        val detector = GestureDetector(Looper.getMainLooper(),
-                                       ViewConfiguration.get(context),
-                                       mTouchSlop,
-                                       mTapSlop,
-                                       mMinFlingVec,
-                                       mMaxFlingVec)
-
-        // Set mapper as the listener.
-        detector.tapGestureListener = this@PaperWidgetView
-        detector.dragGestureListener = this@PaperWidgetView
-        detector.pinchGestureListener = this@PaperWidgetView
-
-        return@lazy detector
-    }
-    private var mIfHandleAction = false
-    private var mIfHandleDrag = false
-    private val mGestureHistory = mutableListOf<GestureRecord>()
-
-    // View port & canvas matrix
-    /**
-     * The view-port boundary in the model world.
-     */
-    private val mViewPort = BehaviorSubject.create<RectF>()
-    /**
-     * Minimum size of [mViewPort].
-     */
-    private val mViewPortMin = RectF()
-    /**
-     * Maximum size of [mViewPort].
-     */
-    private val mViewPortMax = RectF()
-    /**
-     * The initial view port size that is used to compute the scale factor from
-     * Model to View, which is [mScaleM2V].
-     */
-    private val mViewPortBase = RectF()
-    /**
-     * The matrix used for mapping a point from the canvas world to view port
-     * world in the View perspective.
-     *
-     * @sample
-     * .---------------.
-     * |               | ----> View canvas
-     * |       .---.   |
-     * |       | V | --------> View port
-     * |       | P |   |
-     * |       '---'   |
-     * '---------------'
-     */
-    private val mCanvasMatrix = Matrix()
-    /**
-     * The inverse matrix of [mCanvasMatrixInverse], which is used to mapping a
-     * point from view port world to canvas world in the View perspective.
-     */
-    private val mCanvasMatrixInverse = Matrix()
-    private var mCanvasMatrixDirty = false
-    // Output signal related to view port
-    private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
-
-    // Rendering resource.
-    private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
-    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
-    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
-    private var mCanvasBitmap: Bitmap? = null
-    private var mProxyCanvas: Canvas? = null
-    private val mMatrixStack = Stack<Matrix>()
-
-    // Background & grids
-    private val mGridPaint = Paint()
-
-    // Temporary strokes
-    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -184,7 +95,7 @@ class PaperWidgetView : View,
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
-        Log.d(AppConst.TAG, "PaperWidgetView # onMeasure()")
+        println("${AppConst.TAG}: PaperWidgetView # onMeasure()")
         super.onMeasure(widthSpec, heightSpec)
     }
 
@@ -193,7 +104,7 @@ class PaperWidgetView : View,
                           top: Int,
                           right: Int,
                           bottom: Int) {
-        Log.d(AppConst.TAG, "PaperWidgetView # onLayout(changed=$changed)")
+        println("${AppConst.TAG}: PaperWidgetView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
         if (changed) {
@@ -239,7 +150,7 @@ class PaperWidgetView : View,
                     if (changed &&
                         size.width > 0 &&
                         size.height > 0) {
-                        Log.d(AppConst.TAG, "the layout is done, and canvas " +
+                        println("${AppConst.TAG}: the layout is done, and canvas " +
                                             "size is ${size.width} x ${size.height}")
                         onUpdateLayoutOrCanvas(size.width,
                                                size.height)
@@ -252,9 +163,8 @@ class PaperWidgetView : View,
                 .subscribe { vp ->
                     // Would trigger onDraw() call
                     markCanvasMatrixDirty()
-                    invalidate()
 
-                    // Output to the external world
+                    // Notify any external observers
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
                         canvas = mMSize.value.copy(),
                         viewPort = Rect(vp.left,
@@ -269,15 +179,10 @@ class PaperWidgetView : View,
                 .onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
-                    Log.d(DomainConst.TAG, message)
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 })
 
-        Log.d(AppConst.TAG, "Bind view with widget")
-    }
-
-    override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
-        return mDrawViewPortSignal
+        println("${AppConst.TAG}: Bind paper widget \"View\" with paper \"Widget\"")
     }
 
     override fun unbindWidget() {
@@ -287,7 +192,7 @@ class PaperWidgetView : View,
             scrapView.unbindWidget()
         }
 
-        Log.d(AppConst.TAG, "Unbind view from widget")
+        println("${AppConst.TAG}: Unbind paper widget \"View\" from paper \"Widget\"")
     }
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
@@ -314,6 +219,51 @@ class PaperWidgetView : View,
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
+
+    /**
+     * Model canvas size.
+     */
+    private val mMSize = BehaviorSubject.createDefault(Rect())
+    /**
+     * Scale factor from Model world to View world.
+     */
+    private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
+
+    /**
+     * The matrix used for mapping a point from the canvas world to view port
+     * world in the View perspective.
+     *
+     * @sample
+     * .---------------.
+     * |               | ----> View canvas
+     * |       .---.   |
+     * |       | V | --------> View port
+     * |       | P |   |
+     * |       '---'   |
+     * '---------------'
+     */
+    private val mCanvasMatrix = Matrix()
+    /**
+     * The inverse matrix of [mCanvasMatrixInverse], which is used to mapping a
+     * point from view port world to canvas world in the View perspective.
+     */
+    private val mCanvasMatrixInverse = Matrix()
+    private var mCanvasMatrixDirty = false
+
+    // Rendering resource.
+    private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
+    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
+    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
+    private val mMatrixStack = Stack<Matrix>()
+
+    private var mCanvasBitmap: Bitmap? = null
+    private var mProxyCanvas: Canvas? = null
+
+    // Background & grids
+    private val mGridPaint = Paint()
+
+    // Temporary strokes
+    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -361,7 +311,7 @@ class PaperWidgetView : View,
 
         // Backed the canvas Bitmap.
         mCanvasBitmap?.recycle()
-        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.RGB_565)
+        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
         mProxyCanvas = Canvas(mCanvasBitmap)
 
         invalidate()
@@ -418,7 +368,6 @@ class PaperWidgetView : View,
         val tx = mTransformHelper.translationX
         val ty = mTransformHelper.translationY
         val scaleVP = mTransformHelper.scaleX
-        val degrees = mTransformHelper.rotationInDegrees
 
         // Manually calculate position and size of the background cross/grids so
         // that they keep sharp!
@@ -492,7 +441,7 @@ class PaperWidgetView : View,
                 val scaleM2V = mScaleM2V.value
                 val bmp = Bitmap.createBitmap((scaleM2V * mw).toInt(),
                                               (scaleM2V * mh).toInt(),
-                                              Bitmap.Config.RGB_565)
+                                              Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bmp)
                 canvas.drawColor(Color.WHITE)
                 dispatchDrawScraps(canvas, mScrapViews, false)
@@ -504,6 +453,78 @@ class PaperWidgetView : View,
 
     private fun markCanvasMatrixDirty() {
         mCanvasMatrixDirty = true
+
+        invalidate()
+    }
+
+    // View port //////////////////////////////////////////////////////////////
+
+    /**
+     * The view-port boundary in the model world.
+     */
+    private val mViewPort = BehaviorSubject.create<RectF>()
+    /**
+     * Minimum size of [mViewPort].
+     */
+    private val mViewPortMin = RectF()
+    /**
+     * Maximum size of [mViewPort].
+     */
+    private val mViewPortMax = RectF()
+    /**
+     * The initial view port size that is used to compute the scale factor from
+     * Model to View, which is [mScaleM2V].
+     */
+    private val mViewPortBase = RectF()
+    /**
+     * The signal for external observers
+     */
+    private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
+
+    override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
+        return mDrawViewPortSignal
+    }
+
+    private fun resetViewPort(mw: Float,
+                              mh: Float,
+                              defaultW: Float,
+                              defaultH: Float) {
+//        // Place the view port center in the model world.
+//        val viewPortX = (mw - defaultW) / 2
+//        val viewPortY = (mh - defaultH) / 2
+
+        // Place the view port left in the model world.
+        val viewPortX = 0f
+        val viewPortY = 0f
+        mViewPort.onNext(RectF(viewPortX, viewPortY,
+                               viewPortX + defaultW,
+                               viewPortY + defaultH))
+    }
+
+    override fun setViewPortPosition(x: Float, y: Float) {
+        val mw = mMSize.value.width
+        val mh = mMSize.value.height
+
+        mTmpBound.set(x, y,
+                      x + mViewPort.value.width(),
+                      y + mViewPort.value.height())
+
+        // Constraint view port
+        val minWidth = mViewPortMin.width()
+        val minHeight = mViewPortMin.height()
+        val maxWidth = mViewPortMax.width()
+        val maxHeight = mViewPortMax.height()
+        constraintViewPort(mTmpBound,
+                           left = 0f,
+                           top = 0f,
+                           right = mw,
+                           bottom = mh,
+                           minWidth = minWidth,
+                           minHeight = minHeight,
+                           maxWidth = maxWidth,
+                           maxHeight = maxHeight)
+
+        mViewPort.onNext(mTmpBound)
     }
 
     /**
@@ -539,223 +560,6 @@ class PaperWidgetView : View,
 
             mCanvasMatrixDirty = false
         }
-    }
-
-    // Common Gesture /////////////////////////////////////////////////////////
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Interpret the event iff scale, canvas size is ready at ACTION_DOWN.
-        val action = event.actionMasked
-        if (action == MotionEvent.ACTION_DOWN) {
-            mIfHandleAction = isAllSet
-        }
-
-        return if (mIfHandleAction) {
-            val handled = mGestureDetector.onTouchEvent(event, this, null)
-
-            if (action == MotionEvent.ACTION_UP ||
-                action == MotionEvent.ACTION_CANCEL) {
-                mIfHandleAction = false
-            }
-
-            handled
-        } else {
-            false
-        }
-    }
-
-    override fun onActionBegin(event: MyMotionEvent,
-                               target: Any?,
-                               context: Any?) {
-        mGestureHistory.clear()
-
-        // Prevent the following transform applied to the event from do the
-        // sharp rendering.
-        mIfSharpenDrawing = false
-
-        mWidget.handleActionBegin()
-    }
-
-    override fun onActionEnd(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mWidget.handleActionEnd()
-
-        // Prevent the following transform applied to the event from do the
-        // sharp rendering.
-        requestSharpDrawing()
-    }
-
-    // Tap Gesture ////////////////////////////////////////////////////////////
-
-    override fun onSingleTap(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mGestureHistory.add(GestureRecord.TAP)
-
-        val (nx, ny) = toModelWorld(event.downFocusX, event.downFocusY)
-
-        mWidget.handleTap(nx, ny)
-    }
-
-    override fun onDoubleTap(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mGestureHistory.add(GestureRecord.TAP)
-    }
-
-    override fun onLongPress(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-    }
-
-    override fun onLongTap(event: MyMotionEvent,
-                           target: Any?,
-                           context: Any?) {
-    }
-
-    override fun onMoreTap(event: MyMotionEvent,
-                           target: Any?,
-                           context: Any?,
-                           tapCount: Int) {
-    }
-
-    // Drag Gesture ///////////////////////////////////////////////////////////
-
-    override fun onDragBegin(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mGestureHistory.add(GestureRecord.DRAG)
-
-        mIfHandleDrag = mGestureHistory.indexOf(GestureRecord.PINCH) == -1
-        // If there is NO PINCH in the history, do drag; Otherwise, do view
-        // port transform.
-        if (mIfHandleDrag) {
-            val (nx, ny) = toModelWorld(event.downFocusX,
-                                        event.downFocusY)
-            mWidget.handleDragBegin(nx, ny)
-        } else {
-            startUpdateViewport()
-        }
-    }
-
-    override fun onDrag(event: MyMotionEvent,
-                        target: Any?,
-                        context: Any?,
-                        startPointer: PointF,
-                        stopPointer: PointF) {
-        // If there is NO PINCH in the history, do drag; Otherwise, do view
-        // port transform.
-        if (mIfHandleDrag) {
-            val (nx, ny) = toModelWorld(event.downFocusX,
-                                        event.downFocusY)
-            mWidget.handleDrag(nx, ny)
-        } else {
-            onUpdateViewport(Array(2, { _ -> startPointer }),
-                             Array(2, { _ -> stopPointer }))
-        }
-    }
-
-    override fun onDragFling(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?,
-                             startPointer: PointF,
-                             stopPointer: PointF,
-                             velocityX: Float,
-                             velocityY: Float) {
-    }
-
-    override fun onDragEnd(event: MyMotionEvent,
-                           target: Any?,
-                           context: Any?,
-                           startPointer: PointF,
-                           stopPointer: PointF) {
-        // If there is NO PINCH in the history, do drag; Otherwise, do view
-        // port transform.
-        if (mIfHandleDrag) {
-            val (nx, ny) = toModelWorld(event.downFocusX,
-                                        event.downFocusY)
-            mWidget.handleDragEnd(nx, ny)
-        } else {
-            stopUpdateViewport()
-        }
-    }
-
-    // Pinch Gesture //////////////////////////////////////////////////////////
-
-    override fun onPinchBegin(event: MyMotionEvent,
-                              target: Any?,
-                              context: Any?,
-                              startPointers: Array<PointF>) {
-        mGestureHistory.add(GestureRecord.PINCH)
-
-        startUpdateViewport()
-    }
-
-    override fun onPinch(event: MyMotionEvent,
-                         target: Any?,
-                         context: Any?,
-                         startPointers: Array<PointF>,
-                         stopPointers: Array<PointF>) {
-        onUpdateViewport(startPointers, stopPointers)
-    }
-
-    override fun onPinchFling(event: MyMotionEvent,
-                              target: Any?,
-                              context: Any?) {
-        // DO NOTHING.
-    }
-
-    override fun onPinchEnd(event: MyMotionEvent,
-                            target: Any?,
-                            context: Any?,
-                            startPointers: Array<PointF>,
-                            stopPointers: Array<PointF>) {
-        stopUpdateViewport()
-    }
-
-    // View port //////////////////////////////////////////////////////////////
-
-    private fun resetViewPort(mw: Float,
-                              mh: Float,
-                              defaultW: Float,
-                              defaultH: Float) {
-        //        // Place the view port center in the model world.
-        //        val viewPortX = (mw - defaultW) / 2
-        //        val viewPortY = (mh - defaultH) / 2
-
-        // Place the view port left in the model world.
-        val viewPortX = 0f
-        val viewPortY = 0f
-        mViewPort.onNext(RectF(viewPortX, viewPortY,
-                               viewPortX + defaultW,
-                               viewPortY + defaultH))
-    }
-
-    override fun setViewPortPosition(x: Float, y: Float) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
-
-        mTmpBound.set(x, y,
-                      x + mViewPort.value.width(),
-                      y + mViewPort.value.height())
-
-        // Constraint view port
-        val minWidth = mViewPortMin.width()
-        val minHeight = mViewPortMin.height()
-        val maxWidth = mViewPortMax.width()
-        val maxHeight = mViewPortMax.height()
-        constraintViewPort(mTmpBound,
-                           left = 0f,
-                           top = 0f,
-                           right = mw,
-                           bottom = mh,
-                           minWidth = minWidth,
-                           minHeight = minHeight,
-                           maxWidth = maxWidth,
-                           maxHeight = maxHeight)
-
-        mViewPort.onNext(mTmpBound)
     }
 
     private fun startUpdateViewport() {
@@ -911,8 +715,220 @@ class PaperWidgetView : View,
         return mTmpPoint
     }
 
+    // Common Gesture /////////////////////////////////////////////////////////
+
+    // Gesture.
+    private val mTouchSlop by lazy { resources.getDimension(R.dimen.touch_slop) }
+    private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
+    private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
+    private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
+
+    private val mGestureDetector by lazy {
+        val detector = GestureDetector(Looper.getMainLooper(),
+                                       ViewConfiguration.get(context),
+                                       mTouchSlop,
+                                       mTapSlop,
+                                       mMinFlingVec,
+                                       mMaxFlingVec)
+
+        // Set mapper as the listener.
+        detector.tapGestureListener = this@PaperWidgetView
+        detector.dragGestureListener = this@PaperWidgetView
+        detector.pinchGestureListener = this@PaperWidgetView
+
+        return@lazy detector
+    }
+    private var mIfHandleAction = false
+    private var mIfHandleDrag = false
+    private val mGestureHistory = mutableListOf<GestureRecord>()
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        // Interpret the event iff scale, canvas size is ready at ACTION_DOWN.
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_DOWN) {
+            mIfHandleAction = isAllSet
+        }
+
+        return if (mIfHandleAction) {
+            val handled = mGestureDetector.onTouchEvent(event, this, null)
+
+            if (action == MotionEvent.ACTION_UP ||
+                action == MotionEvent.ACTION_CANCEL) {
+                mIfHandleAction = false
+            }
+
+            handled
+        } else {
+            false
+        }
+    }
+
+    override fun onActionBegin(event: MyMotionEvent,
+                               target: Any?,
+                               context: Any?) {
+        mGestureHistory.clear()
+
+        // Prevent the following transform applied to the event from do the
+        // sharp rendering.
+        mIfSharpenDrawing = false
+
+        mWidget.handleActionBegin()
+    }
+
+    override fun onActionEnd(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        mWidget.handleActionEnd()
+
+//        // Prevent the following transform applied to the event from do the
+//        // sharp rendering.
+//        requestSharpDrawing()
+    }
+
+    // Tap Gesture ////////////////////////////////////////////////////////////
+
+    override fun onSingleTap(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        mGestureHistory.add(GestureRecord.TAP)
+
+        val (nx, ny) = toModelWorld(event.downFocusX, event.downFocusY)
+
+        mWidget.handleTap(nx, ny)
+    }
+
+    override fun onDoubleTap(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        mGestureHistory.add(GestureRecord.TAP)
+    }
+
+    override fun onLongPress(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+    }
+
+    override fun onLongTap(event: MyMotionEvent,
+                           target: Any?,
+                           context: Any?) {
+    }
+
+    override fun onMoreTap(event: MyMotionEvent,
+                           target: Any?,
+                           context: Any?,
+                           tapCount: Int) {
+    }
+
+    // Drag Gesture ///////////////////////////////////////////////////////////
+
+    override fun onDragBegin(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?) {
+        mGestureHistory.add(GestureRecord.DRAG)
+
+        mIfHandleDrag = mGestureHistory.indexOf(GestureRecord.PINCH) == -1
+        // If there is NO PINCH in the history, do drag; Otherwise, do view
+        // port transform.
+        if (mIfHandleDrag) {
+            val (nx, ny) = toModelWorld(event.downFocusX,
+                                        event.downFocusY)
+            mWidget.handleDragBegin(nx, ny)
+        } else {
+            startUpdateViewport()
+        }
+    }
+
+    override fun onDrag(event: MyMotionEvent,
+                        target: Any?,
+                        context: Any?,
+                        startPointer: PointF,
+                        stopPointer: PointF) {
+        // If there is NO PINCH in the history, do drag; Otherwise, do view
+        // port transform.
+        if (mIfHandleDrag) {
+            val (nx, ny) = toModelWorld(event.downFocusX,
+                                        event.downFocusY)
+            mWidget.handleDrag(nx, ny)
+        } else {
+            onUpdateViewport(Array(2, { _ -> startPointer }),
+                             Array(2, { _ -> stopPointer }))
+        }
+    }
+
+    override fun onDragFling(event: MyMotionEvent,
+                             target: Any?,
+                             context: Any?,
+                             startPointer: PointF,
+                             stopPointer: PointF,
+                             velocityX: Float,
+                             velocityY: Float) {
+    }
+
+    override fun onDragEnd(event: MyMotionEvent,
+                           target: Any?,
+                           context: Any?,
+                           startPointer: PointF,
+                           stopPointer: PointF) {
+        // If there is NO PINCH in the history, do drag; Otherwise, do view
+        // port transform.
+        if (mIfHandleDrag) {
+            val (nx, ny) = toModelWorld(event.downFocusX,
+                                        event.downFocusY)
+            mWidget.handleDragEnd(nx, ny)
+        } else {
+            stopUpdateViewport()
+        }
+    }
+
+    // Pinch Gesture //////////////////////////////////////////////////////////
+
+    override fun onPinchBegin(event: MyMotionEvent,
+                              target: Any?,
+                              context: Any?,
+                              startPointers: Array<PointF>) {
+        mGestureHistory.add(GestureRecord.PINCH)
+
+        startUpdateViewport()
+    }
+
+    override fun onPinch(event: MyMotionEvent,
+                         target: Any?,
+                         context: Any?,
+                         startPointers: Array<PointF>,
+                         stopPointers: Array<PointF>) {
+        onUpdateViewport(startPointers, stopPointers)
+    }
+
+    override fun onPinchFling(event: MyMotionEvent,
+                              target: Any?,
+                              context: Any?) {
+        // DO NOTHING.
+    }
+
+    override fun onPinchEnd(event: MyMotionEvent,
+                            target: Any?,
+                            context: Any?,
+                            startPointers: Array<PointF>,
+                            stopPointers: Array<PointF>) {
+        stopUpdateViewport()
+    }
+
+    // Context ////////////////////////////////////////////////////////////////
+
+    override fun getOneDp(): Float {
+        return mOneDp
+    }
+
     override fun getViewConfiguration(): ViewConfiguration {
         return ViewConfiguration.get(context)
+    }
+
+    override fun getMinStrokeWidth(): Float {
+        return mMinStrokeWidth
+    }
+
+    override fun getMaxStrokeWidth(): Float {
+        return mMaxStrokeWidth
     }
 
     override fun getTouchSlop(): Float {
@@ -929,20 +945,6 @@ class PaperWidgetView : View,
 
     override fun getMaxFlingVec(): Float {
         return mMaxFlingVec
-    }
-
-    // Context ////////////////////////////////////////////////////////////////
-
-    override fun getOneDp(): Float {
-        return mOneDp
-    }
-
-    override fun getMinStrokeWidth(): Float {
-        return mMinStrokeWidth
-    }
-
-    override fun getMaxStrokeWidth(): Float {
-        return mMaxStrokeWidth
     }
 
     override fun mapM2V(x: Float, y: Float): FloatArray {

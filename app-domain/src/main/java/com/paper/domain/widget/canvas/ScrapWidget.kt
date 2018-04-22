@@ -20,6 +20,7 @@
 
 package com.paper.domain.widget.canvas
 
+import com.paper.domain.DomainConst
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.model.Point
 import com.paper.model.ScrapModel
@@ -57,11 +58,15 @@ class ScrapWidget(
             scaleX = mModel.scale,
             scaleY = mModel.scale,
             rotationInRadians = mModel.rotationInRadians))
+
+        println("${DomainConst.TAG}: Bind scrap \"Widget\" with \"Model\"")
     }
 
     override fun unbindModel() {
         mCancelSignal.onNext(0)
         mDisposables.clear()
+
+        println("${DomainConst.TAG}: Unbind scrap \"Widget\" from \"Model\"")
     }
 
     override fun getId(): UUID {

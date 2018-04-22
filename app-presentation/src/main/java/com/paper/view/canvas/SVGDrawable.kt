@@ -23,8 +23,7 @@ package com.paper.view.canvas
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.util.Log
-import com.paper.domain.DomainConst
+import com.paper.AppConst
 import com.paper.domain.data.Bezier
 import com.paper.model.Point
 
@@ -60,7 +59,7 @@ class SVGDrawable(context: IPaperContext,
         mStrokePaint.style = Paint.Style.FILL_AND_STROKE
         mStrokePaint.strokeCap = Paint.Cap.ROUND
 
-        Log.d(DomainConst.TAG, "SVGDrawable(size=$mPenSize, color=$mPenColor)")
+        println("${AppConst.TAG}: SVGDrawable(size=$mPenSize, color=#${Integer.toHexString(mPenColor)})")
 
         mMinWidth = 1f * paintSize
         mMaxWidth = 2.5f * paintSize

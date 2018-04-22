@@ -20,7 +20,6 @@
 
 package com.paper.domain.widget.canvas
 
-import android.util.Log
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
@@ -96,13 +95,13 @@ class PaperWidget(private val mUiScheduler: Scheduler,
                     mRemoveWidgetSignal.onNext(widget)
                 })
 
-        Log.d(DomainConst.TAG, "Bind to a model(w=${model.width}, h=${model.height})")
+        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model(w=${model.width}, h=${model.height})")
     }
 
     override fun unbindModel() {
         mModelDisposables.clear()
 
-        Log.d(DomainConst.TAG, "Unbind from the model")
+        println("${DomainConst.TAG}: Unbind paper \"Widget\" from the paper model")
     }
 
     // Save ///////////////////////////////////////////////////////////////////
