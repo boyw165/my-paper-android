@@ -171,9 +171,9 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mLineToSignal.onNext(Point(x, y))
 
         mLineToSignal
-            // FIXME: The window filter would make the SVGDrawable laggy.
-            .throttleFirst(DomainConst.COLLECT_PATH_WINDOW_MS,
-                           TimeUnit.MILLISECONDS, mUiScheduler)
+//            // FIXME: The window filter would make the SVGDrawable laggy.
+//            .throttleFirst(DomainConst.COLLECT_PATH_WINDOW_MS,
+//                           TimeUnit.MILLISECONDS, mUiScheduler)
             .takeUntil(mCancelDrawingSignal)
             .observeOn(mUiScheduler)
             .subscribe { p ->
