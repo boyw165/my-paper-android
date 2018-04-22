@@ -45,9 +45,9 @@ class ScrapJSONTranslatorTest {
 //        model.addStrokeToSketch(SketchStroke(color = Color.parseColor("#FF0000"),
 //                                             width = 0.5f,
 //                                             isEraser = false)
-//                                    .addAllPathTuple(listOf(PathTuple(0.18075603f,
+//                                    .addAllPathTuple(listOf(PathPoint(0.18075603f,
 //                                                                      0.25663146f),
-//                                                            PathTuple())))
+//                                                            PathPoint())))
 //    }
 //
 //    @Test
@@ -74,23 +74,23 @@ class ScrapJSONTranslatorTest {
 //
 //        // Every dot stroke's tuple-point has just one point.
 //        for (stroke in model.allStrokes) {
-//            Assert.assertEquals(1, stroke.firstPathTuple.pointSize)
+//            Assert.assertEquals(1, stroke.firstPathPoint.pointSize)
 //        }
 //
 //        // Match x-y pair exactly.
 //        for ((i, stroke) in model.allStrokes.withIndex()) {
 //            when (i) {
 //                0 -> {
-//                    Assert.assertEquals(0.18075603f, stroke.firstPathTuple.firstPoint.x)
-//                    Assert.assertEquals(0.25663146f, stroke.firstPathTuple.firstPoint.y)
+//                    Assert.assertEquals(0.18075603f, stroke.firstPathPoint.firstPoint.x)
+//                    Assert.assertEquals(0.25663146f, stroke.firstPathPoint.firstPoint.y)
 //                }
 //                1 -> {
-//                    Assert.assertEquals(0.5118275f, stroke.firstPathTuple.firstPoint.x)
-//                    Assert.assertEquals(0.5168306f, stroke.firstPathTuple.firstPoint.y)
+//                    Assert.assertEquals(0.5118275f, stroke.firstPathPoint.firstPoint.x)
+//                    Assert.assertEquals(0.5168306f, stroke.firstPathPoint.firstPoint.y)
 //                }
 //                2 -> {
-//                    Assert.assertEquals(0.8192441f, stroke.firstPathTuple.firstPoint.x)
-//                    Assert.assertEquals(0.74336857f, stroke.firstPathTuple.firstPoint.y)
+//                    Assert.assertEquals(0.8192441f, stroke.firstPathPoint.firstPoint.x)
+//                    Assert.assertEquals(0.74336857f, stroke.firstPathPoint.firstPoint.y)
 //                }
 //            }
 //        }

@@ -28,14 +28,13 @@ import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
-import com.paper.model.sketch.PathTuple
+import com.paper.model.sketch.PathPoint
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
-import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.NoSuchElementException
@@ -167,7 +166,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             color = mPenColor,
             isEraser = false,
             width = mPenSize)
-        mTmpStroke.addPathTuple(PathTuple(x, y))
+        mTmpStroke.addPathTuple(PathPoint(x, y, 0))
 
         mLineToSignal.onNext(Point(x, y))
 
@@ -178,7 +177,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             .takeUntil(mCancelDrawingSignal)
             .observeOn(mUiScheduler)
             .subscribe { p ->
-                mTmpStroke.addPathTuple(PathTuple(p.x, p.y, p.time))
+                mTmpStroke.addPathTuple(PathPoint(p.x, p.y, p.time))
 
                 // Notify the observer
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
@@ -202,7 +201,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        mTmpStroke.addPathTuple(PathTuple(x, y))
+        mTmpStroke.addPathTuple(PathPoint(x, y, 0))
         mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer
@@ -235,7 +234,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             color = 0,
             isEraser = false,
             width = 1f)
-        mTmpStroke.addPathTuple(PathTuple(x, y))
+        mTmpStroke.addPathTuple(PathPoint(x, y, 0))
 
         mModel.addStrokeToSketch(mTmpStroke)
 

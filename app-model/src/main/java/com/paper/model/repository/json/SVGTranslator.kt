@@ -23,51 +23,49 @@
 
 package com.paper.model.repository.json
 
-import com.paper.model.sketch.PathTuple
+import com.paper.model.sketch.PathPoint
 
 object SVGTranslator {
 
-    fun toSVG(tupleList: List<PathTuple>): String {
+    fun toSVG(pathPointList: List<PathPoint>): String {
         val builder = StringBuilder()
 
-        tupleList.forEachIndexed { index, tuple ->
+        pathPointList.forEachIndexed { index, p ->
             // FIXME current just need for the Path, it should be handle more cases
             if (index == 0) {
-                builder.append("M${tuple.firstPoint.x},${tuple.firstPoint.y}")
+                builder.append("M${p.x},${p.y}")
             } else {
-                tuple.allPoints.forEach { point ->
-                    builder.append(" L${point.x},${point.y}")
-                }
+                builder.append(" L${p.x},${p.y}")
             }
 
-            if (index == tupleList.lastIndex) builder.append(" Z")
+            if (index == pathPointList.lastIndex) builder.append(" Z")
         }
 
         return builder.toString()
     }
 
-    fun fromSVG(svgString: String): List<PathTuple> {
-        val pathTuples: MutableList<PathTuple> = mutableListOf()
+    fun fromSVG(svgString: String): List<PathPoint> {
+        val pathPoints: MutableList<PathPoint> = mutableListOf()
         val tuples = svgString.split(" ").toTypedArray()
 
         tuples.forEach {
-            // FIXME maybe need to add some parameters for PathTuple
+            // FIXME maybe need to add some parameters for PathPoint
             val prefix = it[0] // prefix case for different SVG
             when (prefix) {
                 'M', 'm' -> {
                     val data = it.removeRange(0, 1)
                     val point = data.split(",")
-                    pathTuples.add(PathTuple(point[0].toFloat(), point[1].toFloat()))
+                    pathPoints.add(PathPoint(point[0].toFloat(), point[1].toFloat(), 0))
                 }
                 'L', 'l' -> {
                     val data = it.removeRange(0, 1)
                     val point = data.split(",")
-                    pathTuples.add(PathTuple(point[0].toFloat(), point[1].toFloat()))
+                    pathPoints.add(PathPoint(point[0].toFloat(), point[1].toFloat(), 0))
                 }
                 // there might be more case
             }
         }
 
-        return pathTuples
+        return pathPoints
     }
 }
