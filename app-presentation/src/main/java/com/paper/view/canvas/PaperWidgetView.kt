@@ -781,9 +781,9 @@ class PaperWidgetView : View,
                              context: Any?) {
         mWidget.handleActionEnd()
 
-        // Prevent the following transform applied to the event from do the
-        // sharp rendering.
-        requestSharpDrawing()
+//        // Prevent the following transform applied to the event from do the
+//        // sharp rendering.
+//        requestSharpDrawing()
     }
 
     // Tap Gesture ////////////////////////////////////////////////////////////
