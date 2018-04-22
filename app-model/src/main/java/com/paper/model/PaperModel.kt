@@ -20,6 +20,7 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import java.io.File
@@ -44,7 +45,16 @@ class PaperModel(
 
     var caption: String = ""
 
-    // Scraps
+    // Sketch & strokes ///////////////////////////////////////////////////////
+
+    private val mSketch = mutableListOf<SketchStroke>()
+
+    fun addStrokeToSketch(stroke: SketchStroke) {
+        mSketch.add(stroke)
+    }
+
+    // Scraps /////////////////////////////////////////////////////////////////
+
     private var mScraps = mutableListOf<ScrapModel>()
     private val mAddScrapSignal = PublishSubject.create<ScrapModel>()
     private val mRemoveScrapSignal = PublishSubject.create<ScrapModel>()

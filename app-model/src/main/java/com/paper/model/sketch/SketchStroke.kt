@@ -32,8 +32,9 @@ data class SketchStroke(
     // The byte order is ARGB.
     var color: Int = 0,
     var width: Float = 0.toFloat(),
-    var isEraser: Boolean = false,
-    private val mPathTupleList: MutableList<PathTuple> = ArrayList()) {
+    var isEraser: Boolean = false) {
+
+    private val mPathTupleList = mutableListOf<PathTuple>()
 
     val pathTupleList: List<PathTuple> get() = mPathTupleList
 
@@ -44,10 +45,10 @@ data class SketchStroke(
     val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
     val firstPathTuple: PathTuple
-        get() = mPathTupleList[0]
+        get() = mPathTupleList.first()
 
     val lastPathTuple: PathTuple
-        get() = mPathTupleList[mPathTupleList.size - 1]
+        get() = mPathTupleList.last()
 
     fun pathTupleSize(): Int = mPathTupleList.size
 
@@ -64,7 +65,7 @@ data class SketchStroke(
         mPathTupleList.add(pathTuple)
     }
 
-    fun addAllPathTuple(pathTupleList: List<PathTuple>) {
+    fun addAllPathTuple(pathTupleList: List<PathTuple>): SketchStroke {
         // Calculate new boundary.
         for (pathTuple in pathTupleList) {
             val point = pathTuple.getPointAt(0)
@@ -72,6 +73,8 @@ data class SketchStroke(
         }
 
         this.mPathTupleList.addAll(pathTupleList)
+
+        return this
     }
 
     fun offset(offsetX: Float, offsetY: Float) {

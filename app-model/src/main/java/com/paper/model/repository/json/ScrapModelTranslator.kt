@@ -21,8 +21,9 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
+import com.paper.model.Color
 import com.paper.model.ScrapModel
-import com.paper.model.sketch.SketchModel
+import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
 import java.util.*
 
@@ -38,14 +39,12 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
 
         root.addProperty("x", src.x)
         root.addProperty("y", src.y)
-//        root.addProperty("width", src.width)
-//        root.addProperty("height", src.height)
 
         root.addProperty("scale", src.scale)
         root.addProperty("rotationInRadians", src.rotationInRadians)
 
         // See SketchModelTranslator.kt
-        root.add("sketch", context.serialize(src.sketch))
+        root.add("sketch", serializeSketch(src.sketch))
 
         return root
     }
@@ -60,15 +59,69 @@ class ScrapModelTranslator : JsonSerializer<ScrapModel>,
 
         model.x = root.get("x").asFloat
         model.y = root.get("y").asFloat
-//        model.width = root.get("width").asFloat
-//        model.height = root.get("height").asFloat
 
         model.scale = root.get("scale").asFloat
         model.rotationInRadians = root.get("rotationInRadians").asFloat
 
         // See SketchModelTranslator.kt
-        model.sketch = context.deserialize(root.get("sketch"), SketchModel::class.java)
+        if (root.has("sketch")) {
+            val sketch = deserializeSketch(root["sketch"])
+            sketch.forEach { model.addStrokeToSketch(it) }
+        }
 
         return model
+    }
+
+    private fun serializeSketch(sketch: List<SketchStroke>): JsonElement {
+        val root = JsonObject()
+        val strokeListObj = JsonArray()
+
+        // A sketch contains several strokes.
+        root.add("strokes", strokeListObj)
+        // {"strokes": [{stroke}, {}, ...]
+        for (stroke in sketch) {
+            val strokeObj = JsonObject()
+
+            strokeListObj.add(strokeObj)
+
+            // Stroke color, #ARGB
+            strokeObj.addProperty("color", "#${Integer.toHexString(stroke.color)}")
+            // Stroke width.
+            strokeObj.addProperty("width", stroke.width)
+
+            // Save via SVG format
+            val svgTransJson = SVGTranslator.toSVG(stroke.pathTupleList)
+            strokeObj.addProperty("path", svgTransJson)
+        }
+
+        return root
+    }
+
+    private fun deserializeSketch(src: JsonElement): List<SketchStroke> {
+        val sketch = mutableListOf<SketchStroke>()
+        val strokeArray = src.asJsonArray
+
+        // Parse stroke object.
+        for (i in 0 until strokeArray.size()) {
+            val strokeJson = strokeArray.get(i).asJsonObject
+            val stroke = SketchStroke()
+
+            // Parse path-tuple
+            val pathString = strokeJson.get("path").asString
+            // Add tuplePath to the stroke.
+            stroke.addAllPathTuple(SVGTranslator.fromSVG(pathString))
+
+            // Stroke color, #ARGB
+            val colorTicket = strokeJson.get("color").asString
+            stroke.color = Color.parseColor(colorTicket)
+
+            // Stroke width.
+            stroke.width = strokeJson.get("width").asFloat
+
+            // Add stroke to the sketch.
+            sketch.add(stroke)
+        }
+
+        return sketch
     }
 }

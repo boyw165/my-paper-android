@@ -82,7 +82,7 @@ class ScrapWidget(
             .timer(1, TimeUnit.MILLISECONDS, mUiScheduler)
             .takeUntil(mCancelSignal)
             .subscribe {
-                mModel.sketch.allStrokes.forEach { stroke ->
+                mModel.sketch.forEach { stroke ->
                     if (stroke.firstPathTuple == stroke.lastPathTuple) {
                         val onlyPath = stroke.lastPathTuple
                         mDrawSVGSignal.onNext(DrawSVGEvent(
