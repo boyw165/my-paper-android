@@ -37,12 +37,12 @@ class PaperJSONTranslatorTest {
                           "        {\n" +
                           "            \"color\": \"#123456\",\n" +
                           "            \"width\": 0.2,\n" +
-                          "            \"path\": \"M0.0,0.0 L0.5,0.5 Z\"\n" +
+                          "            \"path\": \"0.0,0.0,0 0.5,0.5,100\"\n" +
                           "        },\n" +
                           "        {\n" +
                           "            \"color\": \"#654321\",\n" +
                           "            \"width\": 0.8,\n" +
-                          "            \"path\": \"M0.5,0.5 Z\"\n" +
+                          "            \"path\": \"0.5,0.5,0\"\n" +
                           "        }\n" +
                           "    ],\n" +
                           "    \"scraps\": []\n" +
@@ -82,13 +82,12 @@ class PaperJSONTranslatorTest {
         paper.addStrokeToSketch(SketchStroke(color = Color.parseColor("#123456"),
                                              width = 0.5f,
                                              isEraser = false)
-                                    .addPath(Point(0f, 0f))
-                                    .addPath(Point(1f, 1f)))
+                                    .addPath(Point(0f, 0f, 0))
+                                    .addPath(Point(1f, 1f, 100)))
 
-        Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"M0.0,0.0 L1.0,1.0 Z\"}],\"scraps\":[]}",
+
+        Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"0.0,0.0,0 1.0,1.0,100\"}],\"scraps\":[]}",
                             translator.toJson(paper, PaperModel::class.java))
-
-        println(translator.toJson(paper, PaperModel::class.java))
     }
 }
 

@@ -88,13 +88,11 @@ class CommonPenPrefsRepoFileImplTest {
         val testObserver = TestObserver.create<Boolean>()
         Observables
             .combineLatest(
-                tester.putPenColors(listOf(Color.parseColor("#111111"),
-                                           Color.parseColor("#222222"),
-                                           Color.parseColor("#333333")))
+                tester.putPenColors(ICommonPenPrefsRepo.DEFAULT_COLORS)
                     .toObservable(),
-                tester.putChosenPenColor(Color.parseColor("#222222"))
+                tester.putChosenPenColor(ICommonPenPrefsRepo.DEFAULT_CHOSEN_COLOR)
                     .toObservable(),
-                tester.putPenSize(0.2f)
+                tester.putPenSize(ICommonPenPrefsRepo.DEFAULT_PEN_SIZE)
                     .toObservable())
             .map { it.first && it.second && it.third }
             .subscribe(testObserver)
@@ -111,18 +109,6 @@ class CommonPenPrefsRepoFileImplTest {
         val tester = CommonPenPrefsRepoFileImpl(
             dir = dir,
             ioScheduler = testScheduler)
-
-        Observables
-            .combineLatest(
-                tester.putPenColors(ICommonPenPrefsRepo.DEFAULT_COLORS)
-                    .toObservable(),
-                tester.putChosenPenColor(ICommonPenPrefsRepo.DEFAULT_CHOSEN_COLOR)
-                    .toObservable(),
-                tester.putPenSize(0.2f)
-                    .toObservable())
-            .map { it.first && it.second && it.third }
-            .subscribe()
-        testScheduler.triggerActions()
 
         val testObserver = TestObserver.create<List<Int>>()
         tester.getPenColors()

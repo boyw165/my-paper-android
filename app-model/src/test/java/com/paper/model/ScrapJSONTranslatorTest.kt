@@ -23,14 +23,78 @@
 
 package com.paper.model
 
+import com.google.gson.GsonBuilder
+import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.sketch.SketchStroke
+import org.junit.Assert
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner::class)
 class ScrapJSONTranslatorTest {
 
-    private val SKETCH_WITH_THREE_DOTS = "{\"strokes\":[{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"M0.18075603,0.25663146 Z\"},{\"color\":\"#FF70C050\",\"width\":0.09569436,\"path\":\"M0.5118275,0.5168306 Z\"},{\"color\":\"#FF3897F0\",\"width\":0.09569436,\"path\":\"M0.8192441,0.74336857 Z\"}]}"
+    private val SCRAP_TEST_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"mPointList\":[{\"x\":0.18075603,\"y\":0.25663146,\"time\":0},{\"x\":0.5,\"y\":0.5,\"time\":100}],\"mBound\":{\"left\":0.18075603,\"top\":0.25663146,\"right\":0.5,\"bottom\":0.5},\"color\":-65536,\"width\":0.5,\"isEraser\":false}]}\n"
 
-    // TODO: Implement it!
+    @Test
+    fun serializeDummyScrap() {
+        val translator = GsonBuilder()
+            .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
+            .create()
+
+        val model = ScrapModel()
+        val uuid = model.uuid
+        model.x = 100f
+        model.y = 200f
+        model.scale = 0.5f
+
+        model.addStrokeToSketch(SketchStroke(color = Color.parseColor("#FF0000"),
+                                             width = 0.5f,
+                                             isEraser = false)
+                                    .addAllPath(listOf(Point(0.18075603f,
+                                                             0.25663146f,
+                                                             0),
+                                                       Point(0.5f,
+                                                             0.5f,
+                                                             100))))
+
+        Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"mPointList\":[{\"x\":0.18075603,\"y\":0.25663146,\"time\":0},{\"x\":0.5,\"y\":0.5,\"time\":100}],\"mBound\":{\"left\":0.18075603,\"top\":0.25663146,\"right\":0.5,\"bottom\":0.5},\"color\":-65536,\"width\":0.5,\"isEraser\":false}]}",
+                translator.toJson(model, ScrapModel::class.java))
+    }
+
+    @Test
+    fun deserializeSketch_With_ThreeDots() {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
+            .create()
+        val model = gson.fromJson<ScrapModel>(SCRAP_TEST_JSON, ScrapModel::class.java)
+
+        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.uuid.toString())
+
+        Assert.assertEquals(100f, model.x)
+        Assert.assertEquals(200f, model.y)
+        Assert.assertEquals(0.5f, model.scale)
+
+        // Every sketch has just one point.
+        for (sketch in model.sketch) {
+            Assert.assertEquals(2, sketch.pointList.size)
+        }
+
+        // Match x-y pair exactly.
+        for ((i, stroke) in model.sketch.withIndex()) {
+            when (i) {
+                0 -> {
+                    Assert.assertEquals(0.18075603f, stroke.pointList[0].x)
+                    Assert.assertEquals(0.25663146f, stroke.pointList[0].y)
+                    Assert.assertEquals(0, stroke.pointList[0].time)
+                }
+                1 -> {
+                    Assert.assertEquals(0.5f, stroke.pointList[0].x)
+                    Assert.assertEquals(0.5f, stroke.pointList[0].y)
+                    Assert.assertEquals(100, stroke.pointList[0].time)
+                }
+            }
+        }
+    }
 }
 
