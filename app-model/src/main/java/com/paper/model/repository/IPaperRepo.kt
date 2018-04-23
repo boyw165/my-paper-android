@@ -34,7 +34,7 @@ interface IPaperRepo {
 
     fun deleteAllPapers(): Observable<Boolean>
 
-    fun deletePaperById(id: Long): Observable<Boolean>
+    fun deletePaperById(id: Long): Single<Boolean>
 
     fun putBitmap(bmp: Bitmap): Single<File>
 

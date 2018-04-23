@@ -215,7 +215,7 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    override fun deletePaperById(id: Long): Observable<Boolean> {
+    override fun deletePaperById(id: Long): Single<Boolean> {
         TODO("not implemented")
     }
 

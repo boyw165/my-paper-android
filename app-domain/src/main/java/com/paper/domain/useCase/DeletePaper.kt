@@ -22,12 +22,12 @@
 
 package com.paper.domain.useCase
 
-import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.repository.IPaperRepo
-import io.reactivex.*
+import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.Single
+import io.reactivex.SingleObserver
 import io.reactivex.disposables.Disposable
-import io.reactivex.subjects.Subject
 
 // .------.
 // |      | ----> true or false
@@ -43,67 +43,42 @@ import io.reactivex.subjects.Subject
  * There is also a side-effect that it sends ProgressEvent through the given
  * progress signal.
  */
-class LoadPaperAndBindModel(paperID: Long,
-                            paperWidget: IPaperWidget,
-                            paperRepo: IPaperRepo,
-                            updateProgressSignal: Subject<ProgressEvent>,
-                            uiScheduler: Scheduler)
+class DeletePaper(paperID: Long,
+                  paperRepo: IPaperRepo)
     : Single<Boolean>() {
 
     private val mPaperID = paperID
 
-    private val mPaperWidget = paperWidget
     private val mPaperRepo = paperRepo
-
-    private val mUpdateProgressSignal = updateProgressSignal
-
-    private val mUiScheduler = uiScheduler
 
     override fun subscribeActual(observer: SingleObserver<in Boolean>) {
         val actualSrc = mPaperRepo
-            .getPaperById(mPaperID)
+            .deletePaperById(id = mPaperID)
             .toObservable()
             .publish()
         val actualDisposable = actualSrc
-            .observeOn(mUiScheduler)
             .subscribe(
-                { paper ->
-                    // Bind widget with data.
-                    mPaperWidget.bindModel(paper)
-
-                    observer.onSuccess(true)
-
-                    mUpdateProgressSignal.onNext(ProgressEvent.stop())
-                }, { err ->
+                { successful ->
+                    observer.onSuccess(successful)
+                },
+                { err ->
                     observer.onError(err)
-
-                    mUpdateProgressSignal.onNext(ProgressEvent.stop())
                 })
 
-        val d = InnerDisposable(widget = mPaperWidget,
-                                actualDisposable = actualDisposable)
+        val d = InnerDisposable(actualDisposable = actualDisposable)
         observer.onSubscribe(d)
 
-        if (!d.isDisposed) {
-            // Right after the subscription, send a START progress event.
-            mUpdateProgressSignal.onNext(ProgressEvent.start())
-        }
-
-        if (!d.isDisposed) {
-            // Then start the graph
-            actualSrc.connect()
-        }
+        // Start to work!
+        actualSrc.connect()
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    internal class InnerDisposable(widget: IPaperWidget,
-                                   actualDisposable: Disposable) : Disposable {
+    internal class InnerDisposable(actualDisposable: Disposable) : Disposable {
 
         private var mDisposed = false
 
-        private val mPaperWidget = widget
         private val mActualDisposable = actualDisposable
 
         override fun isDisposed(): Boolean {
@@ -112,9 +87,6 @@ class LoadPaperAndBindModel(paperID: Long,
 
         override fun dispose() {
             mActualDisposable.dispose()
-
-            mPaperWidget.unbindModel()
-
             mDisposed = true
         }
     }
