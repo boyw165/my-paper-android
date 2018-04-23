@@ -31,7 +31,7 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner::class)
 class SketchStrokeJSONTranslatorTest {
 
-    private val SKETCH_STROKE_1 = "{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"M0.18075603,0.25663146 Z\"}"
+    private val SKETCH_STROKE_1 = "{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"0.18075603,0.25663146,0\"}"
 
     @Test
     fun deserializeDummyScrap() {
