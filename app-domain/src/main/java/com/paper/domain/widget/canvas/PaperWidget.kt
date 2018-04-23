@@ -169,7 +169,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         val point = Point(x, y)
 
-        println("handleDragBegin $point")
         mTmpStroke.addPath(point)
 
         mLineToSignal.onNext(point)
@@ -197,9 +196,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     override fun handleDrag(x: Float,
                             y: Float) {
-        val point = Point(x,y)
-        mLineToSignal.onNext(point)
-        println("handleDrag $point")
+        mLineToSignal.onNext(Point(x,y))
     }
 
     override fun handleDragEnd(x: Float,
