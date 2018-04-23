@@ -129,7 +129,7 @@ class SVGDrawable(context: IPaperContext,
             // Only draw those points not consumed
             val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
             newPoints.forEachIndexed { i, point ->
-                mStrokePaint.strokeWidth = mStrokeWidth[i]
+                mStrokePaint.strokeWidth = mStrokeWidth[i + mConsumedPointCount]
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
 
@@ -177,7 +177,7 @@ class SVGDrawable(context: IPaperContext,
             // To reduce the initial lag make it work with 3 mCachedPoints
             // by duplicating the first point
             val firstPoint = mCachedPoints[0]
-            mCachedPoints.add(getNewPoint(firstPoint.x, firstPoint.y))
+            mCachedPoints.add(firstPoint)
         }
     }
 
