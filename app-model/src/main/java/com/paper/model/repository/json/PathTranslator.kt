@@ -26,47 +26,30 @@ package com.paper.model.repository.json
 import com.paper.model.Point
 
 
-object SVGTranslator {
+object PathTranslator {
 
-    fun toSVG(points: List<Point>): String {
+    fun toPath(pathPointList: List<Point>): String {
         val builder = StringBuilder()
 
-        points.forEachIndexed { index, p ->
-            // FIXME current just need for the Path, it should be handle more cases
-            if (index == 0) {
-                builder.append("M${p.x},${p.y}")
-            } else {
-                builder.append(" L${p.x},${p.y}")
+        pathPointList.forEachIndexed { index, p ->
+            builder.append("${p.x},${p.y},${p.time}")
+            if (index != pathPointList.lastIndex) {
+                builder.append(" ")
             }
-
-            if (index == points.lastIndex) builder.append(" Z")
         }
 
         return builder.toString()
     }
 
-    fun fromSVG(svgString: String): List<Point> {
-        val timedPoints: MutableList<Point> = mutableListOf()
-        val points = svgString.split(" ").toTypedArray()
+    fun fromPath(pointsString: String): List<Point> {
+        val pathPoints: MutableList<Point> = mutableListOf()
+        val points = pointsString.split(" ").toTypedArray()
 
-        points.forEach {
-            // FIXME maybe need to add some parameters for TimedPoint
-            val prefix = it[0] // prefix case for different SVG
-            when (prefix) {
-                'M', 'm' -> {
-                    val data = it.removeRange(0, 1)
-                    val point = data.split(",")
-                    timedPoints.add(Point(point[0].toFloat(), point[1].toFloat(), 0))
-                }
-                'L', 'l' -> {
-                    val data = it.removeRange(0, 1)
-                    val point = data.split(",")
-                    timedPoints.add(Point(point[0].toFloat(), point[1].toFloat(), 0))
-                }
-                // there might be more case
-            }
+        points.forEach { p ->
+            val point = p.split(",")
+            pathPoints.add(Point(point[0].toFloat(), point[1].toFloat(), point[2].toLong()))
         }
 
-        return timedPoints
+        return pathPoints
     }
 }
