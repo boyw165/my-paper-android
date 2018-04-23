@@ -22,6 +22,7 @@
 
 package com.paper.domain.useCase
 
+import com.paper.domain.DomainConst
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable

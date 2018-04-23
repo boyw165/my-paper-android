@@ -37,6 +37,7 @@ import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.canvas.IPaperWidget
@@ -50,6 +51,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 class PaperWidgetView : View,
@@ -134,7 +136,15 @@ class PaperWidgetView : View,
 
         // Drawing
         mWidgetDisposables.add(
-            widget.onDrawSVG()
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        widget.onDrawSVG()
+                            .startWith(DrawSVGEvent(action = CLEAR_ALL))
+                    } else {
+                        Observable.never()
+                    }
+                }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     onDrawSVG(event)
@@ -151,7 +161,7 @@ class PaperWidgetView : View,
                         size.width > 0 &&
                         size.height > 0) {
                         println("${AppConst.TAG}: the layout is done, and canvas " +
-                                            "size is ${size.width} x ${size.height}")
+                                "size is ${size.width} x ${size.height}")
                         onUpdateLayoutOrCanvas(size.width,
                                                size.height)
                     }
@@ -221,6 +231,12 @@ class PaperWidgetView : View,
     // Drawing ////////////////////////////////////////////////////////////////
 
     /**
+     * A signal indicating whether it's ready to interact with the user. see
+     * [onUpdateLayoutOrCanvas].
+     */
+    private val mReadySignal = PublishSubject.create<Boolean>()
+
+    /**
      * Model canvas size.
      */
     private val mMSize = BehaviorSubject.createDefault(Rect())
@@ -274,6 +290,9 @@ class PaperWidgetView : View,
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
+        // Flag not ready for interacting with user.
+        mReadySignal.onNext(false)
+
         // The maximum view port, a rectangle as the same width over
         // height ratio and it just fits in the canvas rectangle as
         // follow:
@@ -327,6 +346,8 @@ class PaperWidgetView : View,
         mBitmapCanvas = Canvas(mBitmap)
 
         invalidate()
+
+        mReadySignal.onNext(true)
     }
 
     override fun requestSharpDrawing() {
@@ -422,7 +443,7 @@ class PaperWidgetView : View,
         val (x, y) = toViewWorld(nx, ny)
 
         when (event.action) {
-            DrawSVGEvent.Action.MOVE -> {
+            MOVE -> {
                 val drawable = SVGDrawable(context = this@PaperWidgetView,
                                            penColor = event.penColor,
                                            penSize = event.penSize)
@@ -430,17 +451,15 @@ class PaperWidgetView : View,
 
                 mStrokeDrawables.add(drawable)
             }
-            DrawSVGEvent.Action.LINE_TO -> {
+            LINE_TO -> {
                 val drawable = mStrokeDrawables.last()
                 drawable.lineTo(Point(x, y, event.point.time))
             }
-            DrawSVGEvent.Action.CLOSE -> {
+            CLOSE -> {
                 val drawable = mStrokeDrawables.last()
                 drawable.close()
             }
-            DrawSVGEvent.Action.CLEAR_ALL -> {
-                val drawable = mStrokeDrawables.last()
-                drawable.clear()
+            CLEAR_ALL -> {
                 mStrokeDrawables.clear()
             }
             else -> {
