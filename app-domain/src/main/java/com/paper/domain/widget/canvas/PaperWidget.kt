@@ -166,9 +166,12 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             color = mPenColor,
             isEraser = false,
             width = mPenSize)
-        mTmpStroke.addPath(Point(x, y, 0))
 
-        mLineToSignal.onNext(Point(x, y))
+        val point = Point(x, y)
+
+        mTmpStroke.addPath(point)
+
+        mLineToSignal.onNext(point)
 
         mLineToSignal
 //            // FIXME: The window filter would make the SVGDrawable laggy.
@@ -186,14 +189,14 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = Point(x, y),
+                                           point = point,
                                            penColor = mPenColor,
                                            penSize = mPenSize))
     }
 
     override fun handleDrag(x: Float,
                             y: Float) {
-        mLineToSignal.onNext(Point(x, y))
+        mLineToSignal.onNext(Point(x,y))
     }
 
     override fun handleDragEnd(x: Float,
@@ -201,7 +204,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        mTmpStroke.addPath(Point(x, y, 0))
+        mTmpStroke.addPath(Point(x, y))
+
         mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer
