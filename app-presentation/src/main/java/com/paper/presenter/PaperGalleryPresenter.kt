@@ -21,7 +21,6 @@
 package com.paper.presenter
 
 import android.Manifest
-import com.paper.domain.DomainConst
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.useCase.DeletePaper
@@ -144,13 +143,6 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 .switchMap {
                     mRepo.getPapers(isSnapshot = true)
                 }
-                .scan(emptyList<PaperModel>(), { oldList, newPaper ->
-                    val newList = oldList.toMutableList()
-
-                    newList.add(newPaper)
-
-                    return@scan newList
-                })
                 .observeOn(mUiScheduler)
                 .subscribe { papers ->
                     // Hold the paper snapshots.

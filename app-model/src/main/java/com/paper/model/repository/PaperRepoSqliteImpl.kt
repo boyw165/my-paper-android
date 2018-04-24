@@ -26,7 +26,6 @@ import android.database.ContentObserver
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -39,8 +38,11 @@ import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.SketchStrokeJSONTranslator
 import com.paper.model.repository.sqlite.PaperTable
 import com.paper.model.sketch.SketchStroke
-import io.reactivex.*
 import io.reactivex.Observable
+import io.reactivex.Scheduler
+import io.reactivex.Single
+import io.reactivex.SingleEmitter
+import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -48,15 +50,16 @@ import java.util.*
 
 class PaperRepoSqliteImpl(authority: String,
                           resolver: ContentResolver,
-                          cacheDirFile: File,
+                          fileDir: File,
                           dbIoScheduler: Scheduler) : IPaperRepo {
 
     private val mAuthority = authority
     private val mResolver = resolver
-    private val mCacheDirFile = cacheDirFile
+    private val mFileDir = fileDir
+    /**
+     * A DB specific scheduler with only one thread in the thread pool.
+     */
     private val mDbIoScheduler = dbIoScheduler
-
-    private val mTempFile by lazy { File(mCacheDirFile, "$mAuthority.temp_paper") }
 
     // JSON translator.
     private val mTranslator by lazy {
@@ -70,11 +73,26 @@ class PaperRepoSqliteImpl(authority: String,
             .create()
     }
 
-    // Content observer
+    /**
+     * Observer observing the database change.
+     */
     private val mObserver by lazy {
         object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
+            override fun onChange(selfChange: Boolean, uri: Uri) {
                 super.onChange(selfChange, uri)
+
+                when (uri.lastPathSegment) {
+                    CHANGE_ADD,
+                    CHANGE_REMOVE,
+                    CHANGE_UPDATE -> getPapersThenFinish(true)
+                        .subscribe(
+                            { papers ->
+                                mPaperListSignal.onNext(papers)
+                            },
+                            { err ->
+                                mPaperListSignal.onError(err)
+                            })
+                }
             }
         }
     }
@@ -88,9 +106,9 @@ class PaperRepoSqliteImpl(authority: String,
         mResolver.registerContentObserver(uri, true, mObserver)
     }
 
-    override fun getPapers(isSnapshot: Boolean): Observable<PaperModel> {
-        return Observable
-            .create { downstream: ObservableEmitter<PaperModel> ->
+    private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<PaperModel>> {
+        return Single
+            .create { downstream: SingleEmitter<List<PaperModel>> ->
                 var cursor: Cursor? = null
 
                 try {
@@ -124,13 +142,17 @@ class PaperRepoSqliteImpl(authority: String,
                     // TODO: https://github.com/Kotlin/anko/wiki/Anko-SQLite
 
                     // Translate cursor.
+                    val papers = mutableListOf<PaperModel>()
                     if (cursor.moveToFirst() &&
                         !downstream.isDisposed) {
                         do {
-                            val paper = convertCursorToPaper(cursor, false)
-                            downstream.onNext(paper)
+                            papers.add(convertCursorToPaper(cursor, !isSnapshot))
                         } while (cursor.moveToNext() &&
                                  !downstream.isDisposed)
+                    }
+
+                    if (!downstream.isDisposed) {
+                        downstream.onSuccess(papers)
                     }
                 } catch (error: InterruptedException) {
                     val i = error.stackTrace.indexOfFirst { trace ->
@@ -143,12 +165,29 @@ class PaperRepoSqliteImpl(authority: String,
                     }
                 } finally {
                     cursor?.close()
-                    downstream.onComplete()
                 }
             }
             .subscribeOn(mDbIoScheduler)
     }
 
+    private val mPaperListSignal = PublishSubject.create<List<PaperModel>>()
+
+    /**
+     * Get paper list.
+     *
+     * @param isSnapshot Readying the whole paper structure is sometimes
+     *                   time-consuming. True to ready part only matter with
+     *                   thumbnails; False is fully read.
+     */
+    override fun getPapers(isSnapshot: Boolean): Observable<List<PaperModel>> {
+        return Observable.merge(
+            getPapersThenFinish(isSnapshot).toObservable(),
+            mPaperListSignal)
+    }
+
+    /**
+     * Read full structure of the paper by ID.
+     */
     override fun getPaperById(id: Long): Single<PaperModel> {
         // FIXME: Workaround.
         return if (id == ModelConst.TEMP_ID) {
@@ -218,8 +257,6 @@ class PaperRepoSqliteImpl(authority: String,
                               paper: PaperModel): Single<Boolean> {
         paper.modifiedAt = getCurrentTime()
 
-        // TODO: Delegate to a Service or some component that guarantees the
-        // TODO: I/O is atomic.
         return Single
             .fromCallable {
                 if (id == ModelConst.TEMP_ID) {
@@ -229,7 +266,11 @@ class PaperRepoSqliteImpl(authority: String,
                         .path("paper")
                         .build()
 
-                    mResolver.insert(uri, convertPaperToValues(paper))
+                    val newURI = mResolver.insert(uri, convertPaperToValues(paper))
+                    if (newURI != null) {
+                        // Notify a addition just happens
+                        mResolver.notifyChange(Uri.parse("$newURI/$CHANGE_ADD"), null)
+                    }
                 } else {
                     val uri = Uri.Builder()
                         .scheme("content")
@@ -237,11 +278,11 @@ class PaperRepoSqliteImpl(authority: String,
                         .path("paper/$id")
                         .build()
 
-                    mResolver.update(uri, convertPaperToValues(paper), null, null)
+                    if (0 < mResolver.update(uri, convertPaperToValues(paper), null, null)) {
+                       // Notify an update just happens
+                        mResolver.notifyChange(Uri.parse("$uri/$CHANGE_UPDATE"), null)
+                    }
                 }
-
-//                // TODO: Figure out to notify what
-//                mResolver.notifyChange()
 
                 return@fromCallable true
             }
@@ -261,10 +302,10 @@ class PaperRepoSqliteImpl(authority: String,
                     .path("paper/$id")
                     .build()
 
-                mResolver.delete(uri, null, null)
-
-//                // TODO: Figure out to notify what
-//                mResolver.notifyChange()
+                if (0 < mResolver.delete(uri, null, null)) {
+                    // Notify a deletion just happens
+                    mResolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
+                }
 
                 return@fromCallable true
             }
@@ -275,14 +316,12 @@ class PaperRepoSqliteImpl(authority: String,
         return Single
             .fromCallable {
                 // TODO: Use LruCache?
-                val dir = File("${Environment.getExternalStorageDirectory()}/paper")
-                if (!dir.exists()) {
-                    dir.mkdir()
+                if (!mFileDir.exists()) {
+                    mFileDir.mkdir()
                 }
 
                 val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-                val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
-                                   "$ts.jpg")
+                val bmpFile = File(mFileDir, "$ts.jpg")
 
                 FileOutputStream(bmpFile).use { out ->
                     bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
@@ -348,5 +387,14 @@ class PaperRepoSqliteImpl(authority: String,
         }
 
         return paper
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    companion object {
+        const val CHANGE_ADD = "add"
+        const val CHANGE_REMOVE = "remove"
+        const val CHANGE_UPDATE = "update"
     }
 }

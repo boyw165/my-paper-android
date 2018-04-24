@@ -22,7 +22,6 @@ package com.paper
 
 import android.content.Context
 import android.support.multidex.MultiDexApplication
-import android.util.Log
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.IDatabaseIOSchedulerProvider
 import com.paper.domain.IPaperRepoProvider
@@ -55,7 +54,7 @@ class PaperApplication : MultiDexApplication(),
     private val mPaperRepo: PaperRepoSqliteImpl by lazy {
         PaperRepoSqliteImpl(authority = packageName,
                             resolver = contentResolver,
-                            cacheDirFile = externalCacheDir,
+                            fileDir = getExternalFilesDir("media"),
                             dbIoScheduler = getScheduler())
     }
 
