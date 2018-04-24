@@ -31,6 +31,8 @@ class PaperGalleryContract private constructor() {
 
         fun showPaperThumbnailAt(position: Int)
 
+        fun setDeleteButtonVisibility(visible: Boolean)
+
         fun showExpMenu()
 
         fun showProgressBar()
@@ -43,13 +45,13 @@ class PaperGalleryContract private constructor() {
 
         fun onClickNewPaper(): Observable<Any>
 
-        fun onClickDeleteAllPapers(): Observable<Any>
+        fun onClickDeletePaper(): Observable<Any>
 
         fun onClickShowExpMenu(): Observable<Any>
 
         fun onClickExpMenu(): Observable<Int>
 
-        fun onBrowsePaper(): Observable<Int>
+        fun onBrowsePaper(): Observable<Long>
     }
 
     interface Navigator {

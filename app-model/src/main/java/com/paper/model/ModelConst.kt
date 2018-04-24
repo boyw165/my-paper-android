@@ -25,4 +25,6 @@ object ModelConst {
     const val TAG = "paper model"
 
     const val TEMP_ID = -1L
+
+    const val INVALID_ID = Long.MAX_VALUE
 }

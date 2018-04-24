@@ -53,10 +53,10 @@ class PaperApplication : MultiDexApplication(),
 
     // Database.
     private val mPaperRepo: PaperRepoSqliteImpl by lazy {
-        PaperRepoSqliteImpl(packageName,
-                            contentResolver,
-                            externalCacheDir,
-                            getScheduler())
+        PaperRepoSqliteImpl(authority = packageName,
+                            resolver = contentResolver,
+                            cacheDirFile = externalCacheDir,
+                            dbIoScheduler = getScheduler())
     }
 
     override fun getRepo(): IPaperRepo {
@@ -94,6 +94,17 @@ class PaperApplication : MultiDexApplication(),
 
     override fun getInt(key: String, defaultValue: Int): Int {
         return mPreferences.getInt(key, defaultValue)
+    }
+
+    override fun putLong(key: String, value: Long) {
+        mPreferences
+            .edit()
+            .putLong(key, value)
+            .apply()
+    }
+
+    override fun getLong(key: String, defaultValue: Long): Long {
+        return mPreferences.getLong(key, defaultValue)
     }
 
     override fun putFloat(key: String, value: Float) {

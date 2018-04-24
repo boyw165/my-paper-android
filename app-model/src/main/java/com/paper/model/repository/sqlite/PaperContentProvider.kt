@@ -198,7 +198,7 @@ class PaperContentProvider : ContentProvider(),
                 return num
             }
             else -> {
-                throw IllegalArgumentException("Unrecognized update URI, $uri.")
+                throw IllegalArgumentException("Unrecognized deletion URI, $uri.")
             }
         }
     }
