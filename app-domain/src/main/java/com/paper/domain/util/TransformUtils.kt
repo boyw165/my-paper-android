@@ -270,16 +270,16 @@ class TransformUtils {
 
         ///////////////////////////////////////////////////////////////////////
 
-        val ORIENTATION_CW = -1
-        val ORIENTATION_COLLINEAR = 0
-        val ORIENTATION_CCW = 1
+        const val ORIENTATION_CW = -1
+        const val ORIENTATION_COLLINEAR = 0
+        const val ORIENTATION_CCW = 1
 
         fun getOrientation(p1: PointF, p2: PointF, p3: PointF): Int {
             // Vector u: from p1 to p2.
             val ux = p2.x - p1.x
             val uy = p2.y - p1.y
 
-            // Vector u: from p1 to p3.
+            // Vector v: from p1 to p3.
             val vx = p3.x - p1.x
             val vy = p3.y - p1.y
 
