@@ -205,6 +205,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mCancelDrawingSignal.onNext(0)
 
         mTmpStroke.addPath(Point(x, y))
+
         mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer

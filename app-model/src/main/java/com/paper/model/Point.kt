@@ -22,7 +22,7 @@ package com.paper.model
 
 data class Point(var x: Float = 0f,
                  var y: Float = 0f,
-                 var time: Long = System.currentTimeMillis()) {
+                 var time: Long = 0) {
 
     fun offset(tx: Float,
                ty: Float) {
