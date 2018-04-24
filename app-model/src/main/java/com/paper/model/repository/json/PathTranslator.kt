@@ -32,7 +32,7 @@ object PathTranslator {
         val builder = StringBuilder()
 
         pathPointList.forEachIndexed { index, p ->
-            builder.append("${p.x},${p.y},${p.time}")
+            builder.append("(${p.x},${p.y},${p.time})")
             if (index != pathPointList.lastIndex) {
                 builder.append(" ")
             }
@@ -46,7 +46,7 @@ object PathTranslator {
         val points = pointsString.split(" ").toTypedArray()
 
         points.forEach { p ->
-            val point = p.split(",")
+            val point = p.removePrefix("(").removeSuffix(")").split(",")
             pathPoints.add(Point(point[0].toFloat(), point[1].toFloat(), point[2].toLong()))
         }
 
