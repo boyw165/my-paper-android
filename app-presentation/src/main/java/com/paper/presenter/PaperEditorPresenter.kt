@@ -22,8 +22,8 @@ package com.paper.presenter
 
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.LoadPaperAndBindModel
-import com.paper.domain.widget.SavePaperToStore
+import com.paper.domain.useCase.LoadPaperAndBindModel
+import com.paper.domain.useCase.SavePaperToStore
 import com.paper.domain.widget.canvas.PaperWidget
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Scheduler
@@ -79,20 +79,36 @@ class PaperEditorPresenter(paperRepo: IPaperRepo,
         // Close button.
         mDisposablesOnCreate.add(
             mView!!.onClickCloseButton()
-                .debounce(150, TimeUnit.MILLISECONDS)
-                .take(1)
+                .throttleFirst(1000, TimeUnit.MILLISECONDS)
                 .switchMap {
                     canvasView
                         .takeSnapshot()
                         .compose(SavePaperToStore(
-                            paperWidget = mPaperWidget,
-                            paperRepo = mPaperRepo,
-                            ioScheduler = Schedulers.io()))
+                            paper = mPaperWidget.getPaper(),
+                            paperRepo = mPaperRepo))
                         .toObservable()
 //                        .startWith { view.showProgressBar(0) }
 //                        .subscribeOn(mUiScheduler)
 //                        .observeOn(mUiScheduler)
 //                        .doOnNext { view.hideProgressBar() }
+                }
+                .onErrorResumeNext { err: Throwable ->
+//                    err.printStackTrace()
+
+                    mView!!.onClickCloseButton()
+                        .throttleFirst(1000, TimeUnit.MILLISECONDS)
+                        .switchMap {
+                            canvasView
+                                .takeSnapshot()
+                                .compose(SavePaperToStore(
+                                    paper = mPaperWidget.getPaper(),
+                                    paperRepo = mPaperRepo))
+                                .toObservable()
+                            //                        .startWith { view.showProgressBar(0) }
+                            //                        .subscribeOn(mUiScheduler)
+                            //                        .observeOn(mUiScheduler)
+                            //                        .doOnNext { view.hideProgressBar() }
+                        }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {

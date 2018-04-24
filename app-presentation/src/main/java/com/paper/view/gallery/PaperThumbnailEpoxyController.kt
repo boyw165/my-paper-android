@@ -51,6 +51,20 @@ class PaperThumbnailEpoxyController(
         }
     }
 
+    fun getPaperFromAdapterPosition(position: Int): PaperModel? {
+        val actualData = currentData ?: throw IllegalStateException("no data")
+        val actualPosition = position - 1
+        return if (actualPosition >= 0 && actualPosition < actualData.size) {
+            actualData[actualPosition]
+        } else {
+            null
+        }
+    }
+
+    fun getAdapterPositionFromDataPosition(position: Int): Int {
+        return position + 1
+    }
+
     // Click //////////////////////////////////////////////////////////////////
 
     private val mOnClickPaperSignal = PublishSubject.create<Long>()

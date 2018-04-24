@@ -21,53 +21,49 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
-import com.paper.model.ScrapModel
-import com.paper.model.sketch.SketchModel
+import com.paper.model.Color
+import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
-import java.util.*
 
-class ScrapModelTranslator : JsonSerializer<ScrapModel>,
-                             JsonDeserializer<ScrapModel> {
+class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
+                                   JsonDeserializer<SketchStroke> {
 
-    override fun serialize(src: ScrapModel,
+    override fun serialize(src: SketchStroke,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
-        root.addProperty("uuid", src.uuid.toString())
+        // Stroke color, #ARGB
+        root.addProperty("color", "#${Integer.toHexString(src.color)}")
+        // Stroke width.
+        root.addProperty("width", src.width)
 
-        root.addProperty("x", src.x)
-        root.addProperty("y", src.y)
-//        root.addProperty("width", src.width)
-//        root.addProperty("height", src.height)
 
-        root.addProperty("scale", src.scale)
-        root.addProperty("rotationInRadians", src.rotationInRadians)
+        // Save via points format
+        val pathTransJson = PathTranslator.toPath(src.pointList)
+        root.addProperty("path", pathTransJson)
 
-        // See SketchModelTranslator.kt
-        root.add("sketch", context.serialize(src.sketch))
 
         return root
     }
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): ScrapModel {
+                             context: JsonDeserializationContext): SketchStroke {
         val root = json.asJsonObject
+        val model = SketchStroke()
 
-        val model = ScrapModel(
-            uuid = UUID.fromString(root.get("uuid").asString))
+        // Parse path-tuple
+        val pathString = root.get("path").asString
+        // Add pointPath to the stroke.
+        model.addAllPath(PathTranslator.fromPath(pathString))
 
-        model.x = root.get("x").asFloat
-        model.y = root.get("y").asFloat
-//        model.width = root.get("width").asFloat
-//        model.height = root.get("height").asFloat
+        // Stroke color, #ARGB
+        val colorTicket = root.get("color").asString
+        model.color = Color.parseColor(colorTicket)
 
-        model.scale = root.get("scale").asFloat
-        model.rotationInRadians = root.get("rotationInRadians").asFloat
-
-        // See SketchModelTranslator.kt
-        model.sketch = context.deserialize(root.get("sketch"), SketchModel::class.java)
+        // Stroke width.
+        model.width = root.get("width").asFloat
 
         return model
     }

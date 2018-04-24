@@ -21,38 +21,58 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
-import com.paper.model.PaperModel
+import com.paper.model.ScrapModel
+import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
+import java.util.*
 
-class PaperModelTranslator : JsonSerializer<PaperModel>,
-                             JsonDeserializer<PaperModel> {
+class ScrapJSONTranslator : JsonSerializer<ScrapModel>,
+                            JsonDeserializer<ScrapModel> {
 
-    override fun serialize(src: PaperModel,
+    override fun serialize(src: ScrapModel,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
-        // e.g.: root.addProperty(PaperTable.COL_WIDTH, src.widthOverHeight)
+        root.addProperty("uuid", src.uuid.toString())
 
-        // Serialize the scraps.
+        root.addProperty("x", src.x)
+        root.addProperty("y", src.y)
 
-        // TODO: Meta-data?
+        root.addProperty("scale", src.scale)
+        root.addProperty("rotationInRadians", src.rotationInRadians)
+
+        // See SketchStrokeJSONTranslator.kt
+        val sketchJson = JsonArray()
+        src.sketch.forEach { sketchJson.add(context.serialize(it, SketchStroke::class.java)) }
+        root.add("sketch", sketchJson)
 
         return root
     }
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): PaperModel {
-        val model = PaperModel()
-
-        // Deserialize.
+                             context: JsonDeserializationContext): ScrapModel {
         val root = json.asJsonObject
 
-        // width over height.
-        //        if (root.has(PaperTable.COL_WIDTH)) {
-        //            model.widthOverHeight = root.get(PaperTable.COL_WIDTH).asFloat
-        //        }
+        val model = ScrapModel(
+            uuid = UUID.fromString(root.get("uuid").asString))
+
+        model.x = root.get("x").asFloat
+        model.y = root.get("y").asFloat
+
+        model.scale = root.get("scale").asFloat
+        model.rotationInRadians = root.get("rotationInRadians").asFloat
+
+        // See SketchStrokeJSONTranslator.kt
+        if (root.has("sketch")) {
+            val sketchJson = root["sketch"].asJsonArray
+
+            sketchJson.forEach {
+                model.addStrokeToSketch(
+                    context.deserialize(it, SketchStroke::class.java))
+            }
+        }
 
         return model
     }

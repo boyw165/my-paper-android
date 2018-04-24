@@ -21,7 +21,7 @@
 package com.paper.domain
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.LoadPaperAndBindModel
+import com.paper.domain.useCase.LoadPaperAndBindModel
 import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.PaperModel
 import com.paper.model.repository.IPaperRepo
@@ -37,11 +37,12 @@ import org.mockito.junit.MockitoJUnitRunner
 class LoadPaperAndBindModelTest {
 
     @Test
-    fun getFalseIfErrorFromRepo() {
-        val mockedRepo = Mockito.mock(IPaperRepo::class.java)
+    fun getExceptionIfErrorFromRepo() {
+        val error = RuntimeException("Mocked repo!")
+        val mockRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
-            .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
-            .thenReturn(Single.error(RuntimeException("Mocked repo!")))
+            .`when`(mockRepo.getPaperById(Mockito.anyLong()))
+            .thenReturn(Single.error(error))
         val mockedWidget = Mockito.mock(IPaperWidget::class.java)
 
         val testScheduler = TestScheduler()
@@ -52,18 +53,19 @@ class LoadPaperAndBindModelTest {
         val testMainObserver = LoadPaperAndBindModel(
             paperID = 0,
             paperWidget = mockedWidget,
-            paperRepo = mockedRepo,
+            paperRepo = mockRepo,
             updateProgressSignal = progressSignal,
             uiScheduler = testScheduler)
             .test()
 
-        // Must got observable of false without any uncaught exception
+        // Must see exception
         testScheduler.triggerActions()
-        testMainObserver.assertValue(false)
+        testMainObserver.assertError(error)
 
         // Must see two ProgressEvent events, where first one is 0 progress and
         // second one is 100 progress
-        testProgressObserver.assertValueCount(2)
+        testProgressObserver.assertValueSequence(listOf(ProgressEvent.start(),
+                                                        ProgressEvent.stop()))
     }
 
     @Test
@@ -96,7 +98,35 @@ class LoadPaperAndBindModelTest {
         Mockito.verify(mockedWidget).bindModel(mockedModel)
         // Must see two ProgressEvent events, where first one is 0 progress and
         // second one is 100 progress
-        testProgressObserver.assertValueCount(2)
+        testProgressObserver.assertValueSequence(listOf(ProgressEvent.start(),
+                                                        ProgressEvent.stop()))
+        // Must see that widget unbinds model if the subscription is disposed
+        testMainObserver.dispose()
+        Mockito.verify(mockedWidget).unbindModel()
+    }
+
+    @Test
+    fun widgetShouldUnbindModelIfDispose() {
+        val mockedModel = PaperModel()
+        val mockedRepo = Mockito.mock(IPaperRepo::class.java)
+        Mockito
+            .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
+            .thenReturn(Single.just(mockedModel))
+        val mockedWidget = Mockito.mock(IPaperWidget::class.java)
+
+        val testScheduler = TestScheduler()
+
+        val testMainObserver = LoadPaperAndBindModel(
+            paperID = 0,
+            paperWidget = mockedWidget,
+            paperRepo = mockedRepo,
+            updateProgressSignal = PublishSubject.create<ProgressEvent>(),
+            uiScheduler = testScheduler)
+            .test()
+
+        // Must got observable of true without any uncaught exception
+        testScheduler.triggerActions()
+
         // Must see that widget unbinds model if the subscription is disposed
         testMainObserver.dispose()
         Mockito.verify(mockedWidget).unbindModel()

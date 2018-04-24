@@ -22,7 +22,6 @@ package com.paper
 
 import android.content.Context
 import android.support.multidex.MultiDexApplication
-import android.util.Log
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.IDatabaseIOSchedulerProvider
 import com.paper.domain.IPaperRepoProvider
@@ -53,10 +52,10 @@ class PaperApplication : MultiDexApplication(),
 
     // Database.
     private val mPaperRepo: PaperRepoSqliteImpl by lazy {
-        PaperRepoSqliteImpl(packageName,
-                            contentResolver,
-                            externalCacheDir,
-                            getScheduler())
+        PaperRepoSqliteImpl(authority = packageName,
+                            resolver = contentResolver,
+                            fileDir = getExternalFilesDir("media"),
+                            dbIoScheduler = getScheduler())
     }
 
     override fun getRepo(): IPaperRepo {
@@ -94,6 +93,17 @@ class PaperApplication : MultiDexApplication(),
 
     override fun getInt(key: String, defaultValue: Int): Int {
         return mPreferences.getInt(key, defaultValue)
+    }
+
+    override fun putLong(key: String, value: Long) {
+        mPreferences
+            .edit()
+            .putLong(key, value)
+            .apply()
+    }
+
+    override fun getLong(key: String, defaultValue: Long): Long {
+        return mPreferences.getLong(key, defaultValue)
     }
 
     override fun putFloat(key: String, value: Float) {

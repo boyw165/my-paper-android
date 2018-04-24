@@ -20,11 +20,30 @@
 
 package com.paper.model
 
-object ModelConst {
+import com.google.gson.GsonBuilder
+import com.paper.model.repository.json.SketchStrokeJSONTranslator
+import com.paper.model.sketch.SketchStroke
+import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-    const val TAG = "paper model"
+@RunWith(MockitoJUnitRunner::class)
+class SketchStrokeJSONTranslatorTest {
 
-    const val TEMP_ID = -1L
+    private val SKETCH_STROKE_1 = "{\"color\":\"#FFED4956\",\"width\":0.09569436,\"path\":\"0.18075603,0.25663146,0\"}"
 
-    const val INVALID_ID = Long.MAX_VALUE
+    @Test
+    fun deserializeDummyScrap() {
+        val translator = GsonBuilder()
+            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
+            .create()
+
+        val sketchStroke = translator.fromJson(SKETCH_STROKE_1, SketchStroke::class.java)
+
+        Assert.assertEquals(Color.parseColor("#FFED4956"), sketchStroke.color)
+        Assert.assertEquals(0.09569436f, sketchStroke.width)
+        Assert.assertEquals(1, sketchStroke.pointList.size)
+    }
 }
+

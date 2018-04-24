@@ -22,54 +22,93 @@ package com.paper.model.repository
 
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.database.ContentObserver
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.ScrapModel
-import com.paper.model.repository.json.PaperModelTranslator
-import com.paper.model.repository.json.ScrapModelTranslator
-import com.paper.model.repository.json.SketchModelTranslator
+import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.repository.json.SketchStrokeJSONTranslator
 import com.paper.model.repository.sqlite.PaperTable
-import com.paper.model.sketch.SketchModel
+import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
 import io.reactivex.Scheduler
 import io.reactivex.Single
+import io.reactivex.SingleEmitter
+import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PaperRepoSqliteImpl(private val mAuthority: String,
-                          private val mResolver: ContentResolver,
-                          private val mCacheDirFile: File,
-                          private val mDbIoScheduler: Scheduler) : IPaperRepo {
+class PaperRepoSqliteImpl(authority: String,
+                          resolver: ContentResolver,
+                          fileDir: File,
+                          dbIoScheduler: Scheduler) : IPaperRepo {
 
-    private val mTempFile by lazy { File(mCacheDirFile, "$mAuthority.temp_paper") }
+    private val mAuthority = authority
+    private val mResolver = resolver
+    private val mFileDir = fileDir
+    /**
+     * A DB specific scheduler with only one thread in the thread pool.
+     */
+    private val mDbIoScheduler = dbIoScheduler
 
     // JSON translator.
-    private val mGson: Gson by lazy {
+    private val mTranslator by lazy {
         GsonBuilder()
             .registerTypeAdapter(PaperModel::class.java,
-                                 PaperModelTranslator())
+                                 PaperJSONTranslator())
+            .registerTypeAdapter(SketchStroke::class.java,
+                                 SketchStrokeJSONTranslator())
             .registerTypeAdapter(ScrapModel::class.java,
-                                 ScrapModelTranslator())
-            .registerTypeAdapter(SketchModel::class.java,
-                                 SketchModelTranslator())
+                                 ScrapJSONTranslator())
             .create()
     }
 
-    override fun getPapers(isSnapshot: Boolean): Observable<PaperModel> {
-        return Observable
-            .create { downstream: ObservableEmitter<PaperModel> ->
+    /**
+     * Observer observing the database change.
+     */
+    private val mObserver by lazy {
+        object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean, uri: Uri) {
+                super.onChange(selfChange, uri)
+
+                when (uri.lastPathSegment) {
+                    CHANGE_ADD,
+                    CHANGE_REMOVE,
+                    CHANGE_UPDATE -> getPapersThenFinish(true)
+                        .subscribe(
+                            { papers ->
+                                mPaperListSignal.onNext(papers)
+                            },
+                            { err ->
+                                mPaperListSignal.onError(err)
+                            })
+                }
+            }
+        }
+    }
+
+    init {
+        val uri: Uri = Uri.Builder()
+            .scheme("content")
+            .authority(mAuthority)
+            .path("paper")
+            .build()
+        mResolver.registerContentObserver(uri, true, mObserver)
+    }
+
+    private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<PaperModel>> {
+        return Single
+            .create { downstream: SingleEmitter<List<PaperModel>> ->
                 var cursor: Cursor? = null
 
                 try {
@@ -103,13 +142,17 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                     // TODO: https://github.com/Kotlin/anko/wiki/Anko-SQLite
 
                     // Translate cursor.
+                    val papers = mutableListOf<PaperModel>()
                     if (cursor.moveToFirst() &&
                         !downstream.isDisposed) {
                         do {
-                            val paper = convertCursorToPaper(cursor, false)
-                            downstream.onNext(paper)
+                            papers.add(convertCursorToPaper(cursor, !isSnapshot))
                         } while (cursor.moveToNext() &&
                                  !downstream.isDisposed)
+                    }
+
+                    if (!downstream.isDisposed) {
+                        downstream.onSuccess(papers)
                     }
                 } catch (error: InterruptedException) {
                     val i = error.stackTrace.indexOfFirst { trace ->
@@ -122,16 +165,50 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                     }
                 } finally {
                     cursor?.close()
-                    downstream.onComplete()
                 }
             }
             .subscribeOn(mDbIoScheduler)
     }
 
+    private val mPaperListSignal = PublishSubject.create<List<PaperModel>>()
+
+    /**
+     * Get paper list.
+     *
+     * @param isSnapshot Readying the whole paper structure is sometimes
+     *                   time-consuming. True to ready part only matter with
+     *                   thumbnails; False is fully read.
+     */
+    override fun getPapers(isSnapshot: Boolean): Observable<List<PaperModel>> {
+        return Observable.merge(
+            getPapersThenFinish(isSnapshot).toObservable(),
+            mPaperListSignal)
+    }
+
+    /**
+     * Read full structure of the paper by ID.
+     */
     override fun getPaperById(id: Long): Single<PaperModel> {
         // FIXME: Workaround.
         return if (id == ModelConst.TEMP_ID) {
-            getTempPaper()
+            Single
+                .fromCallable {
+//                    // Sol#1
+//                    return@fromCallable mTempFile
+//                        .bufferedReader()
+//                        .use { reader ->
+//                            mTranslator.fromJson(reader, PaperModel::class.java)
+//                        }
+
+                    // Sol#2
+                    // TODO: Assign default portrait size.
+                    val timestamp = getCurrentTime()
+                    val newPaper = PaperModel(
+                        createdAt = timestamp)
+                    newPaper.modifiedAt = timestamp
+                    return@fromCallable newPaper
+                }
+                .subscribeOn(mDbIoScheduler)
         } else {
             Single
                 .fromCallable {
@@ -155,7 +232,7 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                                 PaperTable.COL_THUMB_PATH,
                                 PaperTable.COL_THUMB_WIDTH,
                                 PaperTable.COL_THUMB_HEIGHT,
-                                PaperTable.COL_SCRAPS),
+                                PaperTable.COL_DATA),
                         // selection:
                         null,
                         // selection args:
@@ -180,8 +257,6 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                               paper: PaperModel): Single<Boolean> {
         paper.modifiedAt = getCurrentTime()
 
-        // TODO: Delegate to a Service or some component that guarantees the
-        // TODO: I/O is atomic.
         return Single
             .fromCallable {
                 if (id == ModelConst.TEMP_ID) {
@@ -191,7 +266,11 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                         .path("paper")
                         .build()
 
-                    mResolver.insert(uri, convertPaperToValues(paper))
+                    val newURI = mResolver.insert(uri, convertPaperToValues(paper))
+                    if (newURI != null) {
+                        // Notify a addition just happens
+                        mResolver.notifyChange(Uri.parse("$newURI/$CHANGE_ADD"), null)
+                    }
                 } else {
                     val uri = Uri.Builder()
                         .scheme("content")
@@ -199,7 +278,10 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
                         .path("paper/$id")
                         .build()
 
-                    mResolver.update(uri, convertPaperToValues(paper), null, null)
+                    if (0 < mResolver.update(uri, convertPaperToValues(paper), null, null)) {
+                       // Notify an update just happens
+                        mResolver.notifyChange(Uri.parse("$uri/$CHANGE_UPDATE"), null)
+                    }
                 }
 
                 return@fromCallable true
@@ -211,149 +293,43 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
         TODO("not implemented")
     }
 
-    override fun deleteAllPapers(): Observable<Boolean> {
-        return Observable
+    override fun deletePaperById(id: Long): Single<Boolean> {
+        return Single
             .fromCallable {
-                // TODO: Implement it.
+                val uri = Uri.Builder()
+                    .scheme("content")
+                    .authority(mAuthority)
+                    .path("paper/$id")
+                    .build()
+
+                if (0 < mResolver.delete(uri, null, null)) {
+                    // Notify a deletion just happens
+                    mResolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
+                }
+
                 return@fromCallable true
             }
             .subscribeOn(mDbIoScheduler)
     }
 
-    override fun deletePaperById(id: Long): Observable<Boolean> {
-        TODO("not implemented")
-    }
-
-    override fun putBitmap(bmp: Bitmap): Observable<File> {
-        return Observable.fromCallable {
-            val dir = File("${Environment.getExternalStorageDirectory()}/paper")
-            if (!dir.exists()) {
-                dir.mkdir()
-            }
-
-            val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-            val bmpFile = File("${Environment.getExternalStorageDirectory()}/paper",
-                               "$ts.jpg")
-
-            FileOutputStream(bmpFile).use { out ->
-                bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
-            }
-
-            return@fromCallable bmpFile
-        }
-    }
-
-    override fun getTestPaper(): Single<PaperModel> {
+    override fun putBitmap(bmp: Bitmap): Single<File> {
         return Single
             .fromCallable {
-                val paper = PaperModel()
-
-                //                val stroke1 = SketchStroke()
-                //                stroke1.setWidth(0.2f)
-                //                stroke1.addPathTuple(PathTuple(0f, 0f))
-                //                stroke1.addPathTuple(PathTuple(1f, 0.2f))
-                //                stroke1.addPathTuple(PathTuple(0.2f, 0.6f))
-                //
-                //                val stroke2 = SketchStroke()
-                //                stroke2.setWidth(0.2f)
-                //                stroke1.addPathTuple(PathTuple(0f, 0f))
-                //                stroke2.addPathTuple(PathTuple(1f, 0.1f))
-                //                stroke2.addPathTuple(PathTuple(0.8f, 0.3f))
-                //                stroke2.addPathTuple(PathTuple(0.2f, 0.6f))
-                //                stroke2.addPathTuple(PathTuple(0f, 0.9f))
-                //
-                //                // Add testing scraps.
-                //                val scrap1 = ScrapModel()
-                //                scrap1.x = 0f
-                //                scrap1.y = 0f
-                //                scrap1.width = 0.5f
-                //                scrap1.height = 0.5f
-                //                scrap1.sketch = SketchModel()
-                //                scrap1.sketch?.addStroke(stroke1)
-                //
-                //                val scrap2 = ScrapModel()
-                //                scrap2.x = 0.2f
-                //                scrap2.y = 0.3f
-                //                scrap2.sketch = SketchModel()
-                //                scrap2.sketch?.addStroke(stroke2)
-                //
-                //                paper.scraps.addPathTuple(scrap1)
-                //                paper.scraps.addPathTuple(scrap2)
-
-                return@fromCallable paper
-            }
-            .subscribeOn(mDbIoScheduler)
-    }
-
-    override fun hasTempPaper(): Observable<Boolean> {
-        return Observable
-            .fromCallable {
-                mTempFile.exists()
-            }
-            .subscribeOn(mDbIoScheduler)
-    }
-
-    override fun getTempPaper(): Single<PaperModel> {
-        return Single
-            .fromCallable {
-//                // Sol#1
-//                return@fromCallable mTempFile
-//                    .bufferedReader()
-//                    .use { reader ->
-//                        mGson.fromJson(reader, PaperModel::class.java)
-//                    }
-
-                // Sol#2
-                // TODO: Assign default portrait size.
-                val timestamp = getCurrentTime()
-                val newPaper = PaperModel(
-                    createdAt = timestamp)
-                newPaper.modifiedAt = timestamp
-                return@fromCallable newPaper
-            }
-            .subscribeOn(mDbIoScheduler)
-    }
-
-    override fun newTempPaper(caption: String): Single<PaperModel> {
-        return Single
-            .fromCallable {
-                // TODO: Assign default portrait size.
-                val timestamp = getCurrentTime()
-                val newPaper = PaperModel()
-                newPaper.modifiedAt = timestamp
-                newPaper.caption = caption
-
-                val json = mGson.toJson(newPaper)
-                // TODO: Open an external file and write json to it.
-                mTempFile
-                    .bufferedWriter()
-                    .use { out ->
-                        out.write(json)
-                    }
-
-                // Return..
-                newPaper
-            }
-            .subscribeOn(mDbIoScheduler)
-    }
-
-    override fun newTempPaper(other: PaperModel): Observable<PaperModel> {
-        TODO("not implemented")
-    }
-
-    override fun removeTempPaper(): Observable<Boolean> {
-        return Observable
-            .fromCallable {
-                if (mTempFile.exists()) {
-                    mTempFile.delete()
+                // TODO: Use LruCache?
+                if (!mFileDir.exists()) {
+                    mFileDir.mkdir()
                 }
 
-                true
-            }
-    }
+                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+                val bmpFile = File(mFileDir, "$ts.jpg")
 
-    override fun commitTempPaper(): Observable<PaperModel> {
-        TODO("not implemented")
+                FileOutputStream(bmpFile).use { out ->
+                    bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+
+                return@fromCallable bmpFile
+            }
+            .subscribeOn(mDbIoScheduler)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -375,19 +351,9 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
         values.put(PaperTable.COL_THUMB_WIDTH, paper.thumbnailWidth)
         values.put(PaperTable.COL_THUMB_HEIGHT, paper.thumbnailHeight)
 
-        // Scraps.
-        paper.scraps.let { scraps ->
-            val json = JsonObject()
-            val jsonScraps = JsonArray()
-
-            json.add(PaperTable.COL_DATA, jsonScraps)
-            scraps.forEach { scrap ->
-                jsonScraps.add(mGson.toJsonTree(scrap))
-            }
-
-            values.put(PaperTable.COL_SCRAPS, json.toString())
-            Log.d("xyz", json.toString())
-        }
+        // The rest part of Paper is converted to JSON
+        val json = mTranslator.toJson(paper)
+        values.put(PaperTable.COL_DATA, json)
 
         return values
     }
@@ -412,14 +378,23 @@ class PaperRepoSqliteImpl(private val mAuthority: String,
         paper.thumbnailHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
 
         if (fullyRead) {
-            // Scraps
-            val jsonString = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_SCRAPS))
-            val json = mGson.fromJson(jsonString, JsonObject::class.java)
-            json.get(PaperTable.COL_DATA).asJsonArray.forEach { element ->
-                paper.addScrap(mGson.fromJson(element, ScrapModel::class.java))
-            }
+            val paperDetail = mTranslator.fromJson(
+                cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
+                PaperModel::class.java)
+
+            paperDetail.sketch.forEach { paper.addStrokeToSketch(it) }
+            paperDetail.scraps.forEach { paper.addScrap(it) }
         }
 
         return paper
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    companion object {
+        const val CHANGE_ADD = "add"
+        const val CHANGE_REMOVE = "remove"
+        const val CHANGE_UPDATE = "update"
     }
 }

@@ -24,6 +24,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
@@ -31,9 +32,9 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.domain.DomainConst
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
+import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.presenter.PaperGalleryContract
 import com.paper.presenter.PaperGalleryPresenter
@@ -63,9 +64,9 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
-    private val mBtnDelAllPapers by lazy { findViewById<ImageView>(R.id.btn_delete) }
+    private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
     private val mClickPaperSignal = PublishSubject.create<Long>()
-    private val mBrowsePositionSignal = PublishSubject.create<Int>()
+    private val mBrowsePaperSignal = PublishSubject.create<Long>()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -111,14 +112,26 @@ class PaperGalleryActivity : AppCompatActivity(),
 //        // Determines how much time it takes to change the item on fling, settle
 //        // or smoothScroll
 //        mPapersView.setItemTransitionTimeMillis(300)
-        mPapersView.addScrollListener { _,
-                                        currentPosition,
-                                        newPosition,
-                                        _, _ ->
-            if (currentPosition != newPosition) {
-                mBrowsePositionSignal.onNext(newPosition)
+        mPapersView.addScrollStateChangeListener(object : DiscreteScrollView.ScrollStateChangeListener<RecyclerView.ViewHolder> {
+
+            override fun onScroll(scrollPosition: Float,
+                                  currentPosition: Int,
+                                  newPosition: Int,
+                                  currentHolder: RecyclerView.ViewHolder?,
+                                  newCurrent: RecyclerView.ViewHolder?) {
             }
-        }
+
+            override fun onScrollEnd(currentItemHolder: RecyclerView.ViewHolder,
+                                     adapterPosition: Int) {
+                val paper = mPapersViewController.getPaperFromAdapterPosition(adapterPosition)
+                // Report the paper ID in the database
+                mBrowsePaperSignal.onNext(paper?.id ?: ModelConst.INVALID_ID)
+            }
+
+            override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
+                                       adapterPosition: Int) {
+            }
+        })
 
         // Presenter.
         mPresenter.bindView(
@@ -158,9 +171,14 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     override fun showPaperThumbnailAt(position: Int) {
         if (position > 0 &&
-            mPapersView.adapter.itemCount > position) {
-            mPapersView.post { mPapersView.smoothScrollToPosition(position) }
+            position < mPapersView.adapter.itemCount) {
+            mPapersView.post { mPapersView.smoothScrollToPosition(
+                mPapersViewController.getAdapterPositionFromDataPosition(position)) }
         }
+    }
+
+    override fun setDeleteButtonVisibility(visible: Boolean) {
+        mBtnDelPaper.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
     override fun showExpMenu() {
@@ -193,12 +211,12 @@ class PaperGalleryActivity : AppCompatActivity(),
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    override fun onBrowsePaper(): Observable<Int> {
-        return mBrowsePositionSignal
+    override fun onBrowsePaper(): Observable<Long> {
+        return mBrowsePaperSignal
     }
 
-    override fun onClickDeleteAllPapers(): Observable<Any> {
-        return RxView.clicks(mBtnDelAllPapers)
+    override fun onClickDeletePaper(): Observable<Any> {
+        return RxView.clicks(mBtnDelPaper)
     }
 
     override fun onClickShowExpMenu(): Observable<Any> {

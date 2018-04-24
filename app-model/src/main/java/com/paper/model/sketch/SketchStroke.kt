@@ -20,11 +20,12 @@
 
 package com.paper.model.sketch
 
+import com.paper.model.Point
 import com.paper.model.Rect
 
 /**
  * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
- * stroke contains tuple(s), [PathTuple]. A tuple represents a node of
+ * stroke contains tuple(s), [Point]. A tuple represents a node of
  * a path segment and contains at least one point, [Point]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
@@ -32,10 +33,11 @@ data class SketchStroke(
     // The byte order is ARGB.
     var color: Int = 0,
     var width: Float = 0.toFloat(),
-    var isEraser: Boolean = false,
-    private val mPathTupleList: MutableList<PathTuple> = ArrayList()) {
+    var isEraser: Boolean = false) {
 
-    val pathTupleList: List<PathTuple> get() = mPathTupleList
+    private val mPointList = mutableListOf<Point>()
+
+    val pointList: List<Point> get() = mPointList.toList()
 
     private val mBound = Rect(java.lang.Float.MAX_VALUE,
                               java.lang.Float.MAX_VALUE,
@@ -43,42 +45,31 @@ data class SketchStroke(
                               java.lang.Float.MIN_VALUE)
     val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
-    val firstPathTuple: PathTuple
-        get() = mPathTupleList[0]
-
-    val lastPathTuple: PathTuple
-        get() = mPathTupleList[mPathTupleList.size - 1]
-
-    fun pathTupleSize(): Int = mPathTupleList.size
-
-    fun clearAllPathTuple() {
-        mPathTupleList.clear()
-    }
-
-    fun addPathTuple(pathTuple: PathTuple) {
-        val point = pathTuple.getPointAt(0)
+    fun addPath(p: Point): SketchStroke {
 
         // Calculate new boundary.
-        calculateBound(point.x, point.y)
+        calculateBound(p.x, p.y)
 
-        mPathTupleList.add(pathTuple)
+        mPointList.add(p)
+
+        return this
     }
 
-    fun addAllPathTuple(pathTupleList: List<PathTuple>) {
+    fun addAllPath(PointList: List<Point>): SketchStroke {
         // Calculate new boundary.
-        for (pathTuple in pathTupleList) {
-            val point = pathTuple.getPointAt(0)
-            calculateBound(point.x, point.y)
+        for (p in PointList) {
+            calculateBound(p.x, p.y)
         }
 
-        this.mPathTupleList.addAll(pathTupleList)
+        this.mPointList.addAll(PointList)
+
+        return this
     }
 
     fun offset(offsetX: Float, offsetY: Float) {
-        mPathTupleList.forEach { tuple ->
-            tuple.allPoints.forEach { pt ->
-                pt.offset(offsetX, offsetY)
-            }
+        mPointList.forEach { p ->
+            p.x += offsetX
+            p.y += offsetY
         }
     }
 
@@ -86,7 +77,7 @@ data class SketchStroke(
         return "stroke{" +
                ", color=" + color +
                ", width=" + width +
-               ", mPathTupleList=" + mPathTupleList +
+               ", mPointList=" + mPointList +
                '}'
     }
 

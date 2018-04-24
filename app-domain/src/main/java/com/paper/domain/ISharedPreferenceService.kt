@@ -32,6 +32,10 @@ interface ISharedPreferenceService {
 
     fun getInt(key: String, defaultValue: Int): Int
 
+    fun putLong(key: String, value: Long)
+
+    fun getLong(key: String, defaultValue: Long): Long
+
     fun putFloat(key: String, value: Float)
 
     fun getFloat(key: String, defaultValue: Float): Float

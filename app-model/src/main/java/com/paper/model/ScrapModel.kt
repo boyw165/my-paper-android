@@ -20,7 +20,7 @@
 
 package com.paper.model
 
-import com.paper.model.sketch.SketchModel
+import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import java.util.*
@@ -59,11 +59,24 @@ open class ScrapModel(
     private val mSetScaleSignal = BehaviorSubject.createDefault(1f)
     private val mSetRotationSignal = BehaviorSubject.createDefault(0f)
 
-    var sketch: SketchModel
-        get() = mSetSketchSignal.value
-        set(value) = mSetSketchSignal.onNext(value)
-    private val mSetSketchSignal = BehaviorSubject.createDefault(SketchModel())
+    // Sketch /////////////////////////////////////////////////////////////////
+
+    /**
+     * Sketch is a set of strokes.
+     */
+    private val mSketch = mutableListOf<SketchStroke>()
+    val sketch: List<SketchStroke>
+        get() = mSketch.toList()
+
+    fun addStrokeToSketch(stroke: SketchStroke) {
+        mSketch.add(stroke)
+    }
+
+    fun removeStrokeToSketch(stroke: SketchStroke) {
+        mSketch.remove(stroke)
+    }
+
+    // Image //////////////////////////////////////////////////////////////////
 
     // TODO: Support image?
-//    var image: Any
 }

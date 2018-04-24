@@ -31,10 +31,6 @@ interface IPaperWidget : IBaseWidget<PaperModel> {
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
 
-    fun handleSetThumbnail(file: File,
-                           width: Int,
-                           height: Int)
-
     fun handleChoosePenColor(color: Int)
 
     fun handleUpdatePenSize(size: Float)

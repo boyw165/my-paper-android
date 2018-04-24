@@ -18,13 +18,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain.useCase
 
-object ModelConst {
+import android.graphics.Bitmap
+import com.paper.model.PaperModel
+import com.paper.model.repository.IPaperRepo
+import io.reactivex.Single
+import io.reactivex.SingleSource
+import io.reactivex.SingleTransformer
 
-    const val TAG = "paper model"
+class SavePaperToStore(paper: PaperModel,
+                       paperRepo: IPaperRepo)
+    : SingleTransformer<Bitmap, Boolean> {
 
-    const val TEMP_ID = -1L
+    private val mPaper = paper
+    private val mPaperRepo = paperRepo
 
-    const val INVALID_ID = Long.MAX_VALUE
+    override fun apply(upstream: Single<Bitmap>): SingleSource<Boolean> {
+        return upstream
+            .flatMap { bmp ->
+                mPaperRepo
+                    .putBitmap(bmp)
+                    .flatMap { bmpFile ->
+                        mPaper.thumbnailPath = bmpFile
+                        mPaper.thumbnailWidth = bmp.width
+                        mPaper.thumbnailHeight = bmp.height
+
+                        mPaperRepo.putPaperById(mPaper.id, mPaper)
+                    }
+            }
+    }
 }

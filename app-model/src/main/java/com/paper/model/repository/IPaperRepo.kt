@@ -24,7 +24,7 @@ interface IPaperRepo {
 
     // For persistent store.
 
-    fun getPapers(isSnapshot: Boolean): Observable<PaperModel>
+    fun getPapers(isSnapshot: Boolean): Observable<List<PaperModel>>
 
     fun getPaperById(id: Long): Single<PaperModel>
 
@@ -32,33 +32,7 @@ interface IPaperRepo {
 
     fun duplicatePaperById(id: Long): Observable<PaperModel>
 
-    fun deleteAllPapers(): Observable<Boolean>
+    fun deletePaperById(id: Long): Single<Boolean>
 
-    fun deletePaperById(id: Long): Observable<Boolean>
-
-    fun putBitmap(bmp: Bitmap): Observable<File>
-
-    // For testing data.
-
-    fun getTestPaper(): Single<PaperModel>
-
-    // For temporary store.
-
-    fun hasTempPaper(): Observable<Boolean>
-
-    fun getTempPaper(): Single<PaperModel>
-
-    /**
-     * There is only one inventory for the temporary paper.
-     */
-    fun newTempPaper(caption: String): Single<PaperModel>
-
-    /**
-     * There is only one inventory for the temporary paper.
-     */
-    fun newTempPaper(other: PaperModel): Observable<PaperModel>
-
-    fun removeTempPaper(): Observable<Boolean>
-
-    fun commitTempPaper(): Observable<PaperModel>
+    fun putBitmap(bmp: Bitmap): Single<File>
 }

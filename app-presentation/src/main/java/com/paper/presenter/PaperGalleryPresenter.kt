@@ -23,6 +23,7 @@ package com.paper.presenter
 import android.Manifest
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.ISharedPreferenceService
+import com.paper.domain.useCase.DeletePaper
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.repository.IPaperRepo
@@ -101,18 +102,14 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 })
         // Button of delete all papers.
         mDisposablesOnCreate.add(
-            view.onClickDeleteAllPapers()
+            view.onClickDeletePaper()
                 .switchMap {
                     requestPermissions()
                         .switchMap {
-                            mRepo.deleteAllPapers()
+                            DeletePaper(paperID = mPrefs.getLong(PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID),
+                                        paperRepo = mRepo)
+                                .toObservable()
                         }
-//                        .switchMap {
-//                            mRepo.newTempPaper("")
-//                                .toObservable()
-//                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-//                                .startWith(Pair(ModelConst.TEMP_ID, ProgressEvent.start()))
-//                        }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {
@@ -122,8 +119,14 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         mDisposablesOnCreate.add(
             view.onBrowsePaper()
                 .observeOn(mUiScheduler)
-                .subscribe { position ->
-                    mPrefs.putInt(PREF_BROWSE_POSITION, position)
+                .subscribe { id ->
+                    mPrefs.putLong(PREFS_BROWSE_PAPER_ID, id)
+
+                    if (id == ModelConst.INVALID_ID) {
+                        view.setDeleteButtonVisibility(false)
+                    } else {
+                        view.setDeleteButtonVisibility(true)
+                    }
                 })
     }
 
@@ -140,13 +143,6 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 .switchMap {
                     mRepo.getPapers(isSnapshot = true)
                 }
-                .scan(emptyList<PaperModel>(), { oldList, newPaper ->
-                    val newList = oldList.toMutableList()
-
-                    newList.add(newPaper)
-
-                    return@scan newList
-                })
                 .observeOn(mUiScheduler)
                 .subscribe { papers ->
                     // Hold the paper snapshots.
@@ -156,8 +152,15 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     mView?.let { view ->
                         view.showPaperThumbnails(papers)
 
-                        val position = mPrefs.getInt(PREF_BROWSE_POSITION, 0)
-                        view.showPaperThumbnailAt(position)
+                        val id = mPrefs.getLong(PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                        val position = papers.indexOfFirst { it.id == id }
+
+                        if (position >= 0 && position < papers.size) {
+                            view.showPaperThumbnailAt(position)
+                            view.setDeleteButtonVisibility(true)
+                        } else {
+                            view.setDeleteButtonVisibility(false)
+                        }
                     }
                 })
     }
@@ -189,6 +192,6 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
     internal companion object {
 
-        const val PREF_BROWSE_POSITION = "browse_position"
+        const val PREFS_BROWSE_PAPER_ID = "paper_position"
     }
 }

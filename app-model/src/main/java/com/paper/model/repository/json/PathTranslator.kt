@@ -1,4 +1,7 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: djken0106@gmail.com,
+//         boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,13 +21,35 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.repository.json
 
-object ModelConst {
+import com.paper.model.Point
 
-    const val TAG = "paper model"
 
-    const val TEMP_ID = -1L
+object PathTranslator {
 
-    const val INVALID_ID = Long.MAX_VALUE
+    fun toPath(pathPointList: List<Point>): String {
+        val builder = StringBuilder()
+
+        pathPointList.forEachIndexed { index, p ->
+            builder.append("(${p.x},${p.y},${p.time})")
+            if (index != pathPointList.lastIndex) {
+                builder.append(" ")
+            }
+        }
+
+        return builder.toString()
+    }
+
+    fun fromPath(pointsString: String): List<Point> {
+        val pathPoints: MutableList<Point> = mutableListOf()
+        val points = pointsString.split(" ").toTypedArray()
+
+        points.forEach { p ->
+            val point = p.removePrefix("(").removeSuffix(")").split(",")
+            pathPoints.add(Point(point[0].toFloat(), point[1].toFloat(), point[2].toLong()))
+        }
+
+        return pathPoints
+    }
 }

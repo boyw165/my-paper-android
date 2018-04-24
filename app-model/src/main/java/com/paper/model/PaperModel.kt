@@ -20,6 +20,7 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import java.io.File
@@ -44,12 +45,26 @@ class PaperModel(
 
     var caption: String = ""
 
-    // Scraps
+    // Sketch & strokes ///////////////////////////////////////////////////////
+
+    private val mSketch = mutableListOf<SketchStroke>()
+
+    val sketch: List<SketchStroke>
+        get() = mSketch.toList()
+
+    fun addStrokeToSketch(stroke: SketchStroke) {
+        mSketch.add(stroke)
+    }
+
+    // Scraps /////////////////////////////////////////////////////////////////
+
     private var mScraps = mutableListOf<ScrapModel>()
     private val mAddScrapSignal = PublishSubject.create<ScrapModel>()
     private val mRemoveScrapSignal = PublishSubject.create<ScrapModel>()
+
+    // Must clone the list in case concurrent modification
     val scraps: List<ScrapModel>
-        get() = mScraps
+        get() = mScraps.toList()
 
     fun addScrap(scrap: ScrapModel) {
         mScraps.add(scrap)
@@ -63,8 +78,7 @@ class PaperModel(
 
     fun onAddScrap(): Observable<ScrapModel> {
         return Observable.merge(
-            // Must clone the list in case concurrent modification
-            Observable.fromIterable(mScraps.toList()),
+            Observable.fromIterable(scraps),
             mAddScrapSignal)
     }
 

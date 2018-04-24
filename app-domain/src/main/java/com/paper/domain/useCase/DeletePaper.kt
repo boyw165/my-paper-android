@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,16 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget
+package com.paper.domain.useCase
 
-import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.canvas.IPaperWidget
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
-import io.reactivex.Scheduler
+import io.reactivex.Single
+import io.reactivex.SingleObserver
 import io.reactivex.disposables.Disposable
-import io.reactivex.subjects.Subject
 
 // .------.
 // |      | ----> true or false
@@ -43,59 +43,42 @@ import io.reactivex.subjects.Subject
  * There is also a side-effect that it sends ProgressEvent through the given
  * progress signal.
  */
-class LoadPaperAndBindModel(paperID: Long,
-                            paperWidget: IPaperWidget,
-                            paperRepo: IPaperRepo,
-                            updateProgressSignal: Subject<ProgressEvent>,
-                            uiScheduler: Scheduler)
-    : Observable<Boolean>() {
+class DeletePaper(paperID: Long,
+                  paperRepo: IPaperRepo)
+    : Single<Boolean>() {
 
     private val mPaperID = paperID
 
-    private val mPaperWidget = paperWidget
     private val mPaperRepo = paperRepo
 
-    private val mUpdateProgressSignal = updateProgressSignal
-
-    private val mUiScheduler = uiScheduler
-
-    override fun subscribeActual(observer: Observer<in Boolean>) {
-        val actualDisposable = mPaperRepo
-            .getPaperById(mPaperID)
+    override fun subscribeActual(observer: SingleObserver<in Boolean>) {
+        val actualSrc = mPaperRepo
+            .deletePaperById(id = mPaperID)
             .toObservable()
-            .observeOn(mUiScheduler)
-            .subscribe ({ paper ->
-                // Bind widget with data.
-                mPaperWidget.bindModel(paper)
+            .publish()
+        val actualDisposable = actualSrc
+            .subscribe(
+                { successful ->
+                    observer.onSuccess(successful)
+                },
+                { err ->
+                    observer.onError(err)
+                })
 
-                observer.onNext(true)
-            }, {
-                observer.onNext(false)
-                observer.onComplete()
-
-                mUpdateProgressSignal.onNext(ProgressEvent.stop())
-            }, {
-                observer.onComplete()
-                mUpdateProgressSignal.onNext(ProgressEvent.stop())
-            })
-
-        val d = InnerDisposable(widget = mPaperWidget,
-                                actualDisposable = actualDisposable)
+        val d = InnerDisposable(actualDisposable = actualDisposable)
         observer.onSubscribe(d)
 
-        // Right after the subscription, send a START progress event.
-        mUpdateProgressSignal.onNext(ProgressEvent.start())
+        // Start to work!
+        actualSrc.connect()
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    class InnerDisposable(widget: IPaperWidget,
-                          actualDisposable: Disposable) : Disposable {
+    internal class InnerDisposable(actualDisposable: Disposable) : Disposable {
 
         private var mDisposed = false
 
-        private val mPaperWidget = widget
         private val mActualDisposable = actualDisposable
 
         override fun isDisposed(): Boolean {
@@ -104,9 +87,6 @@ class LoadPaperAndBindModel(paperID: Long,
 
         override fun dispose() {
             mActualDisposable.dispose()
-
-            mPaperWidget.unbindModel()
-
             mDisposed = true
         }
     }

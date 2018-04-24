@@ -37,6 +37,7 @@ import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.canvas.IPaperWidget
@@ -50,6 +51,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 class PaperWidgetView : View,
@@ -134,7 +136,15 @@ class PaperWidgetView : View,
 
         // Drawing
         mWidgetDisposables.add(
-            widget.onDrawSVG()
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        widget.onDrawSVG()
+                            .startWith(DrawSVGEvent(action = CLEAR_ALL))
+                    } else {
+                        Observable.never()
+                    }
+                }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     onDrawSVG(event)
@@ -151,7 +161,7 @@ class PaperWidgetView : View,
                         size.width > 0 &&
                         size.height > 0) {
                         println("${AppConst.TAG}: the layout is done, and canvas " +
-                                            "size is ${size.width} x ${size.height}")
+                                "size is ${size.width} x ${size.height}")
                         onUpdateLayoutOrCanvas(size.width,
                                                size.height)
                     }
@@ -221,6 +231,12 @@ class PaperWidgetView : View,
     // Drawing ////////////////////////////////////////////////////////////////
 
     /**
+     * A signal indicating whether it's ready to interact with the user. see
+     * [onUpdateLayoutOrCanvas].
+     */
+    private val mReadySignal = PublishSubject.create<Boolean>()
+
+    /**
      * Model canvas size.
      */
     private val mMSize = BehaviorSubject.createDefault(Rect())
@@ -256,8 +272,15 @@ class PaperWidgetView : View,
     private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
     private val mMatrixStack = Stack<Matrix>()
 
-    private var mCanvasBitmap: Bitmap? = null
-    private var mProxyCanvas: Canvas? = null
+    /**
+     * The Bitmap in which the sketch and the scraps are drawn to.
+     */
+    private var mBitmap: Bitmap? = null
+    private val mBitmapPaint = Paint()
+    /**
+     * The canvas used in the [dispatchDrawScraps] call.
+     */
+    private lateinit var mBitmapCanvas: Canvas
 
     // Background & grids
     private val mGridPaint = Paint()
@@ -267,6 +290,9 @@ class PaperWidgetView : View,
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
+        // Flag not ready for interacting with user.
+        mReadySignal.onNext(false)
+
         // The maximum view port, a rectangle as the same width over
         // height ratio and it just fits in the canvas rectangle as
         // follow:
@@ -290,6 +316,7 @@ class PaperWidgetView : View,
         val maxScale = Math.min(canvasWidth / spaceWidth,
                                 canvasHeight / spaceHeight)
         val minScale = maxScale / DomainConst.VIEW_PORT_MIN_SCALE
+        val scaleM2V = 1f / maxScale
         mViewPortMax.set(0f, 0f, maxScale * spaceWidth, maxScale * spaceHeight)
         mViewPortMin.set(0f, 0f, minScale * spaceWidth, minScale * spaceHeight)
         mViewPortBase.set(mViewPortMax)
@@ -300,7 +327,7 @@ class PaperWidgetView : View,
         // Initially the model-to-view scale is derived by the scale
         // from min view port boundary to the view boundary.
         // Check out the figure above :D
-        mScaleM2V.onNext(1f / maxScale)
+        mScaleM2V.onNext(scaleM2V)
 
         // Determine the default view-port (makes sense when view
         // layout is changed).
@@ -310,11 +337,17 @@ class PaperWidgetView : View,
                       mViewPortMax.height())
 
         // Backed the canvas Bitmap.
-        mCanvasBitmap?.recycle()
-        mCanvasBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
-        mProxyCanvas = Canvas(mCanvasBitmap)
+        val mw = mMSize.value.width
+        val mh = mMSize.value.height
+        val vw = scaleM2V * mw
+        val vh = scaleM2V * mh
+        mBitmap?.recycle()
+        mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
+        mBitmapCanvas = Canvas(mBitmap)
 
         invalidate()
+
+        mReadySignal.onNext(true)
     }
 
     override fun requestSharpDrawing() {
@@ -328,6 +361,7 @@ class PaperWidgetView : View,
         // Hold canvas matrix.
         mTmpMatrix.set(mCanvasMatrix)
 
+        // Prepare the transform stack for later sharp rendering.
         mMatrixStack.clear()
         mMatrixStack.push(mCanvasMatrix)
 
@@ -373,9 +407,9 @@ class PaperWidgetView : View,
         // that they keep sharp!
         drawBackground(canvas, vw, vh, tx, ty, scaleVP)
 
-        // Draw scrap views & temporary sketch
+        // Draw sketch and scraps
         if (mIfSharpenDrawing) {
-            dispatchDrawScraps(canvas, mScrapViews, true)
+            dispatchDrawScraps(mBitmapCanvas, mScrapViews, true)
 
             mStrokeDrawables.forEach { drawable ->
                 drawable.onDraw(canvas, mCanvasMatrix)
@@ -384,12 +418,18 @@ class PaperWidgetView : View,
             // To view canvas world.
             canvas.concat(mCanvasMatrix)
 
-            dispatchDrawScraps(canvas, mScrapViews, false)
+            // TODO: Both scraps and sketch need to explicitly define the z-order
+            // TODO: so that the paper knows how to render them in the correct
+            // TODO: order.
+
+            dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
 
             mStrokeDrawables.forEach { drawable ->
-                drawable.onDraw(canvas)
+                drawable.onDraw(mBitmapCanvas)
             }
         }
+
+        canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
         // Turn off the sharpening draw because it's costly.
         mIfSharpenDrawing = false
@@ -403,7 +443,7 @@ class PaperWidgetView : View,
         val (x, y) = toViewWorld(nx, ny)
 
         when (event.action) {
-            DrawSVGEvent.Action.MOVE -> {
+            MOVE -> {
                 val drawable = SVGDrawable(context = this@PaperWidgetView,
                                            penColor = event.penColor,
                                            penSize = event.penSize)
@@ -411,17 +451,15 @@ class PaperWidgetView : View,
 
                 mStrokeDrawables.add(drawable)
             }
-            DrawSVGEvent.Action.LINE_TO -> {
+            LINE_TO -> {
                 val drawable = mStrokeDrawables.last()
                 drawable.lineTo(Point(x, y, event.point.time))
             }
-            DrawSVGEvent.Action.CLOSE -> {
+            CLOSE -> {
                 val drawable = mStrokeDrawables.last()
                 drawable.close()
             }
-            DrawSVGEvent.Action.CLEAR_ALL -> {
-                val drawable = mStrokeDrawables.last()
-                drawable.clear()
+            CLEAR_ALL -> {
                 mStrokeDrawables.clear()
             }
             else -> {
@@ -436,15 +474,13 @@ class PaperWidgetView : View,
         // TODO: Make sure no transform is on going
         return Single
             .fromCallable {
-                val mw = mMSize.value.width
-                val mh = mMSize.value.height
-                val scaleM2V = mScaleM2V.value
-                val bmp = Bitmap.createBitmap((scaleM2V * mw).toInt(),
-                                              (scaleM2V * mh).toInt(),
+                // FIXME: Quick close might crash because mBitmap is not present!
+                val bmp = Bitmap.createBitmap(mBitmap!!.width,
+                                              mBitmap!!.height,
                                               Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bmp)
                 canvas.drawColor(Color.WHITE)
-                dispatchDrawScraps(canvas, mScrapViews, false)
+                canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
                 return@fromCallable bmp
             }

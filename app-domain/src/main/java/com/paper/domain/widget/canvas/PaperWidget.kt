@@ -24,20 +24,18 @@ import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
+import com.paper.domain.useCase.SketchToDrawSVGEvent
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
-import com.paper.model.sketch.PathTuple
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
-import java.io.File
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.NoSuchElementException
 
 class PaperWidget(private val mUiScheduler: Scheduler,
@@ -53,8 +51,6 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Scrap controllers
     private val mScrapWidgets = hashMapOf<UUID, IScrapWidget>()
-    private val mAddWidgetSignal = PublishSubject.create<IScrapWidget>()
-    private val mRemoveWidgetSignal = PublishSubject.create<IScrapWidget>()
 
     // Gesture
     private val mGestureHistory = mutableListOf<GestureRecord>()
@@ -68,8 +64,10 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Hold reference.
         mModel = model
 
-        mSetCanvasSize.onNext(Rect(0f, 0f, mModel.width, mModel.height))
+        // Canvas size
+        mSetCanvasSize.onNext(Rect(0f, 0f, model.width, model.height))
 
+        // Add or remove scrap
         mModelDisposables.add(
             model.onAddScrap()
                 .observeOn(mUiScheduler)
@@ -106,44 +104,14 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Save ///////////////////////////////////////////////////////////////////
 
-    override fun handleSetThumbnail(file: File,
-                                    width: Int,
-                                    height: Int) {
-        mModel.thumbnailPath = file
-        mModel.thumbnailWidth = width
-        mModel.thumbnailHeight = height
-    }
-
     override fun getPaper(): PaperModel {
         return mModel
     }
 
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    override fun handleActionBegin() {
-    }
-
-    override fun handleActionEnd() {
-        // Brutally stop the drawing filter.
-        mCancelDrawingSignal.onNext(0)
-    }
-
-    override fun handleTap(x: Float, y: Float) {
-        // Draw a DOT!!!
-        val w = (Math.random()).toFloat()
-        val h = (Math.random()).toFloat()
-        val stroke = SketchStroke(
-            color = 0,
-            isEraser = false,
-            width = 1f)
-        stroke.addPathTuple(PathTuple(x, y))
-        // Add to stroke collection
-        mTmpStrokes.add(stroke)
-
-        collectStrokesAndCreateScrap()
-    }
-
     // Add & Remove Scrap /////////////////////////////////////////////////////
+
+    private val mAddWidgetSignal = PublishSubject.create<IScrapWidget>()
+    private val mRemoveWidgetSignal = PublishSubject.create<IScrapWidget>()
 
     override fun onAddScrapWidget(): Observable<IScrapWidget> {
         return Observable.merge(
@@ -158,10 +126,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    /**
-     * Temporary ...
-     */
-    private val mTmpStrokes = mutableListOf<SketchStroke>()
+    private lateinit var mTmpStroke: SketchStroke
     /**
      * Internal drawing signal for throttling touch event.
      */
@@ -197,23 +162,25 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         mCancelSignal.onNext(0)
 
         // Create a new stroke and hold it in the temporary pool.
-        val stroke = SketchStroke(
+        mTmpStroke = SketchStroke(
             color = mPenColor,
             isEraser = false,
             width = mPenSize)
-        stroke.addPathTuple(PathTuple(x, y))
-        mTmpStrokes.add(stroke)
 
-        mLineToSignal.onNext(Point(x, y))
+        val point = Point(x, y)
+
+        mTmpStroke.addPath(point)
+
+        mLineToSignal.onNext(point)
 
         mLineToSignal
-            // FIXME: The window filter would make the SVGDrawable laggy.
-            .throttleFirst(DomainConst.COLLECT_PATH_WINDOW_MS,
-                           TimeUnit.MILLISECONDS, mUiScheduler)
+//            // FIXME: The window filter would make the SVGDrawable laggy.
+//            .throttleFirst(DomainConst.COLLECT_PATH_WINDOW_MS,
+//                           TimeUnit.MILLISECONDS, mUiScheduler)
             .takeUntil(mCancelDrawingSignal)
             .observeOn(mUiScheduler)
             .subscribe { p ->
-                stroke.addPathTuple(PathTuple(p.x, p.y, p.time))
+                mTmpStroke.addPath(Point(p.x, p.y, p.time))
 
                 // Notify the observer
                 mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
@@ -222,14 +189,14 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = Point(x, y),
+                                           point = point,
                                            penColor = mPenColor,
                                            penSize = mPenSize))
     }
 
     override fun handleDrag(x: Float,
                             y: Float) {
-        mLineToSignal.onNext(Point(x, y))
+        mLineToSignal.onNext(Point(x,y))
     }
 
     override fun handleDragEnd(x: Float,
@@ -237,59 +204,11 @@ class PaperWidget(private val mUiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        val stroke = mTmpStrokes.last()
-        stroke.addPathTuple(PathTuple(x, y))
+        mTmpStroke.addPath(Point(x, y))
+        mModel.addStrokeToSketch(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
-
-        // Set a timer and create a Scrap when time is up.
-        Observable
-            .timer(DomainConst.COLLECT_STROKES_TIMEOUT_MS,
-                   TimeUnit.MILLISECONDS,
-                   mUiScheduler)
-            .takeUntil(mCancelSignal)
-            .subscribe {
-                collectStrokesAndCreateScrap()
-            }
-    }
-
-    private fun collectStrokesAndCreateScrap() {
-        var left = Float.POSITIVE_INFINITY
-        var top = Float.POSITIVE_INFINITY
-        var right = Float.NEGATIVE_INFINITY
-        var bottom = Float.NEGATIVE_INFINITY
-
-        mTmpStrokes.forEach { stroke ->
-            val bound = stroke.bound
-
-            left = Math.min(left, bound.left)
-            top = Math.min(top, bound.top)
-            right = Math.max(right, bound.right)
-            bottom = Math.max(bottom, bound.bottom)
-        }
-
-        val cx = (left + right) / 2f
-        val cy = (top + bottom) / 2f
-
-        mTmpStrokes.forEach { stroke ->
-            stroke.offset(-cx, -cy)
-        }
-
-        val scrapM = ScrapModel()
-        scrapM.x = cx
-        scrapM.y = cy
-        scrapM.sketch.addAllStroke(mTmpStrokes)
-
-        // Clear widget hold strokes
-        mTmpStrokes.clear()
-
-        // Add to Model (will trigger bound View to react)
-        mModel.addScrap(scrapM)
-
-        // Notify view to clear strokes
-        mDrawSVGSignal.onNext(DrawSVGEvent(
-            action = CLEAR_ALL))
     }
 
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()
@@ -299,7 +218,40 @@ class PaperWidget(private val mUiScheduler: Scheduler,
     }
 
     override fun onDrawSVG(): Observable<DrawSVGEvent> {
-        return mDrawSVGSignal
+        return Observable
+            .merge(
+                mDrawSVGSignal,
+                // For the first time subscription, send events one by one!
+                SketchToDrawSVGEvent(mModel.sketch)
+                    .subscribeOn(mWorkerScheduler))
+    }
+
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    override fun handleActionBegin() {
+    }
+
+    override fun handleActionEnd() {
+        // Brutally stop the drawing filter.
+        mCancelDrawingSignal.onNext(0)
+    }
+
+    override fun handleTap(x: Float, y: Float) {
+        // Draw a DOT!!!
+        mTmpStroke = SketchStroke(
+            color = 0,
+            isEraser = false,
+            width = 1f)
+        mTmpStroke.addPath(Point(x, y, 0))
+
+        mModel.addStrokeToSketch(mTmpStroke)
+
+        // Notify the observer
+        mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
+                                           point = Point(x, y, 0),
+                                           penColor = mPenColor,
+                                           penSize = mPenSize))
+        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
     }
 
     // Debug //////////////////////////////////////////////////////////////////
