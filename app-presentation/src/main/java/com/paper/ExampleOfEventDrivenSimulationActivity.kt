@@ -86,13 +86,13 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-        mPresenter.onResume()
+        mPresenter.resume()
     }
 
     override fun onPause() {
         super.onPause()
 
-        mPresenter.onPause()
+        mPresenter.pause()
     }
 
     override fun onBackPressed() {

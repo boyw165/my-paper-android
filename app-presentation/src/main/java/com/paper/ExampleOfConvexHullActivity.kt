@@ -66,14 +66,14 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
         super.onResume()
 
         // Resume presenter.
-        mPresenter.onResume()
+        mPresenter.resume()
     }
 
     override fun onPause() {
         super.onPause()
 
         // Pause presenter.
-        mPresenter.onPause()
+        mPresenter.pause()
     }
 
     override fun onDestroy() {

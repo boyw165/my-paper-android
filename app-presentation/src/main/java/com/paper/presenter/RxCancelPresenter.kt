@@ -20,9 +20,8 @@
 
 package com.paper.presenter
 
-import com.paper.domain.event.ProgressEvent
 import com.paper.domain.INavigator
-import com.paper.domain.IPresenter
+import com.paper.domain.event.ProgressEvent
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
@@ -33,8 +32,7 @@ import java.util.concurrent.TimeUnit
 
 class RxCancelPresenter(navigator: INavigator,
                         workerSchedulers: Scheduler,
-                        uiScheduler: Scheduler)
-    : IPresenter<RxCancelContract.View> {
+                        uiScheduler: Scheduler) {
 
     // Intents.
     companion object {
@@ -59,7 +57,7 @@ class RxCancelPresenter(navigator: INavigator,
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
 
-    override fun bindViewOnCreate(view: RxCancelContract.View) {
+    fun bindViewOnCreate(view: RxCancelContract.View) {
         mView = view
 
         // Start and cancel buttons:
@@ -135,15 +133,15 @@ class RxCancelPresenter(navigator: INavigator,
                 })
     }
 
-    override fun unbindViewOnDestroy() {
+    fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
     }
 
-    override fun onResume() {
+    fun resume() {
         // DO NOTHING.
     }
 
-    override fun onPause() {
+    fun pause() {
         // DO NOTHING.
     }
 

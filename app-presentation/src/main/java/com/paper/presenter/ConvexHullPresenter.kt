@@ -21,7 +21,6 @@
 package com.paper.presenter
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.IPresenter
 import io.reactivex.ObservableTransformer
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -31,8 +30,7 @@ import java.util.concurrent.TimeUnit
 
 class ConvexHullPresenter(val mRouter: ConvexHullContract.Navigator,
                           val mWorkerSchedulers: Scheduler,
-                          val mUiSchedulers: Scheduler)
-    : IPresenter<ConvexHullContract.View> {
+                          val mUiSchedulers: Scheduler) {
 
     // View
     private lateinit var mView: ConvexHullContract.View
@@ -44,7 +42,7 @@ class ConvexHullPresenter(val mRouter: ConvexHullContract.Navigator,
     // Disposables.
     private val mDisposablesOnCreate = CompositeDisposable()
 
-    override fun bindViewOnCreate(view: ConvexHullContract.View) {
+    fun bindViewOnCreate(view: ConvexHullContract.View) {
         mView = view
 
         // Back button.
@@ -76,15 +74,15 @@ class ConvexHullPresenter(val mRouter: ConvexHullContract.Navigator,
                 })
     }
 
-    override fun unbindViewOnDestroy() {
+    fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
     }
 
-    override fun onResume() {
+    fun resume() {
         // DO NOTHING.
     }
 
-    override fun onPause() {
+    fun pause() {
         // DO NOTHING.
     }
 

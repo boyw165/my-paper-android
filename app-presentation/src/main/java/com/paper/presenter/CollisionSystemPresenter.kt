@@ -24,7 +24,6 @@ import android.graphics.Canvas
 import android.graphics.PointF
 import android.graphics.RectF
 import com.paper.domain.INavigator
-import com.paper.domain.IPresenter
 import com.paper.domain.ISystemTime
 import com.paper.domain.util.UniformPoissonDiskSampler
 import com.paper.view.collisionSimulation.CollisionSystem
@@ -38,8 +37,7 @@ import java.util.concurrent.TimeUnit
 class CollisionSystemPresenter(private val mNavigator: INavigator,
                                private val mSystemTime: ISystemTime,
                                private val mWorkerSchedulers: Scheduler,
-                               private val mUiScheduler: Scheduler)
-    : IPresenter<CollisionSystemContract.View> {
+                               private val mUiScheduler: Scheduler) {
 
     // View
     private lateinit var mView: CollisionSystemContract.View
@@ -57,7 +55,7 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
     private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposablesOnResume = CompositeDisposable()
 
-    override fun bindViewOnCreate(view: CollisionSystemContract.View) {
+    fun bindViewOnCreate(view: CollisionSystemContract.View) {
         mView = view
 
         mDisposablesOnCreate.add(
@@ -68,11 +66,11 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
                 })
     }
 
-    override fun unbindViewOnDestroy() {
+    fun unbindViewOnDestroy() {
         mDisposablesOnCreate.clear()
     }
 
-    override fun onResume() {
+    fun resume() {
         mView.schedulePeriodicRendering(listener = object
             : CollisionSystemContract.SimulationListener {
             override fun onUpdateSimulation(canvas: Canvas) {
@@ -108,7 +106,7 @@ class CollisionSystemPresenter(private val mNavigator: INavigator,
         })
     }
 
-    override fun onPause() {
+    fun pause() {
         mView.unScheduleAll()
         mCollisionSystem.stop()
 
