@@ -86,7 +86,7 @@ class PaperJSONTranslatorTest {
                                     .addPath(Point(1f, 1f, 100)))
 
 
-        Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"0.0,0.0,0 1.0,1.0,100\"}],\"scraps\":[]}",
+        Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"(0.0,0.0,0) (1.0,1.0,100)\"}],\"scraps\":[]}",
                             translator.toJson(paper, PaperModel::class.java))
     }
 }

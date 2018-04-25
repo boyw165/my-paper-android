@@ -7,4 +7,5 @@
 **/lib-distribution
 **/.externalNativeBuild
 **/captures
+**/report.xml
 **crashlytics**
