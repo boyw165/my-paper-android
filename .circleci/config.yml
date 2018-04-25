@@ -41,7 +41,7 @@ jobs:
           command: bundle install
 
       # run tests!
-      - run: gradle test
+      - run:
           name: Run Unit Tests
           command: bundle exec fastlane android test
 
