@@ -105,7 +105,11 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
                                                          ModelConst.INVALID_ID)
                     val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.id == toDeletePaperID }
-                    val newPaperPosition = toDeletePaperPosition - 1
+                    val newPaperPosition = if (toDeletePaperPosition + 1 < mPaperSnapshots.size) {
+                        toDeletePaperPosition + 1
+                    } else {
+                        toDeletePaperPosition - 1
+                    }
                     val newPaperID = if (newPaperPosition >= 0) {
                         mPaperSnapshots[newPaperPosition].id
                     } else {
@@ -179,7 +183,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                         val id = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
                         val position = papers.indexOfFirst { it.id == id }
 
-                        if (position > 0 && position <= papers.size) {
+                        if (position >= 0 && position <= papers.size) {
                             view.setDeleteButtonVisibility(true)
                         } else {
                             view.setDeleteButtonVisibility(false)

@@ -170,13 +170,19 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun showPaperThumbnailAt(position: Int) {
-        val actualPosition = mPapersViewController.getAdapterPositionFromDataPosition(position)
-        if (actualPosition > 0) {
-            // FIXME: without the delay the behavior would be strange
-            mPapersView.postDelayed({
-                mPapersView.scrollToPosition(actualPosition)
+        // FIXME: without the delay the behavior would be strange
+        mPapersView.postDelayed(
+            {
+                val actualPosition = mPapersViewController.getAdapterPositionFromDataPosition(position)
+                if (actualPosition >= 0) {
+                    val offset = Math.abs(mPapersView.currentItem - actualPosition)
+                    if (offset in 1..2) {
+                        mPapersView.smoothScrollToPosition(actualPosition)
+                    } else {
+                        mPapersView.scrollToPosition(actualPosition)
+                    }
+                }
             }, 100)
-        }
     }
 
     override fun setDeleteButtonVisibility(visible: Boolean) {

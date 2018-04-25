@@ -59,10 +59,6 @@ class ConvexHullPresenter(val mRouter: ConvexHullContract.Navigator,
                 .throttleFirst(1000, TimeUnit.MILLISECONDS)
                 .observeOn(mUiSchedulers)
                 .subscribe { _ ->
-                    val width = mView.getCanvasWidth().toFloat()
-                    val height = mView.getCanvasHeight().toFloat()
-
-
                 })
 
         // Error.
