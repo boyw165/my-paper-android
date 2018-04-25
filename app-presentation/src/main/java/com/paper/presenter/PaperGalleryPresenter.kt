@@ -89,6 +89,8 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {
+                    mPrefs.putLong(PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                    mPrefs.putInt(PREFS_BROWSE_PAPER_POSITION, 1)
                     navigator.navigateToPaperEditor(ModelConst.TEMP_ID)
                     view.hideProgressBar()
                 })
@@ -114,13 +116,21 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                 .observeOn(mUiScheduler)
                 .subscribe {
                     view.hideProgressBar()
+                    val currentPosition = mPrefs.getInt(PREFS_BROWSE_PAPER_POSITION, -1)
+                    if(currentPosition <= 0) {
+                        mPrefs.putInt(PREFS_BROWSE_PAPER_POSITION, 0)
+                    } else {
+                        mPrefs.putInt(PREFS_BROWSE_PAPER_POSITION, currentPosition - 1)
+                    }
                 })
         // Browse papers.
         mDisposablesOnCreate.add(
             view.onBrowsePaper()
                 .observeOn(mUiScheduler)
-                .subscribe { id ->
+                .subscribe { (id, position) ->
+
                     mPrefs.putLong(PREFS_BROWSE_PAPER_ID, id)
+                    mPrefs.putInt(PREFS_BROWSE_PAPER_POSITION, position)
 
                     if (id == ModelConst.INVALID_ID) {
                         view.setDeleteButtonVisibility(false)
@@ -152,15 +162,15 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     mView?.let { view ->
                         view.showPaperThumbnails(papers)
 
-                        val id = mPrefs.getLong(PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-                        val position = papers.indexOfFirst { it.id == id }
+                        val position = mPrefs.getInt(PREFS_BROWSE_PAPER_POSITION, -1)
 
-                        if (position >= 0 && position < papers.size) {
-                            view.showPaperThumbnailAt(position)
+                        if (position > 0 && position <= papers.size) {
                             view.setDeleteButtonVisibility(true)
                         } else {
                             view.setDeleteButtonVisibility(false)
                         }
+
+                        view.showPaperThumbnailAt(position)
                     }
                 })
     }
@@ -192,6 +202,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
 
     internal companion object {
 
-        const val PREFS_BROWSE_PAPER_ID = "paper_position"
+        const val PREFS_BROWSE_PAPER_POSITION = "paper_position"
+        const val PREFS_BROWSE_PAPER_ID = "paper_id"
     }
 }

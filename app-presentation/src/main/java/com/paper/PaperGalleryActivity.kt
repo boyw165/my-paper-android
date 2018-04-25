@@ -66,7 +66,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
     private val mClickPaperSignal = PublishSubject.create<Long>()
-    private val mBrowsePaperSignal = PublishSubject.create<Long>()
+    private val mBrowsePaperSignal = PublishSubject.create<Pair<Long, Int>>()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -125,7 +125,7 @@ class PaperGalleryActivity : AppCompatActivity(),
                                      adapterPosition: Int) {
                 val paper = mPapersViewController.getPaperFromAdapterPosition(adapterPosition)
                 // Report the paper ID in the database
-                mBrowsePaperSignal.onNext(paper?.id ?: ModelConst.INVALID_ID)
+                mBrowsePaperSignal.onNext(Pair(paper?.id ?: ModelConst.INVALID_ID, adapterPosition))
             }
 
             override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
@@ -171,9 +171,11 @@ class PaperGalleryActivity : AppCompatActivity(),
 
     override fun showPaperThumbnailAt(position: Int) {
         if (position > 0 &&
-            position < mPapersView.adapter.itemCount) {
-            mPapersView.post { mPapersView.smoothScrollToPosition(
-                mPapersViewController.getAdapterPositionFromDataPosition(position)) }
+            position <= mPapersView.adapter.itemCount) {
+            // FIXME without the delay the action would be strange
+            mPapersView.postDelayed({
+                mPapersView.smoothScrollToPosition(position)
+            }, 100)
         }
     }
 
@@ -211,7 +213,7 @@ class PaperGalleryActivity : AppCompatActivity(),
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    override fun onBrowsePaper(): Observable<Long> {
+    override fun onBrowsePaper(): Observable<Pair<Long, Int>> {
         return mBrowsePaperSignal
     }
 
