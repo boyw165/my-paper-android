@@ -21,6 +21,7 @@
 package com.paper.presenter
 
 import android.Manifest
+import com.paper.domain.DomainConst
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.useCase.DeletePaper
@@ -43,10 +44,12 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
     private var mView: PaperGalleryContract.View? = null
     private var mNavigator: PaperGalleryContract.Navigator? = null
 
+    private val mPaperSnapshots = mutableListOf<PaperModel>()
+
     // Progress signal.
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
-
-    private val mPaperSnapshots = mutableListOf<PaperModel>()
+    // Error signal
+    private val mErrorSignal = PublishSubject.create<Throwable>()
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -80,17 +83,12 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
             view.onClickNewPaper()
                 .switchMap {
                     requestPermissions()
-//                        .switchMap {
-//                            mRepo.newTempPaper("")
-//                                .toObservable()
-//                                .map { Pair(it.id, ProgressEvent.stop(100)) }
-//                                .startWith(Pair(ModelConst.TEMP_ID, ProgressEvent.start()))
-//                        }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {
+                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+
                     navigator.navigateToPaperEditor(ModelConst.TEMP_ID)
-                    view.hideProgressBar()
                 })
         // Button of existing paper.
         mDisposablesOnCreate.add(
@@ -103,24 +101,51 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         // Button of delete all papers.
         mDisposablesOnCreate.add(
             view.onClickDeletePaper()
-                .switchMap {
+                .map {
+                    val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
+                                                         ModelConst.INVALID_ID)
+                    val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.id == toDeletePaperID }
+                    val newPaperPosition = toDeletePaperPosition - 1
+                    val newPaperID = if (newPaperPosition >= 0) {
+                        mPaperSnapshots[newPaperPosition].id
+                    } else {
+                        ModelConst.INVALID_ID
+                    }
+
+                    // Save new paper ID.
+                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, newPaperID)
+
+                    return@map toDeletePaperID
+                }
+                .switchMap { toDeletePaperID ->
                     requestPermissions()
                         .switchMap {
-                            DeletePaper(paperID = mPrefs.getLong(PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID),
-                                        paperRepo = mRepo)
+                            DeletePaper(paperID = toDeletePaperID,
+                                        paperRepo = mRepo,
+                                        errorSignal = mErrorSignal)
                                 .toObservable()
                         }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {
                     view.hideProgressBar()
+
+//                    val id = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+//                    val position = papers.indexOfFirst { it.id == id }
+//                    val currentPosition = mPrefs.getInt(PREFS_BROWSE_PAPER_POSITION, -1)
+//                    if(currentPosition <= 0) {
+//                        mPrefs.putInt(PREFS_BROWSE_PAPER_POSITION, 0)
+//                    } else {
+//                        mPrefs.putInt(PREFS_BROWSE_PAPER_POSITION, currentPosition - 1)
+//                    }
                 })
         // Browse papers.
         mDisposablesOnCreate.add(
             view.onBrowsePaper()
                 .observeOn(mUiScheduler)
                 .subscribe { id ->
-                    mPrefs.putLong(PREFS_BROWSE_PAPER_ID, id)
+
+                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, id)
 
                     if (id == ModelConst.INVALID_ID) {
                         view.setDeleteButtonVisibility(false)
@@ -141,6 +166,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
         mDisposablesOnResume.add(
             requestPermissions()
                 .switchMap {
+                    // Note: Any database update will emit new result
                     mRepo.getPapers(isSnapshot = true)
                 }
                 .observeOn(mUiScheduler)
@@ -150,17 +176,17 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     mPaperSnapshots.addAll(papers)
 
                     mView?.let { view ->
-                        view.showPaperThumbnails(papers)
-
-                        val id = mPrefs.getLong(PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                        val id = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
                         val position = papers.indexOfFirst { it.id == id }
 
-                        if (position >= 0 && position < papers.size) {
-                            view.showPaperThumbnailAt(position)
+                        if (position > 0 && position <= papers.size) {
                             view.setDeleteButtonVisibility(true)
                         } else {
                             view.setDeleteButtonVisibility(false)
                         }
+
+                        view.showPaperThumbnails(papers)
+                        view.showPaperThumbnailAt(position)
                     }
                 })
     }
@@ -185,13 +211,5 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
             // TODO: Properly handle it, like showing permission explanation
             // TODO: page if it is denied.
             .filter { it }
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Clazz //////////////////////////////////////////////////////////////////
-
-    internal companion object {
-
-        const val PREFS_BROWSE_PAPER_ID = "paper_position"
     }
 }

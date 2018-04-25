@@ -53,6 +53,8 @@ class PaperEditorPresenter(paperRepo: IPaperRepo,
 
     // Progress signal.
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+    // Error signal
+    private val mErrorSignal = PublishSubject.create<Throwable>()
 
     // Disposables
     private val mDisposablesOnCreate = CompositeDisposable()
@@ -85,30 +87,14 @@ class PaperEditorPresenter(paperRepo: IPaperRepo,
                         .takeSnapshot()
                         .compose(SavePaperToStore(
                             paper = mPaperWidget.getPaper(),
-                            paperRepo = mPaperRepo))
+                            paperRepo = mPaperRepo,
+                            prefs = mPrefs,
+                            errorSignal = mErrorSignal))
                         .toObservable()
 //                        .startWith { view.showProgressBar(0) }
 //                        .subscribeOn(mUiScheduler)
 //                        .observeOn(mUiScheduler)
 //                        .doOnNext { view.hideProgressBar() }
-                }
-                .onErrorResumeNext { err: Throwable ->
-//                    err.printStackTrace()
-
-                    mView!!.onClickCloseButton()
-                        .throttleFirst(1000, TimeUnit.MILLISECONDS)
-                        .switchMap {
-                            canvasView
-                                .takeSnapshot()
-                                .compose(SavePaperToStore(
-                                    paper = mPaperWidget.getPaper(),
-                                    paperRepo = mPaperRepo))
-                                .toObservable()
-                            //                        .startWith { view.showProgressBar(0) }
-                            //                        .subscribeOn(mUiScheduler)
-                            //                        .observeOn(mUiScheduler)
-                            //                        .doOnNext { view.hideProgressBar() }
-                        }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe {

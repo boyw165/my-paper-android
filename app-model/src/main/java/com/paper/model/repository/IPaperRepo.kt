@@ -16,6 +16,7 @@ package com.paper.model.repository
 
 import android.graphics.Bitmap
 import com.paper.model.PaperModel
+import com.paper.model.event.UpdateDatabaseEvent
 import io.reactivex.Observable
 import io.reactivex.Single
 import java.io.File
@@ -28,11 +29,11 @@ interface IPaperRepo {
 
     fun getPaperById(id: Long): Single<PaperModel>
 
-    fun putPaperById(id: Long, paper: PaperModel): Single<Boolean>
+    fun putPaperById(id: Long, paper: PaperModel): Single<UpdateDatabaseEvent>
 
     fun duplicatePaperById(id: Long): Observable<PaperModel>
 
-    fun deletePaperById(id: Long): Single<Boolean>
+    fun deletePaperById(id: Long): Single<UpdateDatabaseEvent>
 
     fun putBitmap(bmp: Bitmap): Single<File>
 }

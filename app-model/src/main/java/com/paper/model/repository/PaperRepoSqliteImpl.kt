@@ -33,6 +33,7 @@ import com.google.gson.GsonBuilder
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
 import com.paper.model.ScrapModel
+import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.SketchStrokeJSONTranslator
@@ -254,22 +255,35 @@ class PaperRepoSqliteImpl(authority: String,
     }
 
     override fun putPaperById(id: Long,
-                              paper: PaperModel): Single<Boolean> {
+                              paper: PaperModel): Single<UpdateDatabaseEvent> {
         paper.modifiedAt = getCurrentTime()
 
         return Single
-            .fromCallable {
+            .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
                 if (id == ModelConst.TEMP_ID) {
                     val uri = Uri.Builder()
                         .scheme("content")
                         .authority(mAuthority)
                         .path("paper")
                         .build()
+                    if (emitter.isDisposed) return@create
 
-                    val newURI = mResolver.insert(uri, convertPaperToValues(paper))
-                    if (newURI != null) {
-                        // Notify a addition just happens
-                        mResolver.notifyChange(Uri.parse("$newURI/$CHANGE_ADD"), null)
+                    try {
+                        val newURI = mResolver.insert(uri, convertPaperToValues(paper))
+                        if (newURI != null) {
+                            if (!emitter.isDisposed) {
+                                emitter.onSuccess(UpdateDatabaseEvent(
+                                    successful = true,
+                                    id = newURI.lastPathSegment.toLong()))
+                            }
+
+                            // Notify a addition just happens
+                            mResolver.notifyChange(Uri.parse("$newURI/$CHANGE_ADD"), null)
+                        } else {
+                            emitter.onError(IllegalArgumentException("Null data gets null URL"))
+                        }
+                    } catch (err: Throwable) {
+                        emitter.onError(err)
                     }
                 } else {
                     val uri = Uri.Builder()
@@ -277,14 +291,25 @@ class PaperRepoSqliteImpl(authority: String,
                         .authority(mAuthority)
                         .path("paper/$id")
                         .build()
+                    if (emitter.isDisposed) return@create
 
-                    if (0 < mResolver.update(uri, convertPaperToValues(paper), null, null)) {
-                       // Notify an update just happens
-                        mResolver.notifyChange(Uri.parse("$uri/$CHANGE_UPDATE"), null)
+                    try {
+                        if (0 < mResolver.update(uri, convertPaperToValues(paper), null, null)) {
+                            if (!emitter.isDisposed) {
+                                emitter.onSuccess(UpdateDatabaseEvent(
+                                    successful = true,
+                                    id = id))
+                            }
+
+                            // Notify an update just happens
+                            mResolver.notifyChange(Uri.parse("$uri/$CHANGE_UPDATE"), null)
+                        } else {
+                            emitter.onError(NoSuchElementException("Cannot find paper with id=$id"))
+                        }
+                    } catch (err: Throwable) {
+                        emitter.onError(err)
                     }
                 }
-
-                return@fromCallable true
             }
             .subscribeOn(mDbIoScheduler)
     }
@@ -293,21 +318,32 @@ class PaperRepoSqliteImpl(authority: String,
         TODO("not implemented")
     }
 
-    override fun deletePaperById(id: Long): Single<Boolean> {
+    override fun deletePaperById(id: Long): Single<UpdateDatabaseEvent> {
         return Single
-            .fromCallable {
+            .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
                 val uri = Uri.Builder()
                     .scheme("content")
                     .authority(mAuthority)
                     .path("paper/$id")
                     .build()
+                if (emitter.isDisposed) return@create
 
-                if (0 < mResolver.delete(uri, null, null)) {
-                    // Notify a deletion just happens
-                    mResolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
+                try {
+                    if (0 < mResolver.delete(uri, null, null)) {
+                        if (!emitter.isDisposed) {
+                            emitter.onSuccess(UpdateDatabaseEvent(
+                                successful = true,
+                                id = id))
+                        }
+
+                        // Notify a deletion just happens
+                        mResolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
+                    } else {
+                        emitter.onError(NoSuchElementException("Cannot delete paper with id=$id"))
+                    }
+                } catch (err: Throwable) {
+                    emitter.onError(err)
                 }
-
-                return@fromCallable true
             }
             .subscribeOn(mDbIoScheduler)
     }

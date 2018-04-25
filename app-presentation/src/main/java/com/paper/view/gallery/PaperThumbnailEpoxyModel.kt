@@ -40,6 +40,7 @@ class PaperThumbnailEpoxyModel(
     private var mThumbFile: File? = null
     private var mThumbWidth = 0
     private var mThumbHeight = 0
+    private var mModifiedAt = 0L
 
     // View
     private var mThumbView: ImageView? = null
@@ -112,6 +113,11 @@ class PaperThumbnailEpoxyModel(
         result = 31 * result + mThumbWidth
         result = 31 * result + mThumbHeight
         return result
+    }
+
+    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyModel {
+        mModifiedAt = modifiedAt
+        return this
     }
 
     fun setThumbnail(glide: RequestManager?,

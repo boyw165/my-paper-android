@@ -41,6 +41,7 @@ class PaperThumbnailEpoxyController(
 
             PaperThumbnailEpoxyModel(id)
                 .onClick(mOnClickPaperSignal)
+                .setModifiedTime(paper.modifiedAt)
                 .setThumbnail(mGlide,
                               paper.thumbnailPath,
                               paper.thumbnailWidth,
@@ -62,7 +63,12 @@ class PaperThumbnailEpoxyController(
     }
 
     fun getAdapterPositionFromDataPosition(position: Int): Int {
-        return position + 1
+        val actualData = currentData ?: throw IllegalStateException("no data")
+        return if (position >= 0 && position < actualData.size) {
+            position + 1
+        } else {
+            -1
+        }
     }
 
     // Click //////////////////////////////////////////////////////////////////

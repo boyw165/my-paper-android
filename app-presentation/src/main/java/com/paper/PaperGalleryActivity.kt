@@ -103,7 +103,7 @@ class PaperGalleryActivity : AppCompatActivity(),
         mPapersView.setItemTransformer(
             ScaleTransformer.Builder()
                 .setMaxScale(1.0f)
-                .setMinScale(0.8f)
+                .setMinScale(1.0f)
                 .setPivotX(Pivot.X.CENTER) // CENTER is a default one
                 .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
                 .build())
@@ -170,10 +170,12 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun showPaperThumbnailAt(position: Int) {
-        if (position > 0 &&
-            position < mPapersView.adapter.itemCount) {
-            mPapersView.post { mPapersView.smoothScrollToPosition(
-                mPapersViewController.getAdapterPositionFromDataPosition(position)) }
+        val actualPosition = mPapersViewController.getAdapterPositionFromDataPosition(position)
+        if (actualPosition > 0) {
+            // FIXME: without the delay the behavior would be strange
+            mPapersView.postDelayed({
+                mPapersView.scrollToPosition(actualPosition)
+            }, 100)
         }
     }
 

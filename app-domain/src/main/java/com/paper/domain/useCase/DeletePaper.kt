@@ -23,7 +23,6 @@
 package com.paper.domain.useCase
 
 import com.paper.model.repository.IPaperRepo
-import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.SingleObserver
@@ -44,12 +43,14 @@ import io.reactivex.disposables.Disposable
  * progress signal.
  */
 class DeletePaper(paperID: Long,
-                  paperRepo: IPaperRepo)
+                  paperRepo: IPaperRepo,
+                  errorSignal: Observer<Throwable>? = null)
     : Single<Boolean>() {
 
     private val mPaperID = paperID
-
     private val mPaperRepo = paperRepo
+
+    private val mErrorSignal = errorSignal
 
     override fun subscribeActual(observer: SingleObserver<in Boolean>) {
         val actualSrc = mPaperRepo
@@ -58,11 +59,12 @@ class DeletePaper(paperID: Long,
             .publish()
         val actualDisposable = actualSrc
             .subscribe(
-                { successful ->
-                    observer.onSuccess(successful)
+                { event ->
+                    observer.onSuccess(event.successful)
                 },
                 { err ->
-                    observer.onError(err)
+                    observer.onSuccess(false)
+                    mErrorSignal?.onError(err)
                 })
 
         val d = InnerDisposable(actualDisposable = actualDisposable)

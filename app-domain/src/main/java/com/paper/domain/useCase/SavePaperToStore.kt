@@ -21,18 +21,26 @@
 package com.paper.domain.useCase
 
 import android.graphics.Bitmap
+import com.paper.domain.DomainConst
+import com.paper.domain.ISharedPreferenceService
 import com.paper.model.PaperModel
 import com.paper.model.repository.IPaperRepo
+import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.SingleSource
 import io.reactivex.SingleTransformer
 
 class SavePaperToStore(paper: PaperModel,
-                       paperRepo: IPaperRepo)
+                       paperRepo: IPaperRepo,
+                       prefs: ISharedPreferenceService,
+                       errorSignal: Observer<Throwable>? = null)
     : SingleTransformer<Bitmap, Boolean> {
 
     private val mPaper = paper
     private val mPaperRepo = paperRepo
+    private val mPrefs = prefs
+
+    private val mErrorSignal = errorSignal
 
     override fun apply(upstream: Single<Bitmap>): SingleSource<Boolean> {
         return upstream
@@ -46,6 +54,17 @@ class SavePaperToStore(paper: PaperModel,
 
                         mPaperRepo.putPaperById(mPaper.id, mPaper)
                     }
+                    .map { event ->
+                        if (event.successful) {
+                            mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, event.id)
+                        }
+
+                        return@map event.successful
+                    }
             }
+            .doOnError { err ->
+                mErrorSignal?.onNext(err)
+            }
+            .onErrorReturnItem(false)
     }
 }
