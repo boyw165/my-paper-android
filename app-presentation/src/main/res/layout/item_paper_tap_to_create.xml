@@ -5,15 +5,15 @@
     android:layout_width="200dp"
     android:layout_height="200dp"
     android:clipToPadding="false"
-    android:background="@drawable/bg_dashed_round_rect"
     android:padding="16dp">
 
     <android.support.v7.widget.AppCompatTextView
         android:id="@+id/txt_tap_to_create"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/msg_create_cta"
+        android:background="@drawable/bg_dashed_round_rect"
         android:gravity="center"
-        android:textSize="20sp"
-        android:scaleType="centerCrop"/>
+        android:scaleType="centerCrop"
+        android:text="@string/msg_create_cta"
+        android:textSize="20sp"/>
 </android.support.constraint.ConstraintLayout>

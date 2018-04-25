@@ -41,6 +41,7 @@ class PaperThumbnailEpoxyController(
 
             PaperThumbnailEpoxyModel(id)
                 .onClick(mOnClickPaperSignal)
+                .setModifiedTime(paper.modifiedAt)
                 .setThumbnail(mGlide,
                               paper.thumbnailPath,
                               paper.thumbnailWidth,
