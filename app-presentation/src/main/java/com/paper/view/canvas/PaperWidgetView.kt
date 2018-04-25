@@ -40,8 +40,8 @@ import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
-import com.paper.domain.widget.canvas.IPaperWidget
-import com.paper.domain.widget.canvas.IScrapWidget
+import com.paper.domain.widget.editor.IPaperWidget
+import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.Point
 import com.paper.model.Rect
 import io.reactivex.Observable

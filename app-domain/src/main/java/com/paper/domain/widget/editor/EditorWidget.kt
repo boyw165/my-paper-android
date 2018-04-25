@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,40 +20,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.presenter
+package com.paper.domain.widget.editor
 
-import com.paper.view.editPanel.IPaperEditPanelView
-import com.paper.view.canvas.IPaperWidgetView
-import io.reactivex.Observable
+class EditorWidget {
 
-class PaperEditorContract private constructor() {
+    fun start() {
 
-    interface View {
+    }
 
-        fun getCanvasView(): IPaperWidgetView
+    fun stop() {
 
-        fun getEditingPanelView(): IPaperEditPanelView
-
-        fun showProgressBar(progress: Int)
-
-        fun hideProgressBar()
-
-        fun showWIP()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun showErrorAlertThenFinish(error: Throwable)
-
-        fun close()
-
-        fun onClickCloseButton(): Observable<Any>
-
-        fun onClickUndoButton(): Observable<Any>
-
-        fun onClickRedoButton(): Observable<Any>
-
-        fun onClickDeleteButton(): Observable<Any>
-
-        fun onClickMenu(): Observable<Any>
     }
 }

@@ -1,4 +1,4 @@
-// Copyright Jan 2017-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,33 +18,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.presenter
+package com.paper.domain.widget.editor
 
+import com.paper.domain.event.DrawSVGEvent
+import com.paper.model.ScrapModel
+import com.paper.model.TransformModel
 import io.reactivex.Observable
+import java.util.*
 
-abstract class ConvexHullContract private constructor() {
+interface IScrapWidget: IWidget<ScrapModel> {
 
-    interface View {
+    // For input //////////////////////////////////////////////////////////////
 
-        fun getCanvasWidth(): Int
+    fun handleTap(x: Float, y: Float)
 
-        fun getCanvasHeight(): Int
+    // For output /////////////////////////////////////////////////////////////
 
-        fun showError(error: Throwable)
+    fun getId(): UUID
 
-        fun addDot(x: Float, y: Float)
+    fun onDrawSVG(): Observable<DrawSVGEvent>
 
-        fun removeDot(x: Float, y: Float)
-
-        fun clearAllDots()
-
-        fun onClickBack(): Observable<Any>
-
-        fun onClickRandom(): Observable<Any>
-    }
-
-    interface Navigator {
-
-        fun exit()
-    }
+    fun onTransform(): Observable<TransformModel>
 }

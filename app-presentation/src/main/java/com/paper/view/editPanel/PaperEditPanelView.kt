@@ -30,7 +30,7 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.view.canvas.ViewPortIndicatorView
-import com.paper.domain.widget.editPanel.PaperEditPanelWidget
+import com.paper.domain.widget.editor.PaperEditPanelWidget
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.model.Point

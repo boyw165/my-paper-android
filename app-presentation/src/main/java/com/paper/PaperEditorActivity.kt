@@ -28,24 +28,25 @@ import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
+import com.paper.domain.event.ProgressEvent
+import com.paper.domain.useCase.LoadPaperAndBindModel
+import com.paper.domain.useCase.SavePaperToStore
+import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.ModelConst
-import com.paper.presenter.PaperEditorContract
-import com.paper.presenter.PaperEditorPresenter
-import com.paper.view.canvas.IPaperWidgetView
 import com.paper.view.canvas.PaperWidgetView
-import com.paper.view.editPanel.IPaperEditPanelView
 import com.paper.view.editPanel.PaperEditPanelView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.TimeUnit
 
-class PaperEditorActivity : AppCompatActivity(),
-                            PaperEditorContract.View {
+class PaperEditorActivity : AppCompatActivity() {
 
-    // View.
+    //
     private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
-    private val mEditingPanelView by lazy { findViewById<PaperEditPanelView>(R.id.editing_panel) }
+    private val mEditPanelView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
 
     private val mProgressBar by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
@@ -62,7 +63,7 @@ class PaperEditorActivity : AppCompatActivity(),
     }
 
     // Back button and signal.
-    private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
+    private val mBtnClose by lazy { findViewById<View>(R.id.btn_close) }
     private val mClickSysBackSignal = PublishSubject.create<Any>()
 
     // Undo & redo buttons
@@ -76,34 +77,174 @@ class PaperEditorActivity : AppCompatActivity(),
     // TODO: Inject the repo.
     private val mPaperRepo by lazy { (application as IPaperRepoProvider).getRepo() }
 
-    // Presenters and controllers.
-    private val mEditorPresenter: PaperEditorPresenter by lazy {
-        PaperEditorPresenter(paperRepo = mPaperRepo,
-                             prefs = application as ISharedPreferenceService,
-                             uiScheduler = AndroidSchedulers.mainThread(),
-                             workerScheduler = Schedulers.single())
+    private val mPrefs by lazy { application as ISharedPreferenceService }
+    private val mUiScheduler = AndroidSchedulers.mainThread()
+    private val mWorkerScheduler = Schedulers.io()
+
+    private val mPaperWidget by lazy {
+        PaperWidget(AndroidSchedulers.mainThread(),
+                                                   Schedulers.io())
     }
+
+    // Progress signal.
+    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+    // Error signal
+    private val mErrorSignal = PublishSubject.create<Throwable>()
+
+    // Disposables
+    private val mDisposablesOnCreate = CompositeDisposable()
+    private val mDisposables = CompositeDisposable()
 
     override fun onCreate(savedState: Bundle?) {
         super.onCreate(savedState)
 
         setContentView(R.layout.activity_paper_editor)
-
-        val paperId = intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
-
-        // Presenter.
-        mEditorPresenter.bindView(this, paperId)
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        mEditorPresenter.unbindView()
-
         // Force to hide the progress-bar.
         hideProgressBar()
         // Force to hide the error dialog.
         mErrorThenFinishDialog.dismiss()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val paperId = intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
+
+        // Progress
+        mDisposablesOnCreate.add(
+            mUpdateProgressSignal
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    when {
+                        event.justStart -> showProgressBar(0)
+                        event.justStop -> hideProgressBar()
+                    }
+                })
+
+        // Close button.
+        mDisposablesOnCreate.add(
+            onClickCloseButton()
+                .throttleFirst(1000, TimeUnit.MILLISECONDS)
+                .switchMap {
+                    mCanvasView
+                        .takeSnapshot()
+                        .compose(SavePaperToStore(
+                            paper = mPaperWidget.getPaper(),
+                            paperRepo = mPaperRepo,
+                            prefs = mPrefs,
+                            errorSignal = mErrorSignal))
+                        .toObservable()
+//                        .startWith { showProgressBar(0) }
+//                        .subscribeOn(mUiScheduler)
+//                        .observeOn(mUiScheduler)
+//                        .doOnNext { hideProgressBar() }
+                }
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    close()
+                })
+
+        // View port indicator.
+        mDisposablesOnCreate.add(
+            mCanvasView
+                .onDrawViewPort()
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    mEditPanelView.setCanvasAndViewPort(
+                        event.canvas,
+                        event.viewPort)
+                })
+        mDisposablesOnCreate.add(
+            mEditPanelView
+                .onUpdateViewPortPosition()
+                .observeOn(mUiScheduler)
+                .subscribe { position ->
+                    mCanvasView.setViewPortPosition(position.x, position.y)
+                })
+
+        // Color, stroke width, and edit tool.
+        mDisposablesOnCreate.add(
+            mEditPanelView
+                .onChooseColorTicket()
+                .observeOn(mUiScheduler)
+                .subscribe { color ->
+                    mPaperWidget.handleChoosePenColor(color)
+                })
+        mDisposablesOnCreate.add(
+            mEditPanelView
+                .onUpdatePenSize()
+                .observeOn(mUiScheduler)
+                .subscribe { penSize ->
+                    mPaperWidget.handleUpdatePenSize(penSize)
+                })
+        mDisposablesOnCreate.add(
+            mEditPanelView
+                .onChooseEditTool()
+                .observeOn(mUiScheduler)
+                .subscribe { toolID ->
+                    // TODO
+                })
+
+        // Undo & redo buttons
+        mDisposablesOnCreate.add(
+            onClickUndoButton()
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // TODO
+                    showWIP()
+                })
+        mDisposablesOnCreate.add(
+            onClickRedoButton()
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // TODO
+                    showWIP()
+                })
+
+        // Delete button
+        mDisposablesOnCreate.add(
+            onClickDeleteButton()
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    // TODO
+                    showWIP()
+                })
+
+        // Inflate paper model.
+        mDisposablesOnCreate.add(
+            LoadPaperAndBindModel(
+                paperID = paperId,
+                paperWidget = mPaperWidget,
+                paperRepo = mPaperRepo,
+                updateProgressSignal = mUpdateProgressSignal,
+                uiScheduler = AndroidSchedulers.mainThread())
+                .observeOn(mUiScheduler)
+                .doOnDispose {
+                    // Unbind widget.
+                    mCanvasView.unbindWidget()
+                }
+                .observeOn(mUiScheduler)
+                .subscribe { successful ->
+                    // Bind view with the widget.
+                    if (successful) {
+                        mCanvasView.bindWidget(mPaperWidget)
+                    } else {
+                        showErrorAlertThenFinish(
+                            RuntimeException("Cannot load paper and bind model!"))
+                    }
+                })
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        mDisposablesOnCreate.clear()
+        mDisposables.clear()
     }
 
     override fun onBackPressed() {
@@ -113,40 +254,32 @@ class PaperEditorActivity : AppCompatActivity(),
     ///////////////////////////////////////////////////////////////////////////
     // Editor view ////////////////////////////////////////////////////////////
 
-    override fun getCanvasView(): IPaperWidgetView {
-        return mCanvasView
-    }
-
-    override fun getEditingPanelView(): IPaperEditPanelView {
-        return mEditingPanelView
-    }
-
-    override fun close() {
+    private fun close() {
         finish()
     }
 
-    override fun onClickCloseButton(): Observable<Any> {
+    private fun onClickCloseButton(): Observable<Any> {
         return Observable.merge(mClickSysBackSignal,
                                 RxView.clicks(mBtnClose))
     }
 
-    override fun onClickUndoButton(): Observable<Any> {
+    private fun onClickUndoButton(): Observable<Any> {
         return RxView.clicks(mBtnUndo)
     }
 
-    override fun onClickRedoButton(): Observable<Any> {
+    private fun onClickRedoButton(): Observable<Any> {
         return RxView.clicks(mBtnRedo)
     }
 
-    override fun onClickDeleteButton(): Observable<Any> {
+    private fun onClickDeleteButton(): Observable<Any> {
         return RxView.clicks(mBtnDelete)
     }
 
-    override fun onClickMenu(): Observable<Any> {
+    private fun onClickMenu(): Observable<Any> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun showProgressBar(progress: Int) {
+    private fun showProgressBar(progress: Int) {
         if (!mProgressBar.isShowing) {
             mProgressBar.show()
         }
@@ -155,21 +288,21 @@ class PaperEditorActivity : AppCompatActivity(),
             "%s: %d".format(getString(R.string.loading), progress))
     }
 
-    override fun hideProgressBar() {
+    private fun hideProgressBar() {
         mProgressBar.dismiss()
     }
 
-    override fun showWIP() {
+    private fun showWIP() {
         Toast.makeText(this, R.string.msg_under_construction, Toast.LENGTH_SHORT).show()
     }
 
-    override fun showErrorAlert(error: Throwable) {
+    private fun showErrorAlert(error: Throwable) {
         Toast.makeText(this@PaperEditorActivity,
                        error.toString(),
                        Toast.LENGTH_SHORT).show()
     }
 
-    override fun showErrorAlertThenFinish(error: Throwable) {
+    private fun showErrorAlertThenFinish(error: Throwable) {
         mErrorThenFinishDialog.setMessage(error.toString())
         mErrorThenFinishDialog.show()
     }

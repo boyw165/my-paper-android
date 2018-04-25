@@ -25,7 +25,7 @@ import android.view.View
 import com.airbnb.epoxy.EpoxyModel
 import com.facebook.drawee.view.SimpleDraweeView
 import com.paper.R
-import com.paper.domain.widget.editPanel.PaperEditPanelWidget
+import com.paper.domain.widget.editor.PaperEditPanelWidget
 
 class ColorTicketEpoxyViewModel(color: Int,
                                 widget: PaperEditPanelWidget,

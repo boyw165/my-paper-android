@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,6 +22,7 @@
 
 package com.paper
 
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
@@ -32,12 +35,13 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
+import com.paper.domain.DomainConst
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
+import com.paper.domain.event.ProgressEvent
+import com.paper.domain.useCase.DeletePaper
 import com.paper.model.ModelConst
 import com.paper.model.PaperModel
-import com.paper.presenter.PaperGalleryContract
-import com.paper.presenter.PaperGalleryPresenter
 import com.paper.view.gallery.PaperThumbnailEpoxyController
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
@@ -45,13 +49,11 @@ import com.yarolegovich.discretescrollview.transform.Pivot
 import com.yarolegovich.discretescrollview.transform.ScaleTransformer
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
-class PaperGalleryActivity : AppCompatActivity(),
-                             PaperGalleryContract.View,
-                             PaperGalleryContract.Navigator {
+class PaperGalleryActivity : AppCompatActivity() {
     // Settings view
     private val mBtnSettings: View by lazy { findViewById<View>(R.id.btn_settings) }
 
@@ -83,15 +85,22 @@ class PaperGalleryActivity : AppCompatActivity(),
         PaperThumbnailEpoxyController(mImgLoader)
     }
 
-    // Presenter.
-    private val mPresenter by lazy {
-        PaperGalleryPresenter(
-            RxPermissions(this@PaperGalleryActivity),
-            (application as IPaperRepoProvider).getRepo(),
-            (application as ISharedPreferenceService),
-            AndroidSchedulers.mainThread(),
-            Schedulers.io())
-    }
+    private val mPaperSnapshots = mutableListOf<PaperModel>()
+
+    private val mRepo by lazy { (application as IPaperRepoProvider).getRepo() }
+    private val mPrefs by lazy { application as ISharedPreferenceService }
+    private val mPermissions by lazy { RxPermissions(this) }
+
+    // Progress signal.
+    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+    // Error signal
+    private val mErrorSignal = PublishSubject.create<Throwable>()
+
+    private val mUiScheduler = AndroidSchedulers.mainThread()
+
+    // Disposables
+    private val mDisposablesOnCreate = CompositeDisposable()
+    private val mDisposablesOnResume = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,18 +141,10 @@ class PaperGalleryActivity : AppCompatActivity(),
                                        adapterPosition: Int) {
             }
         })
-
-        // Presenter.
-        mPresenter.bindView(
-            view = this,
-            navigator = this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Presenter.
-        mPresenter.unbind()
 
         // Paper thumbnail list view.
         // Break the reference to the Epoxy controller's adapter so that the
@@ -154,22 +155,133 @@ class PaperGalleryActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-        // Presenter.
-        mPresenter.resume()
+        // Exp menu button.
+        mDisposablesOnCreate.add(
+            onClickShowExpMenu()
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    showExpMenu()
+                })
+
+        // Exp menu.
+        mDisposablesOnCreate.add(
+            onClickExpMenu()
+                .debounce(150, TimeUnit.MILLISECONDS)
+                .observeOn(mUiScheduler)
+                .subscribe { id ->
+                    navigateToExpById(id)
+                })
+
+        // Button of new paper.
+        mDisposablesOnCreate.add(
+            onClickNewPaper()
+                .switchMap {
+                    requestPermissions()
+                }
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+
+                    navigateToPaperEditor(ModelConst.TEMP_ID)
+                })
+        // Button of existing paper.
+        mDisposablesOnCreate.add(
+            onClickPaper()
+                .observeOn(mUiScheduler)
+                .subscribe { id ->
+                    navigateToPaperEditor(id)
+                    hideProgressBar()
+                })
+        // Button of delete paper.
+        mDisposablesOnCreate.add(
+            onClickDeletePaper()
+                .map {
+                    val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
+                                                         ModelConst.INVALID_ID)
+                    val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.id == toDeletePaperID }
+                    val newPaperPosition = if (toDeletePaperPosition + 1 < mPaperSnapshots.size) {
+                        toDeletePaperPosition + 1
+                    } else {
+                        toDeletePaperPosition - 1
+                    }
+                    val newPaperID = if (newPaperPosition >= 0) {
+                        mPaperSnapshots[newPaperPosition].id
+                    } else {
+                        ModelConst.INVALID_ID
+                    }
+
+                    // Save new paper ID.
+                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, newPaperID)
+
+                    return@map toDeletePaperID
+                }
+                .switchMap { toDeletePaperID ->
+                    requestPermissions()
+                        .switchMap {
+                            DeletePaper(paperID = toDeletePaperID,
+                                        paperRepo = mRepo,
+                                        errorSignal = mErrorSignal)
+                                .toObservable()
+                        }
+                }
+                .observeOn(mUiScheduler)
+                .subscribe {
+                    hideProgressBar()
+                })
+        // Browse papers.
+        mDisposablesOnCreate.add(
+            onBrowsePaper()
+                .observeOn(mUiScheduler)
+                .subscribe { id ->
+
+                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, id)
+
+                    if (id == ModelConst.INVALID_ID) {
+                        setDeleteButtonVisibility(false)
+                    } else {
+                        setDeleteButtonVisibility(true)
+                    }
+                })
+
+        // Load papers
+        mDisposablesOnResume.add(
+            requestPermissions()
+                .switchMap {
+                    // Note: Any database update will emit new result
+                    mRepo.getPapers(isSnapshot = true)
+                }
+                .observeOn(mUiScheduler)
+                .subscribe { papers ->
+                    // Hold the paper snapshots.
+                    mPaperSnapshots.clear()
+                    mPaperSnapshots.addAll(papers)
+
+                    val id = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                    val position = papers.indexOfFirst { it.id == id }
+
+                    if (position >= 0 && position <= papers.size) {
+                        setDeleteButtonVisibility(true)
+                    } else {
+                        setDeleteButtonVisibility(false)
+                    }
+
+                    showPaperThumbnails(papers)
+                    showPaperThumbnailAt(position)
+                })
     }
 
     override fun onPause() {
         super.onPause()
 
-        // Presenter.
-        mPresenter.pause()
+        mDisposablesOnCreate.clear()
     }
 
-    override fun showPaperThumbnails(papers: List<PaperModel>) {
+    private fun showPaperThumbnails(papers: List<PaperModel>) {
         mPapersViewController.setData(papers)
     }
 
-    override fun showPaperThumbnailAt(position: Int) {
+    private fun showPaperThumbnailAt(position: Int) {
         // FIXME: without the delay the behavior would be strange
         mPapersView.postDelayed(
             {
@@ -185,53 +297,53 @@ class PaperGalleryActivity : AppCompatActivity(),
             }, 100)
     }
 
-    override fun setDeleteButtonVisibility(visible: Boolean) {
+    private fun setDeleteButtonVisibility(visible: Boolean) {
         mBtnDelPaper.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
-    override fun showExpMenu() {
+    private fun showExpMenu() {
         mBtnExpMenu.show()
     }
 
-    override fun showProgressBar() {
+    private fun showProgressBar() {
         mProgressBar.setMessage(getString(R.string.loading))
         mProgressBar.show()
     }
 
-    override fun hideProgressBar() {
+    private fun hideProgressBar() {
         mProgressBar.dismiss()
     }
 
-    override fun showErrorAlert(error: Throwable) {
+    private fun showErrorAlert(error: Throwable) {
         TODO("not implemented")
     }
 
-    override fun onClickPaper(): Observable<Long> {
+    private fun onClickPaper(): Observable<Long> {
         return mPapersViewController
             .onClickPaper()
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    override fun onClickNewPaper(): Observable<Any> {
+    private fun onClickNewPaper(): Observable<Any> {
         return Observable
             .merge(RxView.clicks(mBtnNewPaper),
                    mPapersViewController.onClickNewButton())
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    override fun onBrowsePaper(): Observable<Long> {
+    private fun onBrowsePaper(): Observable<Long> {
         return mBrowsePaperSignal
     }
 
-    override fun onClickDeletePaper(): Observable<Any> {
+    private fun onClickDeletePaper(): Observable<Any> {
         return RxView.clicks(mBtnDelPaper)
     }
 
-    override fun onClickShowExpMenu(): Observable<Any> {
+    private fun onClickShowExpMenu(): Observable<Any> {
         return RxView.clicks(mBtnSettings)
     }
 
-    override fun onClickExpMenu(): Observable<Int> {
+    private fun onClickExpMenu(): Observable<Int> {
         return RxPopupMenu.itemClicks(mBtnExpMenu)
             .map {
                 return@map when (it.itemId) {
@@ -243,7 +355,7 @@ class PaperGalleryActivity : AppCompatActivity(),
             }
     }
 
-    override fun navigateToExpById(id: Int) {
+    private fun navigateToExpById(id: Int) {
         when (id) {
             0 -> {
                 startActivity(Intent(
@@ -263,7 +375,7 @@ class PaperGalleryActivity : AppCompatActivity(),
         }
     }
 
-    override fun navigateToPaperEditor(id: Long) {
+    private fun navigateToPaperEditor(id: Long) {
         startActivity(Intent(this@PaperGalleryActivity,
                              PaperEditorActivity::class.java)
                           .putExtra(AppConst.PARAMS_PAPER_ID, id)
@@ -277,5 +389,14 @@ class PaperGalleryActivity : AppCompatActivity(),
         Toast.makeText(this@PaperGalleryActivity,
                        err.toString(),
                        Toast.LENGTH_SHORT).show()
+    }
+
+    private fun requestPermissions(): Observable<Boolean> {
+        return mPermissions
+            .request(Manifest.permission.READ_EXTERNAL_STORAGE,
+                     Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            // TODO: Properly handle it, like showing permission explanation
+            // TODO: page if it is denied.
+            .filter { it }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,45 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editPanel
+package com.paper.domain.widget.editor
 
-object EditingToolFactory {
+import com.paper.domain.event.DrawSVGEvent
+import com.paper.model.PaperModel
+import com.paper.model.Rect
+import io.reactivex.Observable
 
-    const val TOOL_ERASER = 0
-    const val TOOL_PEN = 1
-    const val TOOL_SCISSOR = 2
+interface IPaperWidget : IWidget<PaperModel> {
+
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
+
+    fun handleChoosePenColor(color: Int)
+
+    fun handleUpdatePenSize(size: Float)
+
+    fun handleActionBegin()
+
+    fun handleActionEnd()
+
+    fun handleTap(x: Float, y: Float)
+
+    fun handleDragBegin(x: Float, y: Float)
+
+    fun handleDrag(x: Float, y: Float)
+
+    fun handleDragEnd(x: Float, y: Float)
+
+    // For output /////////////////////////////////////////////////////////////
+
+    fun getPaper(): PaperModel
+
+    fun onSetCanvasSize(): Observable<Rect>
+
+    fun onAddScrapWidget(): Observable<IScrapWidget>
+
+    fun onRemoveScrapWidget(): Observable<IScrapWidget>
+
+    fun onDrawSVG(): Observable<DrawSVGEvent>
+
+    fun onPrintDebugMessage(): Observable<String>
 }

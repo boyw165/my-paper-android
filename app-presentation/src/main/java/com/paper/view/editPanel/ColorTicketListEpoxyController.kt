@@ -23,7 +23,7 @@ package com.paper.view.editPanel
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.domain.event.UpdateColorTicketsEvent
-import com.paper.domain.widget.editPanel.PaperEditPanelWidget
+import com.paper.domain.widget.editor.PaperEditPanelWidget
 
 class ColorTicketListEpoxyController(
     private val mWidget: PaperEditPanelWidget,

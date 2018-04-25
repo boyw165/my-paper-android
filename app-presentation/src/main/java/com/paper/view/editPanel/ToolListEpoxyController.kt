@@ -24,8 +24,8 @@ import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.R
 import com.paper.domain.event.UpdateEditingToolsEvent
-import com.paper.domain.widget.editPanel.PaperEditPanelWidget
-import com.paper.domain.widget.editPanel.EditingToolFactory
+import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.domain.widget.editor.EditingToolFactory
 
 class ToolListEpoxyController(
     private val mWidget: PaperEditPanelWidget,

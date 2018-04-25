@@ -22,7 +22,7 @@ package com.paper.view.canvas
 
 import android.graphics.Bitmap
 import com.paper.domain.event.DrawViewPortEvent
-import com.paper.domain.widget.canvas.IPaperWidget
+import com.paper.domain.widget.editor.IPaperWidget
 import io.reactivex.Observable
 import io.reactivex.Single
 

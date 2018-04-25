@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.canvas
+package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
@@ -73,7 +73,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
                     val widget = ScrapWidget(mUiScheduler,
-                                             mWorkerScheduler)
+                                                                            mWorkerScheduler)
                     mScrapWidgets[scrapM.uuid] = widget
 
                     widget.bindModel(scrapM)

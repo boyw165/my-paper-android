@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,46 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.presenter
+package com.paper.domain.widget.editor
 
-import com.paper.model.PaperModel
-import io.reactivex.Observable
+interface IWidget<in T> {
 
-class PaperGalleryContract private constructor() {
+    fun bindModel(model: T)
 
-    interface View {
-
-        fun showPaperThumbnails(papers: List<PaperModel>)
-
-        fun showPaperThumbnailAt(position: Int)
-
-        fun setDeleteButtonVisibility(visible: Boolean)
-
-        fun showExpMenu()
-
-        fun showProgressBar()
-
-        fun hideProgressBar()
-
-        fun showErrorAlert(error: Throwable)
-
-        fun onClickPaper(): Observable<Long>
-
-        fun onClickNewPaper(): Observable<Any>
-
-        fun onClickDeletePaper(): Observable<Any>
-
-        fun onClickShowExpMenu(): Observable<Any>
-
-        fun onClickExpMenu(): Observable<Int>
-
-        fun onBrowsePaper(): Observable<Long>
-    }
-
-    interface Navigator {
-
-        fun navigateToPaperEditor(id: Long)
-
-        fun navigateToExpById(id: Int)
-    }
+    fun unbindModel()
 }
