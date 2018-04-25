@@ -50,6 +50,17 @@ open class ScrapModel(
         return mSetYSignal
     }
 
+    var z: Long
+        get() = mSetZSignal.value
+        set(value) = mSetZSignal.onNext(value)
+    private val mSetZSignal = BehaviorSubject.createDefault(0L)
+    /**
+     * Observe z order update.
+     */
+    fun onSetZ(): Observable<Long> {
+        return mSetZSignal
+    }
+
     var scale: Float
         get() = mSetScaleSignal.value
         set(value) = mSetScaleSignal.onNext(value)
