@@ -98,7 +98,7 @@ class PaperGalleryPresenter(private val mPermission: RxPermissions,
                     navigator.navigateToPaperEditor(id)
                     view.hideProgressBar()
                 })
-        // Button of delete all papers.
+        // Button of delete paper.
         mDisposablesOnCreate.add(
             view.onClickDeletePaper()
                 .map {
