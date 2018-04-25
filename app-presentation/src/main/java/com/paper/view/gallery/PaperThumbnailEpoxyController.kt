@@ -33,7 +33,7 @@ class PaperThumbnailEpoxyController(
     override fun buildModels(data: List<PaperModel>) {
         TapToCreateEpoxyModel()
             .onClick(mOnClickToCreateSignal)
-            .id(0)
+            .id("cta")
             .addTo(this)
 
         data.forEachIndexed { _, paper ->
@@ -47,7 +47,7 @@ class PaperThumbnailEpoxyController(
                               paper.thumbnailWidth,
                               paper.thumbnailHeight)
                 // Epoxy view-model ID.
-                .id(paper.uuid.toString())
+                .id(paper.id)
                 .addTo(this)
         }
     }
@@ -67,7 +67,7 @@ class PaperThumbnailEpoxyController(
         return if (position >= 0 && position < actualData.size) {
             position + 1
         } else {
-            -1
+            0
         }
     }
 
