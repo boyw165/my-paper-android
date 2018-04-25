@@ -23,9 +23,11 @@
 package com.paper.domain
 
 import com.paper.domain.useCase.DeletePaper
+import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Single
 import io.reactivex.schedulers.TestScheduler
+import io.reactivex.subjects.PublishSubject
 import org.junit.Test
 import org.mockito.Mockito
 
@@ -39,24 +41,34 @@ class DeletePaperTest {
             .`when`(mockRepo.deletePaperById(Mockito.anyLong()))
             .thenReturn(Single.error(error))
 
-        val testScheduler = TestScheduler()
+        val errorSignal = PublishSubject.create<Throwable>()
+        val testErrorObserver = errorSignal.test()
 
+        val testScheduler = TestScheduler()
         val testMainObserver = DeletePaper(
             paperID = 0,
-            paperRepo = mockRepo)
+            paperRepo = mockRepo,
+            errorSignal = errorSignal)
             .test()
 
-        // Must see exception
         testScheduler.triggerActions()
-        testMainObserver.assertError(error)
+
+        // Must see false
+        testMainObserver.assertValue(false)
+
+        // Must see exception
+        testErrorObserver.assertError(error)
     }
 
     @Test
     fun getTrueIfRepoWorks() {
+        val mockID = 5L
         val mockRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockRepo.deletePaperById(Mockito.anyLong()))
-            .thenReturn(Single.just(true))
+            .thenReturn(Single.just(UpdateDatabaseEvent(
+                successful = true,
+                id = mockID)))
 
         val testMainObserver = DeletePaper(
             paperID = 0,

@@ -66,7 +66,7 @@ class PaperGalleryActivity : AppCompatActivity(),
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
     private val mClickPaperSignal = PublishSubject.create<Long>()
-    private val mBrowsePaperSignal = PublishSubject.create<Pair<Long, Int>>()
+    private val mBrowsePaperSignal = PublishSubject.create<Long>()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -103,7 +103,7 @@ class PaperGalleryActivity : AppCompatActivity(),
         mPapersView.setItemTransformer(
             ScaleTransformer.Builder()
                 .setMaxScale(1.0f)
-                .setMinScale(0.8f)
+                .setMinScale(1.0f)
                 .setPivotX(Pivot.X.CENTER) // CENTER is a default one
                 .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
                 .build())
@@ -125,7 +125,7 @@ class PaperGalleryActivity : AppCompatActivity(),
                                      adapterPosition: Int) {
                 val paper = mPapersViewController.getPaperFromAdapterPosition(adapterPosition)
                 // Report the paper ID in the database
-                mBrowsePaperSignal.onNext(Pair(paper?.id ?: ModelConst.INVALID_ID, adapterPosition))
+                mBrowsePaperSignal.onNext(paper?.id ?: ModelConst.INVALID_ID)
             }
 
             override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
@@ -170,11 +170,11 @@ class PaperGalleryActivity : AppCompatActivity(),
     }
 
     override fun showPaperThumbnailAt(position: Int) {
-        if (position > 0 &&
-            position <= mPapersView.adapter.itemCount) {
-            // FIXME without the delay the action would be strange
+        val actualPosition = mPapersViewController.getAdapterPositionFromDataPosition(position)
+        if (actualPosition > 0) {
+            // FIXME: without the delay the behavior would be strange
             mPapersView.postDelayed({
-                mPapersView.smoothScrollToPosition(position)
+                mPapersView.scrollToPosition(actualPosition)
             }, 100)
         }
     }
@@ -213,7 +213,7 @@ class PaperGalleryActivity : AppCompatActivity(),
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    override fun onBrowsePaper(): Observable<Pair<Long, Int>> {
+    override fun onBrowsePaper(): Observable<Long> {
         return mBrowsePaperSignal
     }
 

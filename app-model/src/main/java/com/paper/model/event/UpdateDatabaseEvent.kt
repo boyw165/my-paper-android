@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,20 +20,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.model.event
 
-object DomainConst {
+import com.paper.model.ModelConst
 
-    // Common /////////////////////////////////////////////////////////////////
-
-    const val TAG = "paper domain"
-
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
-
-    // Paper editor ///////////////////////////////////////////////////////////
-
-    const val VIEW_PORT_MIN_SCALE = 8f
-
-    const val COLLECT_PATH_WINDOW_MS = 66L
-    const val COLLECT_STROKES_TIMEOUT_MS = 850L
-}
+data class UpdateDatabaseEvent(
+    val successful: Boolean = true,
+    val id: Long = ModelConst.INVALID_ID)

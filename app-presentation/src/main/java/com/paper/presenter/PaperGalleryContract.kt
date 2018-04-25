@@ -51,7 +51,7 @@ class PaperGalleryContract private constructor() {
 
         fun onClickExpMenu(): Observable<Int>
 
-        fun onBrowsePaper(): Observable<Pair<Long, Int>>
+        fun onBrowsePaper(): Observable<Long>
     }
 
     interface Navigator {
