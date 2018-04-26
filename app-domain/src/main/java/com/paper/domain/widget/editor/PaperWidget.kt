@@ -24,33 +24,40 @@ import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
+import com.paper.domain.event.ProgressEvent
+import com.paper.domain.useCase.LoadPaperAndBindModel
 import com.paper.domain.useCase.SketchToDrawSVGEvent
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
+import com.paper.model.repository.IPaperRepo
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import kotlin.NoSuchElementException
 
-class PaperWidget(private val mUiScheduler: Scheduler,
-                  private val mWorkerScheduler: Scheduler)
+class PaperWidget(uiScheduler: Scheduler,
+                  workerScheduler: Scheduler)
     : IPaperWidget {
+
+    private val mUiScheduler = uiScheduler
+    private val mWorkerScheduler = workerScheduler
 
     // Model
     private lateinit var mModel: PaperModel
     private val mModelDisposables = CompositeDisposable()
 
-    // Global canceller
-    private val mCancelSignal = PublishSubject.create<Any>()
-
     // Scrap controllers
     private val mScrapWidgets = hashMapOf<UUID, IScrapWidget>()
+
+    // Global canceller
+    private val mCancelSignal = PublishSubject.create<Any>()
 
     // Gesture
     private val mGestureHistory = mutableListOf<GestureRecord>()
@@ -63,6 +70,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
         // Hold reference.
         mModel = model
+
 
         // Canvas size
         mSetCanvasSize.onNext(Rect(0f, 0f, model.width, model.height))

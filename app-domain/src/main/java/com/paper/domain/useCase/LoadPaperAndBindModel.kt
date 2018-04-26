@@ -46,7 +46,7 @@ import io.reactivex.subjects.Subject
 class LoadPaperAndBindModel(paperID: Long,
                             paperWidget: IPaperWidget,
                             paperRepo: IPaperRepo,
-                            updateProgressSignal: Subject<ProgressEvent>,
+                            updateProgressSignal: Observer<ProgressEvent>,
                             uiScheduler: Scheduler)
     : Single<Boolean>() {
 

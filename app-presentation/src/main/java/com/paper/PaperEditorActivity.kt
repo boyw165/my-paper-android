@@ -31,10 +31,11 @@ import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.LoadPaperAndBindModel
 import com.paper.domain.useCase.SavePaperToStore
-import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.ModelConst
+import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperWidgetView
 import com.paper.view.editPanel.PaperEditPanelView
+import com.paper.view.editor.PaperEditorWidget
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -44,7 +45,6 @@ import java.util.concurrent.TimeUnit
 
 class PaperEditorActivity : AppCompatActivity() {
 
-    //
     private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
     private val mEditPanelView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
 
@@ -81,18 +81,19 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mUiScheduler = AndroidSchedulers.mainThread()
     private val mWorkerScheduler = Schedulers.io()
 
-    private val mPaperWidget by lazy {
-        PaperWidget(AndroidSchedulers.mainThread(),
-                                                   Schedulers.io())
-    }
-
     // Progress signal.
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
     // Error signal
     private val mErrorSignal = PublishSubject.create<Throwable>()
 
+    private val mWidget by lazy {
+        PaperEditorWidget(
+            paperRepo = (application as IPaperRepoProvider).getRepo(),
+            uiScheduler = AndroidSchedulers.mainThread(),
+            ioScheduler = Schedulers.io())
+    }
+
     // Disposables
-    private val mDisposablesOnCreate = CompositeDisposable()
     private val mDisposables = CompositeDisposable()
 
     override fun onCreate(savedState: Bundle?) {
@@ -113,10 +114,8 @@ class PaperEditorActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        val paperId = intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
-
         // Progress
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             mUpdateProgressSignal
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
@@ -127,7 +126,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // Close button.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickCloseButton()
                 .throttleFirst(1000, TimeUnit.MILLISECONDS)
                 .switchMap {
@@ -150,7 +149,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // View port indicator.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             mCanvasView
                 .onDrawViewPort()
                 .observeOn(mUiScheduler)
@@ -159,7 +158,7 @@ class PaperEditorActivity : AppCompatActivity() {
                         event.canvas,
                         event.viewPort)
                 })
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             mEditPanelView
                 .onUpdateViewPortPosition()
                 .observeOn(mUiScheduler)
@@ -168,21 +167,21 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // Color, stroke width, and edit tool.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             mEditPanelView
                 .onChooseColorTicket()
                 .observeOn(mUiScheduler)
                 .subscribe { color ->
                     mPaperWidget.handleChoosePenColor(color)
                 })
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             mEditPanelView
                 .onUpdatePenSize()
                 .observeOn(mUiScheduler)
                 .subscribe { penSize ->
                     mPaperWidget.handleUpdatePenSize(penSize)
                 })
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             mEditPanelView
                 .onChooseEditTool()
                 .observeOn(mUiScheduler)
@@ -191,14 +190,14 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // Undo & redo buttons
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickUndoButton()
                 .observeOn(mUiScheduler)
                 .subscribe {
                     // TODO
                     showWIP()
                 })
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickRedoButton()
                 .observeOn(mUiScheduler)
                 .subscribe {
@@ -207,7 +206,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // Delete button
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickDeleteButton()
                 .observeOn(mUiScheduler)
                 .subscribe {
@@ -216,9 +215,9 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // Inflate paper model.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             LoadPaperAndBindModel(
-                paperID = paperId,
+                paperID = paperID,
                 paperWidget = mPaperWidget,
                 paperRepo = mPaperRepo,
                 updateProgressSignal = mUpdateProgressSignal,
@@ -238,12 +237,25 @@ class PaperEditorActivity : AppCompatActivity() {
                             RuntimeException("Cannot load paper and bind model!"))
                     }
                 })
+
+        // Bind sub-view with the sub-widget if the widget is ready!
+        mDisposables.add(
+            mWidget.onPaperWidgetReady()
+                .switchMap { widget ->
+                    BindViewWithWidget(view = mCanvasView,
+                                       widget = widget)
+                }
+                .subscribe())
+
+        val paperID = intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
+        mWidget.start(paperID)
     }
 
     override fun onPause() {
         super.onPause()
 
-        mDisposablesOnCreate.clear()
+        mWidget.stop()
+
         mDisposables.clear()
     }
 

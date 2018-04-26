@@ -1,0 +1,68 @@
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+package com.paper.useCase
+
+import com.paper.view.IWidgetView
+import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.disposables.Disposable
+
+/**
+ * Bind the view with the widget and automatically destroy the binding if it
+ * gets disposed.
+ */
+class BindViewWithWidget<T>(view: IWidgetView<T>,
+                            widget: T)
+    : Observable<IWidgetView<T>>() {
+
+    private val mView = view
+    private val mWidget = widget
+
+    override fun subscribeActual(observer: Observer<in IWidgetView<T>>) {
+        val d = UnbindDisposable(mView)
+        observer.onSubscribe(d)
+
+        mView.bindWidget(mWidget)
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    internal class UnbindDisposable<T>(view: IWidgetView<T>) : Disposable {
+
+        @Volatile
+        private var disposed = false
+
+        private val mView = view
+
+        override fun isDisposed(): Boolean {
+            return disposed
+        }
+
+        override fun dispose() {
+            disposed = true
+
+            mView.unbindWidget()
+        }
+    }
+}

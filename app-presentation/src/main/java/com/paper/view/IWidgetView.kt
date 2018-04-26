@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,23 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view.canvas
+package com.paper.view
 
-import android.graphics.Bitmap
-import com.paper.domain.event.DrawViewPortEvent
-import com.paper.domain.widget.editor.IPaperWidget
-import io.reactivex.Observable
-import io.reactivex.Single
+interface IWidgetView<T> {
 
-interface IPaperWidgetView {
-
-    fun bindWidget(widget: IPaperWidget)
+    fun bindWidget(widget: T)
 
     fun unbindWidget()
-
-    fun takeSnapshot(): Single<Bitmap>
-
-    fun setViewPortPosition(x: Float, y: Float)
-
-    fun onDrawViewPort(): Observable<DrawViewPortEvent>
 }
