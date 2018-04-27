@@ -67,7 +67,6 @@ class PaperGalleryActivity : AppCompatActivity() {
     // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
-    private val mClickPaperSignal = PublishSubject.create<Long>()
     private val mBrowsePaperSignal = PublishSubject.create<Long>()
 
     private val mProgressBar: AlertDialog by lazy {

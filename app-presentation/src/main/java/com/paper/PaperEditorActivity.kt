@@ -72,11 +72,7 @@ class PaperEditorActivity : AppCompatActivity() {
     // Delete button
     private val mBtnDelete by lazy { findViewById<View>(R.id.btn_delete) }
 
-    // Repositories.
-    // TODO: Inject the repo.
-    private val mPaperRepo by lazy { (application as IPaperRepoProvider).getRepo() }
 
-    private val mPrefs by lazy { application as ISharedPreferenceService }
     private val mUiScheduler = AndroidSchedulers.mainThread()
     private val mWorkerScheduler = Schedulers.io()
 
