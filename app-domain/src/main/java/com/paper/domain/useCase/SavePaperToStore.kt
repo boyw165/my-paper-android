@@ -33,14 +33,14 @@ import io.reactivex.SingleTransformer
 class SavePaperToStore(paper: PaperModel,
                        paperRepo: IPaperRepo,
                        prefs: ISharedPreferenceService,
-                       errorSignal: Observer<Throwable>? = null)
+                       caughtErrorSignal: Observer<Throwable>? = null)
     : SingleTransformer<Bitmap, Boolean> {
 
     private val mPaper = paper
     private val mPaperRepo = paperRepo
     private val mPrefs = prefs
 
-    private val mErrorSignal = errorSignal
+    private val mCaughtErrorSignal = caughtErrorSignal
 
     override fun apply(upstream: Single<Bitmap>): SingleSource<Boolean> {
         return upstream
@@ -63,7 +63,7 @@ class SavePaperToStore(paper: PaperModel,
                     }
             }
             .doOnError { err ->
-                mErrorSignal?.onNext(err)
+                mCaughtErrorSignal?.onNext(err)
             }
             .onErrorReturnItem(false)
     }

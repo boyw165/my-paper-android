@@ -89,6 +89,8 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mWidget by lazy {
         PaperEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getRepo(),
+            prefs = application as ISharedPreferenceService,
+            caughtErrorSignal = mErrorSignal,
             uiScheduler = AndroidSchedulers.mainThread(),
             ioScheduler = Schedulers.io())
     }
@@ -116,7 +118,7 @@ class PaperEditorActivity : AppCompatActivity() {
 
         // Progress
         mDisposables.add(
-            mUpdateProgressSignal
+            mWidget.onUpdateProgress()
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
                     when {
@@ -130,24 +132,18 @@ class PaperEditorActivity : AppCompatActivity() {
             onClickCloseButton()
                 .throttleFirst(1000, TimeUnit.MILLISECONDS)
                 .switchMap {
-                    mCanvasView
-                        .takeSnapshot()
-                        .compose(SavePaperToStore(
-                            paper = mPaperWidget.getPaper(),
-                            paperRepo = mPaperRepo,
-                            prefs = mPrefs,
-                            errorSignal = mErrorSignal))
+                    mWidget
+                        .writePaperToRepo(mCanvasView.takeSnapshot())
                         .toObservable()
-//                        .startWith { showProgressBar(0) }
-//                        .subscribeOn(mUiScheduler)
-//                        .observeOn(mUiScheduler)
-//                        .doOnNext { hideProgressBar() }
                 }
                 .observeOn(mUiScheduler)
-                .subscribe {
-                    close()
+                .subscribe { done ->
+                    if (done) {
+                        close()
+                    }
                 })
 
+        // TODO: Following is the responsibility of EditorWidget
         // View port indicator.
         mDisposables.add(
             mCanvasView
@@ -158,6 +154,7 @@ class PaperEditorActivity : AppCompatActivity() {
                         event.canvas,
                         event.viewPort)
                 })
+        // TODO
         mDisposables.add(
             mEditPanelView
                 .onUpdateViewPortPosition()
@@ -166,6 +163,7 @@ class PaperEditorActivity : AppCompatActivity() {
                     mCanvasView.setViewPortPosition(position.x, position.y)
                 })
 
+        // TODO
         // Color, stroke width, and edit tool.
         mDisposables.add(
             mEditPanelView
@@ -174,6 +172,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 .subscribe { color ->
                     mPaperWidget.handleChoosePenColor(color)
                 })
+        // TODO
         mDisposables.add(
             mEditPanelView
                 .onUpdatePenSize()
@@ -181,6 +180,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 .subscribe { penSize ->
                     mPaperWidget.handleUpdatePenSize(penSize)
                 })
+        // TODO
         mDisposables.add(
             mEditPanelView
                 .onChooseEditTool()
@@ -189,6 +189,7 @@ class PaperEditorActivity : AppCompatActivity() {
                     // TODO
                 })
 
+        // TODO
         // Undo & redo buttons
         mDisposables.add(
             onClickUndoButton()
@@ -197,6 +198,7 @@ class PaperEditorActivity : AppCompatActivity() {
                     // TODO
                     showWIP()
                 })
+        // TODO
         mDisposables.add(
             onClickRedoButton()
                 .observeOn(mUiScheduler)
@@ -205,6 +207,7 @@ class PaperEditorActivity : AppCompatActivity() {
                     showWIP()
                 })
 
+        // TODO
         // Delete button
         mDisposables.add(
             onClickDeleteButton()
@@ -214,6 +217,7 @@ class PaperEditorActivity : AppCompatActivity() {
                     showWIP()
                 })
 
+        // TODO
         // Inflate paper model.
         mDisposables.add(
             LoadPaperAndBindModel(

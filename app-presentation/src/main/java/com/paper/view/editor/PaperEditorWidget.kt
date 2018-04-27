@@ -22,32 +22,30 @@
 
 package com.paper.view.editor
 
+import android.graphics.Bitmap
+import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.LoadPaperAndBindModel
+import com.paper.domain.useCase.SavePaperToStore
 import com.paper.domain.widget.editor.IPaperWidget
 import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.repository.IPaperRepo
-import io.reactivex.Observable
-import io.reactivex.Scheduler
+import io.reactivex.*
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 
 class PaperEditorWidget(paperRepo: IPaperRepo,
+                        prefs: ISharedPreferenceService,
+                        caughtErrorSignal: Observer<Throwable>,
                         uiScheduler: Scheduler,
                         ioScheduler: Scheduler) {
 
     private val mPaperRepo = paperRepo
+    private val mPrefs = prefs
+    private val mCaughtErrorSignal = caughtErrorSignal
 
     private val mUiScheduler = uiScheduler
     private val mIoScheduler = ioScheduler
-
-    // Progress
-    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
-
-    private val mPaperWidget by lazy {
-        PaperWidget(mUiScheduler,
-                    mIoScheduler)
-    }
 
     private val mDisposables = CompositeDisposable()
 
@@ -70,9 +68,32 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         mDisposables.dispose()
     }
 
+    // Paper widget ///////////////////////////////////////////////////////////
+
+    private val mPaperWidget by lazy {
+        PaperWidget(mUiScheduler,
+                    mIoScheduler)
+    }
+
     private val mOnPaperWidgetReadySignal = PublishSubject.create<IPaperWidget>()
 
     fun onPaperWidgetReady(): Observable<IPaperWidget> {
         return mOnPaperWidgetReadySignal
+    }
+
+    fun writePaperToRepo(bmpSrc: Single<Bitmap>): Single<Boolean> {
+        return bmpSrc.compose(SavePaperToStore(
+            paper = mPaperWidget.getPaper(),
+            paperRepo = mPaperRepo,
+            prefs = mPrefs,
+            caughtErrorSignal = mCaughtErrorSignal))
+    }
+
+    // Progress ///////////////////////////////////////////////////////////////
+
+    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+
+    fun onUpdateProgress(): Observable<ProgressEvent> {
+        return mUpdateProgressSignal
     }
 }
