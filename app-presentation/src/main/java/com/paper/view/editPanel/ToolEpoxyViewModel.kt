@@ -29,13 +29,21 @@ import com.paper.R
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 
 class ToolEpoxyViewModel(
-    private val mToolID: Int,
-    private val mWidget: PaperEditPanelWidget,
-    private val mImgLoader: RequestManager,
-    private val mResourceId: Int,
-    private val mFadeResourceId: Int,
-    private val mIsUsing: Boolean = false)
+    toolID: Int,
+    resourceId: Int,
+    fadeResourceId: Int,
+    imgLoader: RequestManager,
+    isUsing: Boolean = false,
+    widget: PaperEditPanelWidget? = null)
     : EpoxyModel<View>() {
+
+    private val mToolID = toolID
+    private val mImgLoader = imgLoader
+    private val mResourceId = resourceId
+    private val mFadeResourceId = fadeResourceId
+    private val mIsUsing = isUsing
+
+    private val mWidget = widget
 
     private lateinit var mImgView: ImageView
 
@@ -55,7 +63,7 @@ class ToolEpoxyViewModel(
         super.bind(view)
 
         view.setOnClickListener {
-            mWidget.handleClickTool(mToolID)
+            mWidget?.handleClickTool(mToolID)
         }
 
         if (mIsUsing) {

@@ -32,11 +32,9 @@ import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
 class PaperEditPanelWidget(
-    penColorRepo: ICommonPenPrefsRepo,
     uiScheduler: Scheduler,
-    workerScheduler: Scheduler) {
-
-    private val mCommonPenPrefsRepo = penColorRepo
+    workerScheduler: Scheduler)
+    : IWidget<ICommonPenPrefsRepo> {
 
     private val mUiScheduler = uiScheduler
     private val mWorkerScheduler = workerScheduler
@@ -46,8 +44,12 @@ class PaperEditPanelWidget(
 
     // Lifecycle //////////////////////////////////////////////////////////////
 
-    fun start() {
+    private lateinit var mModel: ICommonPenPrefsRepo
+
+    override fun bindModel(model: ICommonPenPrefsRepo) {
         ensureNoLeakingSubscription()
+
+        mModel = model
 
         // Prepare initial tools and select the pen by default.
         val tools = getEditToolIDs()
@@ -60,8 +62,8 @@ class PaperEditPanelWidget(
         mDisposables.add(
             Observables
                 .combineLatest(
-                    mCommonPenPrefsRepo.getPenColors(),
-                    mCommonPenPrefsRepo.getChosenPenColor())
+                    model.getPenColors(),
+                    model.getChosenPenColor())
                 .subscribe { (colors, chosenColor) ->
                     val index = colors.indexOf(chosenColor)
 
@@ -73,15 +75,14 @@ class PaperEditPanelWidget(
 
         // Prepare initial pen size
         mDisposables.add(
-            mCommonPenPrefsRepo
-                .getPenSize()
+            model.getPenSize()
                 .subscribe { penSize ->
                     // Export the signal as onUpdatePenSize()
                     mPenSizeSignal.onNext(penSize)
                 })
     }
 
-    fun stop() {
+    override fun unbindModel() {
         mDisposables.clear()
     }
 
@@ -140,7 +141,7 @@ class PaperEditPanelWidget(
         mCancelSignal.onNext(0)
 
         mDisposables.add(
-            mCommonPenPrefsRepo
+            mModel
                 .putChosenPenColor(color)
                 .toObservable()
                 .takeUntil(mCancelSignal)
@@ -158,7 +159,7 @@ class PaperEditPanelWidget(
         mCancelSignal.onNext(0)
 
         mDisposables.add(
-            mCommonPenPrefsRepo
+            mModel
                 .putPenSize(size)
                 .toObservable()
                 .takeUntil(mCancelSignal)

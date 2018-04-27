@@ -28,8 +28,8 @@ import com.paper.R
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 
 class ColorTicketEpoxyViewModel(color: Int,
-                                widget: PaperEditPanelWidget,
-                                isUsing: Boolean = false)
+                                isUsing: Boolean = false,
+                                widget: PaperEditPanelWidget? = null)
     : EpoxyModel<View>() {
 
     private val mColor = color
@@ -56,7 +56,7 @@ class ColorTicketEpoxyViewModel(color: Int,
         mHighlightedColorView.alpha = if (mIsUsing) 1f else 0f
 
         view.setOnClickListener {
-            mWidget.handleClickColor(mColor)
+            mWidget?.handleClickColor(mColor)
         }
     }
 

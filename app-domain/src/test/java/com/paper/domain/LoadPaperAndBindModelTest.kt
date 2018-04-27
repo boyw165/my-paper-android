@@ -21,7 +21,7 @@
 package com.paper.domain
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.useCase.LoadPaperAndBindModel
+import com.paper.domain.useCase.LoadPaperAndBindPaperWidgetWithPaperModel
 import com.paper.domain.widget.editor.IPaperWidget
 import com.paper.model.PaperModel
 import com.paper.model.repository.IPaperRepo
@@ -47,20 +47,27 @@ class LoadPaperAndBindModelTest {
 
         val testScheduler = TestScheduler()
 
+        val caughtErrorSignal = PublishSubject.create<Throwable>()
+        val testErrorObserver = caughtErrorSignal.test()
+
         val progressSignal = PublishSubject.create<ProgressEvent>()
         val testProgressObserver = progressSignal.test()
 
-        val testMainObserver = LoadPaperAndBindModel(
+        val testMainObserver = LoadPaperAndBindPaperWidgetWithPaperModel(
             paperID = 0,
             paperWidget = mockedWidget,
             paperRepo = mockRepo,
             updateProgressSignal = progressSignal,
+            caughtErrorSignal = caughtErrorSignal,
             uiScheduler = testScheduler)
             .test()
 
-        // Must see exception
         testScheduler.triggerActions()
-        testMainObserver.assertError(error)
+
+        // Must see false
+        testMainObserver.assertValue(false)
+        // Must see exception
+        testErrorObserver.assertValue(error)
 
         // Must see two ProgressEvent events, where first one is 0 progress and
         // second one is 100 progress
@@ -82,11 +89,12 @@ class LoadPaperAndBindModelTest {
         val progressSignal = PublishSubject.create<ProgressEvent>()
         val testProgressObserver = progressSignal.test()
 
-        val testMainObserver = LoadPaperAndBindModel(
+        val testMainObserver = LoadPaperAndBindPaperWidgetWithPaperModel(
             paperID = 0,
             paperWidget = mockedWidget,
             paperRepo = mockedRepo,
             updateProgressSignal = progressSignal,
+            caughtErrorSignal = PublishSubject.create<Throwable>(),
             uiScheduler = testScheduler)
             .test()
 
@@ -116,11 +124,12 @@ class LoadPaperAndBindModelTest {
 
         val testScheduler = TestScheduler()
 
-        val testMainObserver = LoadPaperAndBindModel(
+        val testMainObserver = LoadPaperAndBindPaperWidgetWithPaperModel(
             paperID = 0,
             paperWidget = mockedWidget,
             paperRepo = mockedRepo,
             updateProgressSignal = PublishSubject.create<ProgressEvent>(),
+            caughtErrorSignal = PublishSubject.create<Throwable>(),
             uiScheduler = testScheduler)
             .test()
 

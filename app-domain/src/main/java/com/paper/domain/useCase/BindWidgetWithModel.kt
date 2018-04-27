@@ -20,34 +20,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.useCase
+package com.paper.domain.useCase
 
-import com.paper.view.IWidgetView
+import com.paper.domain.widget.editor.IWidget
 import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.SingleObserver
 import io.reactivex.disposables.Disposable
 
 /**
- * Bind the [IWidgetView] with the widget and automatically destroy the binding
- * if it gets disposed.
+ * Bind the [IWidget] with the model and automatically destroy the binding if it
+ * gets disposed.
  */
-class BindViewWithWidget<T>(view: IWidgetView<T>,
-                            widget: T,
-                            caughtErrorSignal: Observer<Throwable>? = null)
+class BindWidgetWithModel<T>(widget: IWidget<T>,
+                             model: T,
+                             caughtErrorSignal: Observer<Throwable>? = null)
     : Single<Boolean>() {
 
-    private val mView = view
     private val mWidget = widget
+    private val mModel = model
 
     private val mCaughtErrorSignal = caughtErrorSignal
 
     override fun subscribeActual(observer: SingleObserver<in Boolean>) {
-        val d = UnbindDisposable(mView)
+        val d = UnbindDisposable(mWidget)
         observer.onSubscribe(d)
 
         try {
-            mView.bindWidget(mWidget)
+            mWidget.bindModel(mModel)
 
             observer.onSuccess(true)
         } catch (err: Throwable) {
@@ -60,12 +60,12 @@ class BindViewWithWidget<T>(view: IWidgetView<T>,
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    internal class UnbindDisposable<T>(view: IWidgetView<T>) : Disposable {
+    internal class UnbindDisposable<T>(widget: IWidget<T>) : Disposable {
 
         @Volatile
         private var disposed = false
 
-        private val mView = view
+        private val widget = widget
 
         override fun isDisposed(): Boolean {
             return disposed
@@ -74,7 +74,7 @@ class BindViewWithWidget<T>(view: IWidgetView<T>,
         override fun dispose() {
             disposed = true
 
-            mView.unbindWidget()
+            widget.unbindModel()
         }
     }
 }

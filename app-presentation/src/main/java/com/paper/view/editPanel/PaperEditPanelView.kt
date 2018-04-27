@@ -29,33 +29,24 @@ import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
-import com.paper.view.canvas.ViewPortIndicatorView
 import com.paper.domain.widget.editor.PaperEditPanelWidget
-import com.paper.model.repository.CommonPenPrefsRepoFileImpl
-import com.paper.observables.SeekBarChangeObservable
 import com.paper.model.Point
 import com.paper.model.Rect
+import com.paper.observables.SeekBarChangeObservable
+import com.paper.view.IWidgetView
+import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.PublishSubject
 
 /**
  * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
  */
 class PaperEditPanelView : ConstraintLayout,
-                           IPaperEditPanelView {
+                           IWidgetView<PaperEditPanelWidget> {
 
     private var mOneDp = 0f
 
-    // The business login/view-model
-    private val mWidget by lazy {
-        PaperEditPanelWidget(
-            CommonPenPrefsRepoFileImpl(context.getExternalFilesDir(context.packageName)),
-            AndroidSchedulers.mainThread(),
-            Schedulers.io())
-    }
     private val mDisposables = CompositeDisposable()
 
     constructor(context: Context) : this(context, null)
@@ -76,23 +67,24 @@ class PaperEditPanelView : ConstraintLayout,
         mColorTicketsView.adapter = mColorTicketsViewController.adapter
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
+    private lateinit var mWidget: PaperEditPanelWidget
+
+    override fun bindWidget(widget: PaperEditPanelWidget) {
+        mWidget = widget
+
+        mToolListViewController.setWidget(widget)
+        mColorTicketsViewController.setWidget(widget)
 
         // Edit tool, e.g. eraser, pen, scissor, ...
         mDisposables.add(
-            mWidget.onUpdateEditToolList()
+            widget.onUpdateEditToolList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     // Update view
                     mToolListViewController.setData(event)
-
-                    // Notify observer
-                    val toolID = event.toolIDs[event.usingIndex]
-                    mSelectedEditTool.onNext(toolID)
                 })
         mDisposables.add(
-            mWidget.onChooseUnsupportedEditTool()
+            widget.onChooseUnsupportedEditTool()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     Toast.makeText(context, R.string.msg_under_construction, Toast.LENGTH_SHORT).show()
@@ -100,15 +92,11 @@ class PaperEditPanelView : ConstraintLayout,
 
         // Pen colors
         mDisposables.add(
-            mWidget.onUpdatePenColorList()
+            widget.onUpdatePenColorList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     // Update view
                     mColorTicketsViewController.setData(event)
-
-                    // Notify observer
-                    val color = event.colorTickets[event.usingIndex]
-                    mChooseColorSignal.onNext(color)
                 })
 
         // Pen size
@@ -119,41 +107,32 @@ class PaperEditPanelView : ConstraintLayout,
                     if (event.fromUser) {
                         val penSize = event.progress.toFloat() / 100f
 
-                        mWidget.handleChangePenSize(penSize)
+                        widget.handleChangePenSize(penSize)
                     }
                 })
         mDisposables.add(
-            mWidget.onUpdatePenSize()
+            widget.onUpdatePenSize()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { penSize ->
                     // Update view
                     mPenSizeView.progress = (penSize * 100f).toInt()
-
-                    // Notify observer, see onUpdatePenSize()
-                    mPenSizeSignal.onNext(penSize)
                 })
-
-        mWidget.start()
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
+    override fun unbindWidget() {
         mDisposables.clear()
-
-        mWidget.stop()
     }
 
     // View port indicator ////////////////////////////////////////////////////
 
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
 
-    override fun setCanvasAndViewPort(canvas: Rect,
+    fun setCanvasAndViewPort(canvas: Rect,
                                       viewPort: Rect) {
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
 
-    override fun onUpdateViewPortPosition(): Observable<Point> {
+    fun onUpdateViewPortPosition(): Observable<Point> {
         return mViewPortIndicatorView.onUpdateViewPortPosition()
     }
 
@@ -162,13 +141,7 @@ class PaperEditPanelView : ConstraintLayout,
     // Tools sub-view
     private val mToolListView by lazy { findViewById<RecyclerView>(R.id.list_tools) }
     private val mToolListViewController by lazy {
-        ToolListEpoxyController(mWidget = mWidget,
-                                mImgLoader = Glide.with(context))
-    }
-    private val mSelectedEditTool = PublishSubject.create<Int>()
-
-    override fun onChooseEditTool(): Observable<Int> {
-        return mSelectedEditTool
+        ToolListEpoxyController(imageLoader = Glide.with(context))
     }
 
     // Pen color & pen size ///////////////////////////////////////////////////
@@ -176,21 +149,10 @@ class PaperEditPanelView : ConstraintLayout,
     // The color list view and view controller
     private val mColorTicketsView by lazy { findViewById<RecyclerView>(R.id.list_color_tickets) }
     private val mColorTicketsViewController by lazy {
-        ColorTicketListEpoxyController(mWidget = mWidget,
-                                       mImgLoader = Glide.with(context))
-    }
-    private val mChooseColorSignal = PublishSubject.create<Int>()
-
-    override fun onChooseColorTicket(): Observable<Int> {
-        return mChooseColorSignal
+        ColorTicketListEpoxyController(imageLoader = Glide.with(context))
     }
 
     private val mPenSizeView by lazy { findViewById<SeekBar>(R.id.slider_stroke_size) }
-    private val mPenSizeSignal = PublishSubject.create<Float>()
-
-    override fun onUpdatePenSize(): Observable<Float> {
-        return mPenSizeSignal
-    }
 
     // Other //////////////////////////////////////////////////////////////////
 

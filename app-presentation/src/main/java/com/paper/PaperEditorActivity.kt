@@ -29,9 +29,8 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.useCase.LoadPaperAndBindModel
-import com.paper.domain.useCase.SavePaperToStore
 import com.paper.model.ModelConst
+import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperWidgetView
 import com.paper.view.editPanel.PaperEditPanelView
@@ -89,7 +88,8 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mWidget by lazy {
         PaperEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getRepo(),
-            prefs = application as ISharedPreferenceService,
+            sharedPrefs = application as ISharedPreferenceService,
+            penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
             uiScheduler = AndroidSchedulers.mainThread(),
             ioScheduler = Schedulers.io())
@@ -143,8 +143,7 @@ class PaperEditorActivity : AppCompatActivity() {
                     }
                 })
 
-        // TODO: Following is the responsibility of EditorWidget
-        // View port indicator.
+        // View port indicator
         mDisposables.add(
             mCanvasView
                 .onDrawViewPort()
@@ -154,39 +153,12 @@ class PaperEditorActivity : AppCompatActivity() {
                         event.canvas,
                         event.viewPort)
                 })
-        // TODO
         mDisposables.add(
             mEditPanelView
                 .onUpdateViewPortPosition()
                 .observeOn(mUiScheduler)
                 .subscribe { position ->
                     mCanvasView.setViewPortPosition(position.x, position.y)
-                })
-
-        // TODO
-        // Color, stroke width, and edit tool.
-        mDisposables.add(
-            mEditPanelView
-                .onChooseColorTicket()
-                .observeOn(mUiScheduler)
-                .subscribe { color ->
-                    mPaperWidget.handleChoosePenColor(color)
-                })
-        // TODO
-        mDisposables.add(
-            mEditPanelView
-                .onUpdatePenSize()
-                .observeOn(mUiScheduler)
-                .subscribe { penSize ->
-                    mPaperWidget.handleUpdatePenSize(penSize)
-                })
-        // TODO
-        mDisposables.add(
-            mEditPanelView
-                .onChooseEditTool()
-                .observeOn(mUiScheduler)
-                .subscribe { toolID ->
-                    // TODO
                 })
 
         // TODO
@@ -217,37 +189,23 @@ class PaperEditorActivity : AppCompatActivity() {
                     showWIP()
                 })
 
-        // TODO
-        // Inflate paper model.
-        mDisposables.add(
-            LoadPaperAndBindModel(
-                paperID = paperID,
-                paperWidget = mPaperWidget,
-                paperRepo = mPaperRepo,
-                updateProgressSignal = mUpdateProgressSignal,
-                uiScheduler = AndroidSchedulers.mainThread())
-                .observeOn(mUiScheduler)
-                .doOnDispose {
-                    // Unbind widget.
-                    mCanvasView.unbindWidget()
-                }
-                .observeOn(mUiScheduler)
-                .subscribe { successful ->
-                    // Bind view with the widget.
-                    if (successful) {
-                        mCanvasView.bindWidget(mPaperWidget)
-                    } else {
-                        showErrorAlertThenFinish(
-                            RuntimeException("Cannot load paper and bind model!"))
-                    }
-                })
-
         // Bind sub-view with the sub-widget if the widget is ready!
         mDisposables.add(
             mWidget.onPaperWidgetReady()
                 .switchMap { widget ->
                     BindViewWithWidget(view = mCanvasView,
-                                       widget = widget)
+                                       widget = widget,
+                                       caughtErrorSignal = mErrorSignal)
+                        .toObservable()
+                }
+                .subscribe())
+        mDisposables.add(
+            mWidget.onEditPanelWidgetReady()
+                .switchMap { widget ->
+                    BindViewWithWidget(view = mEditPanelView,
+                                       widget = widget,
+                                       caughtErrorSignal = mErrorSignal)
+                        .toObservable()
                 }
                 .subscribe())
 

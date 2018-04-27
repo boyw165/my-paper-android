@@ -24,19 +24,15 @@ import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
-import com.paper.domain.event.ProgressEvent
-import com.paper.domain.useCase.LoadPaperAndBindModel
 import com.paper.domain.useCase.SketchToDrawSVGEvent
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
-import com.paper.model.repository.IPaperRepo
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
@@ -71,7 +67,6 @@ class PaperWidget(uiScheduler: Scheduler,
         // Hold reference.
         mModel = model
 
-
         // Canvas size
         mSetCanvasSize.onNext(Rect(0f, 0f, model.width, model.height))
 
@@ -81,7 +76,7 @@ class PaperWidget(uiScheduler: Scheduler,
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
                     val widget = ScrapWidget(mUiScheduler,
-                                                                            mWorkerScheduler)
+                                             mWorkerScheduler)
                     mScrapWidgets[scrapM.uuid] = widget
 
                     widget.bindModel(scrapM)
@@ -93,7 +88,8 @@ class PaperWidget(uiScheduler: Scheduler,
             model.onRemoveScrap()
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
-                    val widget = mScrapWidgets[scrapM.uuid] ?: throw NoSuchElementException("Cannot find the widget")
+                    val widget = mScrapWidgets[scrapM.uuid] ?:
+                                 throw NoSuchElementException("Cannot find the widget")
 
                     widget.unbindModel()
 
@@ -101,7 +97,8 @@ class PaperWidget(uiScheduler: Scheduler,
                     mRemoveWidgetSignal.onNext(widget)
                 })
 
-        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model(w=${model.width}, h=${model.height})")
+        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model" +
+                "(w=${model.width}, h=${model.height})")
     }
 
     override fun unbindModel() {
@@ -204,7 +201,7 @@ class PaperWidget(uiScheduler: Scheduler,
 
     override fun handleDrag(x: Float,
                             y: Float) {
-        mLineToSignal.onNext(Point(x,y))
+        mLineToSignal.onNext(Point(x, y))
     }
 
     override fun handleDragEnd(x: Float,

@@ -25,19 +25,25 @@ import com.bumptech.glide.RequestManager
 import com.paper.domain.event.UpdateColorTicketsEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 
-class ColorTicketListEpoxyController(
-    private val mWidget: PaperEditPanelWidget,
-    private val mImgLoader: RequestManager)
+class ColorTicketListEpoxyController(imageLoader: RequestManager)
     : TypedEpoxyController<UpdateColorTicketsEvent>() {
+
+    private val mImgLoader = imageLoader
 
     override fun buildModels(data: UpdateColorTicketsEvent) {
         data.colorTickets.forEachIndexed { i, color ->
             ColorTicketEpoxyViewModel(
                 color = color,
-                widget = mWidget,
-                isUsing = i == data.usingIndex)
+                isUsing = i == data.usingIndex,
+                widget = mWidget)
                 .id(i)
                 .addTo(this)
         }
+    }
+
+    private var mWidget: PaperEditPanelWidget? = null
+
+    fun setWidget(widget: PaperEditPanelWidget?) {
+        mWidget = widget
     }
 }
