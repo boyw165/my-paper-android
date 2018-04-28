@@ -20,15 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.model
 
-class EditorWidget {
+interface IOperationToPaper {
 
-    fun start() {
+    fun undo()
 
-    }
-
-    fun stop() {
-
-    }
+    fun redo()
 }

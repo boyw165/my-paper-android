@@ -35,6 +35,8 @@ import io.reactivex.subjects.Subject
 // |      | ----> ProgressEvent
 // '------'
 
+// TODO: Is it now redundant?
+
 /**
  * An observable to load paper from DB and then bind widget with the model.
  * True if the model is successfully loaded and binding is done. False means
@@ -43,12 +45,12 @@ import io.reactivex.subjects.Subject
  * There is also a side-effect that it sends ProgressEvent through the given
  * progress signal.
  */
-class LoadPaperAndBindPaperWidgetWithPaperModel(paperID: Long,
-                                                paperWidget: IPaperWidget,
-                                                paperRepo: IPaperRepo,
-                                                updateProgressSignal: Observer<ProgressEvent>,
-                                                caughtErrorSignal: Observer<Throwable>,
-                                                uiScheduler: Scheduler)
+class LoadPaperAndCreateBinding(paperID: Long,
+                                paperWidget: IPaperWidget,
+                                paperRepo: IPaperRepo,
+                                updateProgressSignal: Observer<ProgressEvent>,
+                                caughtErrorSignal: Observer<Throwable>,
+                                uiScheduler: Scheduler)
     : Single<Boolean>() {
 
     private val mPaperID = paperID

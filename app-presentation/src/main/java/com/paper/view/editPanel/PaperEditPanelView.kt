@@ -21,6 +21,7 @@
 package com.paper.view.editPanel
 
 import android.content.Context
+import android.os.Looper
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -70,6 +71,9 @@ class PaperEditPanelView : ConstraintLayout,
     private lateinit var mWidget: PaperEditPanelWidget
 
     override fun bindWidget(widget: PaperEditPanelWidget) {
+        ensureMainThread()
+        ensureNoLeakingSubscription()
+
         mWidget = widget
 
         mToolListViewController.setWidget(widget)
@@ -121,6 +125,17 @@ class PaperEditPanelView : ConstraintLayout,
 
     override fun unbindWidget() {
         mDisposables.clear()
+    }
+
+    private fun ensureMainThread() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw IllegalThreadStateException("Not in MAIN thread")
+        }
+    }
+
+    private fun ensureNoLeakingSubscription() {
+        if (mDisposables.size() > 0) throw IllegalStateException(
+            "Already bind to a widget")
     }
 
     // View port indicator ////////////////////////////////////////////////////

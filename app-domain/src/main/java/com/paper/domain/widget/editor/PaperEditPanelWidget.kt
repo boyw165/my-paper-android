@@ -169,4 +169,8 @@ class PaperEditPanelWidget(
     fun onUpdatePenSize(): Observable<Float> {
         return mPenSizeSignal
     }
+
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

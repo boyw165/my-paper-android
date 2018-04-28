@@ -22,6 +22,7 @@
 
 package com.paper.domain.useCase
 
+import com.paper.domain.DomainConst
 import com.paper.domain.widget.editor.IWidget
 import io.reactivex.Observer
 import io.reactivex.Single
@@ -49,6 +50,8 @@ class BindWidgetWithModel<T>(widget: IWidget<T>,
         try {
             mWidget.bindModel(mModel)
 
+            println("${DomainConst.TAG}: Bind widget [$mWidget] with the model")
+
             observer.onSuccess(true)
         } catch (err: Throwable) {
             observer.onSuccess(false)
@@ -75,6 +78,9 @@ class BindWidgetWithModel<T>(widget: IWidget<T>,
             disposed = true
 
             widget.unbindModel()
+
+            println("${DomainConst.TAG}: Unbind widget [$widget] " +
+                    "from the model")
         }
     }
 }

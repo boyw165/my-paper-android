@@ -42,7 +42,6 @@ import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperWidget
 import com.paper.domain.widget.editor.IScrapWidget
-import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.view.IWidgetView
@@ -68,7 +67,7 @@ class PaperWidgetView : View,
 
     // Widget.
     private lateinit var mWidget: IPaperWidget
-    private val mWidgetDisposables = CompositeDisposable()
+    private val mDisposables = CompositeDisposable()
 
     /**
      * A signal indicating the layout change.
@@ -104,13 +103,13 @@ class PaperWidgetView : View,
         mWidget = widget
 
         // Add or remove scraps
-        mWidgetDisposables.add(
+        mDisposables.add(
             widget.onAddScrapWidget()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { scrapWidget ->
                     addScrap(scrapWidget)
                 })
-        mWidgetDisposables.add(
+        mDisposables.add(
             widget.onRemoveScrapWidget()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { scrapWidget ->
@@ -118,7 +117,7 @@ class PaperWidgetView : View,
                 })
 
         // Drawing
-        mWidgetDisposables.add(
+        mDisposables.add(
             mReadySignal
                 .switchMap { ready ->
                     if (ready) {
@@ -134,7 +133,7 @@ class PaperWidgetView : View,
                 })
 
         // Canvas size change
-        mWidgetDisposables.add(
+        mDisposables.add(
             Observables.combineLatest(
                 mOnLayoutChangeSignal,
                 widget.onSetCanvasSize())
@@ -150,7 +149,7 @@ class PaperWidgetView : View,
                     }
                 })
         // View port and canvas matrix change
-        mWidgetDisposables.add(
+        mDisposables.add(
             mViewPort
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { vp ->
@@ -167,7 +166,7 @@ class PaperWidgetView : View,
                 })
 
         // Debug
-        mWidgetDisposables.add(
+        mDisposables.add(
             widget
                 .onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -179,7 +178,7 @@ class PaperWidgetView : View,
     }
 
     override fun unbindWidget() {
-        mWidgetDisposables.clear()
+        mDisposables.clear()
 
         mScrapViews.forEach { scrapView ->
             scrapView.unbindWidget()
@@ -999,7 +998,7 @@ class PaperWidgetView : View,
     }
 
     private fun ensureNoLeakingSubscription() {
-        if (mWidgetDisposables.size() > 0) throw IllegalStateException(
+        if (mDisposables.size() > 0) throw IllegalStateException(
             "Already bind to a widget")
     }
 

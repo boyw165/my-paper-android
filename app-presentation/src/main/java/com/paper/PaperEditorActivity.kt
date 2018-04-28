@@ -34,7 +34,7 @@ import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperWidgetView
 import com.paper.view.editPanel.PaperEditPanelView
-import com.paper.view.editor.PaperEditorWidget
+import com.paper.domain.widget.editor.PaperEditorWidget
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -123,6 +123,16 @@ class PaperEditorActivity : AppCompatActivity() {
                     }
                 })
 
+        // Error
+        mDisposables.add(
+            mErrorSignal
+                .observeOn(mUiScheduler)
+                .subscribe { error ->
+                    if (BuildConfig.DEBUG) {
+                        showErrorAlert(error)
+                    }
+                })
+
         // Close button.
         mDisposables.add(
             onClickCloseButton()
@@ -157,28 +167,30 @@ class PaperEditorActivity : AppCompatActivity() {
                     mCanvasView.setViewPortPosition(position.x, position.y)
                 })
 
-        // TODO
         // Undo & redo buttons
         mDisposables.add(
-            onClickUndoButton()
+            RxView.clicks(mBtnUndo)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    // TODO
-                    showWIP()
+                    mWidget.handleUndo()
                 })
-        // TODO
         mDisposables.add(
-            onClickRedoButton()
+            RxView.clicks(mBtnRedo)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    // TODO
-                    showWIP()
+                    mWidget.handleRedo()
+                })
+        mDisposables.add(
+            mWidget.onGetUndoRedoEvent()
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    mBtnUndo.isEnabled = event.canUndo
+                    mBtnRedo.isEnabled = event.canRedo
                 })
 
-        // TODO
         // Delete button
         mDisposables.add(
-            onClickDeleteButton()
+            RxView.clicks(mBtnDelete)
                 .observeOn(mUiScheduler)
                 .subscribe {
                     // TODO
@@ -188,6 +200,7 @@ class PaperEditorActivity : AppCompatActivity() {
         // Bind sub-view with the sub-widget if the widget is ready!
         mDisposables.add(
             mWidget.onPaperWidgetReady()
+                .observeOn(mUiScheduler)
                 .switchMap { widget ->
                     BindViewWithWidget(view = mCanvasView,
                                        widget = widget,
@@ -197,6 +210,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 .subscribe())
         mDisposables.add(
             mWidget.onEditPanelWidgetReady()
+                .observeOn(mUiScheduler)
                 .switchMap { widget ->
                     BindViewWithWidget(view = mEditPanelView,
                                        widget = widget,
@@ -233,22 +247,6 @@ class PaperEditorActivity : AppCompatActivity() {
                                 RxView.clicks(mBtnClose))
     }
 
-    private fun onClickUndoButton(): Observable<Any> {
-        return RxView.clicks(mBtnUndo)
-    }
-
-    private fun onClickRedoButton(): Observable<Any> {
-        return RxView.clicks(mBtnRedo)
-    }
-
-    private fun onClickDeleteButton(): Observable<Any> {
-        return RxView.clicks(mBtnDelete)
-    }
-
-    private fun onClickMenu(): Observable<Any> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     private fun showProgressBar(progress: Int) {
         if (!mProgressBar.isShowing) {
             mProgressBar.show()
@@ -269,7 +267,7 @@ class PaperEditorActivity : AppCompatActivity() {
     private fun showErrorAlert(error: Throwable) {
         Toast.makeText(this@PaperEditorActivity,
                        error.toString(),
-                       Toast.LENGTH_SHORT).show()
+                       Toast.LENGTH_LONG).show()
     }
 
     private fun showErrorAlertThenFinish(error: Throwable) {

@@ -20,17 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view.editor
+package com.paper.domain.widget.editor
 
 import android.graphics.Bitmap
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
+import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
-import com.paper.domain.useCase.LoadPaperAndBindPaperWidgetWithPaperModel
 import com.paper.domain.useCase.SavePaperToStore
-import com.paper.domain.widget.editor.IPaperWidget
-import com.paper.domain.widget.editor.PaperEditPanelWidget
-import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
@@ -38,6 +35,8 @@ import io.reactivex.Observer
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Observables
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
 // TODO: Use dagger 2 to inject the dependency gracefully
@@ -62,20 +61,40 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     private val mDisposables = CompositeDisposable()
 
     fun start(paperID: Long) {
+        ensureNoLeakingSubscription()
+
         // Load paper and bind paper widget with the paper
+        val paperSrc = mPaperRepo
+            .getPaperById(paperID)
+            .toObservable()
+            .publish()
+        val paperBindingSrc = paperSrc
+            .switchMap { paper ->
+                BindWidgetWithModel(
+                    widget = mPaperWidget,
+                    model = paper,
+                    caughtErrorSignal = mCaughtErrorSignal)
+                    .toObservable()
+            }
+        val historyBindingSrc = paperSrc
+            .switchMap { paper ->
+                BindWidgetWithModel(
+                    widget = mHistoryWidget,
+                    model = paper,
+                    caughtErrorSignal = mCaughtErrorSignal)
+                    .toObservable()
+            }
         mDisposables.add(
-            LoadPaperAndBindPaperWidgetWithPaperModel(
-                paperID = paperID,
-                paperWidget = mPaperWidget,
-                paperRepo = mPaperRepo,
-                updateProgressSignal = mUpdateProgressSignal,
-                caughtErrorSignal = mCaughtErrorSignal,
-                uiScheduler = mUiScheduler)
+            Observables
+                .zip(paperBindingSrc,
+                     historyBindingSrc)
+                .map { (result1, result2) -> result1 && result2 }
                 .subscribe { done ->
                     if (done) {
                         mOnPaperWidgetReadySignal.onNext(mPaperWidget)
                     }
                 })
+        paperSrc.connect()
 
         // Bind the edit panel widget with the pen preference model
         mDisposables.add(
@@ -88,8 +107,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     }
                 })
 
-        // As an editor widget, part of its job is to coordinate the sub-widgets.
-        // Following are all about the edit panel outputs to paper widget.
+        // Following are all about the edit panel outputs to paper widget:
 
         // Choose what drawing tool
         mDisposables.add(
@@ -119,10 +137,29 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .subscribe { penSize ->
                     mPaperWidget.handleUpdatePenSize(penSize)
                 })
+
+        // Following are about undo and redo:
+        mDisposables.add(
+            Observables
+                .combineLatest(
+                mHistoryWidget.onUpdateUndoCapacity(),
+                mHistoryWidget.onUpdateRedoCapacity())
+                .map { (undo, redo) ->
+                    UndoRedoEvent(canUndo = undo > 0,
+                                  canRedo = redo > 0)
+                }
+                .subscribe { event ->
+                    mUndoRedoEventSignal.onNext(event)
+                })
     }
 
     fun stop() {
         mDisposables.dispose()
+    }
+
+    private fun ensureNoLeakingSubscription() {
+        if (mDisposables.size() > 0) throw IllegalStateException(
+            "Already bind to a widget")
     }
 
     // Paper widget ///////////////////////////////////////////////////////////
@@ -161,11 +198,41 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         return mOnEditPanelWidgetReadySignal
     }
 
-    // Progress ///////////////////////////////////////////////////////////////
+    // Undo & redo ////////////////////////////////////////////////////////////
+
+    private val mHistoryWidget by lazy {
+        HistoryWidget()
+    }
+
+    private val mUndoRedoEventSignal = BehaviorSubject.createDefault(
+        UndoRedoEvent(canUndo = false,
+                      canRedo = false))
+
+    fun handleUndo() {
+        if (!mUndoRedoEventSignal.value.canUndo) return
+
+        // TODO
+    }
+
+    fun handleRedo() {
+        if (!mUndoRedoEventSignal.value.canRedo) return
+
+        // TODO
+    }
+
+    fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {
+        return mUndoRedoEventSignal
+    }
+
+    // Progress & error & Editor status ///////////////////////////////////////
 
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
 
     fun onUpdateProgress(): Observable<ProgressEvent> {
         return mUpdateProgressSignal
+    }
+
+    fun onGetStatus(): Observable<Any> {
+        TODO()
     }
 }

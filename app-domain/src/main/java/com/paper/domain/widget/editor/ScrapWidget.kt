@@ -22,7 +22,7 @@ package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
 import com.paper.domain.event.DrawSVGEvent
-import com.paper.domain.useCase.SketchToDrawSVGEvent
+import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.ScrapModel
 import com.paper.model.TransformModel
 import io.reactivex.Observable
@@ -79,7 +79,7 @@ class ScrapWidget(
             .merge(
                 mDrawSVGSignal,
                 // For the first time subscription, send events one by one!
-                SketchToDrawSVGEvent(mModel.sketch)
+                TranslateSketchToSVG(mModel.sketch)
                     .subscribeOn(mWorkerScheduler))
     }
 

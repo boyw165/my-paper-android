@@ -20,11 +20,10 @@
 
 package com.paper.domain.widget.editor
 
-import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
-import com.paper.domain.useCase.SketchToDrawSVGEvent
+import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
@@ -96,15 +95,15 @@ class PaperWidget(uiScheduler: Scheduler,
                     // Signal the removing event.
                     mRemoveWidgetSignal.onNext(widget)
                 })
-
-        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model" +
-                "(w=${model.width}, h=${model.height})")
     }
 
     override fun unbindModel() {
         mModelDisposables.clear()
+    }
 
-        println("${DomainConst.TAG}: Unbind paper \"Widget\" from the paper model")
+    private fun ensureNoLeakedBinding() {
+        if (mModelDisposables.size() > 0)
+            throw IllegalStateException("Already bind a model")
     }
 
     // Save ///////////////////////////////////////////////////////////////////
@@ -227,7 +226,7 @@ class PaperWidget(uiScheduler: Scheduler,
             .merge(
                 mDrawSVGSignal,
                 // For the first time subscription, send events one by one!
-                SketchToDrawSVGEvent(mModel.sketch)
+                TranslateSketchToSVG(mModel.sketch)
                     .subscribeOn(mWorkerScheduler))
     }
 
@@ -268,11 +267,6 @@ class PaperWidget(uiScheduler: Scheduler,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun ensureNoLeakedBinding() {
-        if (mModelDisposables.size() > 0)
-            throw IllegalStateException("Already bind a model")
-    }
-
     private fun addScrapAtPosition(x: Float,
                                    y: Float) {
         val scrap = ScrapModel(UUID.randomUUID())
@@ -280,5 +274,9 @@ class PaperWidget(uiScheduler: Scheduler,
         scrap.y = y
 
         mModel.addScrap(scrap)
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
     }
 }

@@ -54,6 +54,7 @@ class PaperModel(
 
     fun addStrokeToSketch(stroke: SketchStroke) {
         mSketch.add(stroke)
+        mAddStrokeSignal.onNext(stroke)
     }
 
     private val mAddStrokeSignal = PublishSubject.create<SketchStroke>()
