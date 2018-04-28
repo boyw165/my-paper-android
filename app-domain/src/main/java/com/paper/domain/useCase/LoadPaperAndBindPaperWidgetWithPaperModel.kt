@@ -23,7 +23,7 @@
 package com.paper.domain.useCase
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.canvas.IPaperWidget
+import com.paper.domain.widget.editor.IPaperWidget
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.*
 import io.reactivex.disposables.Disposable
@@ -43,11 +43,12 @@ import io.reactivex.subjects.Subject
  * There is also a side-effect that it sends ProgressEvent through the given
  * progress signal.
  */
-class LoadPaperAndBindModel(paperID: Long,
-                            paperWidget: IPaperWidget,
-                            paperRepo: IPaperRepo,
-                            updateProgressSignal: Subject<ProgressEvent>,
-                            uiScheduler: Scheduler)
+class LoadPaperAndBindPaperWidgetWithPaperModel(paperID: Long,
+                                                paperWidget: IPaperWidget,
+                                                paperRepo: IPaperRepo,
+                                                updateProgressSignal: Observer<ProgressEvent>,
+                                                caughtErrorSignal: Observer<Throwable>,
+                                                uiScheduler: Scheduler)
     : Single<Boolean>() {
 
     private val mPaperID = paperID
@@ -56,6 +57,7 @@ class LoadPaperAndBindModel(paperID: Long,
     private val mPaperRepo = paperRepo
 
     private val mUpdateProgressSignal = updateProgressSignal
+    private val mCaughtErrorSignal = caughtErrorSignal
 
     private val mUiScheduler = uiScheduler
 
@@ -75,7 +77,9 @@ class LoadPaperAndBindModel(paperID: Long,
 
                     mUpdateProgressSignal.onNext(ProgressEvent.stop())
                 }, { err ->
-                    observer.onError(err)
+                    observer.onSuccess(false)
+
+                    mCaughtErrorSignal.onNext(err)
 
                     mUpdateProgressSignal.onNext(ProgressEvent.stop())
                 })

@@ -40,10 +40,12 @@ import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
-import com.paper.domain.widget.canvas.IPaperWidget
-import com.paper.domain.widget.canvas.IScrapWidget
+import com.paper.domain.widget.editor.IPaperWidget
+import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.Point
 import com.paper.model.Rect
+import com.paper.view.IWidgetView
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -55,7 +57,7 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 class PaperWidgetView : View,
-                        IPaperWidgetView,
+                        IWidgetView<IPaperWidget>,
                         IPaperContext,
                         IParentWidgetView,
                         IAllGesturesListener {
@@ -93,25 +95,6 @@ class PaperWidgetView : View,
         mGridPaint.color = Color.LTGRAY
         mGridPaint.style = Paint.Style.STROKE
         mGridPaint.strokeWidth = 2f * mOneDp
-    }
-
-    override fun onMeasure(widthSpec: Int,
-                           heightSpec: Int) {
-        println("${AppConst.TAG}: PaperWidgetView # onMeasure()")
-        super.onMeasure(widthSpec, heightSpec)
-    }
-
-    override fun onLayout(changed: Boolean,
-                          left: Int,
-                          top: Int,
-                          right: Int,
-                          bottom: Int) {
-        println("${AppConst.TAG}: PaperWidgetView # onLayout(changed=$changed)")
-        super.onLayout(changed, left, top, right, bottom)
-
-        if (changed) {
-            mOnLayoutChangeSignal.onNext(changed)
-        }
     }
 
     override fun bindWidget(widget: IPaperWidget) {
@@ -185,7 +168,7 @@ class PaperWidgetView : View,
 
         // Debug
         mWidgetDisposables.add(
-            mWidget
+            widget
                 .onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
@@ -203,6 +186,25 @@ class PaperWidgetView : View,
         }
 
         println("${AppConst.TAG}: Unbind paper widget \"View\" from paper \"Widget\"")
+    }
+
+    override fun onMeasure(widthSpec: Int,
+                           heightSpec: Int) {
+        println("${AppConst.TAG}: PaperWidgetView # onMeasure()")
+        super.onMeasure(widthSpec, heightSpec)
+    }
+
+    override fun onLayout(changed: Boolean,
+                          left: Int,
+                          top: Int,
+                          right: Int,
+                          bottom: Int) {
+        println("${AppConst.TAG}: PaperWidgetView # onLayout(changed=$changed)")
+        super.onLayout(changed, left, top, right, bottom)
+
+        if (changed) {
+            mOnLayoutChangeSignal.onNext(changed)
+        }
     }
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
@@ -470,7 +472,7 @@ class PaperWidgetView : View,
         invalidate()
     }
 
-    override fun takeSnapshot(): Single<Bitmap> {
+    fun takeSnapshot(): Single<Bitmap> {
         // TODO: Make sure no transform is on going
         return Single
             .fromCallable {
@@ -517,27 +519,11 @@ class PaperWidgetView : View,
      */
     private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
 
-    override fun onDrawViewPort(): Observable<DrawViewPortEvent> {
+    fun onDrawViewPort(): Observable<DrawViewPortEvent> {
         return mDrawViewPortSignal
     }
 
-    private fun resetViewPort(mw: Float,
-                              mh: Float,
-                              defaultW: Float,
-                              defaultH: Float) {
-//        // Place the view port center in the model world.
-//        val viewPortX = (mw - defaultW) / 2
-//        val viewPortY = (mh - defaultH) / 2
-
-        // Place the view port left in the model world.
-        val viewPortX = 0f
-        val viewPortY = 0f
-        mViewPort.onNext(RectF(viewPortX, viewPortY,
-                               viewPortX + defaultW,
-                               viewPortY + defaultH))
-    }
-
-    override fun setViewPortPosition(x: Float, y: Float) {
+    fun setViewPortPosition(x: Float, y: Float) {
         val mw = mMSize.value.width
         val mh = mMSize.value.height
 
@@ -561,6 +547,22 @@ class PaperWidgetView : View,
                            maxHeight = maxHeight)
 
         mViewPort.onNext(mTmpBound)
+    }
+
+    private fun resetViewPort(mw: Float,
+                              mh: Float,
+                              defaultW: Float,
+                              defaultH: Float) {
+//        // Place the view port center in the model world.
+//        val viewPortX = (mw - defaultW) / 2
+//        val viewPortY = (mh - defaultH) / 2
+
+        // Place the view port left in the model world.
+        val viewPortX = 0f
+        val viewPortY = 0f
+        mViewPort.onNext(RectF(viewPortX, viewPortY,
+                               viewPortX + defaultW,
+                               viewPortY + defaultH))
     }
 
     /**

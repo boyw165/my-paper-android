@@ -18,23 +18,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view.canvas
+package com.paper.domain.widget.editor
 
-import android.graphics.Bitmap
-import com.paper.domain.event.DrawViewPortEvent
-import com.paper.domain.widget.canvas.IPaperWidget
+import com.paper.domain.event.DrawSVGEvent
+import com.paper.model.ScrapModel
+import com.paper.model.TransformModel
 import io.reactivex.Observable
-import io.reactivex.Single
+import java.util.*
 
-interface IPaperWidgetView {
+interface IScrapWidget: IWidget<ScrapModel> {
 
-    fun bindWidget(widget: IPaperWidget)
+    // For input //////////////////////////////////////////////////////////////
 
-    fun unbindWidget()
+    fun handleTap(x: Float, y: Float)
 
-    fun takeSnapshot(): Single<Bitmap>
+    // For output /////////////////////////////////////////////////////////////
 
-    fun setViewPortPosition(x: Float, y: Float)
+    fun getId(): UUID
 
-    fun onDrawViewPort(): Observable<DrawViewPortEvent>
+    fun onDrawSVG(): Observable<DrawSVGEvent>
+
+    fun onTransform(): Observable<TransformModel>
 }

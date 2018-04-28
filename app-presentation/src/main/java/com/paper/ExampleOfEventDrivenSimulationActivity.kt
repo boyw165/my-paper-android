@@ -21,26 +21,25 @@
 package com.paper
 
 import android.graphics.Canvas
+import android.graphics.PointF
+import android.graphics.RectF
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.presenter.CollisionSystemContract
-import com.paper.presenter.CollisionSystemPresenter
+import com.paper.domain.ISystemTime
+import com.paper.domain.util.UniformPoissonDiskSampler
+import com.paper.view.collisionSimulation.CollisionSystem
 import com.paper.view.collisionSimulation.CollisionSystemView
 import com.paper.view.collisionSimulation.Particle
-import com.paper.domain.INavigator
-import com.paper.domain.ISystemTime
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
+import java.util.concurrent.TimeUnit
 
-class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
-                                               CollisionSystemContract.View,
-                                               INavigator {
+class ExampleOfEventDrivenSimulationActivity : AppCompatActivity() {
 
     // View.
     private val mBtnClose: View by lazy { findViewById<View>(R.id.btn_close) }
@@ -58,13 +57,18 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
         }
     }
 
-    // Presenter.
-    private val mPresenter: CollisionSystemPresenter by lazy {
-        CollisionSystemPresenter(this@ExampleOfEventDrivenSimulationActivity,
-                                                     mSystemTime,
-                                                     Schedulers.io(),
-                                                     AndroidSchedulers.mainThread())
-    }
+    // Collision system.
+    private val mCollisionSystem: CollisionSystem = CollisionSystem()
+
+    // Clock.
+    private var mClock: Long = 0L
+
+    // Error.
+    private val mOnThrowError: Subject<Throwable> = PublishSubject.create()
+
+    // Disposables.
+    private val mDisposablesOnCreate = CompositeDisposable()
+    private val mDisposablesOnResume = CompositeDisposable()
 
     // Subjects.
     private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
@@ -74,56 +78,95 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_example_of_event_driven_simulation)
 
-        mPresenter.bindViewOnCreate(this@ExampleOfEventDrivenSimulationActivity)
+        mDisposablesOnCreate.add(
+            onClickBack()
+                .throttleWithTimeout(1, TimeUnit.SECONDS)
+                .subscribe { _ ->
+                    gotoBack()
+                })
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        mPresenter.unbindViewOnDestroy()
+        mDisposablesOnCreate.clear()
     }
 
     override fun onResume() {
         super.onResume()
 
-        mPresenter.resume()
+        schedulePeriodicRendering(listener = object
+            : CollisionSystemView.SimulationListener {
+            override fun onUpdateSimulation(canvas: Canvas) {
+                if (!mCollisionSystem.isStarted()) {
+                    // Init the collision system.
+                    mCollisionSystem.start(createParticles())
+
+                    // Init the clock.
+                    mClock = 0L
+                } else {
+                    val current = mSystemTime.getCurrentTimeMillis()
+
+                    // Update system clock.
+                    val lastClock = if (mClock == 0L) current else mClock
+                    mClock = current
+
+                    // Simulate the collision.
+                    val particles = mCollisionSystem.simulate(
+                        (mClock - lastClock).toDouble() / 1000.0)
+
+                    // Draw particles.
+                    drawParticles(canvas, particles)
+
+                    // Debug info.
+                    drawDebugText(
+                        canvas,
+                        ("particle number = %d\n" +
+                         "event number = %d").format(
+                            mCollisionSystem.particlesSize,
+                            mCollisionSystem.collisionEventsSize))
+                }
+            }
+        })
     }
 
     override fun onPause() {
         super.onPause()
 
-        mPresenter.pause()
+        unScheduleAll()
+        mCollisionSystem.stop()
+
+        mDisposablesOnResume.clear()
     }
 
     override fun onBackPressed() {
         mOnClickSystemBack.onNext(0)
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     // *Contract.View /////////////////////////////////////////////////////////
 
-    override fun getCanvasWidth(): Int {
-        return mCollisionSystemView.getCanvasWidth()
+    private fun getCanvasWidth(): Int {
+        return mCollisionSystemView.canvasWidth
     }
 
-    override fun getCanvasHeight(): Int {
-        return mCollisionSystemView.getCanvasHeight()
+    private fun getCanvasHeight(): Int {
+        return mCollisionSystemView.canvasHeight
     }
 
-    override fun onClickBack(): Observable<Any> {
+    private fun onClickBack(): Observable<Any> {
         return Observable.merge(mOnClickSystemBack,
                                 RxView.clicks(mBtnClose))
     }
 
-    override fun schedulePeriodicRendering(listener: CollisionSystemContract.SimulationListener) {
+    private fun schedulePeriodicRendering(listener: CollisionSystemView.SimulationListener) {
         mCollisionSystemView.schedulePeriodicRendering(listener)
     }
 
-    override fun unScheduleAll() {
+    private fun unScheduleAll() {
         mCollisionSystemView.unScheduleAll()
     }
 
-    override fun showToast(text: String) {
+    private fun showToast(text: String) {
         runOnUiThread {
             Toast.makeText(this@ExampleOfEventDrivenSimulationActivity,
                            "The collision system is initialized.",
@@ -132,22 +175,60 @@ class ExampleOfEventDrivenSimulationActivity : AppCompatActivity(),
         }
     }
 
-    override fun drawDebugText(canvas: Canvas, text: String) {
+    private fun drawDebugText(canvas: Canvas, text: String) {
         mCollisionSystemView.drawDebugText(canvas, text)
     }
 
-    override fun drawParticles(canvas: Canvas, particles: List<Particle>) {
+    private fun drawParticles(canvas: Canvas, particles: List<Particle>) {
         mCollisionSystemView.drawParticles(canvas, particles)
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     // INavigator /////////////////////////////////////////////////////////////
 
-    override fun gotoBack() {
+    private fun gotoBack() {
         finish()
     }
 
-    override fun gotoTarget(target: Int) {
+    private fun gotoTarget(target: Int) {
         // DUMMY.
+    }
+
+    // Sample /////////////////////////////////////////////////////////////////
+
+    private fun createParticles(): Array<Particle> {
+        val mass = 0.5
+        val radius = 0.02
+        val padding = 2.5 * radius
+        // Use uniform-Possion-distribution to populate the particles.
+        val sampler = UniformPoissonDiskSampler(
+            RectF(padding.toFloat(), padding.toFloat(),
+                  (1.0 - padding).toFloat(), (1.0 - padding).toFloat()),
+            3f * radius,
+            PointF(padding.toFloat(), padding.toFloat()))
+
+        return Array(25, { i ->
+            if (i == 0) {
+                val scale = 6.0
+                val scaledRadius = scale * radius
+                val vecX = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
+
+                Particle(1.0 - scaledRadius - padding, 0.5,
+                         vecX, 0.0,
+                         scaledRadius,
+                         scale * mass)
+            } else {
+                val pt = sampler.sample() ?: throw IllegalStateException(
+                    "Insufficient space to populate the particle.")
+                val x = pt.x.toDouble()
+                val y = pt.y.toDouble()
+                val vecX = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
+                val vecY = 1.3 * ((100.0 * Math.random() - 50.0) / 100.0)
+
+                Particle(x, y,
+                         vecX, vecY,
+                         radius,
+                         mass)
+            }
+        })
     }
 }

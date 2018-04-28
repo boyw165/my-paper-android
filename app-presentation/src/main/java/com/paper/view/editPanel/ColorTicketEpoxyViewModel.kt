@@ -25,11 +25,11 @@ import android.view.View
 import com.airbnb.epoxy.EpoxyModel
 import com.facebook.drawee.view.SimpleDraweeView
 import com.paper.R
-import com.paper.domain.widget.editPanel.PaperEditPanelWidget
+import com.paper.domain.widget.editor.PaperEditPanelWidget
 
 class ColorTicketEpoxyViewModel(color: Int,
-                                widget: PaperEditPanelWidget,
-                                isUsing: Boolean = false)
+                                isUsing: Boolean = false,
+                                widget: PaperEditPanelWidget? = null)
     : EpoxyModel<View>() {
 
     private val mColor = color
@@ -56,7 +56,7 @@ class ColorTicketEpoxyViewModel(color: Int,
         mHighlightedColorView.alpha = if (mIsUsing) 1f else 0f
 
         view.setOnClickListener {
-            mWidget.handleClickColor(mColor)
+            mWidget?.handleClickColor(mColor)
         }
     }
 

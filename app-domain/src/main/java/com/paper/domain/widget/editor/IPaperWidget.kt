@@ -1,4 +1,4 @@
-// Copyright Jan 2017-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,33 +18,45 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.presenter
+package com.paper.domain.widget.editor
 
+import com.paper.domain.event.DrawSVGEvent
+import com.paper.model.PaperModel
+import com.paper.model.Rect
 import io.reactivex.Observable
 
-abstract class ConvexHullContract private constructor() {
+interface IPaperWidget : IWidget<PaperModel> {
 
-    interface View {
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-        fun getCanvasWidth(): Int
+    fun handleChoosePenColor(color: Int)
 
-        fun getCanvasHeight(): Int
+    fun handleUpdatePenSize(size: Float)
 
-        fun showError(error: Throwable)
+    fun handleActionBegin()
 
-        fun addDot(x: Float, y: Float)
+    fun handleActionEnd()
 
-        fun removeDot(x: Float, y: Float)
+    fun handleTap(x: Float, y: Float)
 
-        fun clearAllDots()
+    fun handleDragBegin(x: Float, y: Float)
 
-        fun onClickBack(): Observable<Any>
+    fun handleDrag(x: Float, y: Float)
 
-        fun onClickRandom(): Observable<Any>
-    }
+    fun handleDragEnd(x: Float, y: Float)
 
-    interface Navigator {
+    // For output /////////////////////////////////////////////////////////////
 
-        fun exit()
-    }
+    fun getPaper(): PaperModel
+
+    fun onSetCanvasSize(): Observable<Rect>
+
+    fun onAddScrapWidget(): Observable<IScrapWidget>
+
+    fun onRemoveScrapWidget(): Observable<IScrapWidget>
+
+    fun onDrawSVG(): Observable<DrawSVGEvent>
+
+    fun onPrintDebugMessage(): Observable<String>
 }

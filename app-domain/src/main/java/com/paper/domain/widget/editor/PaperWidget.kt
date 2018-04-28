@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.canvas
+package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
@@ -38,19 +38,22 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 import kotlin.NoSuchElementException
 
-class PaperWidget(private val mUiScheduler: Scheduler,
-                  private val mWorkerScheduler: Scheduler)
+class PaperWidget(uiScheduler: Scheduler,
+                  workerScheduler: Scheduler)
     : IPaperWidget {
+
+    private val mUiScheduler = uiScheduler
+    private val mWorkerScheduler = workerScheduler
 
     // Model
     private lateinit var mModel: PaperModel
     private val mModelDisposables = CompositeDisposable()
 
-    // Global canceller
-    private val mCancelSignal = PublishSubject.create<Any>()
-
     // Scrap controllers
     private val mScrapWidgets = hashMapOf<UUID, IScrapWidget>()
+
+    // Global canceller
+    private val mCancelSignal = PublishSubject.create<Any>()
 
     // Gesture
     private val mGestureHistory = mutableListOf<GestureRecord>()
@@ -85,7 +88,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
             model.onRemoveScrap()
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
-                    val widget = mScrapWidgets[scrapM.uuid] ?: throw NoSuchElementException("Cannot find the widget")
+                    val widget = mScrapWidgets[scrapM.uuid] ?:
+                                 throw NoSuchElementException("Cannot find the widget")
 
                     widget.unbindModel()
 
@@ -93,7 +97,8 @@ class PaperWidget(private val mUiScheduler: Scheduler,
                     mRemoveWidgetSignal.onNext(widget)
                 })
 
-        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model(w=${model.width}, h=${model.height})")
+        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model" +
+                "(w=${model.width}, h=${model.height})")
     }
 
     override fun unbindModel() {
@@ -196,7 +201,7 @@ class PaperWidget(private val mUiScheduler: Scheduler,
 
     override fun handleDrag(x: Float,
                             y: Float) {
-        mLineToSignal.onNext(Point(x,y))
+        mLineToSignal.onNext(Point(x, y))
     }
 
     override fun handleDragEnd(x: Float,

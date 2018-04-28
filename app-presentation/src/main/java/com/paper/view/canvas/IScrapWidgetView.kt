@@ -24,7 +24,7 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.view.MotionEvent
 import com.cardinalblue.gesture.IAllGesturesListener
-import com.paper.domain.widget.canvas.IScrapWidget
+import com.paper.domain.widget.editor.IScrapWidget
 import java.util.*
 
 interface IScrapWidgetView {

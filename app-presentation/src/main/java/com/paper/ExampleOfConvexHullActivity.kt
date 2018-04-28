@@ -23,23 +23,15 @@
 
 package com.paper
 
-import android.graphics.PointF
-import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.presenter.ConvexHullContract
-import com.paper.presenter.ConvexHullPresenter
 import com.paper.view.DrawableView
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 
-class ExampleOfConvexHullActivity : AppCompatActivity(),
-                                    ConvexHullContract.View,
-                                    ConvexHullContract.Navigator {
+class ExampleOfConvexHullActivity : AppCompatActivity() {
 
     // View.
     private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_close) }
@@ -49,79 +41,17 @@ class ExampleOfConvexHullActivity : AppCompatActivity(),
     // Subjects.
     private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
 
-    private val mPresenter: ConvexHullPresenter by lazy {
-        ConvexHullPresenter(this@ExampleOfConvexHullActivity,
-                            Schedulers.io(),
-                            AndroidSchedulers.mainThread())
-    }
-
-    override fun onCreate(savedState: Bundle?) {
-        super.onCreate(savedState)
-
-        // Start presenter.
-        mPresenter.bindViewOnCreate(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        // Resume presenter.
-        mPresenter.resume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        // Pause presenter.
-        mPresenter.pause()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Stop presenter.
-        mPresenter.unbindViewOnDestroy()
-    }
-
     override fun onBackPressed() {
         mOnClickSystemBack.onNext(0)
     }
 
-    override fun getCanvasWidth(): Int {
-        return 0
-    }
-
-    override fun getCanvasHeight(): Int {
-        return 0
-    }
-
-    override fun showError(error: Throwable) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun addDot(x: Float, y: Float) {
-        mDotCanvas.addDot(PointF(x, y))
-    }
-
-    override fun removeDot(x: Float, y: Float) {
-        mDotCanvas.removeDot(PointF(x, y))
-    }
-
-    override fun clearAllDots() {
-        mDotCanvas.clearAllDots()
-    }
-
-    override fun onClickBack(): Observable<Any> {
+    private fun onClickBack(): Observable<Any> {
         return Observable.merge(
             mOnClickSystemBack,
             RxView.clicks(mBtnBack))
     }
 
-    override fun onClickRandom(): Observable<Any> {
-        return RxView.clicks(mBtnRandom)
-    }
-
-    override fun exit() {
+    private fun exit() {
         finish()
     }
 }

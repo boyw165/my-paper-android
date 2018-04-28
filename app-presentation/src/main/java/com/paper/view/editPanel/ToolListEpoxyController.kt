@@ -24,23 +24,23 @@ import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.R
 import com.paper.domain.event.UpdateEditingToolsEvent
-import com.paper.domain.widget.editPanel.PaperEditPanelWidget
-import com.paper.domain.widget.editPanel.EditingToolFactory
+import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.domain.widget.editor.EditingToolFactory
 
-class ToolListEpoxyController(
-    private val mWidget: PaperEditPanelWidget,
-    private val mImgLoader: RequestManager)
+class ToolListEpoxyController(imageLoader: RequestManager)
     : TypedEpoxyController<UpdateEditingToolsEvent>() {
+
+    private val mImgLoader = imageLoader
 
     override fun buildModels(data: UpdateEditingToolsEvent) {
         data.toolIDs.forEachIndexed { i, toolId ->
             ToolEpoxyViewModel(
-                toolId,
-                mWidget,
-                mImgLoader = mImgLoader,
-                mResourceId = getResourceId(toolId),
-                mFadeResourceId = getFadeResourceId(toolId),
-                mIsUsing = data.usingIndex == i)
+                toolID = toolId,
+                imgLoader = mImgLoader,
+                resourceId = getResourceId(toolId),
+                fadeResourceId = getFadeResourceId(toolId),
+                isUsing = data.usingIndex == i,
+                widget = mWidget)
                 .id(toolId)
                 .addTo(this)
         }
@@ -62,5 +62,11 @@ class ToolListEpoxyController(
             EditingToolFactory.TOOL_SCISSOR -> R.drawable.img_e_tool_scissor_unselected
             else -> throw IllegalArgumentException("Unsupported tool ID")
         }
+    }
+
+    private var mWidget: PaperEditPanelWidget? = null
+
+    fun setWidget(widget: PaperEditPanelWidget?) {
+        mWidget = widget
     }
 }

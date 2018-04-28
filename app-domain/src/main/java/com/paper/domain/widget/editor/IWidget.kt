@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editPanel
+package com.paper.domain.widget.editor
 
-object EditingToolFactory {
+interface IWidget<in T> {
 
-    const val TOOL_ERASER = 0
-    const val TOOL_PEN = 1
-    const val TOOL_SCISSOR = 2
+    fun bindModel(model: T)
+
+    fun unbindModel()
 }
