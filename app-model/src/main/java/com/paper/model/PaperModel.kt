@@ -56,6 +56,23 @@ class PaperModel(
         mSketch.add(stroke)
     }
 
+    private val mAddStrokeSignal = PublishSubject.create<SketchStroke>()
+    private val mRemoveStrokeSignal = PublishSubject.create<SketchStroke>()
+
+    fun onAddStroke(replayAll: Boolean = true): Observable<SketchStroke> {
+        return if (replayAll) {
+            Observable.merge(
+                Observable.fromIterable(sketch),
+                mAddStrokeSignal)
+        } else {
+            mAddStrokeSignal
+        }
+    }
+
+    fun onRemoveStroke(): Observable<SketchStroke> {
+        return mRemoveStrokeSignal
+    }
+
     // Scraps /////////////////////////////////////////////////////////////////
 
     private var mScraps = mutableListOf<ScrapModel>()
@@ -76,10 +93,14 @@ class PaperModel(
         mRemoveScrapSignal.onNext(scrap)
     }
 
-    fun onAddScrap(): Observable<ScrapModel> {
-        return Observable.merge(
-            Observable.fromIterable(scraps),
-            mAddScrapSignal)
+    fun onAddScrap(replayAll: Boolean = true): Observable<ScrapModel> {
+        return if (replayAll) {
+            Observable.merge(
+                Observable.fromIterable(scraps),
+                mAddScrapSignal)
+        } else {
+            mAddScrapSignal
+        }
     }
 
     fun onRemoveScrap(): Observable<ScrapModel> {
