@@ -32,10 +32,10 @@ open class ScrapModel(
     private val mSetXSignal = BehaviorSubject.createDefault(0f)
     private val mSetYSignal = BehaviorSubject.createDefault(0f)
     var x: Float
-        get() = mSetXSignal.value
+        get() = mSetXSignal.value!!
         set(value) = mSetXSignal.onNext(value)
     var y: Float
-        get() = mSetYSignal.value
+        get() = mSetYSignal.value!!
         set(value) = mSetYSignal.onNext(value)
     /**
      * Observe x update.
@@ -51,7 +51,7 @@ open class ScrapModel(
     }
 
     var z: Long
-        get() = mSetZSignal.value
+        get() = mSetZSignal.value!!
         set(value) = mSetZSignal.onNext(value)
     private val mSetZSignal = BehaviorSubject.createDefault(0L)
     /**
@@ -62,10 +62,10 @@ open class ScrapModel(
     }
 
     var scale: Float
-        get() = mSetScaleSignal.value
+        get() = mSetScaleSignal.value!!
         set(value) = mSetScaleSignal.onNext(value)
     var rotationInRadians: Float
-        get() = mSetRotationSignal.value
+        get() = mSetRotationSignal.value!!
         set(value) = mSetRotationSignal.onNext(value)
     private val mSetScaleSignal = BehaviorSubject.createDefault(1f)
     private val mSetRotationSignal = BehaviorSubject.createDefault(0f)

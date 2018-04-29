@@ -158,7 +158,7 @@ class PaperWidgetView : View,
 
                     // Notify any external observers
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
-                        canvas = mMSize.value.copy(),
+                        canvas = mMSize.value!!.copy(),
                         viewPort = Rect(vp.left,
                                         vp.top,
                                         vp.right,
@@ -334,8 +334,8 @@ class PaperWidgetView : View,
                       mViewPortMax.height())
 
         // Backed the canvas Bitmap.
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
         mBitmap?.recycle()
@@ -376,12 +376,12 @@ class PaperWidgetView : View,
         if (!isAllSet) return
 
         // Scale from model to view.
-        val scaleM2V = mScaleM2V.value
+        val scaleM2V = mScaleM2V.value!!
         // Scale from view to model
         val scaleV2M = 1f / scaleM2V
         // Scale contributed by view port.
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
 
@@ -519,12 +519,12 @@ class PaperWidgetView : View,
     }
 
     fun setViewPortPosition(x: Float, y: Float) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
 
         mTmpBound.set(x, y,
-                      x + mViewPort.value.width(),
-                      y + mViewPort.value.height())
+                      x + mViewPort.value!!.width(),
+                      y + mViewPort.value!!.height())
 
         // Constraint view port
         val minWidth = mViewPortMin.width()
@@ -568,11 +568,11 @@ class PaperWidgetView : View,
     private fun computeCanvasMatrix(scaleM2V: Float) {
         if (mCanvasMatrixDirty && mViewPort.hasValue()) {
             // View port x
-            val vx = mViewPort.value.left
+            val vx = mViewPort.value!!.left
             // View port y
-            val vy = mViewPort.value.top
+            val vy = mViewPort.value!!.top
             // View port width
-            val vw = mViewPort.value.width()
+            val vw = mViewPort.value!!.width()
             val scaleVP = mViewPortBase.width() / vw
 
             mCanvasMatrix.reset()
@@ -603,9 +603,9 @@ class PaperWidgetView : View,
     // TODO: Make the view-port code a component.
     private fun onUpdateViewport(startPointers: Array<PointF>,
                                  stopPointers: Array<PointF>) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
-        val scaleM2V = mScaleM2V.value
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
+        val scaleM2V = mScaleM2V.value!!
 
         // Compute new canvas matrix.
         val transform = TransformUtils.getTransformFromPointers(
@@ -725,8 +725,8 @@ class PaperWidgetView : View,
 
         // The point is still in the View world, we still need to map it to the
         // Model world.
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
-        val scaleM2V = mScaleM2V.value
+        val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
+        val scaleM2V = mScaleM2V.value!!
         mTmpPoint[0] = mTmpPoint[0] / scaleVP / scaleM2V
         mTmpPoint[1] = mTmpPoint[1] / scaleVP / scaleM2V
 
@@ -738,8 +738,8 @@ class PaperWidgetView : View,
      */
     private fun toViewWorld(x: Float,
                             y: Float): FloatArray {
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
-        val scaleM2V = mScaleM2V.value
+        val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
+        val scaleM2V = mScaleM2V.value!!
 
         // Map the point from Model world to View world.
         mTmpPoint[0] = scaleVP * scaleM2V * x
@@ -1000,8 +1000,8 @@ class PaperWidgetView : View,
 
     private val isAllSet
         get() = mScaleM2V.value != Float.NaN &&
-                (mMSize.value.width > 0f &&
-                 mMSize.value.height > 0f) &&
+                (mMSize.value!!.width > 0f &&
+                 mMSize.value!!.height > 0f) &&
                 mViewPort.hasValue()
 
     private fun drawBackground(canvas: Canvas,
@@ -1027,7 +1027,7 @@ class PaperWidgetView : View,
         //       vpW - baseW
         // a = --------------
         //      minW - baseW
-        val alpha = (mViewPort.value.width() - mViewPortBase.width()) /
+        val alpha = (mViewPort.value!!.width() - mViewPortBase.width()) /
                     (mViewPortMin.width() - mViewPortBase.width())
         mGridPaint.alpha = (alpha * 0xFF).toInt()
 

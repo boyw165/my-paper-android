@@ -218,7 +218,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         // TODO: immediately. While doing, please update the editor state to
         // TODO: busy. Once finished, update it to free.
 
-        if (!mUndoRedoEventSignal.value.canUndo) return
+        if (!mUndoRedoEventSignal.value!!.canUndo) return
 
         mHistoryWidget.undo()
     }
@@ -228,7 +228,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         // TODO: immediately. While doing, please update the editor state to
         // TODO: busy. Once finished, update it to free.
 
-        if (!mUndoRedoEventSignal.value.canRedo) return
+        if (!mUndoRedoEventSignal.value!!.canRedo) return
 
         mHistoryWidget.redo()
     }
