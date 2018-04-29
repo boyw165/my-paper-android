@@ -74,6 +74,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     widget = mPaperWidget,
                     model = paper,
                     caughtErrorSignal = mCaughtErrorSignal)
+                    .subscribeOn(mUiScheduler)
                     .toObservable()
             }
         val historyBindingSrc = paperSrc
@@ -82,6 +83,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     widget = mHistoryWidget,
                     model = paper,
                     caughtErrorSignal = mCaughtErrorSignal)
+                    .subscribeOn(mUiScheduler)
                     .toObservable()
             }
         mDisposables.add(
@@ -89,6 +91,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .zip(paperBindingSrc,
                      historyBindingSrc)
                 .map { (result1, result2) -> result1 && result2 }
+                .observeOn(mUiScheduler)
                 .subscribe { done ->
                     if (done) {
                         mOnPaperWidgetReadySignal.onNext(mPaperWidget)
@@ -101,6 +104,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
             BindWidgetWithModel(
                 widget = mEditPanelWidget,
                 model = mPenPrefs)
+                .observeOn(mUiScheduler)
                 .subscribe { done ->
                     if (done) {
                         mOnEditPanelWidgetReadySignal.onNext(mEditPanelWidget)
@@ -148,6 +152,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     UndoRedoEvent(canUndo = undo > 0,
                                   canRedo = redo > 0)
                 }
+                .observeOn(mUiScheduler)
                 .subscribe { event ->
                     mUndoRedoEventSignal.onNext(event)
                 })
