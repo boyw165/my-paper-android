@@ -55,14 +55,14 @@ import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-class PaperWidgetView : View,
+class PaperCanvasView : View,
                         IWidgetView<IPaperWidget>,
                         IPaperContext,
-                        IParentWidgetView,
+                        IParentView,
                         IAllGesturesListener {
 
     // Scraps.
-    private val mScrapViews = mutableListOf<IScrapWidgetView>()
+    private val mScrapViews = mutableListOf<IScrapView>()
     private var mIfSharpenDrawing = true
 
     // Widget.
@@ -185,7 +185,7 @@ class PaperWidgetView : View,
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
-        println("${AppConst.TAG}: PaperWidgetView # onMeasure()")
+        println("${AppConst.TAG}: PaperCanvasView # onMeasure()")
         super.onMeasure(widthSpec, heightSpec)
     }
 
@@ -194,7 +194,7 @@ class PaperWidgetView : View,
                           top: Int,
                           right: Int,
                           bottom: Int) {
-        println("${AppConst.TAG}: PaperWidgetView # onLayout(changed=$changed)")
+        println("${AppConst.TAG}: PaperCanvasView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
         if (changed) {
@@ -205,7 +205,7 @@ class PaperWidgetView : View,
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
     private fun addScrap(widget: IScrapWidget) {
-        val scrapView = ScrapWidgetView()
+        val scrapView = ScrapView()
 
         scrapView.setPaperContext(this)
         scrapView.setParent(this)
@@ -353,7 +353,7 @@ class PaperWidgetView : View,
     }
 
     private fun dispatchDrawScraps(canvas: Canvas,
-                                   scrapViews: List<IScrapWidgetView>,
+                                   scrapViews: List<IScrapView>,
                                    ifSharpenDrawing: Boolean) {
         // Hold canvas matrix.
         mTmpMatrix.set(mCanvasMatrix)
@@ -441,7 +441,7 @@ class PaperWidgetView : View,
 
         when (event.action) {
             MOVE -> {
-                val drawable = SVGDrawable(context = this@PaperWidgetView,
+                val drawable = SVGDrawable(context = this@PaperCanvasView,
                                            penColor = event.penColor,
                                            penSize = event.penSize)
                 drawable.moveTo(Point(x, y, event.point.time))
@@ -765,9 +765,9 @@ class PaperWidgetView : View,
                                        mMaxFlingVec)
 
         // Set mapper as the listener.
-        detector.tapGestureListener = this@PaperWidgetView
-        detector.dragGestureListener = this@PaperWidgetView
-        detector.pinchGestureListener = this@PaperWidgetView
+        detector.tapGestureListener = this@PaperCanvasView
+        detector.dragGestureListener = this@PaperCanvasView
+        detector.pinchGestureListener = this@PaperCanvasView
 
         return@lazy detector
     }

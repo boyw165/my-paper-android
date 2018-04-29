@@ -14,7 +14,7 @@
         app:layout_constraintGuide_begin="@dimen/toolbar_height"/>
 
     <!-- Paper canvas -->
-    <com.paper.view.canvas.PaperWidgetView
+    <com.paper.view.canvas.PaperCanvasView
         android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"

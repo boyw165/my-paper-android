@@ -20,39 +20,12 @@
 
 package com.paper.view.canvas
 
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.view.MotionEvent
-import com.cardinalblue.gesture.IAllGesturesListener
-import com.paper.domain.widget.editor.IScrapWidget
-import java.util.*
+/**
+ * The parent View for the current [IScrapView].
+ */
+interface IParentView {
 
-interface IScrapWidgetView {
+    fun requestSharpDrawing()
 
-    fun bindWidget(widget: IScrapWidget)
-
-    fun unbindWidget()
-
-    fun addChild(child: IScrapWidgetView)
-
-    fun removeChild(child: IScrapWidgetView)
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    fun setGestureListener(listener: IAllGesturesListener?)
-
-    // Rendering //////////////////////////////////////////////////////////////
-
-    // TODO: Do the root canvas care about whether there is any children view
-    // TODO: is dirty?
-
-    // TODO: How to pass the current transform in the recursion call?
-
-    fun dispatchDraw(canvas: Canvas,
-                     previousXforms: Stack<Matrix>,
-                     ifSharpenDrawing: Boolean)
-
-    // Touch //////////////////////////////////////////////////////////////////
-
-    fun dispatchTouch(event: MotionEvent)
+    fun invalidate()
 }

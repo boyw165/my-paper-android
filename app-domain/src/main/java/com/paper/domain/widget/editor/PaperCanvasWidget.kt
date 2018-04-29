@@ -37,8 +37,8 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 import kotlin.NoSuchElementException
 
-class PaperWidget(uiScheduler: Scheduler,
-                  workerScheduler: Scheduler)
+class PaperCanvasWidget(uiScheduler: Scheduler,
+                        workerScheduler: Scheduler)
     : IPaperWidget {
 
     private val mUiScheduler = uiScheduler

@@ -37,7 +37,6 @@ import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
-import io.reactivex.rxkotlin.Singles
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
@@ -74,7 +73,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         val paperBindingSrc = paperSrc
             .flatMap { paper ->
                 BindWidgetWithModel(
-                    widget = mPaperWidget,
+                    widget = mCanvasWidget,
                     model = paper,
                     caughtErrorSignal = mCaughtErrorSignal)
                     .subscribeOn(mUiScheduler)
@@ -95,7 +94,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .observeOn(mUiScheduler)
                 .subscribe { done ->
                     if (done) {
-                        mOnPaperWidgetReadySignal.onNext(mPaperWidget)
+                        mOnCanvasWidgetReadySignal.onNext(mCanvasWidget)
                     }
                 })
 
@@ -121,7 +120,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .subscribe {
                     // TODO
 //                    val toolID = event.toolIDs[event.usingIndex]
-//                    mPaperWidget.handleChooseTool()
+//                    mCanvasWidget.handleChooseTool()
                 })
 
         // Pen colors
@@ -131,7 +130,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
                     val color = event.colorTickets[event.usingIndex]
-                    mPaperWidget.handleChoosePenColor(color)
+                    mCanvasWidget.handleChoosePenColor(color)
                 })
         // Pen size
         mDisposables.add(
@@ -139,7 +138,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .onUpdatePenSize()
                 .observeOn(mUiScheduler)
                 .subscribe { penSize ->
-                    mPaperWidget.handleUpdatePenSize(penSize)
+                    mCanvasWidget.handleUpdatePenSize(penSize)
                 })
 
         // Following are about undo and redo:
@@ -169,21 +168,21 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     // Paper widget ///////////////////////////////////////////////////////////
 
-    private val mPaperWidget by lazy {
-        PaperWidget(mUiScheduler,
-                    mIoScheduler)
+    private val mCanvasWidget by lazy {
+        PaperCanvasWidget(mUiScheduler,
+                          mIoScheduler)
     }
 
-    private val mOnPaperWidgetReadySignal = PublishSubject.create<IPaperWidget>()
+    private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperWidget>()
 
     // TODO: The interface is probably redundant
-    fun onPaperWidgetReady(): Observable<IPaperWidget> {
-        return mOnPaperWidgetReadySignal
+    fun onCanvasWidgetReady(): Observable<IPaperWidget> {
+        return mOnCanvasWidgetReadySignal
     }
 
     fun writePaperToRepo(bmpSrc: Single<Bitmap>): Single<Boolean> {
         return bmpSrc.compose(SavePaperToStore(
-            paper = mPaperWidget.getPaper(),
+            paper = mCanvasWidget.getPaper(),
             paperRepo = mPaperRepo,
             prefs = mSharedPrefs,
             caughtErrorSignal = mCaughtErrorSignal))

@@ -33,7 +33,7 @@ import com.paper.domain.event.ProgressEvent
 import com.paper.model.ModelConst
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.useCase.BindViewWithWidget
-import com.paper.view.canvas.PaperWidgetView
+import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
 import com.paper.domain.widget.editor.PaperEditorWidget
 import io.reactivex.Observable
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit
 
 class PaperEditorActivity : AppCompatActivity() {
 
-    private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
+    private val mCanvasView by lazy { findViewById<PaperCanvasView>(R.id.paper_canvas) }
     private val mEditPanelView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
 
     private val mProgressBar by lazy {
@@ -201,7 +201,7 @@ class PaperEditorActivity : AppCompatActivity() {
 
         // Bind sub-view with the sub-widget if the widget is ready!
         mDisposables.add(
-            mWidget.onPaperWidgetReady()
+            mWidget.onCanvasWidgetReady()
                 .observeOn(mUiScheduler)
                 .switchMap { widget ->
                     BindViewWithWidget(view = mCanvasView,
