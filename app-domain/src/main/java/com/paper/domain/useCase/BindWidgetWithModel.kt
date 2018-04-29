@@ -52,9 +52,13 @@ class BindWidgetWithModel<T>(widget: IWidget<T>,
 
             println("${DomainConst.TAG}: Bind widget [$mWidget] with the model")
 
-            observer.onSuccess(true)
+            if (!d.isDisposed) {
+                observer.onSuccess(true)
+            }
         } catch (err: Throwable) {
-            observer.onSuccess(false)
+            if (!d.isDisposed) {
+                observer.onSuccess(false)
+            }
 
             mCaughtErrorSignal?.onNext(err)
         }

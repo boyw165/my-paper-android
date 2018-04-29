@@ -121,7 +121,7 @@ class PaperWidgetView : View,
             mReadySignal
                 .switchMap { ready ->
                     if (ready) {
-                        widget.onDrawSVG()
+                        widget.onDrawSVG(true)
                             .startWith(DrawSVGEvent(action = CLEAR_ALL))
                     } else {
                         Observable.never()
