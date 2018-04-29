@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,13 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain
 
-import io.reactivex.Single
+import com.paper.model.IPaperTransformRepo
 
-interface IHistoryRepo {
+interface IPaperTransformRepoProvider {
 
-    fun putRecord(): Single<Boolean>
-
-    fun getRecord(): Single<Any>
+    fun getPaperTransformRepo(): IPaperTransformRepo
 }

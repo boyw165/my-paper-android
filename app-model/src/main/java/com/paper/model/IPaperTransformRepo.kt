@@ -22,9 +22,12 @@
 
 package com.paper.model
 
-interface IOperationToPaper {
+import io.reactivex.Single
+import java.util.*
 
-    fun undo()
+interface IPaperTransformRepo {
 
-    fun redo()
+    fun putRecord(key: UUID, transform: IPaperTransform): Single<Boolean>
+
+    fun getRecord(key: UUID): Single<IPaperTransform>
 }

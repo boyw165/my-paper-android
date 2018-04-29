@@ -20,58 +20,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.model.repository
 
-import com.paper.model.PaperModel
-import io.reactivex.Observable
+import com.paper.model.IPaperTransform
+import com.paper.model.IPaperTransformRepo
+import com.paper.model.ModelConst
 import io.reactivex.Single
-import io.reactivex.disposables.CompositeDisposable
+import java.io.File
+import java.util.*
+import kotlin.collections.HashMap
 
-class HistoryWidget : IWidget<PaperModel> {
+class PaperTransformFileImpl(fileDir: File) : IPaperTransformRepo {
 
-    private val mDisposables = CompositeDisposable()
+    // TODO: Serialize the transform to file
 
-    override fun bindModel(model: PaperModel) {
-        ensureNoLeakedBinding()
+    private val mLookupTable = HashMap<UUID, IPaperTransform>()
 
-        mDisposables.add(
-            model.onAddStroke(replayAll = false)
-                .subscribe {
+    override fun putRecord(key: UUID,
+                           transform: IPaperTransform): Single<Boolean> {
+        mLookupTable[key] = transform
 
-                })
-        mDisposables.add(
-            model.onRemoveStroke()
-                .subscribe {
+        println("${ModelConst.TAG}: put $transform")
 
-                })
+        return Single.just(true)
     }
 
-    override fun unbindModel() {
-        mDisposables.clear()
-    }
+    override fun getRecord(key: UUID): Single<IPaperTransform> {
+        val transform = mLookupTable[key]
 
-    private fun ensureNoLeakedBinding() {
-        if (mDisposables.size() > 0)
-            throw IllegalStateException("Already bind a model")
-    }
+        println("${ModelConst.TAG}: get $transform")
 
-    fun onUpdateUndoCapacity(): Observable<Int> {
-        return Observable.just(0)
-    }
-
-    fun onUpdateRedoCapacity(): Observable<Int> {
-        return Observable.just(0)
-    }
-
-    fun undo(): Single<Boolean> {
-        TODO()
-    }
-
-    fun redo(): Single<Boolean> {
-        TODO()
-    }
-
-    override fun toString(): String {
-        return javaClass.simpleName
+        return Single.just(transform)
     }
 }

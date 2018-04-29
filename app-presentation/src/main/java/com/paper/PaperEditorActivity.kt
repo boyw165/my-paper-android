@@ -27,6 +27,7 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IPaperRepoProvider
+import com.paper.domain.IPaperTransformRepoProvider
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.model.ModelConst
@@ -83,7 +84,8 @@ class PaperEditorActivity : AppCompatActivity() {
 
     private val mWidget by lazy {
         PaperEditorWidget(
-            paperRepo = (application as IPaperRepoProvider).getRepo(),
+            paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
+            paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),
             sharedPrefs = application as ISharedPreferenceService,
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,

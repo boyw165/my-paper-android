@@ -28,6 +28,7 @@ import com.paper.domain.event.ProgressEvent
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.domain.useCase.SavePaperToStore
+import com.paper.model.IPaperTransformRepo
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
@@ -44,6 +45,7 @@ import io.reactivex.subjects.PublishSubject
 // TODO: Shouldn't depend on any Android package!
 
 class PaperEditorWidget(paperRepo: IPaperRepo,
+                        paperTransformRepo: IPaperTransformRepo,
                         sharedPrefs: ISharedPreferenceService,
                         penPrefs: ICommonPenPrefsRepo,
                         caughtErrorSignal: Observer<Throwable>,
@@ -206,7 +208,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     // Undo & redo ////////////////////////////////////////////////////////////
 
     private val mHistoryWidget by lazy {
-        HistoryWidget()
+        PaperTransformWidget(historyRepo = paperTransformRepo)
     }
 
     private val mUndoRedoEventSignal = BehaviorSubject.createDefault(
@@ -214,15 +216,23 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                       canRedo = false))
 
     fun handleUndo() {
+        // TODO: Before really undo, check editor state. If it's free, do it
+        // TODO: immediately. While doing, please update the editor state to
+        // TODO: busy. Once finished, update it to free.
+
         if (!mUndoRedoEventSignal.value.canUndo) return
 
-        // TODO
+        mHistoryWidget.undo()
     }
 
     fun handleRedo() {
+        // TODO: Before really undo, check editor state. If it's free, do it
+        // TODO: immediately. While doing, please update the editor state to
+        // TODO: busy. Once finished, update it to free.
+
         if (!mUndoRedoEventSignal.value.canRedo) return
 
-        // TODO
+        mHistoryWidget.redo()
     }
 
     fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {

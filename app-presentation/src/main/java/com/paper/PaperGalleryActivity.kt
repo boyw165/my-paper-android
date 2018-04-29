@@ -86,7 +86,7 @@ class PaperGalleryActivity : AppCompatActivity() {
 
     private val mPaperSnapshots = mutableListOf<PaperModel>()
 
-    private val mRepo by lazy { (application as IPaperRepoProvider).getRepo() }
+    private val mRepo by lazy { (application as IPaperRepoProvider).getPaperRepo() }
     private val mPrefs by lazy { application as ISharedPreferenceService }
     private val mPermissions by lazy { RxPermissions(this) }
 

@@ -20,20 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.operation
+package com.paper.model
 
-import com.paper.model.IOperationToPaper
-import com.paper.model.PaperModel
+interface IPaperTransform {
 
-class AddStrokeOp(paper: PaperModel) : IOperationToPaper {
+    fun undo()
 
-    private val mPaper = paper
-
-    override fun undo() {
-        TODO("not implemented")
-    }
-
-    override fun redo() {
-        TODO("not implemented")
-    }
+    fun redo()
 }

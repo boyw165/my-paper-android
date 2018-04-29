@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +20,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.model.transform
 
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.IPaperTransform
+import com.paper.model.PaperModel
 
-interface IPaperRepoProvider {
+class AddStrokeTransform(paper: PaperModel) : IPaperTransform {
 
-    fun getPaperRepo(): IPaperRepo
+    private val mPaper = paper
+
+    init {
+        // TODO: Take screenshot of the paper?
+    }
+
+    override fun undo() {
+        // TODO
+    }
+
+    override fun redo() {
+        // TODO
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }
