@@ -173,8 +173,6 @@ class PaperWidgetView : View,
                 .subscribe { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 })
-
-        println("${AppConst.TAG}: Bind paper widget \"View\" with paper \"Widget\"")
     }
 
     override fun unbindWidget() {
@@ -183,8 +181,6 @@ class PaperWidgetView : View,
         mScrapViews.forEach { scrapView ->
             scrapView.unbindWidget()
         }
-
-        println("${AppConst.TAG}: Unbind paper widget \"View\" from paper \"Widget\"")
     }
 
     override fun onMeasure(widthSpec: Int,
@@ -1050,5 +1046,9 @@ class PaperWidgetView : View,
             }
             y += cell
         }
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
     }
 }

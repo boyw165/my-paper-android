@@ -22,6 +22,7 @@
 
 package com.paper.useCase
 
+import com.paper.AppConst
 import com.paper.view.IWidgetView
 import io.reactivex.Observer
 import io.reactivex.Single
@@ -49,6 +50,8 @@ class BindViewWithWidget<T>(view: IWidgetView<T>,
         try {
             mView.bindWidget(mWidget)
 
+            println("${AppConst.TAG}: Bind view [$mView] with the widget [$mWidget]")
+
             observer.onSuccess(true)
         } catch (err: Throwable) {
             observer.onSuccess(false)
@@ -75,6 +78,8 @@ class BindViewWithWidget<T>(view: IWidgetView<T>,
             disposed = true
 
             mView.unbindWidget()
+
+            println("${AppConst.TAG}: Unbind view [$mView] from the widget")
         }
     }
 }
