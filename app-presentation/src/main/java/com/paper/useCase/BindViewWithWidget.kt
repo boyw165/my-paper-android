@@ -24,9 +24,8 @@ package com.paper.useCase
 
 import com.paper.AppConst
 import com.paper.view.IWidgetView
+import io.reactivex.Observable
 import io.reactivex.Observer
-import io.reactivex.Single
-import io.reactivex.SingleObserver
 import io.reactivex.disposables.Disposable
 
 /**
@@ -36,14 +35,14 @@ import io.reactivex.disposables.Disposable
 class BindViewWithWidget<T>(view: IWidgetView<T>,
                             widget: T,
                             caughtErrorSignal: Observer<Throwable>? = null)
-    : Single<Boolean>() {
+    : Observable<Boolean>() {
 
     private val mView = view
     private val mWidget = widget
 
     private val mCaughtErrorSignal = caughtErrorSignal
 
-    override fun subscribeActual(observer: SingleObserver<in Boolean>) {
+    override fun subscribeActual(observer: Observer<in Boolean>) {
         val d = UnbindDisposable(mView)
         observer.onSubscribe(d)
 
@@ -52,9 +51,9 @@ class BindViewWithWidget<T>(view: IWidgetView<T>,
 
             println("${AppConst.TAG}: Bind view [$mView] with the widget [$mWidget]")
 
-            observer.onSuccess(true)
+            observer.onNext(true)
         } catch (err: Throwable) {
-            observer.onSuccess(false)
+            observer.onNext(false)
 
             mCaughtErrorSignal?.onNext(err)
         }

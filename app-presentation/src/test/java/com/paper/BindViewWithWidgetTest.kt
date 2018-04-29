@@ -24,6 +24,8 @@ package com.paper
 
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.IWidgetView
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
@@ -40,10 +42,12 @@ class BindViewWithWidgetTest {
                                         widget = 0)
         val testObserver = tester.test()
 
-        // Must see complete
-        testObserver.assertComplete()
+        // Must see true
+        testObserver.assertValue(true)
         // Must see bindWidget call!
         Mockito.verify(mockView).bindWidget(Mockito.anyInt())
+
+        testObserver.dispose()
     }
 
     @Test
@@ -57,6 +61,56 @@ class BindViewWithWidgetTest {
         testObserver.dispose()
 
         // Must see bindWidget call!
+        Mockito.verify(mockView).unbindWidget()
+    }
+
+    @Test
+    fun shouldSeeNestedUnbindWhenDisposes() {
+        val mockView = Mockito.mock(TypedView::class.java)
+
+        val tester = BindViewWithWidget(view = mockView,
+                                        widget = 0)
+        // Put the tester in a random nested RX graph
+        val testObserver = Observable
+            .just(0)
+            .switchMap {
+                Observable
+                    .just(1)
+                    .switchMap {
+                        tester
+                    }
+            }
+            .test()
+
+        testObserver.dispose()
+
+        // Must see unbind call!
+        Mockito.verify(mockView).unbindWidget()
+    }
+
+    @Test
+    fun shouldSeeNestedUnbindWhenCompositeDisposableDisposes() {
+        val mockView = Mockito.mock(TypedView::class.java)
+
+        val tester = BindViewWithWidget(view = mockView,
+                                        widget = 0)
+        // Put the tester in a random nested RX graph
+        val disposables = CompositeDisposable()
+        disposables.add(
+            Observable
+                .just(0)
+                .switchMap {
+                    Observable
+                        .just(1)
+                        .switchMap {
+                            tester
+                        }
+                }
+                .subscribe())
+
+        disposables.clear()
+
+        // Must see unbind call!
         Mockito.verify(mockView).unbindWidget()
     }
 

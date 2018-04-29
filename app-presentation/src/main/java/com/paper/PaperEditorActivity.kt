@@ -207,7 +207,6 @@ class PaperEditorActivity : AppCompatActivity() {
                     BindViewWithWidget(view = mCanvasView,
                                        widget = widget,
                                        caughtErrorSignal = mErrorSignal)
-                        .toObservable()
                 }
                 .subscribe())
         mDisposables.add(
@@ -217,7 +216,6 @@ class PaperEditorActivity : AppCompatActivity() {
                     BindViewWithWidget(view = mEditPanelView,
                                        widget = widget,
                                        caughtErrorSignal = mErrorSignal)
-                        .toObservable()
                 }
                 .subscribe())
 

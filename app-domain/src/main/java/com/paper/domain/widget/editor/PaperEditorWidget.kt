@@ -69,6 +69,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         // Load paper and establish the paper (canvas) and transform bindings.
         val paperSrc = mPaperRepo
             .getPaperById(paperID)
+            .toObservable()
             .cache()
         val paperBindingSrc = paperSrc
             .flatMap { paper ->
@@ -87,7 +88,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     .subscribeOn(mUiScheduler)
             }
         mDisposables.add(
-            Singles
+            Observables
                 .zip(paperBindingSrc,
                      historyBindingSrc)
                 .map { (result1, result2) -> result1 && result2 }
