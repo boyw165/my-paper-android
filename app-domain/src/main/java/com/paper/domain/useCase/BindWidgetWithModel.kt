@@ -44,35 +44,34 @@ class BindWidgetWithModel<T>(widget: IWidget<T>,
     private val mCaughtErrorSignal = caughtErrorSignal
 
     override fun subscribeActual(observer: SingleObserver<in Boolean>) {
-        val d = UnbindDisposable(mWidget)
+        val d = UnbindDisposable(mWidget, mCaughtErrorSignal)
         observer.onSubscribe(d)
 
-        try {
-            mWidget.bindModel(mModel)
+        if (!d.isDisposed) {
+            try {
+                mWidget.bindModel(mModel)
+                println("${DomainConst.TAG}: Bind widget [$mWidget] with the model")
 
-            println("${DomainConst.TAG}: Bind widget [$mWidget] with the model")
-
-            if (!d.isDisposed) {
                 observer.onSuccess(true)
-            }
-        } catch (err: Throwable) {
-            if (!d.isDisposed) {
+            } catch (err: Throwable) {
                 observer.onSuccess(false)
-            }
 
-            mCaughtErrorSignal?.onNext(err)
+                mCaughtErrorSignal?.onNext(err)
+            }
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    internal class UnbindDisposable<T>(widget: IWidget<T>) : Disposable {
+    internal class UnbindDisposable<T>(widget: IWidget<T>,
+                                       caughtErrorSignal: Observer<Throwable>?) : Disposable {
 
         @Volatile
         private var disposed = false
 
         private val widget = widget
+        private val caughtErrorSignal = caughtErrorSignal
 
         override fun isDisposed(): Boolean {
             return disposed
@@ -81,10 +80,14 @@ class BindWidgetWithModel<T>(widget: IWidget<T>,
         override fun dispose() {
             disposed = true
 
-            widget.unbindModel()
+            try {
+                widget.unbindModel()
 
-            println("${DomainConst.TAG}: Unbind widget [$widget] " +
-                    "from the model")
+                println("${DomainConst.TAG}: Unbind widget [$widget] " +
+                        "from the model")
+            } catch (err: Throwable) {
+                caughtErrorSignal?.onNext(err)
+            }
         }
     }
 }

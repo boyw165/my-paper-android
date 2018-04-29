@@ -56,7 +56,7 @@ interface IPaperWidget : IWidget<PaperModel> {
 
     fun onRemoveScrapWidget(): Observable<IScrapWidget>
 
-    fun onDrawSVG(): Observable<DrawSVGEvent>
+    fun onDrawSVG(replayAll: Boolean = true): Observable<DrawSVGEvent>
 
     fun onPrintDebugMessage(): Observable<String>
 }

@@ -37,6 +37,7 @@ import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
+import io.reactivex.rxkotlin.Singles
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
@@ -65,31 +66,28 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     fun start(paperID: Long) {
         ensureNoLeakingSubscription()
 
-        // Load paper and bind paper widget with the paper
+        // Load paper and establish the paper (canvas) and transform bindings.
         val paperSrc = mPaperRepo
             .getPaperById(paperID)
-            .toObservable()
-            .publish()
+            .cache()
         val paperBindingSrc = paperSrc
-            .switchMap { paper ->
+            .flatMap { paper ->
                 BindWidgetWithModel(
                     widget = mPaperWidget,
                     model = paper,
                     caughtErrorSignal = mCaughtErrorSignal)
                     .subscribeOn(mUiScheduler)
-                    .toObservable()
             }
         val historyBindingSrc = paperSrc
-            .switchMap { paper ->
+            .flatMap { paper ->
                 BindWidgetWithModel(
                     widget = mHistoryWidget,
                     model = paper,
                     caughtErrorSignal = mCaughtErrorSignal)
                     .subscribeOn(mUiScheduler)
-                    .toObservable()
             }
         mDisposables.add(
-            Observables
+            Singles
                 .zip(paperBindingSrc,
                      historyBindingSrc)
                 .map { (result1, result2) -> result1 && result2 }
@@ -99,7 +97,6 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                         mOnPaperWidgetReadySignal.onNext(mPaperWidget)
                     }
                 })
-        paperSrc.connect()
 
         // Bind the edit panel widget with the pen preference model
         mDisposables.add(
@@ -161,7 +158,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     }
 
     fun stop() {
-        mDisposables.dispose()
+        mDisposables.clear()
     }
 
     private fun ensureNoLeakingSubscription() {

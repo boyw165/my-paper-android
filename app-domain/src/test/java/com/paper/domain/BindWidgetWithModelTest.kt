@@ -24,6 +24,7 @@ package com.paper.domain
 
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.domain.widget.editor.IWidget
+import io.reactivex.Single
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
@@ -42,8 +43,10 @@ class BindWidgetWithModelTest {
 
         // Must see complete
         testObserver.assertComplete()
-        // Must see bindWidget call!
+        // Must see bind call!
         Mockito.verify(mockWidget).bindModel(Mockito.anyInt())
+
+        testObserver.dispose()
     }
 
     @Test
@@ -56,7 +59,30 @@ class BindWidgetWithModelTest {
 
         testObserver.dispose()
 
-        // Must see bindWidget call!
+        // Must see unbind call!
+        Mockito.verify(mockWidget).unbindModel()
+    }
+
+    @Test
+    fun shouldSeeNestedUnbindWhenDisposes() {
+        val mockWidget = Mockito.mock(TypedWidget::class.java)
+
+        val tester = BindWidgetWithModel(widget = mockWidget,
+                                         model = 0)
+        val testObserver = Single
+            .just(0)
+            .flatMap {
+                Single
+                    .just(1)
+                    .flatMap {
+                        tester
+                    }
+            }
+            .test()
+
+        testObserver.dispose()
+
+        // Must see unbind call!
         Mockito.verify(mockWidget).unbindModel()
     }
 

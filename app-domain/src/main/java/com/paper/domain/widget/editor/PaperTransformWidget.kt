@@ -69,7 +69,7 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo) : IWidget<PaperMode
             mPaper.onRemoveStroke()
                 .switchMap {
                     // TODO
-                    Observable.empty<Any>()
+                    Observable.never<Any>()
                 }
                 .subscribe {
                     // DO NOTHING
