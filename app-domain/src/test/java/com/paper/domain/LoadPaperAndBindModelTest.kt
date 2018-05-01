@@ -22,8 +22,8 @@ package com.paper.domain
 
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.LoadPaperAndCreateBinding
-import com.paper.domain.widget.editor.IPaperWidget
-import com.paper.model.PaperModel
+import com.paper.domain.widget.editor.IPaperCanvasWidget
+import com.paper.model.PaperAutoSaveImpl
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Single
 import io.reactivex.schedulers.TestScheduler
@@ -43,7 +43,7 @@ class LoadPaperAndBindModelTest {
         Mockito
             .`when`(mockRepo.getPaperById(Mockito.anyLong()))
             .thenReturn(Single.error(error))
-        val mockedWidget = Mockito.mock(IPaperWidget::class.java)
+        val mockedWidget = Mockito.mock(IPaperCanvasWidget::class.java)
 
         val testScheduler = TestScheduler()
 
@@ -77,12 +77,12 @@ class LoadPaperAndBindModelTest {
 
     @Test
     fun widgetShouldBindModelIfRepoWorks() {
-        val mockedModel = PaperModel()
+        val mockedModel = PaperAutoSaveImpl()
         val mockedRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
             .thenReturn(Single.just(mockedModel))
-        val mockedWidget = Mockito.mock(IPaperWidget::class.java)
+        val mockedWidget = Mockito.mock(IPaperCanvasWidget::class.java)
 
         val testScheduler = TestScheduler()
 
@@ -115,12 +115,12 @@ class LoadPaperAndBindModelTest {
 
     @Test
     fun widgetShouldUnbindModelIfDispose() {
-        val mockedModel = PaperModel()
+        val mockedModel = PaperAutoSaveImpl()
         val mockedRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
             .thenReturn(Single.just(mockedModel))
-        val mockedWidget = Mockito.mock(IPaperWidget::class.java)
+        val mockedWidget = Mockito.mock(IPaperCanvasWidget::class.java)
 
         val testScheduler = TestScheduler()
 

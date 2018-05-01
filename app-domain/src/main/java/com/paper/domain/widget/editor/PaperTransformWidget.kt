@@ -22,8 +22,8 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.model.IPaper
 import com.paper.model.IPaperTransformRepo
-import com.paper.model.PaperModel
 import com.paper.model.transform.AddStrokeTransform
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -35,9 +35,9 @@ import java.util.*
 class PaperTransformWidget(historyRepo: IPaperTransformRepo,
                            uiScheduler: Scheduler,
                            ioScheduler: Scheduler)
-    : IWidget<PaperModel> {
+    : IWidget<IPaper> {
 
-    private lateinit var mPaper: PaperModel
+    private lateinit var mPaper: IPaper
     private val mOperationRepo = historyRepo
 
     private val mUiScheduler = uiScheduler
@@ -45,7 +45,7 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
 
     private val mDisposables = CompositeDisposable()
 
-    override fun bindModel(model: PaperModel) {
+    override fun bindModel(model: IPaper) {
         ensureNoLeakedBinding()
 
         mPaper = model

@@ -24,10 +24,7 @@ import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.useCase.TranslateSketchToSVG
-import com.paper.model.PaperModel
-import com.paper.model.Point
-import com.paper.model.Rect
-import com.paper.model.ScrapModel
+import com.paper.model.*
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -39,13 +36,13 @@ import kotlin.NoSuchElementException
 
 class PaperCanvasWidget(uiScheduler: Scheduler,
                         workerScheduler: Scheduler)
-    : IPaperWidget {
+    : IPaperCanvasWidget {
 
     private val mUiScheduler = uiScheduler
     private val mWorkerScheduler = workerScheduler
 
     // Model
-    private var mModel: PaperModel? = null
+    private var mModel: IPaper? = null
     private val mModelDisposables = CompositeDisposable()
 
     // Scrap controllers
@@ -60,14 +57,14 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     // Debug
     private val mDebugSignal = PublishSubject.create<String>()
 
-    override fun bindModel(model: PaperModel) {
+    override fun bindModel(model: IPaper) {
         ensureNoLeakedBinding()
 
         // Hold reference.
         mModel = model
 
         // Canvas size
-        mSetCanvasSize.onNext(Rect(0f, 0f, model.width, model.height))
+        mSetCanvasSize.onNext(Rect(0f, 0f, model.getWidth(), model.getHeight()))
 
         // Add or remove scrap
         mModelDisposables.add(
@@ -108,12 +105,6 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     private fun hasModelBinding(): Boolean {
         return mModel != null && mModelDisposables.size() > 0
-    }
-
-    // Save ///////////////////////////////////////////////////////////////////
-
-    override fun getPaper(): PaperModel {
-        return mModel!!
     }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
@@ -241,7 +232,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     .merge(
                         mDrawSVGSignal,
                         // For the first time subscription, send events one by one!
-                        TranslateSketchToSVG(mModel!!.sketch)
+                        TranslateSketchToSVG(mModel!!.getSketch())
                             .subscribeOn(mWorkerScheduler))
             } else {
                 mDrawSVGSignal

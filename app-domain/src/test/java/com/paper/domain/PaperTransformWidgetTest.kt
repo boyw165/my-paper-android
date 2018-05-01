@@ -24,7 +24,7 @@ package com.paper.domain
 
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.domain.widget.editor.PaperTransformWidget
-import com.paper.model.PaperModel
+import com.paper.model.PaperAutoSaveImpl
 import com.paper.model.Point
 import com.paper.model.repository.PaperTransformRepoFileImpl
 import com.paper.model.sketch.SketchStroke
@@ -56,7 +56,7 @@ class PaperTransformWidgetTest {
 
     @Test
     fun addOneStrokeToPaper_TransformRepoShouldRecordIt() {
-        val paper = PaperModel()
+        val paper = PaperAutoSaveImpl()
         val historyRepo = PaperTransformRepoFileImpl(fileDir = File("/tmp"))
         val testScheduler = TestScheduler()
         val disposables = CompositeDisposable()
@@ -85,7 +85,7 @@ class PaperTransformWidgetTest {
 
     @Test
     fun undo_shouldSeeNoStrokeInPaper() {
-        val paper = PaperModel()
+        val paper = PaperAutoSaveImpl()
         val historyRepo = PaperTransformRepoFileImpl(fileDir = File("/tmp"))
         val testScheduler = TestScheduler()
         val disposables = CompositeDisposable()

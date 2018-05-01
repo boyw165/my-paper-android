@@ -23,24 +23,24 @@
 package com.paper.model.transform
 
 import com.paper.model.IPaperTransform
-import com.paper.model.PaperModel
+import com.paper.model.IPaper
 
-class AddStrokeTransform(paper: PaperModel) : IPaperTransform {
+class AddStrokeTransform(paper: IPaper) : IPaperTransform {
 
     private val mPaper = paper
-    private val mUndoStrokeSize = paper.sketch.size - 1
+    private val mUndoStrokeSize = paper.getSketch().size - 1
     private val mRedoStrokeSize = mUndoStrokeSize + 1
-    private val mRedoStroke = paper.sketch.last()
+    private val mRedoStroke = paper.getSketch().last()
 
     override fun undo() {
-        val size = mPaper.sketch.size
+        val size = mPaper.getSketch().size
         while (size > mUndoStrokeSize) {
             mPaper.popStroke()
         }
     }
 
     override fun redo() {
-        val size = mPaper.sketch.size
+        val size = mPaper.getSketch().size
         while (size < mRedoStrokeSize) {
             mPaper.pushStroke(mRedoStroke)
         }

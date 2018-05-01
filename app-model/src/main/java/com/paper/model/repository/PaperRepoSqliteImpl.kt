@@ -30,9 +30,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.GsonBuilder
-import com.paper.model.ModelConst
-import com.paper.model.PaperModel
-import com.paper.model.ScrapModel
+import com.paper.model.*
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
@@ -65,7 +63,7 @@ class PaperRepoSqliteImpl(authority: String,
     // JSON translator.
     private val mTranslator by lazy {
         GsonBuilder()
-            .registerTypeAdapter(PaperModel::class.java,
+            .registerTypeAdapter(IPaper::class.java,
                                  PaperJSONTranslator())
             .registerTypeAdapter(SketchStroke::class.java,
                                  SketchStrokeJSONTranslator())
@@ -107,9 +105,9 @@ class PaperRepoSqliteImpl(authority: String,
         mResolver.registerContentObserver(uri, true, mObserver)
     }
 
-    private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<PaperModel>> {
+    private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<IPaper>> {
         return Single
-            .create { downstream: SingleEmitter<List<PaperModel>> ->
+            .create { downstream: SingleEmitter<List<IPaper>> ->
                 var cursor: Cursor? = null
 
                 try {
@@ -143,7 +141,7 @@ class PaperRepoSqliteImpl(authority: String,
                     // TODO: https://github.com/Kotlin/anko/wiki/Anko-SQLite
 
                     // Translate cursor.
-                    val papers = mutableListOf<PaperModel>()
+                    val papers = mutableListOf<IPaper>()
                     if (cursor.moveToFirst() &&
                         !downstream.isDisposed) {
                         do {
@@ -171,7 +169,7 @@ class PaperRepoSqliteImpl(authority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    private val mPaperListSignal = PublishSubject.create<List<PaperModel>>()
+    private val mPaperListSignal = PublishSubject.create<List<IPaper>>()
 
     /**
      * Get paper list.
@@ -180,7 +178,7 @@ class PaperRepoSqliteImpl(authority: String,
      *                   time-consuming. True to ready part only matter with
      *                   thumbnails; False is fully read.
      */
-    override fun getPapers(isSnapshot: Boolean): Observable<List<PaperModel>> {
+    override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
         return Observable.merge(
             getPapersThenFinish(isSnapshot).toObservable(),
             mPaperListSignal)
@@ -189,25 +187,17 @@ class PaperRepoSqliteImpl(authority: String,
     /**
      * Read full structure of the paper by ID.
      */
-    override fun getPaperById(id: Long): Single<PaperModel> {
+    override fun getPaperById(id: Long): Single<IPaper> {
         // FIXME: Workaround.
         return if (id == ModelConst.TEMP_ID) {
             Single
                 .fromCallable {
-//                    // Sol#1
-//                    return@fromCallable mTempFile
-//                        .bufferedReader()
-//                        .use { reader ->
-//                            mTranslator.fromJson(reader, PaperModel::class.java)
-//                        }
-
-                    // Sol#2
-                    // TODO: Assign default portrait size.
                     val timestamp = getCurrentTime()
-                    val newPaper = PaperModel(
+                    val newPaper = PaperAutoSaveImpl(
                         createdAt = timestamp)
-                    newPaper.modifiedAt = timestamp
-                    return@fromCallable newPaper
+                    newPaper.setModifiedAt(timestamp)
+
+                    return@fromCallable newPaper as IPaper
                 }
                 .subscribeOn(mDbIoScheduler)
         } else {
@@ -255,8 +245,8 @@ class PaperRepoSqliteImpl(authority: String,
     }
 
     override fun putPaperById(id: Long,
-                              paper: PaperModel): Single<UpdateDatabaseEvent> {
-        paper.modifiedAt = getCurrentTime()
+                              paper: IPaper): Single<UpdateDatabaseEvent> {
+        paper.setModifiedAt(getCurrentTime())
 
         return Single
             .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
@@ -314,7 +304,7 @@ class PaperRepoSqliteImpl(authority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    override fun duplicatePaperById(id: Long): Observable<PaperModel> {
+    override fun duplicatePaperById(id: Long): Observable<IPaper> {
         TODO("not implemented")
     }
 
@@ -373,19 +363,19 @@ class PaperRepoSqliteImpl(authority: String,
 
     private fun getCurrentTime(): Long = System.currentTimeMillis() / 1000
 
-    private fun convertPaperToValues(paper: PaperModel): ContentValues {
+    private fun convertPaperToValues(paper: IPaper): ContentValues {
         val values = ContentValues()
 
-        values.put(PaperTable.COL_UUID, paper.uuid.toString())
-        values.put(PaperTable.COL_CREATED_AT, paper.createdAt)
-        values.put(PaperTable.COL_MODIFIED_AT, paper.modifiedAt)
-        values.put(PaperTable.COL_WIDTH, paper.width)
-        values.put(PaperTable.COL_HEIGHT, paper.height)
-        values.put(PaperTable.COL_CAPTION, paper.caption)
+        values.put(PaperTable.COL_UUID, paper.getUUID().toString())
+        values.put(PaperTable.COL_CREATED_AT, paper.getCreatedAt())
+        values.put(PaperTable.COL_MODIFIED_AT, paper.getModifiedAt())
+        values.put(PaperTable.COL_WIDTH, paper.getWidth())
+        values.put(PaperTable.COL_HEIGHT, paper.getHeight())
+        values.put(PaperTable.COL_CAPTION, paper.getCaption())
 
-        values.put(PaperTable.COL_THUMB_PATH, paper.thumbnailPath?.canonicalPath ?: "")
-        values.put(PaperTable.COL_THUMB_WIDTH, paper.thumbnailWidth)
-        values.put(PaperTable.COL_THUMB_HEIGHT, paper.thumbnailHeight)
+        values.put(PaperTable.COL_THUMB_PATH, paper.getThumbnail()?.canonicalPath ?: "")
+        values.put(PaperTable.COL_THUMB_WIDTH, paper.getThumbnailWidth())
+        values.put(PaperTable.COL_THUMB_HEIGHT, paper.getThumbnailHeight())
 
         // The rest part of Paper is converted to JSON
         val json = mTranslator.toJson(paper)
@@ -395,31 +385,29 @@ class PaperRepoSqliteImpl(authority: String,
     }
 
     private fun convertCursorToPaper(cursor: Cursor,
-                                     fullyRead: Boolean): PaperModel {
-        val paper = PaperModel(
+                                     fullyRead: Boolean): IPaper {
+        val paper = PaperAutoSaveImpl(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
             uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)))
 
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
-        paper.modifiedAt = cursor.getLong(colOfModifiedAt)
+        paper.setModifiedAt(cursor.getLong(colOfModifiedAt))
 
-        paper.width = cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH))
-        paper.height = cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT))
+        paper.setWidth(cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH)))
+        paper.setHeight(cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT)))
 
-        paper.caption = cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_CAPTION))
-
-        paper.thumbnailPath = File(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH)))
-        paper.thumbnailWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH))
-        paper.thumbnailHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
+        paper.setThumbnail(File(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))))
+        paper.setThumbnailWidth(cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH)))
+        paper.setThumbnailHeight(cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT)))
 
         if (fullyRead) {
             val paperDetail = mTranslator.fromJson(
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
-                PaperModel::class.java)
+                IPaper::class.java)
 
-            paperDetail.sketch.forEach { paper.pushStroke(it) }
-            paperDetail.scraps.forEach { paper.addScrap(it) }
+            paperDetail.getSketch().forEach { paper.pushStroke(it) }
+            paperDetail.getScraps().forEach { paper.addScrap(it) }
         }
 
         return paper

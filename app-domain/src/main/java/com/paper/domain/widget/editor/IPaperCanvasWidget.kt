@@ -21,11 +21,11 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.event.DrawSVGEvent
-import com.paper.model.PaperModel
+import com.paper.model.IPaper
 import com.paper.model.Rect
 import io.reactivex.Observable
 
-interface IPaperWidget : IWidget<PaperModel> {
+interface IPaperCanvasWidget : IWidget<IPaper> {
 
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
@@ -47,8 +47,6 @@ interface IPaperWidget : IWidget<PaperModel> {
     fun handleDragEnd(x: Float, y: Float)
 
     // For output /////////////////////////////////////////////////////////////
-
-    fun getPaper(): PaperModel
 
     fun onSetCanvasSize(): Observable<Rect>
 

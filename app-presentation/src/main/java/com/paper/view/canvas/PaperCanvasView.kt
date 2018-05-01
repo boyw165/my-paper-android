@@ -40,7 +40,7 @@ import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
-import com.paper.domain.widget.editor.IPaperWidget
+import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.Point
 import com.paper.model.Rect
@@ -56,7 +56,7 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 class PaperCanvasView : View,
-                        IWidgetView<IPaperWidget>,
+                        IWidgetView<IPaperCanvasWidget>,
                         IPaperContext,
                         IParentView,
                         IAllGesturesListener {
@@ -66,7 +66,7 @@ class PaperCanvasView : View,
     private var mIfSharpenDrawing = true
 
     // Widget.
-    private lateinit var mWidget: IPaperWidget
+    private lateinit var mWidget: IPaperCanvasWidget
     private val mDisposables = CompositeDisposable()
 
     /**
@@ -96,7 +96,7 @@ class PaperCanvasView : View,
         mGridPaint.strokeWidth = 2f * mOneDp
     }
 
-    override fun bindWidget(widget: IPaperWidget) {
+    override fun bindWidget(widget: IPaperCanvasWidget) {
         ensureMainThread()
         ensureNoLeakingSubscription()
 

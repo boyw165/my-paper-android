@@ -138,17 +138,9 @@ class PaperEditorActivity : AppCompatActivity() {
         // Close button.
         mDisposables.add(
             onClickCloseButton()
-                .throttleFirst(1000, TimeUnit.MILLISECONDS)
-                .switchMap {
-                    mWidget
-                        .writePaperToRepo(mCanvasView.takeSnapshot())
-                        .toObservable()
-                }
                 .observeOn(mUiScheduler)
-                .subscribe { done ->
-                    if (done) {
-                        close()
-                    }
+                .subscribe {
+                    close()
                 })
 
         // View port indicator
