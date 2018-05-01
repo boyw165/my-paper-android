@@ -30,7 +30,7 @@ import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
 
-class PaperTransformFileImpl(fileDir: File) : IPaperTransformRepo {
+class PaperTransformRepoFileImpl(fileDir: File) : IPaperTransformRepo {
 
     // TODO: Serialize the transform to file
 
@@ -52,4 +52,25 @@ class PaperTransformFileImpl(fileDir: File) : IPaperTransformRepo {
 
         return Single.just(transform)
     }
+
+    override fun toString(): String {
+        val builder = StringBuilder("${javaClass.simpleName} {\n")
+
+        val values = mLookupTable.values.toList()
+        values.forEachIndexed { i, x ->
+            val separator = if (i == values.lastIndex) {
+                ""
+            } else {
+                ","
+            }
+            builder.append("    $x$separator\n")
+        }
+
+        builder.append("}")
+
+        return builder.toString()
+    }
+
+    val recordSize: Int
+        get() = mLookupTable.size
 }

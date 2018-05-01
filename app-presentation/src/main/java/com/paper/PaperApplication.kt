@@ -30,7 +30,7 @@ import com.paper.domain.ISharedPreferenceService
 import com.paper.model.IPaperTransformRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.IPaperRepo
-import com.paper.model.repository.PaperTransformFileImpl
+import com.paper.model.repository.PaperTransformRepoFileImpl
 import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
@@ -66,7 +66,7 @@ class PaperApplication : MultiDexApplication(),
     }
 
     private val mPaperTransformRepo by lazy {
-        PaperTransformFileImpl(fileDir = getExternalFilesDir("transform"))
+        PaperTransformRepoFileImpl(fileDir = getExternalFilesDir("transform"))
     }
 
     override fun getPaperTransformRepo(): IPaperTransformRepo {

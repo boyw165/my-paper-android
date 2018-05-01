@@ -79,9 +79,9 @@ class PaperJSONTranslatorTest {
             .create()
 
         val paper = PaperModel()
-        paper.addStrokeToSketch(SketchStroke(color = Color.parseColor("#123456"),
-                                             width = 0.5f,
-                                             isEraser = false)
+        paper.pushStroke(SketchStroke(color = Color.parseColor("#123456"),
+                                      width = 0.5f,
+                                      isEraser = false)
                                     .addPath(Point(0f, 0f, 0))
                                     .addPath(Point(1f, 1f, 100)))
 

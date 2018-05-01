@@ -26,8 +26,6 @@ import com.paper.domain.DomainConst
 import com.paper.domain.widget.editor.IWidget
 import io.reactivex.Observable
 import io.reactivex.Observer
-import io.reactivex.Single
-import io.reactivex.SingleObserver
 import io.reactivex.disposables.Disposable
 
 /**

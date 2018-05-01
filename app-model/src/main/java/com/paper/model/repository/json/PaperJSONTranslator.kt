@@ -56,7 +56,7 @@ class PaperJSONTranslator : JsonSerializer<PaperModel>,
 
         if (root.has("sketch")) {
             root["sketch"].asJsonArray.forEach {
-                paperDetails.addStrokeToSketch(context.deserialize(
+                paperDetails.pushStroke(context.deserialize(
                     it, SketchStroke::class.java))
             }
         }

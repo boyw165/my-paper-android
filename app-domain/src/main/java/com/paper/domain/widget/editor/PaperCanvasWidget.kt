@@ -222,7 +222,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mCancelDrawingSignal.onNext(0)
 
         mTmpStroke.addPath(Point(x, y))
-        mModel?.addStrokeToSketch(mTmpStroke)
+        mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
@@ -271,7 +271,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
             width = 1f)
         mTmpStroke.addPath(Point(x, y, 0))
 
-        mModel?.addStrokeToSketch(mTmpStroke)
+        mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,

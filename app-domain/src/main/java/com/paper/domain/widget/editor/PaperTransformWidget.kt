@@ -26,15 +26,22 @@ import com.paper.model.IPaperTransformRepo
 import com.paper.model.PaperModel
 import com.paper.model.transform.AddStrokeTransform
 import io.reactivex.Observable
+import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-class PaperTransformWidget(historyRepo: IPaperTransformRepo) : IWidget<PaperModel> {
+class PaperTransformWidget(historyRepo: IPaperTransformRepo,
+                           uiScheduler: Scheduler,
+                           ioScheduler: Scheduler)
+    : IWidget<PaperModel> {
 
     private lateinit var mPaper: PaperModel
     private val mOperationRepo = historyRepo
+
+    private val mUiScheduler = uiScheduler
+    private val mIoScheduler = ioScheduler
 
     private val mDisposables = CompositeDisposable()
 
@@ -53,27 +60,27 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo) : IWidget<PaperMode
     private fun bindPaperImpl() {
         mDisposables.add(
             mPaper.onAddStroke(replayAll = false)
+                .observeOn(mUiScheduler)
                 .switchMap {
                     val key = UUID.randomUUID()
                     val value = AddStrokeTransform(
                         paper = mPaper)
 
+                    mUndoKeys.push(key)
+
                     mOperationRepo
                         .putRecord(key, value)
                         .toObservable()
                 }
-                .subscribe {
-                    // DO NOTHING
-                })
+                .subscribe())
         mDisposables.add(
             mPaper.onRemoveStroke()
+                .observeOn(mUiScheduler)
                 .switchMap {
                     // TODO
                     Observable.never<Any>()
                 }
-                .subscribe {
-                    // DO NOTHING
-                })
+                .subscribe())
     }
 
     private fun unbindPaperImpl() {

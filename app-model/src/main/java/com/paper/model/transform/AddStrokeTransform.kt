@@ -28,17 +28,22 @@ import com.paper.model.PaperModel
 class AddStrokeTransform(paper: PaperModel) : IPaperTransform {
 
     private val mPaper = paper
-
-    init {
-        // TODO: Take screenshot of the paper?
-    }
+    private val mUndoStrokeSize = paper.sketch.size - 1
+    private val mRedoStrokeSize = mUndoStrokeSize + 1
+    private val mRedoStroke = paper.sketch.last()
 
     override fun undo() {
-        // TODO
+        val size = mPaper.sketch.size
+        while (size > mUndoStrokeSize) {
+            mPaper.popStroke()
+        }
     }
 
     override fun redo() {
-        // TODO
+        val size = mPaper.sketch.size
+        while (size < mRedoStrokeSize) {
+            mPaper.pushStroke(mRedoStroke)
+        }
     }
 
     override fun toString(): String {

@@ -205,7 +205,9 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     // Undo & redo ////////////////////////////////////////////////////////////
 
     private val mHistoryWidget by lazy {
-        PaperTransformWidget(historyRepo = paperTransformRepo)
+        PaperTransformWidget(historyRepo = paperTransformRepo,
+                             uiScheduler = mUiScheduler,
+                             ioScheduler = mIoScheduler)
     }
 
     private val mUndoRedoEventSignal = BehaviorSubject.createDefault(
