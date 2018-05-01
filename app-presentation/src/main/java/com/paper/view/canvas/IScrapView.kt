@@ -18,45 +18,41 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.view.canvas
 
-import com.paper.domain.event.DrawSVGEvent
-import com.paper.model.PaperModel
-import com.paper.model.Rect
-import io.reactivex.Observable
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.view.MotionEvent
+import com.cardinalblue.gesture.IAllGesturesListener
+import com.paper.domain.widget.editor.IScrapWidget
+import java.util.*
 
-interface IPaperWidget : IWidget<PaperModel> {
+interface IScrapView {
 
-    // For input //////////////////////////////////////////////////////////////
-    // TODO: How to define the inbox?
+    fun bindWidget(widget: IScrapWidget)
 
-    fun handleChoosePenColor(color: Int)
+    fun unbindWidget()
 
-    fun handleUpdatePenSize(size: Float)
+    fun addChild(child: IScrapView)
 
-    fun handleActionBegin()
+    fun removeChild(child: IScrapView)
 
-    fun handleActionEnd()
+    // Gesture ////////////////////////////////////////////////////////////////
 
-    fun handleTap(x: Float, y: Float)
+    fun setGestureListener(listener: IAllGesturesListener?)
 
-    fun handleDragBegin(x: Float, y: Float)
+    // Rendering //////////////////////////////////////////////////////////////
 
-    fun handleDrag(x: Float, y: Float)
+    // TODO: Do the root canvas care about whether there is any children view
+    // TODO: is dirty?
 
-    fun handleDragEnd(x: Float, y: Float)
+    // TODO: How to pass the current transform in the recursion call?
 
-    // For output /////////////////////////////////////////////////////////////
+    fun dispatchDraw(canvas: Canvas,
+                     previousXforms: Stack<Matrix>,
+                     ifSharpenDrawing: Boolean)
 
-    fun getPaper(): PaperModel
+    // Touch //////////////////////////////////////////////////////////////////
 
-    fun onSetCanvasSize(): Observable<Rect>
-
-    fun onAddScrapWidget(): Observable<IScrapWidget>
-
-    fun onRemoveScrapWidget(): Observable<IScrapWidget>
-
-    fun onDrawSVG(replayAll: Boolean = true): Observable<DrawSVGEvent>
-
-    fun onPrintDebugMessage(): Observable<String>
+    fun dispatchTouch(event: MotionEvent)
 }

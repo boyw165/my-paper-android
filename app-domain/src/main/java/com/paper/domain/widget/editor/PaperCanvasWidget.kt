@@ -20,11 +20,10 @@
 
 package com.paper.domain.widget.editor
 
-import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
-import com.paper.domain.useCase.SketchToDrawSVGEvent
+import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.PaperModel
 import com.paper.model.Point
 import com.paper.model.Rect
@@ -38,15 +37,15 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 import kotlin.NoSuchElementException
 
-class PaperWidget(uiScheduler: Scheduler,
-                  workerScheduler: Scheduler)
+class PaperCanvasWidget(uiScheduler: Scheduler,
+                        workerScheduler: Scheduler)
     : IPaperWidget {
 
     private val mUiScheduler = uiScheduler
     private val mWorkerScheduler = workerScheduler
 
     // Model
-    private lateinit var mModel: PaperModel
+    private var mModel: PaperModel? = null
     private val mModelDisposables = CompositeDisposable()
 
     // Scrap controllers
@@ -96,21 +95,25 @@ class PaperWidget(uiScheduler: Scheduler,
                     // Signal the removing event.
                     mRemoveWidgetSignal.onNext(widget)
                 })
-
-        println("${DomainConst.TAG}: Bind paper \"Widget\" to a paper model" +
-                "(w=${model.width}, h=${model.height})")
     }
 
     override fun unbindModel() {
         mModelDisposables.clear()
+    }
 
-        println("${DomainConst.TAG}: Unbind paper \"Widget\" from the paper model")
+    private fun ensureNoLeakedBinding() {
+        if (mModelDisposables.size() > 0)
+            throw IllegalStateException("Already bind a model")
+    }
+
+    private fun hasModelBinding(): Boolean {
+        return mModel != null && mModelDisposables.size() > 0
     }
 
     // Save ///////////////////////////////////////////////////////////////////
 
     override fun getPaper(): PaperModel {
-        return mModel
+        return mModel!!
     }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
@@ -161,8 +164,13 @@ class PaperWidget(uiScheduler: Scheduler,
         mPenSize = size
     }
 
+    private var mCanHandleThisDrag = false
+
     override fun handleDragBegin(x: Float,
                                  y: Float) {
+        mCanHandleThisDrag = hasModelBinding()
+        if (!mCanHandleThisDrag) return
+
         // Clear all the delayed execution.
         mCancelSignal.onNext(0)
 
@@ -201,16 +209,20 @@ class PaperWidget(uiScheduler: Scheduler,
 
     override fun handleDrag(x: Float,
                             y: Float) {
+        if (!mCanHandleThisDrag) return
+
         mLineToSignal.onNext(Point(x, y))
     }
 
     override fun handleDragEnd(x: Float,
                                y: Float) {
+        if (!mCanHandleThisDrag) return
+
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
         mTmpStroke.addPath(Point(x, y))
-        mModel.addStrokeToSketch(mTmpStroke)
+        mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
@@ -222,13 +234,21 @@ class PaperWidget(uiScheduler: Scheduler,
         return mSetCanvasSize
     }
 
-    override fun onDrawSVG(): Observable<DrawSVGEvent> {
-        return Observable
-            .merge(
-                mDrawSVGSignal,
-                // For the first time subscription, send events one by one!
-                SketchToDrawSVGEvent(mModel.sketch)
-                    .subscribeOn(mWorkerScheduler))
+    override fun onDrawSVG(replayAll: Boolean): Observable<DrawSVGEvent> {
+        return if (hasModelBinding()) {
+            if (replayAll) {
+                Observable
+                    .merge(
+                        mDrawSVGSignal,
+                        // For the first time subscription, send events one by one!
+                        TranslateSketchToSVG(mModel!!.sketch)
+                            .subscribeOn(mWorkerScheduler))
+            } else {
+                mDrawSVGSignal
+            }
+        } else {
+            Observable.never()
+        }
     }
 
     // Gesture ////////////////////////////////////////////////////////////////
@@ -242,6 +262,8 @@ class PaperWidget(uiScheduler: Scheduler,
     }
 
     override fun handleTap(x: Float, y: Float) {
+        if (!hasModelBinding()) return
+
         // Draw a DOT!!!
         mTmpStroke = SketchStroke(
             color = 0,
@@ -249,7 +271,7 @@ class PaperWidget(uiScheduler: Scheduler,
             width = 1f)
         mTmpStroke.addPath(Point(x, y, 0))
 
-        mModel.addStrokeToSketch(mTmpStroke)
+        mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
@@ -268,17 +290,16 @@ class PaperWidget(uiScheduler: Scheduler,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun ensureNoLeakedBinding() {
-        if (mModelDisposables.size() > 0)
-            throw IllegalStateException("Already bind a model")
-    }
-
     private fun addScrapAtPosition(x: Float,
                                    y: Float) {
         val scrap = ScrapModel(UUID.randomUUID())
         scrap.x = x
         scrap.y = y
 
-        mModel.addScrap(scrap)
+        mModel?.addScrap(scrap)
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
     }
 }

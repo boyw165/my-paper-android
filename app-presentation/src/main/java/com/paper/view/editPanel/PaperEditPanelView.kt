@@ -21,6 +21,7 @@
 package com.paper.view.editPanel
 
 import android.content.Context
+import android.os.Looper
 import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -28,6 +29,7 @@ import android.util.AttributeSet
 import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
+import com.paper.AppConst
 import com.paper.R
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 import com.paper.model.Point
@@ -38,6 +40,7 @@ import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import kotlin.math.log
 
 /**
  * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
@@ -70,6 +73,9 @@ class PaperEditPanelView : ConstraintLayout,
     private lateinit var mWidget: PaperEditPanelWidget
 
     override fun bindWidget(widget: PaperEditPanelWidget) {
+        ensureMainThread()
+        ensureNoLeakingSubscription()
+
         mWidget = widget
 
         mToolListViewController.setWidget(widget)
@@ -123,6 +129,17 @@ class PaperEditPanelView : ConstraintLayout,
         mDisposables.clear()
     }
 
+    private fun ensureMainThread() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            throw IllegalThreadStateException("Not in MAIN thread")
+        }
+    }
+
+    private fun ensureNoLeakingSubscription() {
+        if (mDisposables.size() > 0) throw IllegalStateException(
+            "Already bind to a widget")
+    }
+
     // View port indicator ////////////////////////////////////////////////////
 
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
@@ -156,9 +173,7 @@ class PaperEditPanelView : ConstraintLayout,
 
     // Other //////////////////////////////////////////////////////////////////
 
-    private fun ensureNoLeakingSubscriptions() {
-        if (mDisposables.size() > 0) {
-            throw IllegalStateException("Already bind to a widget")
-        }
+    override fun toString(): String {
+        return javaClass.simpleName
     }
 }

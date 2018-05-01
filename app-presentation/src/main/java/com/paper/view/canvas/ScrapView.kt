@@ -35,13 +35,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import java.util.*
 
-open class ScrapWidgetView : IScrapWidgetView {
+open class ScrapView : IScrapView {
 
     private lateinit var mWidget: IScrapWidget
 
     private var mContext: IPaperContext? = null
-    private var mParent: IParentWidgetView? = null
-    private val mChildren = mutableListOf<ScrapWidgetView>()
+    private var mParent: IParentView? = null
+    private val mChildren = mutableListOf<ScrapView>()
 
     // Sketch
     private val mDrawables = mutableListOf<SVGDrawable>()
@@ -79,9 +79,9 @@ open class ScrapWidgetView : IScrapWidgetView {
                                     mContext!!.getTapSlop(),
                                     mContext!!.getMinFlingVec(),
                                     mContext!!.getMaxFlingVec())
-//        field.tapGestureListener = this@ScrapWidgetView
-//        field.dragGestureListener = this@ScrapWidgetView
-//        field.pinchGestureListener = this@ScrapWidgetView
+//        field.tapGestureListener = this@ScrapView
+//        field.dragGestureListener = this@ScrapView
+//        field.pinchGestureListener = this@ScrapView
         field
     }
 
@@ -117,17 +117,17 @@ open class ScrapWidgetView : IScrapWidgetView {
         println("${AppConst.TAG}: Unbind scrap widget \"View\" from a scrap \"Widget\"")
     }
 
-    override fun addChild(child: IScrapWidgetView) {
-        val childView = child as ScrapWidgetView
+    override fun addChild(child: IScrapView) {
+        val childView = child as ScrapView
         mChildren.add(childView)
     }
 
-    override fun removeChild(child: IScrapWidgetView) {
-        val childView = child as ScrapWidgetView
+    override fun removeChild(child: IScrapView) {
+        val childView = child as ScrapView
         mChildren.remove(childView)
     }
 
-    fun setParent(parent: IParentWidgetView) {
+    fun setParent(parent: IParentView) {
         mParent = parent
     }
 

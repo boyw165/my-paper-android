@@ -20,15 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.model
 
-class EditorWidget {
+import io.reactivex.Single
+import java.util.*
 
-    fun start() {
+interface IPaperTransformRepo {
 
-    }
+    fun putRecord(key: UUID, transform: IPaperTransform): Single<Boolean>
 
-    fun stop() {
-
-    }
+    fun getRecord(key: UUID): Single<IPaperTransform>
 }

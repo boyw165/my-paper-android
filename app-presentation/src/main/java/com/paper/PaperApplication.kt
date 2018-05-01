@@ -25,9 +25,12 @@ import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.IDatabaseIOSchedulerProvider
 import com.paper.domain.IPaperRepoProvider
+import com.paper.domain.IPaperTransformRepoProvider
 import com.paper.domain.ISharedPreferenceService
+import com.paper.model.IPaperTransformRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.PaperTransformRepoFileImpl
 import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
@@ -35,6 +38,7 @@ import io.reactivex.plugins.RxJavaPlugins
 class PaperApplication : MultiDexApplication(),
                          IDatabaseIOSchedulerProvider,
                          IPaperRepoProvider,
+                         IPaperTransformRepoProvider,
                          ISharedPreferenceService {
 
     override fun onCreate() {
@@ -50,16 +54,23 @@ class PaperApplication : MultiDexApplication(),
 
     // Repository and scheduler ///////////////////////////////////////////////
 
-    // Database.
-    private val mPaperRepo: PaperRepoSqliteImpl by lazy {
+    private val mPaperRepo by lazy {
         PaperRepoSqliteImpl(authority = packageName,
                             resolver = contentResolver,
                             fileDir = getExternalFilesDir("media"),
                             dbIoScheduler = getScheduler())
     }
 
-    override fun getRepo(): IPaperRepo {
+    override fun getPaperRepo(): IPaperRepo {
         return mPaperRepo
+    }
+
+    private val mPaperTransformRepo by lazy {
+        PaperTransformRepoFileImpl(fileDir = getExternalFilesDir("transform"))
+    }
+
+    override fun getPaperTransformRepo(): IPaperTransformRepo {
+        return mPaperTransformRepo
     }
 
     private val mDbScheduler = SingleScheduler()

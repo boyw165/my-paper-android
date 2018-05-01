@@ -67,7 +67,6 @@ class PaperGalleryActivity : AppCompatActivity() {
     // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
-    private val mClickPaperSignal = PublishSubject.create<Long>()
     private val mBrowsePaperSignal = PublishSubject.create<Long>()
 
     private val mProgressBar: AlertDialog by lazy {
@@ -87,7 +86,7 @@ class PaperGalleryActivity : AppCompatActivity() {
 
     private val mPaperSnapshots = mutableListOf<PaperModel>()
 
-    private val mRepo by lazy { (application as IPaperRepoProvider).getRepo() }
+    private val mRepo by lazy { (application as IPaperRepoProvider).getPaperRepo() }
     private val mPrefs by lazy { application as ISharedPreferenceService }
     private val mPermissions by lazy { RxPermissions(this) }
 
@@ -99,8 +98,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     private val mUiScheduler = AndroidSchedulers.mainThread()
 
     // Disposables
-    private val mDisposablesOnCreate = CompositeDisposable()
-    private val mDisposablesOnResume = CompositeDisposable()
+    private val mDisposables = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,7 +154,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         super.onResume()
 
         // Exp menu button.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickShowExpMenu()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .observeOn(mUiScheduler)
@@ -165,7 +163,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                 })
 
         // Exp menu.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickExpMenu()
                 .debounce(150, TimeUnit.MILLISECONDS)
                 .observeOn(mUiScheduler)
@@ -174,7 +172,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                 })
 
         // Button of new paper.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickNewPaper()
                 .switchMap {
                     requestPermissions()
@@ -186,7 +184,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     navigateToPaperEditor(ModelConst.TEMP_ID)
                 })
         // Button of existing paper.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickPaper()
                 .observeOn(mUiScheduler)
                 .subscribe { id ->
@@ -194,7 +192,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     hideProgressBar()
                 })
         // Button of delete paper.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onClickDeletePaper()
                 .map {
                     val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
@@ -230,7 +228,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     hideProgressBar()
                 })
         // Browse papers.
-        mDisposablesOnCreate.add(
+        mDisposables.add(
             onBrowsePaper()
                 .observeOn(mUiScheduler)
                 .subscribe { id ->
@@ -245,7 +243,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                 })
 
         // Load papers
-        mDisposablesOnResume.add(
+        mDisposables.add(
             requestPermissions()
                 .switchMap {
                     // Note: Any database update will emit new result
@@ -274,7 +272,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
 
-        mDisposablesOnCreate.clear()
+        mDisposables.clear()
     }
 
     private fun showPaperThumbnails(papers: List<PaperModel>) {

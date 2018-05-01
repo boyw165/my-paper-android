@@ -28,7 +28,7 @@ import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 
-class SketchToDrawSVGEvent(sketch: List<SketchStroke>) : Observable<DrawSVGEvent>() {
+class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent>() {
 
     private val mSketch = sketch.toList()
 

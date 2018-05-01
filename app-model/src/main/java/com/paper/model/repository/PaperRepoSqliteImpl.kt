@@ -418,7 +418,7 @@ class PaperRepoSqliteImpl(authority: String,
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
                 PaperModel::class.java)
 
-            paperDetail.sketch.forEach { paper.addStrokeToSketch(it) }
+            paperDetail.sketch.forEach { paper.pushStroke(it) }
             paperDetail.scraps.forEach { paper.addScrap(it) }
         }
 

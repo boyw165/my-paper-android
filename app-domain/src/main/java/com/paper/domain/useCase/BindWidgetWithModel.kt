@@ -22,10 +22,10 @@
 
 package com.paper.domain.useCase
 
+import com.paper.domain.DomainConst
 import com.paper.domain.widget.editor.IWidget
+import io.reactivex.Observable
 import io.reactivex.Observer
-import io.reactivex.Single
-import io.reactivex.SingleObserver
 import io.reactivex.disposables.Disposable
 
 /**
@@ -35,37 +35,42 @@ import io.reactivex.disposables.Disposable
 class BindWidgetWithModel<T>(widget: IWidget<T>,
                              model: T,
                              caughtErrorSignal: Observer<Throwable>? = null)
-    : Single<Boolean>() {
+    : Observable<Boolean>() {
 
     private val mWidget = widget
     private val mModel = model
 
     private val mCaughtErrorSignal = caughtErrorSignal
 
-    override fun subscribeActual(observer: SingleObserver<in Boolean>) {
-        val d = UnbindDisposable(mWidget)
+    override fun subscribeActual(observer: Observer<in Boolean>) {
+        val d = UnbindDisposable(mWidget, mCaughtErrorSignal)
         observer.onSubscribe(d)
 
-        try {
-            mWidget.bindModel(mModel)
+        if (!d.isDisposed) {
+            try {
+                mWidget.bindModel(mModel)
+                println("${DomainConst.TAG}: Bind widget [$mWidget] with the model")
 
-            observer.onSuccess(true)
-        } catch (err: Throwable) {
-            observer.onSuccess(false)
+                observer.onNext(true)
+            } catch (err: Throwable) {
+                observer.onNext(false)
 
-            mCaughtErrorSignal?.onNext(err)
+                mCaughtErrorSignal?.onNext(err)
+            }
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    internal class UnbindDisposable<T>(widget: IWidget<T>) : Disposable {
+    internal class UnbindDisposable<T>(widget: IWidget<T>,
+                                       caughtErrorSignal: Observer<Throwable>?) : Disposable {
 
         @Volatile
         private var disposed = false
 
         private val widget = widget
+        private val caughtErrorSignal = caughtErrorSignal
 
         override fun isDisposed(): Boolean {
             return disposed
@@ -74,7 +79,14 @@ class BindWidgetWithModel<T>(widget: IWidget<T>,
         override fun dispose() {
             disposed = true
 
-            widget.unbindModel()
+            try {
+                widget.unbindModel()
+
+                println("${DomainConst.TAG}: Unbind widget [$widget] " +
+                        "from the model")
+            } catch (err: Throwable) {
+                caughtErrorSignal?.onNext(err)
+            }
         }
     }
 }

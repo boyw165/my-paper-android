@@ -27,14 +27,15 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IPaperRepoProvider
+import com.paper.domain.IPaperTransformRepoProvider
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.model.ModelConst
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.useCase.BindViewWithWidget
-import com.paper.view.canvas.PaperWidgetView
+import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
-import com.paper.view.editor.PaperEditorWidget
+import com.paper.domain.widget.editor.PaperEditorWidget
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -44,7 +45,7 @@ import java.util.concurrent.TimeUnit
 
 class PaperEditorActivity : AppCompatActivity() {
 
-    private val mCanvasView by lazy { findViewById<PaperWidgetView>(R.id.paper_canvas) }
+    private val mCanvasView by lazy { findViewById<PaperCanvasView>(R.id.paper_canvas) }
     private val mEditPanelView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
 
     private val mProgressBar by lazy {
@@ -72,11 +73,7 @@ class PaperEditorActivity : AppCompatActivity() {
     // Delete button
     private val mBtnDelete by lazy { findViewById<View>(R.id.btn_delete) }
 
-    // Repositories.
-    // TODO: Inject the repo.
-    private val mPaperRepo by lazy { (application as IPaperRepoProvider).getRepo() }
 
-    private val mPrefs by lazy { application as ISharedPreferenceService }
     private val mUiScheduler = AndroidSchedulers.mainThread()
     private val mWorkerScheduler = Schedulers.io()
 
@@ -87,7 +84,8 @@ class PaperEditorActivity : AppCompatActivity() {
 
     private val mWidget by lazy {
         PaperEditorWidget(
-            paperRepo = (application as IPaperRepoProvider).getRepo(),
+            paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
+            paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),
             sharedPrefs = application as ISharedPreferenceService,
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
@@ -127,6 +125,16 @@ class PaperEditorActivity : AppCompatActivity() {
                     }
                 })
 
+        // Error
+        mDisposables.add(
+            mErrorSignal
+                .observeOn(mUiScheduler)
+                .subscribe { error ->
+                    if (BuildConfig.DEBUG) {
+                        showErrorAlert(error)
+                    }
+                })
+
         // Close button.
         mDisposables.add(
             onClickCloseButton()
@@ -161,28 +169,30 @@ class PaperEditorActivity : AppCompatActivity() {
                     mCanvasView.setViewPortPosition(position.x, position.y)
                 })
 
-        // TODO
         // Undo & redo buttons
         mDisposables.add(
-            onClickUndoButton()
+            RxView.clicks(mBtnUndo)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    // TODO
-                    showWIP()
+                    mWidget.handleUndo()
                 })
-        // TODO
         mDisposables.add(
-            onClickRedoButton()
+            RxView.clicks(mBtnRedo)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    // TODO
-                    showWIP()
+                    mWidget.handleRedo()
+                })
+        mDisposables.add(
+            mWidget.onGetUndoRedoEvent()
+                .observeOn(mUiScheduler)
+                .subscribe { event ->
+                    mBtnUndo.isEnabled = event.canUndo
+                    mBtnRedo.isEnabled = event.canRedo
                 })
 
-        // TODO
         // Delete button
         mDisposables.add(
-            onClickDeleteButton()
+            RxView.clicks(mBtnDelete)
                 .observeOn(mUiScheduler)
                 .subscribe {
                     // TODO
@@ -191,21 +201,21 @@ class PaperEditorActivity : AppCompatActivity() {
 
         // Bind sub-view with the sub-widget if the widget is ready!
         mDisposables.add(
-            mWidget.onPaperWidgetReady()
+            mWidget.onCanvasWidgetReady()
+                .observeOn(mUiScheduler)
                 .switchMap { widget ->
                     BindViewWithWidget(view = mCanvasView,
                                        widget = widget,
                                        caughtErrorSignal = mErrorSignal)
-                        .toObservable()
                 }
                 .subscribe())
         mDisposables.add(
             mWidget.onEditPanelWidgetReady()
+                .observeOn(mUiScheduler)
                 .switchMap { widget ->
                     BindViewWithWidget(view = mEditPanelView,
                                        widget = widget,
                                        caughtErrorSignal = mErrorSignal)
-                        .toObservable()
                 }
                 .subscribe())
 
@@ -237,22 +247,6 @@ class PaperEditorActivity : AppCompatActivity() {
                                 RxView.clicks(mBtnClose))
     }
 
-    private fun onClickUndoButton(): Observable<Any> {
-        return RxView.clicks(mBtnUndo)
-    }
-
-    private fun onClickRedoButton(): Observable<Any> {
-        return RxView.clicks(mBtnRedo)
-    }
-
-    private fun onClickDeleteButton(): Observable<Any> {
-        return RxView.clicks(mBtnDelete)
-    }
-
-    private fun onClickMenu(): Observable<Any> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     private fun showProgressBar(progress: Int) {
         if (!mProgressBar.isShowing) {
             mProgressBar.show()
@@ -273,7 +267,7 @@ class PaperEditorActivity : AppCompatActivity() {
     private fun showErrorAlert(error: Throwable) {
         Toast.makeText(this@PaperEditorActivity,
                        error.toString(),
-                       Toast.LENGTH_SHORT).show()
+                       Toast.LENGTH_LONG).show()
     }
 
     private fun showErrorAlertThenFinish(error: Throwable) {

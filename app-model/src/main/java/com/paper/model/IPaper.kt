@@ -53,9 +53,11 @@ interface IPaper {
 
     fun getSketch(): List<SketchStroke>
 
-    fun addStrokeToSketch(stroke: SketchStroke): Observable<Boolean>
+    fun addStroke(stroke: SketchStroke): Observable<Boolean>
 
-    fun onAddStrokeToSketch(): Observable<SketchStroke>
+    fun onAddStroke(replayAll: Boolean = true): Observable<SketchStroke>
+
+    fun onRemoveStroke(): Observable<SketchStroke>
 
     // Scraps /////////////////////////////////////////////////////////////////
 
@@ -65,7 +67,7 @@ interface IPaper {
 
     fun removeScrap(scrap: ScrapModel): Observable<Boolean>
 
-    fun onAddScrap(): Observable<ScrapModel>
+    fun onAddScrap(replayAll: Boolean = true): Observable<ScrapModel>
 
     fun onRemoveScrap(): Observable<ScrapModel>
 }

@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,45 +20,33 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.model.transform
 
-import com.paper.domain.event.DrawSVGEvent
+import com.paper.model.IPaperTransform
 import com.paper.model.PaperModel
-import com.paper.model.Rect
-import io.reactivex.Observable
 
-interface IPaperWidget : IWidget<PaperModel> {
+class AddStrokeTransform(paper: PaperModel) : IPaperTransform {
 
-    // For input //////////////////////////////////////////////////////////////
-    // TODO: How to define the inbox?
+    private val mPaper = paper
+    private val mUndoStrokeSize = paper.sketch.size - 1
+    private val mRedoStrokeSize = mUndoStrokeSize + 1
+    private val mRedoStroke = paper.sketch.last()
 
-    fun handleChoosePenColor(color: Int)
+    override fun undo() {
+        val size = mPaper.sketch.size
+        while (size > mUndoStrokeSize) {
+            mPaper.popStroke()
+        }
+    }
 
-    fun handleUpdatePenSize(size: Float)
+    override fun redo() {
+        val size = mPaper.sketch.size
+        while (size < mRedoStrokeSize) {
+            mPaper.pushStroke(mRedoStroke)
+        }
+    }
 
-    fun handleActionBegin()
-
-    fun handleActionEnd()
-
-    fun handleTap(x: Float, y: Float)
-
-    fun handleDragBegin(x: Float, y: Float)
-
-    fun handleDrag(x: Float, y: Float)
-
-    fun handleDragEnd(x: Float, y: Float)
-
-    // For output /////////////////////////////////////////////////////////////
-
-    fun getPaper(): PaperModel
-
-    fun onSetCanvasSize(): Observable<Rect>
-
-    fun onAddScrapWidget(): Observable<IScrapWidget>
-
-    fun onRemoveScrapWidget(): Observable<IScrapWidget>
-
-    fun onDrawSVG(replayAll: Boolean = true): Observable<DrawSVGEvent>
-
-    fun onPrintDebugMessage(): Observable<String>
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

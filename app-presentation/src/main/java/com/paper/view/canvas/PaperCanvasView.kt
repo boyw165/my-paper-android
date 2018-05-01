@@ -42,7 +42,6 @@ import com.paper.domain.event.DrawViewPortEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperWidget
 import com.paper.domain.widget.editor.IScrapWidget
-import com.paper.domain.widget.editor.PaperWidget
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.view.IWidgetView
@@ -56,19 +55,19 @@ import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-class PaperWidgetView : View,
+class PaperCanvasView : View,
                         IWidgetView<IPaperWidget>,
                         IPaperContext,
-                        IParentWidgetView,
+                        IParentView,
                         IAllGesturesListener {
 
     // Scraps.
-    private val mScrapViews = mutableListOf<IScrapWidgetView>()
+    private val mScrapViews = mutableListOf<IScrapView>()
     private var mIfSharpenDrawing = true
 
     // Widget.
     private lateinit var mWidget: IPaperWidget
-    private val mWidgetDisposables = CompositeDisposable()
+    private val mDisposables = CompositeDisposable()
 
     /**
      * A signal indicating the layout change.
@@ -104,13 +103,13 @@ class PaperWidgetView : View,
         mWidget = widget
 
         // Add or remove scraps
-        mWidgetDisposables.add(
+        mDisposables.add(
             widget.onAddScrapWidget()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { scrapWidget ->
                     addScrap(scrapWidget)
                 })
-        mWidgetDisposables.add(
+        mDisposables.add(
             widget.onRemoveScrapWidget()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { scrapWidget ->
@@ -118,11 +117,11 @@ class PaperWidgetView : View,
                 })
 
         // Drawing
-        mWidgetDisposables.add(
+        mDisposables.add(
             mReadySignal
                 .switchMap { ready ->
                     if (ready) {
-                        widget.onDrawSVG()
+                        widget.onDrawSVG(true)
                             .startWith(DrawSVGEvent(action = CLEAR_ALL))
                     } else {
                         Observable.never()
@@ -134,7 +133,7 @@ class PaperWidgetView : View,
                 })
 
         // Canvas size change
-        mWidgetDisposables.add(
+        mDisposables.add(
             Observables.combineLatest(
                 mOnLayoutChangeSignal,
                 widget.onSetCanvasSize())
@@ -150,7 +149,7 @@ class PaperWidgetView : View,
                     }
                 })
         // View port and canvas matrix change
-        mWidgetDisposables.add(
+        mDisposables.add(
             mViewPort
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { vp ->
@@ -159,7 +158,7 @@ class PaperWidgetView : View,
 
                     // Notify any external observers
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
-                        canvas = mMSize.value.copy(),
+                        canvas = mMSize.value!!.copy(),
                         viewPort = Rect(vp.left,
                                         vp.top,
                                         vp.right,
@@ -167,30 +166,26 @@ class PaperWidgetView : View,
                 })
 
         // Debug
-        mWidgetDisposables.add(
+        mDisposables.add(
             widget
                 .onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 })
-
-        println("${AppConst.TAG}: Bind paper widget \"View\" with paper \"Widget\"")
     }
 
     override fun unbindWidget() {
-        mWidgetDisposables.clear()
+        mDisposables.clear()
 
         mScrapViews.forEach { scrapView ->
             scrapView.unbindWidget()
         }
-
-        println("${AppConst.TAG}: Unbind paper widget \"View\" from paper \"Widget\"")
     }
 
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
-        println("${AppConst.TAG}: PaperWidgetView # onMeasure()")
+        println("${AppConst.TAG}: PaperCanvasView # onMeasure()")
         super.onMeasure(widthSpec, heightSpec)
     }
 
@@ -199,7 +194,7 @@ class PaperWidgetView : View,
                           top: Int,
                           right: Int,
                           bottom: Int) {
-        println("${AppConst.TAG}: PaperWidgetView # onLayout(changed=$changed)")
+        println("${AppConst.TAG}: PaperCanvasView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
         if (changed) {
@@ -210,7 +205,7 @@ class PaperWidgetView : View,
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
     private fun addScrap(widget: IScrapWidget) {
-        val scrapView = ScrapWidgetView()
+        val scrapView = ScrapView()
 
         scrapView.setPaperContext(this)
         scrapView.setParent(this)
@@ -339,8 +334,8 @@ class PaperWidgetView : View,
                       mViewPortMax.height())
 
         // Backed the canvas Bitmap.
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
         mBitmap?.recycle()
@@ -358,7 +353,7 @@ class PaperWidgetView : View,
     }
 
     private fun dispatchDrawScraps(canvas: Canvas,
-                                   scrapViews: List<IScrapWidgetView>,
+                                   scrapViews: List<IScrapView>,
                                    ifSharpenDrawing: Boolean) {
         // Hold canvas matrix.
         mTmpMatrix.set(mCanvasMatrix)
@@ -381,12 +376,12 @@ class PaperWidgetView : View,
         if (!isAllSet) return
 
         // Scale from model to view.
-        val scaleM2V = mScaleM2V.value
+        val scaleM2V = mScaleM2V.value!!
         // Scale from view to model
         val scaleV2M = 1f / scaleM2V
         // Scale contributed by view port.
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
 
@@ -446,7 +441,7 @@ class PaperWidgetView : View,
 
         when (event.action) {
             MOVE -> {
-                val drawable = SVGDrawable(context = this@PaperWidgetView,
+                val drawable = SVGDrawable(context = this@PaperCanvasView,
                                            penColor = event.penColor,
                                            penSize = event.penSize)
                 drawable.moveTo(Point(x, y, event.point.time))
@@ -524,12 +519,12 @@ class PaperWidgetView : View,
     }
 
     fun setViewPortPosition(x: Float, y: Float) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
 
         mTmpBound.set(x, y,
-                      x + mViewPort.value.width(),
-                      y + mViewPort.value.height())
+                      x + mViewPort.value!!.width(),
+                      y + mViewPort.value!!.height())
 
         // Constraint view port
         val minWidth = mViewPortMin.width()
@@ -573,11 +568,11 @@ class PaperWidgetView : View,
     private fun computeCanvasMatrix(scaleM2V: Float) {
         if (mCanvasMatrixDirty && mViewPort.hasValue()) {
             // View port x
-            val vx = mViewPort.value.left
+            val vx = mViewPort.value!!.left
             // View port y
-            val vy = mViewPort.value.top
+            val vy = mViewPort.value!!.top
             // View port width
-            val vw = mViewPort.value.width()
+            val vw = mViewPort.value!!.width()
             val scaleVP = mViewPortBase.width() / vw
 
             mCanvasMatrix.reset()
@@ -608,9 +603,9 @@ class PaperWidgetView : View,
     // TODO: Make the view-port code a component.
     private fun onUpdateViewport(startPointers: Array<PointF>,
                                  stopPointers: Array<PointF>) {
-        val mw = mMSize.value.width
-        val mh = mMSize.value.height
-        val scaleM2V = mScaleM2V.value
+        val mw = mMSize.value!!.width
+        val mh = mMSize.value!!.height
+        val scaleM2V = mScaleM2V.value!!
 
         // Compute new canvas matrix.
         val transform = TransformUtils.getTransformFromPointers(
@@ -730,8 +725,8 @@ class PaperWidgetView : View,
 
         // The point is still in the View world, we still need to map it to the
         // Model world.
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
-        val scaleM2V = mScaleM2V.value
+        val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
+        val scaleM2V = mScaleM2V.value!!
         mTmpPoint[0] = mTmpPoint[0] / scaleVP / scaleM2V
         mTmpPoint[1] = mTmpPoint[1] / scaleVP / scaleM2V
 
@@ -743,8 +738,8 @@ class PaperWidgetView : View,
      */
     private fun toViewWorld(x: Float,
                             y: Float): FloatArray {
-        val scaleVP = mViewPortBase.width() / mViewPort.value.width()
-        val scaleM2V = mScaleM2V.value
+        val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
+        val scaleM2V = mScaleM2V.value!!
 
         // Map the point from Model world to View world.
         mTmpPoint[0] = scaleVP * scaleM2V * x
@@ -770,9 +765,9 @@ class PaperWidgetView : View,
                                        mMaxFlingVec)
 
         // Set mapper as the listener.
-        detector.tapGestureListener = this@PaperWidgetView
-        detector.dragGestureListener = this@PaperWidgetView
-        detector.pinchGestureListener = this@PaperWidgetView
+        detector.tapGestureListener = this@PaperCanvasView
+        detector.dragGestureListener = this@PaperCanvasView
+        detector.pinchGestureListener = this@PaperCanvasView
 
         return@lazy detector
     }
@@ -999,14 +994,14 @@ class PaperWidgetView : View,
     }
 
     private fun ensureNoLeakingSubscription() {
-        if (mWidgetDisposables.size() > 0) throw IllegalStateException(
+        if (mDisposables.size() > 0) throw IllegalStateException(
             "Already bind to a widget")
     }
 
     private val isAllSet
         get() = mScaleM2V.value != Float.NaN &&
-                (mMSize.value.width > 0f &&
-                 mMSize.value.height > 0f) &&
+                (mMSize.value!!.width > 0f &&
+                 mMSize.value!!.height > 0f) &&
                 mViewPort.hasValue()
 
     private fun drawBackground(canvas: Canvas,
@@ -1032,7 +1027,7 @@ class PaperWidgetView : View,
         //       vpW - baseW
         // a = --------------
         //      minW - baseW
-        val alpha = (mViewPort.value.width() - mViewPortBase.width()) /
+        val alpha = (mViewPort.value!!.width() - mViewPortBase.width()) /
                     (mViewPortMin.width() - mViewPortBase.width())
         mGridPaint.alpha = (alpha * 0xFF).toInt()
 
@@ -1051,5 +1046,9 @@ class PaperWidgetView : View,
             }
             y += cell
         }
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
     }
 }

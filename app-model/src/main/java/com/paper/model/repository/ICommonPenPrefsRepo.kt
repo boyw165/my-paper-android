@@ -108,6 +108,6 @@ interface ICommonPenPrefsRepo {
                                     Color.parseColor("#666B6D"),
                                     Color.parseColor("#666B6D"))
         val DEFAULT_CHOSEN_COLOR = DEFAULT_COLORS[1]
-        val DEFAULT_PEN_SIZE = 0.2f
+        const val DEFAULT_PEN_SIZE = 0.2f
     }
 }

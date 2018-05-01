@@ -21,7 +21,7 @@
 package com.paper.domain
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.useCase.LoadPaperAndBindPaperWidgetWithPaperModel
+import com.paper.domain.useCase.LoadPaperAndCreateBinding
 import com.paper.domain.widget.editor.IPaperWidget
 import com.paper.model.PaperModel
 import com.paper.model.repository.IPaperRepo
@@ -53,7 +53,7 @@ class LoadPaperAndBindModelTest {
         val progressSignal = PublishSubject.create<ProgressEvent>()
         val testProgressObserver = progressSignal.test()
 
-        val testMainObserver = LoadPaperAndBindPaperWidgetWithPaperModel(
+        val testMainObserver = LoadPaperAndCreateBinding(
             paperID = 0,
             paperWidget = mockedWidget,
             paperRepo = mockRepo,
@@ -89,7 +89,7 @@ class LoadPaperAndBindModelTest {
         val progressSignal = PublishSubject.create<ProgressEvent>()
         val testProgressObserver = progressSignal.test()
 
-        val testMainObserver = LoadPaperAndBindPaperWidgetWithPaperModel(
+        val testMainObserver = LoadPaperAndCreateBinding(
             paperID = 0,
             paperWidget = mockedWidget,
             paperRepo = mockedRepo,
@@ -124,7 +124,7 @@ class LoadPaperAndBindModelTest {
 
         val testScheduler = TestScheduler()
 
-        val testMainObserver = LoadPaperAndBindPaperWidgetWithPaperModel(
+        val testMainObserver = LoadPaperAndCreateBinding(
             paperID = 0,
             paperWidget = mockedWidget,
             paperRepo = mockedRepo,

@@ -20,9 +20,9 @@
 
 package com.paper.domain
 
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.IPaperTransformRepo
 
-interface IPaperRepoProvider {
+interface IPaperTransformRepoProvider {
 
-    fun getPaperRepo(): IPaperRepo
+    fun getPaperTransformRepo(): IPaperTransformRepo
 }

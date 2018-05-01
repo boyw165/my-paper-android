@@ -64,6 +64,7 @@ class PaperEditPanelWidget(
                 .combineLatest(
                     model.getPenColors(),
                     model.getChosenPenColor())
+                .observeOn(mUiScheduler)
                 .subscribe { (colors, chosenColor) ->
                     val index = colors.indexOf(chosenColor)
 
@@ -76,6 +77,7 @@ class PaperEditPanelWidget(
         // Prepare initial pen size
         mDisposables.add(
             model.getPenSize()
+                .observeOn(mUiScheduler)
                 .subscribe { penSize ->
                     // Export the signal as onUpdatePenSize()
                     mPenSizeSignal.onNext(penSize)
@@ -134,10 +136,9 @@ class PaperEditPanelWidget(
 
     // Pen Color & size //////////////////////////////////////////////////////
 
-    private val mColorTicketsSignal = PublishSubject.create<UpdateColorTicketsEvent>()
+    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
 
     fun handleClickColor(color: Int) {
-        println("${DomainConst.TAG}: choose color=${Integer.toHexString(color)}")
         mCancelSignal.onNext(0)
 
         mDisposables.add(
@@ -152,7 +153,7 @@ class PaperEditPanelWidget(
         return mColorTicketsSignal
     }
 
-    private val mPenSizeSignal = PublishSubject.create<Float>()
+    private val mPenSizeSignal = BehaviorSubject.create<Float>()
 
     fun handleChangePenSize(size: Float) {
         println("${DomainConst.TAG}: change pen size=$size")
@@ -168,5 +169,9 @@ class PaperEditPanelWidget(
 
     fun onUpdatePenSize(): Observable<Float> {
         return mPenSizeSignal
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
     }
 }

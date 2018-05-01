@@ -33,6 +33,8 @@ class PaperModel(
     val uuid: UUID = UUID.randomUUID(),
     val createdAt: Long = 0L) {
 
+    private val mLock = Any()
+
     var modifiedAt: Long = 0L
 
     // By default is landscape A4, 210 x 297 units.
@@ -50,10 +52,41 @@ class PaperModel(
     private val mSketch = mutableListOf<SketchStroke>()
 
     val sketch: List<SketchStroke>
-        get() = mSketch.toList()
+        get() {
+            return synchronized(mLock) {
+                mSketch.toList()
+            }
+        }
 
-    fun addStrokeToSketch(stroke: SketchStroke) {
-        mSketch.add(stroke)
+    fun pushStroke(stroke: SketchStroke) {
+        synchronized(mLock) {
+            mSketch.add(stroke)
+            mAddStrokeSignal.onNext(stroke)
+        }
+    }
+
+    fun popStroke() {
+        synchronized(mLock) {
+            val stroke = mSketch.removeAt(mSketch.lastIndex)
+            mRemoveStrokeSignal.onNext(stroke)
+        }
+    }
+
+    private val mAddStrokeSignal = PublishSubject.create<SketchStroke>()
+    private val mRemoveStrokeSignal = PublishSubject.create<SketchStroke>()
+
+    fun onAddStroke(replayAll: Boolean = true): Observable<SketchStroke> {
+        return if (replayAll) {
+            Observable.merge(
+                Observable.fromIterable(sketch),
+                mAddStrokeSignal)
+        } else {
+            mAddStrokeSignal
+        }
+    }
+
+    fun onRemoveStroke(): Observable<SketchStroke> {
+        return mRemoveStrokeSignal
     }
 
     // Scraps /////////////////////////////////////////////////////////////////
@@ -64,22 +97,34 @@ class PaperModel(
 
     // Must clone the list in case concurrent modification
     val scraps: List<ScrapModel>
-        get() = mScraps.toList()
+        get() {
+            return synchronized(mLock) {
+                mScraps.toList()
+            }
+        }
 
     fun addScrap(scrap: ScrapModel) {
-        mScraps.add(scrap)
-        mAddScrapSignal.onNext(scrap)
+        synchronized(mLock) {
+            mScraps.add(scrap)
+            mAddScrapSignal.onNext(scrap)
+        }
     }
 
     fun removeScrap(scrap: ScrapModel) {
-        mScraps.remove(scrap)
-        mRemoveScrapSignal.onNext(scrap)
+        synchronized(mLock) {
+            mScraps.remove(scrap)
+            mRemoveScrapSignal.onNext(scrap)
+        }
     }
 
-    fun onAddScrap(): Observable<ScrapModel> {
-        return Observable.merge(
-            Observable.fromIterable(scraps),
-            mAddScrapSignal)
+    fun onAddScrap(replayAll: Boolean = true): Observable<ScrapModel> {
+        return if (replayAll) {
+            Observable.merge(
+                Observable.fromIterable(scraps),
+                mAddScrapSignal)
+        } else {
+            mAddScrapSignal
+        }
     }
 
     fun onRemoveScrap(): Observable<ScrapModel> {
