@@ -1,5 +1,6 @@
 .DS_Store
 .gradle
+**/merged_proguard*
 **/*.iml
 **/local.properties
 **/.idea/**
