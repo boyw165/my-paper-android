@@ -35,6 +35,9 @@ data class SketchStroke(
     var width: Float = 0.toFloat(),
     var isEraser: Boolean = false) {
 
+    private var mIsHashDirty = true
+    private var mHashCode = 0
+
     private val mPointList = mutableListOf<Point>()
 
     val pointList: List<Point> get() = mPointList.toList()
@@ -52,6 +55,9 @@ data class SketchStroke(
 
         mPointList.add(p)
 
+        // Flag hash code dirty
+        mIsHashDirty = true
+
         return this
     }
 
@@ -63,6 +69,9 @@ data class SketchStroke(
 
         this.mPointList.addAll(PointList)
 
+        // Flag hash code dirty
+        mIsHashDirty = true
+
         return this
     }
 
@@ -71,6 +80,38 @@ data class SketchStroke(
             p.x += offsetX
             p.y += offsetY
         }
+
+        // Flag hash code dirty
+        mIsHashDirty = true
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SketchStroke
+
+        if (color != other.color) return false
+        if (width != other.width) return false
+        if (isEraser != other.isEraser) return false
+        if (mPointList != other.mPointList) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        if (mIsHashDirty) {
+            mHashCode = color
+            mHashCode = 31 * mHashCode + java.lang.Float.floatToIntBits(width)
+            mHashCode = 31 * mHashCode + if (isEraser) 1 else 0
+            mPointList.forEach { p ->
+                mHashCode = 31 * mHashCode + p.hashCode()
+            }
+
+            mIsHashDirty = false
+        }
+
+        return mHashCode
     }
 
     override fun toString(): String {

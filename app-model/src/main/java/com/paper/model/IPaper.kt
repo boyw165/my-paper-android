@@ -27,8 +27,9 @@ import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import java.io.File
 import java.util.*
+import java.util.concurrent.locks.Lock
 
-interface IPaper {
+interface IPaper : Lock {
 
     // The SQLite ID.
     fun getId(): Long

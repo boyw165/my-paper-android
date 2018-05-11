@@ -45,6 +45,8 @@ android {
 
     buildTypes {
         debug {
+            // Configurable ProGuard testing, for example,
+            // "./gradlew assembleDebug -PtestProguard=true"
             minifyEnabled project.hasProperty("testProguard")
             shrinkResources project.hasProperty("testProguard")
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

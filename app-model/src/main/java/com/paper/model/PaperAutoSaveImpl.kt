@@ -20,11 +20,17 @@
 
 package com.paper.model
 
+import com.paper.model.repository.IPaperRepo
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
+import io.reactivex.Scheduler
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.Condition
+import java.util.concurrent.locks.ReentrantLock
 
 class PaperAutoSaveImpl(
     // The SQLite ID.
@@ -34,11 +40,9 @@ class PaperAutoSaveImpl(
     createdAt: Long = 0L)
     : IPaper {
 
-    private val mLock = Any()
-
     // General ////////////////////////////////////////////////////////////////
 
-    private val mID = id
+    private var mID = id
 
     override fun getId(): Long {
         return mID
@@ -79,11 +83,15 @@ class PaperAutoSaveImpl(
     }
 
     override fun setWidth(width: Float) {
+        mLock.lock()
         mWidth = width
+        mLock.unlock()
     }
 
     override fun setHeight(height: Float) {
+        mLock.lock()
         mHeight = height
+        mLock.unlock()
     }
 
     // Caption & tags /////////////////////////////////////////////////////////
@@ -115,15 +123,30 @@ class PaperAutoSaveImpl(
     }
 
     override fun setThumbnail(file: File) {
+        mLock.lock()
         mThumbnail = file
+        mLock.unlock()
+
+        // Request to save file
+        requestAutoSave()
     }
 
     override fun setThumbnailWidth(width: Int) {
+        mLock.lock()
         mThumbnailWidth = width
+        mLock.unlock()
+
+        // Request to save file
+        requestAutoSave()
     }
 
     override fun setThumbnailHeight(height: Int) {
+        mLock.lock()
         mThumbnailHeight = height
+        mLock.unlock()
+
+        // Request to save file
+        requestAutoSave()
     }
 
     // Sketch & strokes ///////////////////////////////////////////////////////
@@ -133,21 +156,30 @@ class PaperAutoSaveImpl(
     private val mRemoveStrokeSignal = PublishSubject.create<SketchStroke>()
 
     override fun getSketch(): List<SketchStroke> {
-        return synchronized(mLock) {
-            mSketch.toList()
-        }
+        mLock.lock()
+        val sketch: List<SketchStroke> = mSketch.toList()
+        mLock.unlock()
+
+        return sketch
     }
 
     override fun pushStroke(stroke: SketchStroke) {
-        synchronized(mLock) {
-            mSketch.add(stroke)
-            mAddStrokeSignal.onNext(stroke)
-        }
+        mLock.lock()
+        mSketch.add(stroke)
+        mAddStrokeSignal.onNext(stroke)
+        mLock.unlock()
+
+        // Request to save file
+        requestAutoSave()
     }
 
     override fun popStroke(): SketchStroke {
         val stroke = mSketch.removeAt(mSketch.lastIndex)
         mRemoveStrokeSignal.onNext(stroke)
+
+        // Request to save file
+        requestAutoSave()
+
         return stroke
     }
 
@@ -172,24 +204,32 @@ class PaperAutoSaveImpl(
     private val mRemoveScrapSignal = PublishSubject.create<ScrapModel>()
 
     override fun getScraps(): List<ScrapModel> {
-        return synchronized(mLock) {
-            // Must clone the list in case concurrent modification
-            mScraps.toList()
-        }
+        mLock.lock()
+        // Must clone the list in case concurrent modification
+        val scraps = mScraps.toList()
+        mLock.unlock()
+
+        return scraps
     }
 
     override fun addScrap(scrap: ScrapModel) {
-        synchronized(mLock) {
-            mScraps.add(scrap)
-            mAddScrapSignal.onNext(scrap)
-        }
+        mLock.lock()
+        mScraps.add(scrap)
+        mAddScrapSignal.onNext(scrap)
+        mLock.unlock()
+
+        // Request to save file
+        requestAutoSave()
     }
 
     override fun removeScrap(scrap: ScrapModel) {
-        synchronized(mLock) {
-            mScraps.remove(scrap)
-            mRemoveScrapSignal.onNext(scrap)
-        }
+        mLock.lock()
+        mScraps.remove(scrap)
+        mRemoveScrapSignal.onNext(scrap)
+        mLock.unlock()
+
+        // Request to save file
+        requestAutoSave()
     }
 
     override fun onAddScrap(replayAll: Boolean): Observable<ScrapModel> {
@@ -204,5 +244,75 @@ class PaperAutoSaveImpl(
 
     override fun onRemoveScrap(): Observable<ScrapModel> {
         return mRemoveScrapSignal
+    }
+
+    // Auto-save //////////////////////////////////////////////////////////////
+
+    private val mSaveSignal = PublishSubject.create<Any>()
+    private val mAutoSaveDisposables = CompositeDisposable()
+
+    /**
+     * Enable the auto-save function.
+     */
+    fun setAutoSaveRepo(repo: IPaperRepo,
+                        workerScheduler: Scheduler) {
+        mAutoSaveDisposables.clear()
+        mAutoSaveDisposables.add(
+            mSaveSignal
+                // TODO: Make sure the operation is processed one by one
+                // TODO: (on single thread pool)
+                .debounce(850, TimeUnit.MILLISECONDS, workerScheduler)
+                .flatMap {
+                    repo.putPaperById(getId(), this@PaperAutoSaveImpl)
+                        .toObservable()
+                }
+                .subscribe { event ->
+                    mLock.lock()
+                    if (event.id != mID) {
+                        mID = event.id
+                    }
+                    mLock.unlock()
+
+                    println("${ModelConst.TAG}: model saved! (auto-save impl)")
+                })
+    }
+
+    // FIXME: Call it somewhere!
+    fun unsetAutoSave() {
+        mAutoSaveDisposables.clear()
+    }
+
+    private fun requestAutoSave() {
+        if (!mSaveSignal.hasObservers()) return
+
+        mSaveSignal.onNext(0)
+    }
+
+    // Thread save ////////////////////////////////////////////////////////////
+
+    private val mLock = ReentrantLock()
+
+    override fun lock() {
+        mLock.lock()
+    }
+
+    override fun tryLock(): Boolean {
+        return mLock.tryLock()
+    }
+
+    override fun tryLock(time: Long, unit: TimeUnit?): Boolean {
+        return mLock.tryLock(time, unit)
+    }
+
+    override fun unlock() {
+        mLock.unlock()
+    }
+
+    override fun lockInterruptibly() {
+        mLock.lockInterruptibly()
+    }
+
+    override fun newCondition(): Condition {
+        return mLock.newCondition()
     }
 }

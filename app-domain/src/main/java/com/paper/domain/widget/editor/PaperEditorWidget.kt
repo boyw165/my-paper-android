@@ -140,10 +140,8 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
         // Following are about undo and redo:
         mDisposables.add(
-            Observables
-                .combineLatest(
-                mHistoryWidget.onUpdateUndoCapacity(),
-                mHistoryWidget.onUpdateRedoCapacity())
+            mHistoryWidget
+                .onUpdateUndoRedoCapacity()
                 .map { (undo, redo) ->
                     UndoRedoEvent(canUndo = undo > 0,
                                   canRedo = redo > 0)

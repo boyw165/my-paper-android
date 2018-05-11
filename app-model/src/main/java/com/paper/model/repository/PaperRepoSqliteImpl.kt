@@ -25,12 +25,16 @@ import android.content.ContentValues
 import android.database.ContentObserver
 import android.database.Cursor
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.GsonBuilder
-import com.paper.model.*
+import com.paper.model.IPaper
+import com.paper.model.ModelConst
+import com.paper.model.PaperAutoSaveImpl
+import com.paper.model.ScrapModel
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
@@ -46,11 +50,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.HashMap
 
 class PaperRepoSqliteImpl(authority: String,
                           resolver: ContentResolver,
                           fileDir: File,
-                          dbIoScheduler: Scheduler) : IPaperRepo {
+                          dbIoScheduler: Scheduler) : IPaperRepo,
+                                                      IBitmapRepo {
 
     private val mAuthority = authority
     private val mResolver = resolver
@@ -63,7 +69,7 @@ class PaperRepoSqliteImpl(authority: String,
     // JSON translator.
     private val mTranslator by lazy {
         GsonBuilder()
-            .registerTypeAdapter(IPaper::class.java,
+            .registerTypeAdapter(PaperAutoSaveImpl::class.java,
                                  PaperJSONTranslator())
             .registerTypeAdapter(SketchStroke::class.java,
                                  SketchStrokeJSONTranslator())
@@ -83,14 +89,18 @@ class PaperRepoSqliteImpl(authority: String,
                 when (uri.lastPathSegment) {
                     CHANGE_ADD,
                     CHANGE_REMOVE,
-                    CHANGE_UPDATE -> getPapersThenFinish(true)
-                        .subscribe(
-                            { papers ->
-                                mPaperListSignal.onNext(papers)
-                            },
-                            { err ->
-                                mPaperListSignal.onError(err)
-                            })
+                    CHANGE_UPDATE -> {
+                        if (!mPaperListSignal.hasObservers()) return
+
+                        getPapersThenFinish(true)
+                            .subscribe(
+                                { papers ->
+                                    mPaperListSignal.onNext(papers)
+                                },
+                                { err ->
+                                    mPaperListSignal.onError(err)
+                                })
+                    }
                 }
             }
         }
@@ -107,7 +117,7 @@ class PaperRepoSqliteImpl(authority: String,
 
     private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<IPaper>> {
         return Single
-            .create { downstream: SingleEmitter<List<IPaper>> ->
+            .create { observer: SingleEmitter<List<IPaper>> ->
                 var cursor: Cursor? = null
 
                 try {
@@ -143,15 +153,17 @@ class PaperRepoSqliteImpl(authority: String,
                     // Translate cursor.
                     val papers = mutableListOf<IPaper>()
                     if (cursor.moveToFirst() &&
-                        !downstream.isDisposed) {
+                        !observer.isDisposed) {
                         do {
-                            papers.add(convertCursorToPaper(cursor, !isSnapshot))
+                            papers.add(convertCursorToPaper(
+                                cursor = cursor,
+                                fullyRead = !isSnapshot))
                         } while (cursor.moveToNext() &&
-                                 !downstream.isDisposed)
+                                 !observer.isDisposed)
                     }
 
-                    if (!downstream.isDisposed) {
-                        downstream.onSuccess(papers)
+                    if (!observer.isDisposed) {
+                        observer.onSuccess(papers)
                     }
                 } catch (error: InterruptedException) {
                     val i = error.stackTrace.indexOfFirst { trace ->
@@ -197,12 +209,15 @@ class PaperRepoSqliteImpl(authority: String,
                         createdAt = timestamp)
                     newPaper.setModifiedAt(timestamp)
 
+                    // Enable auto-save
+                    newPaper.setAutoSaveRepo(this@PaperRepoSqliteImpl, mDbIoScheduler)
+
                     return@fromCallable newPaper as IPaper
                 }
                 .subscribeOn(mDbIoScheduler)
         } else {
             Single
-                .fromCallable {
+                .create { observer: SingleEmitter<IPaper> ->
                     val uri = Uri.Builder()
                         .scheme("content")
                         .authority(mAuthority)
@@ -232,13 +247,24 @@ class PaperRepoSqliteImpl(authority: String,
                         null)
                     if (cursor.count == 0) throw IllegalArgumentException("Cannot find paper, id=$id")
                     if (cursor.count > 1) throw IllegalStateException("Multiple paper id=%id conflict")
+                    if (observer.isDisposed) return@create
 
                     // Translate cursor.
                     cursor.moveToFirst()
-                    val paper = convertCursorToPaper(cursor, true)
-                    cursor.close()
+                    cursor.use { c ->
+                        val paper = convertCursorToPaper(
+                            c,
+                            fullyRead = true)
 
-                    return@fromCallable paper
+                        // Enable auto-save
+                        if (paper is PaperAutoSaveImpl) {
+                            paper.setAutoSaveRepo(this@PaperRepoSqliteImpl, mDbIoScheduler)
+                        }
+
+                        if (!observer.isDisposed) {
+                            observer.onSuccess(paper)
+                        }
+                    }
                 }
                 .subscribeOn(mDbIoScheduler)
         }
@@ -259,7 +285,12 @@ class PaperRepoSqliteImpl(authority: String,
                     if (emitter.isDisposed) return@create
 
                     try {
-                        val newURI = mResolver.insert(uri, convertPaperToValues(paper))
+                        // Lock paper and convert to database format
+                        paper.lock()
+                        val values = convertPaperToValues(paper)
+                        paper.unlock()
+
+                        val newURI = mResolver.insert(uri, values)
                         if (newURI != null) {
                             if (!emitter.isDisposed) {
                                 emitter.onSuccess(UpdateDatabaseEvent(
@@ -284,7 +315,12 @@ class PaperRepoSqliteImpl(authority: String,
                     if (emitter.isDisposed) return@create
 
                     try {
-                        if (0 < mResolver.update(uri, convertPaperToValues(paper), null, null)) {
+                        // Lock paper and convert to database format
+                        paper.lock()
+                        val values = convertPaperToValues(paper)
+                        paper.unlock()
+
+                        if (0 < mResolver.update(uri, values, null, null)) {
                             if (!emitter.isDisposed) {
                                 emitter.onSuccess(UpdateDatabaseEvent(
                                     successful = true,
@@ -338,10 +374,11 @@ class PaperRepoSqliteImpl(authority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    override fun putBitmap(bmp: Bitmap): Single<File> {
+    private val mBitmapMap = HashMap<Int, File>()
+
+    override fun putBitmap(key: Int, bmp: Bitmap): Single<File> {
         return Single
             .fromCallable {
-                // TODO: Use LruCache?
                 if (!mFileDir.exists()) {
                     mFileDir.mkdir()
                 }
@@ -353,9 +390,24 @@ class PaperRepoSqliteImpl(authority: String,
                     bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
                 }
 
+                // TODO: Use LruCache?
+                mBitmapMap[key] = bmpFile
+
+                println("${ModelConst.TAG}: put Bitmap to cache (key=$key, file=$bmpFile")
+
                 return@fromCallable bmpFile
             }
             .subscribeOn(mDbIoScheduler)
+    }
+
+    override fun getBitmap(key: Int): Single<Bitmap> {
+        val file = mBitmapMap[key] ?: return Single.never()
+
+        return Single
+                .fromCallable {
+                    BitmapFactory.decodeFile(file.absolutePath)
+                }
+                .subscribeOn(mDbIoScheduler)
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -404,7 +456,7 @@ class PaperRepoSqliteImpl(authority: String,
         if (fullyRead) {
             val paperDetail = mTranslator.fromJson(
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
-                IPaper::class.java)
+                PaperAutoSaveImpl::class.java)
 
             paperDetail.getSketch().forEach { paper.pushStroke(it) }
             paperDetail.getScraps().forEach { paper.addScrap(it) }

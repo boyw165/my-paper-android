@@ -24,13 +24,17 @@ import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.useCase.TranslateSketchToSVG
-import com.paper.model.*
+import com.paper.model.IPaper
+import com.paper.model.Point
+import com.paper.model.Rect
+import com.paper.model.ScrapModel
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 import java.util.*
 import kotlin.NoSuchElementException
 
@@ -91,6 +95,16 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
                     // Signal the removing event.
                     mRemoveWidgetSignal.onNext(widget)
+                })
+
+        // Thumbnail
+        mModelDisposables.add(
+            mUpdateBitmapSignal
+                .observeOn(mUiScheduler)
+                .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
+                    mModel?.setThumbnail(bmpFile)
+                    mModel?.setThumbnailWidth(bmpWidth)
+                    mModel?.setThumbnailHeight(bmpHeight)
                 })
     }
 
@@ -217,6 +231,14 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
         // Notify the observer
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
+    }
+
+    private val mUpdateBitmapSignal = PublishSubject.create<Triple<File, Int, Int>>()
+
+    override fun handleUpdateThumbnail(bmpFile: File,
+                                       bmpWidth: Int,
+                                       bmpHeight: Int) {
+        mUpdateBitmapSignal.onNext(Triple(bmpFile, bmpWidth, bmpHeight))
     }
 
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()

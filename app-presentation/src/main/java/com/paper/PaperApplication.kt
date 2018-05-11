@@ -21,13 +21,12 @@
 package com.paper
 
 import android.content.Context
+import android.os.StrictMode
 import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
-import com.paper.domain.IDatabaseIOSchedulerProvider
-import com.paper.domain.IPaperRepoProvider
-import com.paper.domain.IPaperTransformRepoProvider
-import com.paper.domain.ISharedPreferenceService
+import com.paper.domain.*
 import com.paper.model.IPaperTransformRepo
+import com.paper.model.repository.IBitmapRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperTransformRepoFileImpl
@@ -39,6 +38,7 @@ class PaperApplication : MultiDexApplication(),
                          IDatabaseIOSchedulerProvider,
                          IPaperRepoProvider,
                          IPaperTransformRepoProvider,
+                         IBitmapRepoProvider,
                          ISharedPreferenceService {
 
     override fun onCreate() {
@@ -46,9 +46,21 @@ class PaperApplication : MultiDexApplication(),
 
         Fresco.initialize(this)
 
-        // RxJava
+        // RxJava global exception
         RxJavaPlugins.setErrorHandler { err ->
             err.printStackTrace()
+        }
+
+        // Enable the strict mode for DEBUG
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectAll()
+                    .build())
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder()
+                    .detectAll()
+                    .build())
         }
     }
 
@@ -62,6 +74,10 @@ class PaperApplication : MultiDexApplication(),
     }
 
     override fun getPaperRepo(): IPaperRepo {
+        return mPaperRepo
+    }
+
+    override fun getBitmapRepo(): IBitmapRepo {
         return mPaperRepo
     }
 

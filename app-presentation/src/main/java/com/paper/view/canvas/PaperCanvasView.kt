@@ -44,6 +44,7 @@ import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.Point
 import com.paper.model.Rect
+import com.paper.model.repository.IBitmapRepo
 import com.paper.view.IWidgetView
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -53,7 +54,9 @@ import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class PaperCanvasView : View,
                         IWidgetView<IPaperCanvasWidget>,
@@ -121,7 +124,7 @@ class PaperCanvasView : View,
             mReadySignal
                 .switchMap { ready ->
                     if (ready) {
-                        widget.onDrawSVG(true)
+                        widget.onDrawSVG(replayAll = true)
                             .startWith(DrawSVGEvent(action = CLEAR_ALL))
                     } else {
                         Observable.never()
@@ -130,6 +133,25 @@ class PaperCanvasView : View,
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
                     onDrawSVG(event)
+                })
+        mDisposables.add(
+            mUpdateBitmapSignal
+                .debounce(850, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
+                .switchMap { bmp ->
+                    val hashCode = hashCode()
+                    if (hashCode == AppConst.EMPTY_HASH) {
+                        Observable.never()
+                    } else {
+                        mBitmapRepo
+                            ?.putBitmap(hashCode, bmp)
+                            ?.toObservable()
+                            ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
+                        ?: Observable.never<Triple<File, Int, Int>>()
+                    }
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
+                    widget.handleUpdateThumbnail(bmpFile, bmpWidth, bmpHeight)
                 })
 
         // Canvas size change
@@ -232,6 +254,11 @@ class PaperCanvasView : View,
      * [onUpdateLayoutOrCanvas].
      */
     private val mReadySignal = PublishSubject.create<Boolean>()
+
+    /**
+     * A signal of updating the rendering cache.
+     */
+    private val mUpdateBitmapSignal = PublishSubject.create<Bitmap>()
 
     /**
      * Model canvas size.
@@ -340,7 +367,10 @@ class PaperCanvasView : View,
         val vh = scaleM2V * mh
         mBitmap?.recycle()
         mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
-        mBitmapCanvas = Canvas(mBitmap)
+        mBitmap?.let { bmp ->
+            bmp.eraseColor(Color.WHITE)
+            mBitmapCanvas = Canvas(bmp)
+        }
 
         invalidate()
 
@@ -428,6 +458,9 @@ class PaperCanvasView : View,
 
         canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
+        // Notify Bitmap update
+        mBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+
         // Turn off the sharpening draw because it's costly.
         mIfSharpenDrawing = false
 
@@ -482,6 +515,12 @@ class PaperCanvasView : View,
                 return@fromCallable bmp
             }
             .subscribeOn(Schedulers.io())
+    }
+
+    private var mBitmapRepo: IBitmapRepo? = null
+
+    fun setBitmapRepo(repo: IBitmapRepo) {
+        mBitmapRepo = repo
     }
 
     private fun markCanvasMatrixDirty() {
@@ -1050,5 +1089,42 @@ class PaperCanvasView : View,
 
     override fun toString(): String {
         return javaClass.simpleName
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PaperCanvasView
+
+        if (mScrapViews != other.mScrapViews) return false
+        if (mStrokeDrawables != other.mStrokeDrawables) return false
+        if (mViewPortMin != other.mViewPortMin) return false
+        if (mViewPortMax != other.mViewPortMax) return false
+        if (mViewPortBase != other.mViewPortBase) return false
+
+        return true
+    }
+
+    private var mIsHashDirty = true
+    private var mHashCode = AppConst.EMPTY_HASH
+
+    override fun hashCode(): Int {
+        return if (mScrapViews.isEmpty() && mStrokeDrawables.isEmpty()) {
+            AppConst.EMPTY_HASH
+        } else {
+            // FIXME: Consider scraps hash too.
+
+            if (mIsHashDirty) {
+                mHashCode = AppConst.EMPTY_HASH
+                mStrokeDrawables.forEach { d ->
+                    mHashCode = 31 * mHashCode + d.hashCode()
+                }
+
+                mIsHashDirty = false
+            }
+
+            mHashCode
+        }
     }
 }
