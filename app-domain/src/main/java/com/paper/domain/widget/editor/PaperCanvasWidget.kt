@@ -189,23 +189,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
         mTmpStroke.addPath(point)
 
-        mLineToSignal.onNext(point)
-
-        mLineToSignal
-//            // FIXME: The window filter would make the SVGDrawable laggy.
-//            .throttleFirst(DomainConst.COLLECT_PATH_WINDOW_MS,
-//                           TimeUnit.MILLISECONDS, mUiScheduler)
-            .takeUntil(mCancelDrawingSignal)
-            .observeOn(mUiScheduler)
-            .subscribe { p ->
-                mTmpStroke.addPath(Point(p.x, p.y, p.time))
-
-                // Notify the observer
-                mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
-                                                   point = Point(p.x, p.y, p.time)))
-            }
-
-        // Notify the observer
+        // Notify the observer the MOVE action
         mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
                                            point = point,
                                            penColor = mPenColor,
@@ -216,7 +200,13 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                             y: Float) {
         if (!mCanHandleThisDrag) return
 
-        mLineToSignal.onNext(Point(x, y))
+        val p = Point(x, y)
+
+        mTmpStroke.addPath(p)
+
+        // Notify the observer the LINE_TO action
+        mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
+                                           point = p.copy()))
     }
 
     override fun handleDragEnd(x: Float,
