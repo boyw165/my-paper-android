@@ -29,7 +29,6 @@ import android.util.AttributeSet
 import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
-import com.paper.AppConst
 import com.paper.R
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 import com.paper.model.Point
@@ -40,7 +39,6 @@ import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import kotlin.math.log
 
 /**
  * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
@@ -78,6 +76,7 @@ class PaperEditPanelView : ConstraintLayout,
 
         mWidget = widget
 
+        // For item click event handling
         mToolListViewController.setWidget(widget)
         mColorTicketsViewController.setWidget(widget)
 

@@ -31,7 +31,6 @@ import com.paper.domain.widget.editor.PaperEditPanelWidget
 class ToolEpoxyViewModel(
     toolID: Int,
     resourceId: Int,
-    fadeResourceId: Int,
     imgLoader: RequestManager,
     isUsing: Boolean = false,
     widget: PaperEditPanelWidget? = null)
@@ -40,36 +39,53 @@ class ToolEpoxyViewModel(
     private val mToolID = toolID
     private val mImgLoader = imgLoader
     private val mResourceId = resourceId
-    private val mFadeResourceId = fadeResourceId
     private val mIsUsing = isUsing
 
     private val mWidget = widget
 
-    private lateinit var mImgView: ImageView
+    private var mImgView: ImageView? = null
 
     override fun getDefaultLayout(): Int {
         return R.layout.item_editing_tool
     }
 
-    override fun buildView(parent: ViewGroup?): View {
-        val view = super.buildView(parent)
-
-        mImgView = view.findViewById(R.id.image_view)
-
-        return view
-    }
-
     override fun bind(view: View) {
-        super.bind(view)
+        if (mImgView == null) {
+            mImgView = view.findViewById(R.id.image_view)
+        }
 
         view.setOnClickListener {
             mWidget?.handleClickTool(mToolID)
         }
 
-        if (mIsUsing) {
-            mImgView.setImageResource(mResourceId)
-        } else {
-            mImgView.setImageResource(mFadeResourceId)
-        }
+        mImgView?.setImageResource(mResourceId)
+        mImgView?.isSelected = mIsUsing
+//        if (mIsUsing) {
+//            mImgView.setImageResource(mResourceId)
+//        } else {
+//            mImgView.setImageResource(mFadeResourceId)
+//        }
+    }
+
+    // Equality & hash ////////////////////////////////////////////////////////
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as ToolEpoxyViewModel
+
+        if (mToolID != other.mToolID) return false
+        if (mIsUsing != other.mIsUsing) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + mToolID
+        result = 31 * result + mIsUsing.hashCode()
+        return result
     }
 }

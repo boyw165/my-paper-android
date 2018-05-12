@@ -38,7 +38,6 @@ class ToolListEpoxyController(imageLoader: RequestManager)
                 toolID = toolId,
                 imgLoader = mImgLoader,
                 resourceId = getResourceId(toolId),
-                fadeResourceId = getFadeResourceId(toolId),
                 isUsing = data.usingIndex == i,
                 widget = mWidget)
                 .id(toolId)
@@ -51,15 +50,6 @@ class ToolListEpoxyController(imageLoader: RequestManager)
             EditingToolFactory.TOOL_ERASER -> R.drawable.sel_img_e_eraser
             EditingToolFactory.TOOL_PEN -> R.drawable.sel_img_e_pen
             EditingToolFactory.TOOL_SCISSOR -> R.drawable.sel_img_e_scissor
-            else -> throw IllegalArgumentException("Unsupported tool ID")
-        }
-    }
-
-    private fun getFadeResourceId(toolId: Int): Int {
-        return when (toolId) {
-            EditingToolFactory.TOOL_ERASER -> R.drawable.img_e_tool_eraser_unselected
-            EditingToolFactory.TOOL_PEN -> R.drawable.img_e_tool_pen_unselected
-            EditingToolFactory.TOOL_SCISSOR -> R.drawable.img_e_tool_scissor_unselected
             else -> throw IllegalArgumentException("Unsupported tool ID")
         }
     }

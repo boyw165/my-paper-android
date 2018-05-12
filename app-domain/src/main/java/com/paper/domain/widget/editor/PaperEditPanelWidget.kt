@@ -107,12 +107,22 @@ class PaperEditPanelWidget(
 
     fun handleClickTool(toolID: Int) {
         val toolIDs = getEditToolIDs()
-        val usingIndex = if (toolID != EditingToolFactory.TOOL_PEN) {
-            mUnsupportedToolMsg.onNext(0)
-            toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
-        } else {
-            toolIDs.indexOf(toolID)
+        val usingIndex = when (toolID) {
+            EditingToolFactory.TOOL_PEN,
+            EditingToolFactory.TOOL_ERASER -> {
+                toolIDs.indexOf(toolID)
+            }
+            else -> {
+                mUnsupportedToolMsg.onNext(0)
+                toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
+            }
         }
+//        if (toolID != EditingToolFactory.TOOL_PEN) {
+//            mUnsupportedToolMsg.onNext(0)
+//            toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
+//        } else {
+//            toolIDs.indexOf(toolID)
+//        }
 
         mEditingTools.onNext(UpdateEditingToolsEvent(
             toolIDs = toolIDs,
