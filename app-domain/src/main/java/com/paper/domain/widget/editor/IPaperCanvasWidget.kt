@@ -31,12 +31,6 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
 
-    fun handleUpdateThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
-
-    fun handleChoosePenColor(color: Int)
-
-    fun handleUpdatePenSize(size: Float)
-
     fun handleActionBegin()
 
     fun handleActionEnd()
@@ -48,6 +42,14 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
     fun handleDrag(x: Float, y: Float)
 
     fun handleDragEnd(x: Float, y: Float)
+
+    fun setDrawingMode(mode: DrawingMode)
+
+    fun setChosenPenColor(color: Int)
+
+    fun setPenSize(size: Float)
+
+    fun setThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
 
     // For output /////////////////////////////////////////////////////////////
 

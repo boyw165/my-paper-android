@@ -127,7 +127,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
                     val color = event.colorTickets[event.usingIndex]
-                    mCanvasWidget.handleChoosePenColor(color)
+                    mCanvasWidget.setChosenPenColor(color)
                 })
         // Pen size
         mDisposables.add(
@@ -135,7 +135,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .onUpdatePenSize()
                 .observeOn(mUiScheduler)
                 .subscribe { penSize ->
-                    mCanvasWidget.handleUpdatePenSize(penSize)
+                    mCanvasWidget.setPenSize(penSize)
                 })
 
         // Following are about undo and redo:

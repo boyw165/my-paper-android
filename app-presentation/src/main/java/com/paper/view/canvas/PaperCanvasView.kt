@@ -151,7 +151,7 @@ class PaperCanvasView : View,
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
-                    widget.handleUpdateThumbnail(bmpFile, bmpWidth, bmpHeight)
+                    widget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
                 })
 
         // Canvas size change

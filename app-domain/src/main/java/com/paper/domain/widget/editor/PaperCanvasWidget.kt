@@ -161,11 +161,11 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
      */
     private var mPenSize = 0.2f
 
-    override fun handleChoosePenColor(color: Int) {
+    override fun setChosenPenColor(color: Int) {
         mPenColor = color
     }
 
-    override fun handleUpdatePenSize(size: Float) {
+    override fun setPenSize(size: Float) {
         mPenSize = size
     }
 
@@ -235,9 +235,9 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     private val mUpdateBitmapSignal = PublishSubject.create<Triple<File, Int, Int>>()
 
-    override fun handleUpdateThumbnail(bmpFile: File,
-                                       bmpWidth: Int,
-                                       bmpHeight: Int) {
+    override fun setThumbnail(bmpFile: File,
+                              bmpWidth: Int,
+                              bmpHeight: Int) {
         mUpdateBitmapSignal.onNext(Triple(bmpFile, bmpWidth, bmpHeight))
     }
 
