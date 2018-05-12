@@ -22,19 +22,16 @@
 
 package com.paper.domain.widget.editor
 
-import android.graphics.Bitmap
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
-import com.paper.domain.useCase.SavePaperToStore
 import com.paper.model.IPaperTransformRepo
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Scheduler
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
@@ -143,10 +140,8 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
         // Following are about undo and redo:
         mDisposables.add(
-            Observables
-                .combineLatest(
-                mHistoryWidget.onUpdateUndoCapacity(),
-                mHistoryWidget.onUpdateRedoCapacity())
+            mHistoryWidget
+                .onUpdateUndoRedoCapacity()
                 .map { (undo, redo) ->
                     UndoRedoEvent(canUndo = undo > 0,
                                   canRedo = redo > 0)
@@ -173,19 +168,11 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                           mIoScheduler)
     }
 
-    private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperWidget>()
+    private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperCanvasWidget>()
 
     // TODO: The interface is probably redundant
-    fun onCanvasWidgetReady(): Observable<IPaperWidget> {
+    fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
         return mOnCanvasWidgetReadySignal
-    }
-
-    fun writePaperToRepo(bmpSrc: Single<Bitmap>): Single<Boolean> {
-        return bmpSrc.compose(SavePaperToStore(
-            paper = mCanvasWidget.getPaper(),
-            paperRepo = mPaperRepo,
-            prefs = mSharedPrefs,
-            caughtErrorSignal = mCaughtErrorSignal))
     }
 
     // Edit panel widget //////////////////////////////////////////////////////

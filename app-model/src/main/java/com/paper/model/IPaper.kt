@@ -27,8 +27,9 @@ import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import java.io.File
 import java.util.*
+import java.util.concurrent.locks.Lock
 
-interface IPaper {
+interface IPaper : Lock {
 
     // The SQLite ID.
     fun getId(): Long
@@ -36,15 +37,24 @@ interface IPaper {
     fun getUUID(): UUID
 
     fun getCreatedAt(): Long
+
     fun getModifiedAt(): Long
+    fun setModifiedAt(time: Long)
 
     // By default is landscape A4, 210 x 297 units.
     fun getWidth(): Float
     fun getHeight(): Float
 
+    fun setWidth(width: Float)
+    fun setHeight(height: Float)
+
     fun getThumbnail(): File?
     fun getThumbnailWidth(): Int
     fun getThumbnailHeight(): Int
+
+    fun setThumbnail(file: File)
+    fun setThumbnailWidth(width: Int)
+    fun setThumbnailHeight(height: Int)
 
     fun getCaption(): String
     fun getTags(): List<String>
@@ -53,7 +63,9 @@ interface IPaper {
 
     fun getSketch(): List<SketchStroke>
 
-    fun addStroke(stroke: SketchStroke): Observable<Boolean>
+    fun pushStroke(stroke: SketchStroke)
+
+    fun popStroke(): SketchStroke
 
     fun onAddStroke(replayAll: Boolean = true): Observable<SketchStroke>
 
@@ -63,9 +75,9 @@ interface IPaper {
 
     fun getScraps(): List<ScrapModel>
 
-    fun addScrap(scrap: ScrapModel): Observable<Boolean>
+    fun addScrap(scrap: ScrapModel)
 
-    fun removeScrap(scrap: ScrapModel): Observable<Boolean>
+    fun removeScrap(scrap: ScrapModel)
 
     fun onAddScrap(replayAll: Boolean = true): Observable<ScrapModel>
 

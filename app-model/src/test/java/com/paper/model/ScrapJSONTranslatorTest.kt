@@ -25,6 +25,7 @@ package com.paper.model
 
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.repository.json.SketchStrokeJSONTranslator
 import com.paper.model.sketch.SketchStroke
 import org.junit.Assert
 import org.junit.Test
@@ -34,12 +35,11 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner::class)
 class ScrapJSONTranslatorTest {
 
-    private val SCRAP_TEST_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"mPointList\":[{\"x\":0.18075603,\"y\":0.25663146,\"time\":0},{\"x\":0.5,\"y\":0.5,\"time\":100}],\"mBound\":{\"left\":0.18075603,\"top\":0.25663146,\"right\":0.5,\"bottom\":0.5},\"color\":-65536,\"width\":0.5,\"isEraser\":false}]}\n"
-
     @Test
     fun serializeDummyScrap() {
         val translator = GsonBuilder()
             .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
+            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
             .create()
 
         val model = ScrapModel()
@@ -58,16 +58,19 @@ class ScrapJSONTranslatorTest {
                                                              0.5f,
                                                              100))))
 
-        Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"mPointList\":[{\"x\":0.18075603,\"y\":0.25663146,\"time\":0},{\"x\":0.5,\"y\":0.5,\"time\":100}],\"mBound\":{\"left\":0.18075603,\"top\":0.25663146,\"right\":0.5,\"bottom\":0.5},\"color\":-65536,\"width\":0.5,\"isEraser\":false}]}",
+        Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"color\":\"#ffff0000\",\"width\":0.5,\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\"}]}",
                 translator.toJson(model, ScrapModel::class.java))
     }
 
+    private val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"color\":\"#00000000\",\"width\":0.5,\"isEraser\":false}]}"
+
     @Test
-    fun deserializeSketch_With_ThreeDots() {
+    fun deserializeScrap_With_Sketch() {
         val gson = GsonBuilder()
             .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
+            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
             .create()
-        val model = gson.fromJson<ScrapModel>(SCRAP_TEST_JSON, ScrapModel::class.java)
+        val model = gson.fromJson<ScrapModel>(TEST_SCRAP_JSON, ScrapModel::class.java)
 
         Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.uuid.toString())
 

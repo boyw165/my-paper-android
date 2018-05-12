@@ -24,7 +24,7 @@ import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.event.DrawSVGEvent.Action.*
 import com.paper.domain.useCase.TranslateSketchToSVG
-import com.paper.model.PaperModel
+import com.paper.model.IPaper
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
@@ -34,18 +34,19 @@ import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 import java.util.*
 import kotlin.NoSuchElementException
 
 class PaperCanvasWidget(uiScheduler: Scheduler,
                         workerScheduler: Scheduler)
-    : IPaperWidget {
+    : IPaperCanvasWidget {
 
     private val mUiScheduler = uiScheduler
     private val mWorkerScheduler = workerScheduler
 
     // Model
-    private var mModel: PaperModel? = null
+    private var mModel: IPaper? = null
     private val mModelDisposables = CompositeDisposable()
 
     // Scrap controllers
@@ -60,14 +61,14 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     // Debug
     private val mDebugSignal = PublishSubject.create<String>()
 
-    override fun bindModel(model: PaperModel) {
+    override fun bindModel(model: IPaper) {
         ensureNoLeakedBinding()
 
         // Hold reference.
         mModel = model
 
         // Canvas size
-        mSetCanvasSize.onNext(Rect(0f, 0f, model.width, model.height))
+        mSetCanvasSize.onNext(Rect(0f, 0f, model.getWidth(), model.getHeight()))
 
         // Add or remove scrap
         mModelDisposables.add(
@@ -95,6 +96,16 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     // Signal the removing event.
                     mRemoveWidgetSignal.onNext(widget)
                 })
+
+        // Thumbnail
+        mModelDisposables.add(
+            mUpdateBitmapSignal
+                .observeOn(mUiScheduler)
+                .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
+                    mModel?.setThumbnail(bmpFile)
+                    mModel?.setThumbnailWidth(bmpWidth)
+                    mModel?.setThumbnailHeight(bmpHeight)
+                })
     }
 
     override fun unbindModel() {
@@ -108,12 +119,6 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     private fun hasModelBinding(): Boolean {
         return mModel != null && mModelDisposables.size() > 0
-    }
-
-    // Save ///////////////////////////////////////////////////////////////////
-
-    override fun getPaper(): PaperModel {
-        return mModel!!
     }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
@@ -228,6 +233,14 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
     }
 
+    private val mUpdateBitmapSignal = PublishSubject.create<Triple<File, Int, Int>>()
+
+    override fun handleUpdateThumbnail(bmpFile: File,
+                                       bmpWidth: Int,
+                                       bmpHeight: Int) {
+        mUpdateBitmapSignal.onNext(Triple(bmpFile, bmpWidth, bmpHeight))
+    }
+
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()
 
     override fun onSetCanvasSize(): Observable<Rect> {
@@ -241,7 +254,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     .merge(
                         mDrawSVGSignal,
                         // For the first time subscription, send events one by one!
-                        TranslateSketchToSVG(mModel!!.sketch)
+                        TranslateSketchToSVG(mModel!!.getSketch())
                             .subscribeOn(mWorkerScheduler))
             } else {
                 mDrawSVGSignal

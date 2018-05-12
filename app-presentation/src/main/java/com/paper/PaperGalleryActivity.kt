@@ -41,7 +41,7 @@ import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
 import com.paper.model.ModelConst
-import com.paper.model.PaperModel
+import com.paper.model.IPaper
 import com.paper.view.gallery.PaperThumbnailEpoxyController
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
@@ -84,7 +84,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         PaperThumbnailEpoxyController(mImgLoader)
     }
 
-    private val mPaperSnapshots = mutableListOf<PaperModel>()
+    private val mPaperSnapshots = mutableListOf<IPaper>()
 
     private val mRepo by lazy { (application as IPaperRepoProvider).getPaperRepo() }
     private val mPrefs by lazy { application as ISharedPreferenceService }
@@ -132,7 +132,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                                      adapterPosition: Int) {
                 val paper = mPapersViewController.getPaperFromAdapterPosition(adapterPosition)
                 // Report the paper ID in the database
-                mBrowsePaperSignal.onNext(paper?.id ?: ModelConst.INVALID_ID)
+                mBrowsePaperSignal.onNext(paper?.getId() ?: ModelConst.INVALID_ID)
             }
 
             override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
@@ -197,14 +197,14 @@ class PaperGalleryActivity : AppCompatActivity() {
                 .map {
                     val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
                                                          ModelConst.INVALID_ID)
-                    val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.id == toDeletePaperID }
+                    val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.getId() == toDeletePaperID }
                     val newPaperPosition = if (toDeletePaperPosition + 1 < mPaperSnapshots.size) {
                         toDeletePaperPosition + 1
                     } else {
                         toDeletePaperPosition - 1
                     }
                     val newPaperID = if (newPaperPosition >= 0) {
-                        mPaperSnapshots[newPaperPosition].id
+                        mPaperSnapshots[newPaperPosition].getId()
                     } else {
                         ModelConst.INVALID_ID
                     }
@@ -256,7 +256,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     mPaperSnapshots.addAll(papers)
 
                     val id = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-                    val position = papers.indexOfFirst { it.id == id }
+                    val position = papers.indexOfFirst { it.getId() == id }
 
                     if (position >= 0 && position <= papers.size) {
                         setDeleteButtonVisibility(true)
@@ -275,7 +275,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         mDisposables.clear()
     }
 
-    private fun showPaperThumbnails(papers: List<PaperModel>) {
+    private fun showPaperThumbnails(papers: List<IPaper>) {
         mPapersViewController.setData(papers)
     }
 

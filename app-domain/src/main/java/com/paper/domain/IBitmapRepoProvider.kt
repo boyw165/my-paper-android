@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,13 +18,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper
+package com.paper.domain
 
-object AppConst {
+import com.paper.model.repository.IBitmapRepo
 
-    const val TAG = "paper presentation"
+interface IBitmapRepoProvider {
 
-    const val PARAMS_PAPER_ID = "params_paper_id"
-
-    const val EMPTY_HASH = 0
+    fun getBitmapRepo(): IBitmapRepo
 }

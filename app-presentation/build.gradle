@@ -3,6 +3,15 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
+// Some annotation processors (such as AutoFactory) rely on precise types in
+// declaration signatures. By default, Kapt replaces every unknown type
+// (including types for the generated classes) to NonExistentClass, but you
+// can change this behavior. Add the additional flag to the build.gradle file
+// to enable error type inferring in stubs:
+kapt {
+    correctErrorTypes = true
+}
+
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -36,10 +45,15 @@ android {
 
     buildTypes {
         debug {
-            minifyEnabled false
+            // Configurable ProGuard testing, for example,
+            // "./gradlew assembleDebug -PtestProguard=true"
+            minifyEnabled project.hasProperty("testProguard")
+            shrinkResources project.hasProperty("testProguard")
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 
             // Enable the sign process.

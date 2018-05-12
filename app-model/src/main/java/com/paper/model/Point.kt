@@ -24,10 +24,15 @@ data class Point(var x: Float = 0f,
                  var y: Float = 0f,
                  var time: Long = System.currentTimeMillis()) {
 
+    private var mIsHashDirty = true
+    private var mHashCode = 0
+
     fun offset(tx: Float,
                ty: Float) {
         x += tx
         y += ty
+
+        mIsHashDirty = false
     }
 
     fun velocityFrom(start: Point): Float {
@@ -39,5 +44,31 @@ data class Point(var x: Float = 0f,
         val dx = other.x - this.x
         val dy = other.y - this.y
         return Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Point
+
+        if (x != other.x) return false
+        if (y != other.y) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        if (mIsHashDirty) {
+            mHashCode = if (x != +0.0f) java.lang.Float.floatToIntBits(x) else 0
+            mHashCode = 31 * mHashCode + if (y != +0.0f) java.lang.Float.floatToIntBits(y) else 0
+
+            mIsHashDirty = false
+        }
+        return mHashCode
+    }
+
+    override fun toString(): String {
+        return "Point(%.3f, %.3f)".format(this.x, this.y)
     }
 }

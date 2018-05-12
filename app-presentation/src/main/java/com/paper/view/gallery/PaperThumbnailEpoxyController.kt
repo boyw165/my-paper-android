@@ -22,37 +22,37 @@ package com.paper.view.gallery
 
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
-import com.paper.model.PaperModel
+import com.paper.model.IPaper
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
 class PaperThumbnailEpoxyController(
     private val mGlide: RequestManager)
-    : TypedEpoxyController<List<PaperModel>>() {
+    : TypedEpoxyController<List<IPaper>>() {
 
-    override fun buildModels(data: List<PaperModel>) {
+    override fun buildModels(data: List<IPaper>) {
         TapToCreateEpoxyModel()
             .onClick(mOnClickToCreateSignal)
             .id("cta")
             .addTo(this)
 
         data.forEachIndexed { _, paper ->
-            val id = paper.id
+            val id = paper.getId()
 
             PaperThumbnailEpoxyModel(id)
                 .onClick(mOnClickPaperSignal)
-                .setModifiedTime(paper.modifiedAt)
+                .setModifiedTime(paper.getModifiedAt())
                 .setThumbnail(mGlide,
-                              paper.thumbnailPath,
-                              paper.thumbnailWidth,
-                              paper.thumbnailHeight)
+                              paper.getThumbnail(),
+                              paper.getThumbnailWidth(),
+                              paper.getThumbnailHeight())
                 // Epoxy view-model ID.
-                .id(paper.id)
+                .id(paper.getId())
                 .addTo(this)
         }
     }
 
-    fun getPaperFromAdapterPosition(position: Int): PaperModel? {
+    fun getPaperFromAdapterPosition(position: Int): IPaper? {
         val actualData = currentData ?: throw IllegalStateException("no data")
         val actualPosition = position - 1
         return if (actualPosition >= 0 && actualPosition < actualData.size) {

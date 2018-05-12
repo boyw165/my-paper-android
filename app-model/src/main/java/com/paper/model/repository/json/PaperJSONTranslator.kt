@@ -21,7 +21,8 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
-import com.paper.model.PaperModel
+import com.paper.model.IPaper
+import com.paper.model.PaperAutoSaveImpl
 import com.paper.model.ScrapModel
 import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
@@ -29,20 +30,20 @@ import java.lang.reflect.Type
 /**
  * Part of paper is stored as JSON.
  */
-class PaperJSONTranslator : JsonSerializer<PaperModel>,
-                            JsonDeserializer<PaperModel> {
+class PaperJSONTranslator : JsonSerializer<IPaper>,
+                            JsonDeserializer<IPaper> {
 
-    override fun serialize(src: PaperModel,
+    override fun serialize(src: IPaper,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
         val sketchJson = JsonArray()
-        src.sketch.forEach { sketchJson.add(context.serialize(it, SketchStroke::class.java)) }
+        src.getSketch().forEach { sketchJson.add(context.serialize(it, SketchStroke::class.java)) }
         root.add("sketch", sketchJson)
 
         val scrapJson = JsonArray()
-        src.scraps.forEach { scrapJson.add(context.serialize(it, ScrapModel::class.java)) }
+        src.getScraps().forEach { scrapJson.add(context.serialize(it, ScrapModel::class.java)) }
         root.add("scraps", scrapJson)
 
         return root
@@ -50,9 +51,9 @@ class PaperJSONTranslator : JsonSerializer<PaperModel>,
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): PaperModel {
+                             context: JsonDeserializationContext): IPaper {
         val root = json.asJsonObject
-        val paperDetails = PaperModel()
+        val paperDetails = PaperAutoSaveImpl()
 
         if (root.has("sketch")) {
             root["sketch"].asJsonArray.forEach {

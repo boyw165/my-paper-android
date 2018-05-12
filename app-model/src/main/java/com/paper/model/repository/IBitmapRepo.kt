@@ -14,22 +14,13 @@
 
 package com.paper.model.repository
 
-import com.paper.model.IPaper
-import com.paper.model.event.UpdateDatabaseEvent
-import io.reactivex.Observable
+import android.graphics.Bitmap
 import io.reactivex.Single
+import java.io.File
 
-interface IPaperRepo {
+interface IBitmapRepo {
 
-    // For persistent store.
+    fun putBitmap(key: Int, bmp: Bitmap): Single<File>
 
-    fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>>
-
-    fun getPaperById(id: Long): Single<IPaper>
-
-    fun putPaperById(id: Long, paper: IPaper): Single<UpdateDatabaseEvent>
-
-    fun duplicatePaperById(id: Long): Observable<IPaper>
-
-    fun deletePaperById(id: Long): Single<UpdateDatabaseEvent>
+    fun getBitmap(key: Int): Single<Bitmap>
 }

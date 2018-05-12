@@ -40,7 +40,7 @@ class PaperTransformRepoFileImpl(fileDir: File) : IPaperTransformRepo {
                            transform: IPaperTransform): Single<Boolean> {
         mLookupTable[key] = transform
 
-        println("${ModelConst.TAG}: put $transform")
+        println("${ModelConst.TAG}: put $transform to transformation repo (file impl)")
 
         return Single.just(true)
     }
@@ -48,7 +48,7 @@ class PaperTransformRepoFileImpl(fileDir: File) : IPaperTransformRepo {
     override fun getRecord(key: UUID): Single<IPaperTransform> {
         val transform = mLookupTable[key]
 
-        println("${ModelConst.TAG}: get $transform")
+        println("${ModelConst.TAG}: get $transform from transformation repo (file impl)")
 
         return Single.just(transform)
     }

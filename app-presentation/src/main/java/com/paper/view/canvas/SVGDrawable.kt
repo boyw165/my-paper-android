@@ -248,4 +248,32 @@ class SVGDrawable(context: IPaperContext,
     private fun getNewPoint(x: Float, y: Float): Point {
         return Point(x, y)
     }
+
+    // Equality & hash ////////////////////////////////////////////////////////
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SVGDrawable
+
+        if (mPenColor != other.mPenColor) return false
+        if (mPenSize != other.mPenSize) return false
+        if (mStrokePoint != other.mStrokePoint) return false
+        if (mStrokeWidth != other.mStrokeWidth) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = mPenColor
+        result = 31 * result + mPenSize.hashCode()
+        result = 31 * result + mStrokeWidth.hashCode()
+
+        mStrokePoint.forEach { p ->
+            result = 31 * result + p.hashCode()
+        }
+
+        return result
+    }
 }

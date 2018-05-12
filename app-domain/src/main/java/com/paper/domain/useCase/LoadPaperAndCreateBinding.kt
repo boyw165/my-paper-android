@@ -23,11 +23,10 @@
 package com.paper.domain.useCase
 
 import com.paper.domain.event.ProgressEvent
-import com.paper.domain.widget.editor.IPaperWidget
+import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.*
 import io.reactivex.disposables.Disposable
-import io.reactivex.subjects.Subject
 
 // .------.
 // |      | ----> true or false
@@ -46,7 +45,7 @@ import io.reactivex.subjects.Subject
  * progress signal.
  */
 class LoadPaperAndCreateBinding(paperID: Long,
-                                paperWidget: IPaperWidget,
+                                paperWidget: IPaperCanvasWidget,
                                 paperRepo: IPaperRepo,
                                 updateProgressSignal: Observer<ProgressEvent>,
                                 caughtErrorSignal: Observer<Throwable>,
@@ -104,7 +103,7 @@ class LoadPaperAndCreateBinding(paperID: Long,
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    internal class InnerDisposable(widget: IPaperWidget,
+    internal class InnerDisposable(widget: IPaperCanvasWidget,
                                    actualDisposable: Disposable) : Disposable {
 
         private var mDisposed = false

@@ -26,26 +26,30 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.domain.IBitmapRepoProvider
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.IPaperTransformRepoProvider
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
+import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.ModelConst
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
-import com.paper.domain.widget.editor.PaperEditorWidget
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import java.util.concurrent.TimeUnit
 
 class PaperEditorActivity : AppCompatActivity() {
 
-    private val mCanvasView by lazy { findViewById<PaperCanvasView>(R.id.paper_canvas) }
+    private val mCanvasView by lazy {
+        val field = findViewById<PaperCanvasView>(R.id.paper_canvas)
+        field.setBitmapRepo((application as IBitmapRepoProvider).getBitmapRepo())
+        field
+    }
     private val mEditPanelView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
 
     private val mProgressBar by lazy {
@@ -138,17 +142,9 @@ class PaperEditorActivity : AppCompatActivity() {
         // Close button.
         mDisposables.add(
             onClickCloseButton()
-                .throttleFirst(1000, TimeUnit.MILLISECONDS)
-                .switchMap {
-                    mWidget
-                        .writePaperToRepo(mCanvasView.takeSnapshot())
-                        .toObservable()
-                }
                 .observeOn(mUiScheduler)
-                .subscribe { done ->
-                    if (done) {
-                        close()
-                    }
+                .subscribe {
+                    close()
                 })
 
         // View port indicator
@@ -174,13 +170,17 @@ class PaperEditorActivity : AppCompatActivity() {
             RxView.clicks(mBtnUndo)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    mWidget.handleUndo()
+                    // TODO
+                    showWIP()
+//                    mWidget.handleUndo()
                 })
         mDisposables.add(
             RxView.clicks(mBtnRedo)
                 .observeOn(mUiScheduler)
                 .subscribe {
-                    mWidget.handleRedo()
+                    // TODO
+                    showWIP()
+//                    mWidget.handleRedo()
                 })
         mDisposables.add(
             mWidget.onGetUndoRedoEvent()
