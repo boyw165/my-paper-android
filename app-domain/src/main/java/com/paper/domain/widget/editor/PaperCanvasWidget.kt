@@ -20,14 +20,18 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.data.DrawingMode
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.DrawSVGEvent
-import com.paper.domain.event.DrawSVGEvent.Action.*
+import com.paper.domain.event.OnSketchEvent
+import com.paper.domain.event.StartSketchEvent
+import com.paper.domain.event.StopSketchEvent
 import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.IPaper
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.ScrapModel
+import com.paper.model.sketch.PenType
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -139,6 +143,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
+    private var mDrawingMode = DrawingMode.IDLE
+
     private lateinit var mTmpStroke: SketchStroke
     /**
      * Internal drawing signal for throttling touch event.
@@ -161,6 +167,10 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
      */
     private var mPenSize = 0.2f
 
+    override fun setDrawingMode(mode: DrawingMode) {
+        mDrawingMode = mode
+    }
+
     override fun setChosenPenColor(color: Int) {
         mPenColor = color
     }
@@ -173,27 +183,33 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     override fun handleDragBegin(x: Float,
                                  y: Float) {
-        mCanHandleThisDrag = hasModelBinding()
+        mCanHandleThisDrag = hasModelBinding() && mDrawingMode != DrawingMode.IDLE
         if (!mCanHandleThisDrag) return
 
         // Clear all the delayed execution.
         mCancelSignal.onNext(0)
 
         // Create a new stroke and hold it in the temporary pool.
+        val penType = if (mDrawingMode == DrawingMode.ERASER) {
+            PenType.ERASER
+        } else {
+            PenType.PEN
+        }
         mTmpStroke = SketchStroke(
-            color = mPenColor,
-            isEraser = false,
-            width = mPenSize)
+            penType = penType,
+            penColor = mPenColor,
+            penSize = mPenSize)
 
-        val point = Point(x, y)
+        val p = Point(x, y)
 
-        mTmpStroke.addPath(point)
+        mTmpStroke.addPath(p)
 
         // Notify the observer the MOVE action
-        mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = point,
-                                           penColor = mPenColor,
-                                           penSize = mPenSize))
+        mDrawSVGSignal.onNext(StartSketchEvent(
+            point = p,
+            penColor = mTmpStroke.penColor,
+            penSize = mTmpStroke.penSize,
+            penType = mTmpStroke.penType))
     }
 
     override fun handleDrag(x: Float,
@@ -205,8 +221,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mTmpStroke.addPath(p)
 
         // Notify the observer the LINE_TO action
-        mDrawSVGSignal.onNext(DrawSVGEvent(action = LINE_TO,
-                                           point = p.copy()))
+        mDrawSVGSignal.onNext(OnSketchEvent(point = p))
     }
 
     override fun handleDragEnd(x: Float,
@@ -216,11 +231,15 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
 
-        mTmpStroke.addPath(Point(x, y))
+        val p = Point(x, y)
+
+        // Add last point
+        mTmpStroke.addPath(p)
+        // Commit to model
         mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
-        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
+        mDrawSVGSignal.onNext(StopSketchEvent())
     }
 
     private val mUpdateBitmapSignal = PublishSubject.create<Triple<File, Int, Int>>()
@@ -268,20 +287,23 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         if (!hasModelBinding()) return
 
         // Draw a DOT!!!
+        val p = Point(x, y, 0)
         mTmpStroke = SketchStroke(
-            color = 0,
-            isEraser = false,
-            width = 1f)
-        mTmpStroke.addPath(Point(x, y, 0))
+            penType = PenType.PEN,
+            penColor = 0,
+            penSize = 1f)
+        mTmpStroke.addPath(p)
 
+        // Commit to model
         mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
-        mDrawSVGSignal.onNext(DrawSVGEvent(action = MOVE,
-                                           point = Point(x, y, 0),
-                                           penColor = mPenColor,
-                                           penSize = mPenSize))
-        mDrawSVGSignal.onNext(DrawSVGEvent(action = CLOSE))
+        mDrawSVGSignal.onNext(StartSketchEvent(
+            point = p,
+            penColor = mTmpStroke.penColor,
+            penSize = mTmpStroke.penSize,
+            penType = mTmpStroke.penType))
+        mDrawSVGSignal.onNext(StopSketchEvent())
     }
 
     // Debug //////////////////////////////////////////////////////////////////

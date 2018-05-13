@@ -36,15 +36,14 @@ import com.paper.AppConst
 import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
-import com.paper.domain.event.DrawSVGEvent
-import com.paper.domain.event.DrawSVGEvent.Action.*
-import com.paper.domain.event.DrawViewPortEvent
+import com.paper.domain.event.*
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepo
+import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -125,7 +124,7 @@ class PaperCanvasView : View,
                 .switchMap { ready ->
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
-                            .startWith(DrawSVGEvent(action = CLEAR_ALL))
+                            .startWith(ClearAllSketchEvent())
                     } else {
                         Observable.never()
                     }
@@ -227,7 +226,8 @@ class PaperCanvasView : View,
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
     private fun addScrap(widget: IScrapWidget) {
-        val scrapView = ScrapView()
+        val scrapView = ScrapView(drawMode = mDrawMode,
+                                  eraserMode = mEraserMode)
 
         scrapView.setPaperContext(this)
         scrapView.setParent(this)
@@ -301,6 +301,8 @@ class PaperCanvasView : View,
      */
     private var mBitmap: Bitmap? = null
     private val mBitmapPaint = Paint()
+    private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
+    private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     /**
      * The canvas used in the [dispatchDrawScraps] call.
      */
@@ -368,7 +370,6 @@ class PaperCanvasView : View,
         mBitmap?.recycle()
         mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
         mBitmap?.let { bmp ->
-            bmp.eraseColor(Color.WHITE)
             mBitmapCanvas = Canvas(bmp)
         }
 
@@ -468,28 +469,34 @@ class PaperCanvasView : View,
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
-        val nx = event.point.x
-        val ny = event.point.y
-        val (x, y) = toViewWorld(nx, ny)
+        when (event) {
+            is StartSketchEvent -> {
+                val nx = event.point.x
+                val ny = event.point.y
+                val (x, y) = toViewWorld(nx, ny)
 
-        when (event.action) {
-            MOVE -> {
-                val drawable = SVGDrawable(context = this@PaperCanvasView,
-                                           penColor = event.penColor,
-                                           penSize = event.penSize)
+                val drawable = SVGDrawable(
+                    context = this@PaperCanvasView,
+                    penColor = event.penColor,
+                    penSize = event.penSize,
+                    porterDuffMode = if (event.penType == PenType.ERASER) mEraserMode else mDrawMode)
                 drawable.moveTo(Point(x, y, event.point.time))
 
                 mStrokeDrawables.add(drawable)
             }
-            LINE_TO -> {
+            is OnSketchEvent -> {
+                val nx = event.point.x
+                val ny = event.point.y
+                val (x, y) = toViewWorld(nx, ny)
+
                 val drawable = mStrokeDrawables.last()
                 drawable.lineTo(Point(x, y, event.point.time))
             }
-            CLOSE -> {
+            is StopSketchEvent -> {
                 val drawable = mStrokeDrawables.last()
                 drawable.close()
             }
-            CLEAR_ALL -> {
+            is ClearAllSketchEvent -> {
                 mStrokeDrawables.clear()
             }
             else -> {

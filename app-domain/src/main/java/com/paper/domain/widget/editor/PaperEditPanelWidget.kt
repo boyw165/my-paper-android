@@ -21,8 +21,9 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
+import com.paper.domain.data.ToolType
 import com.paper.domain.event.UpdateColorTicketsEvent
-import com.paper.domain.event.UpdateEditingToolsEvent
+import com.paper.domain.event.UpdateEditToolsEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
 import io.reactivex.Observable
 import io.reactivex.Scheduler
@@ -53,8 +54,8 @@ class PaperEditPanelWidget(
 
         // Prepare initial tools and select the pen by default.
         val tools = getEditToolIDs()
-        mToolIndex = tools.indexOf(EditingToolFactory.TOOL_PEN)
-        mEditingTools.onNext(UpdateEditingToolsEvent(
+        mToolIndex = tools.indexOf(ToolType.PEN)
+        mEditingTools.onNext(UpdateEditToolsEvent(
             toolIDs = tools,
             usingIndex = mToolIndex))
 
@@ -94,42 +95,32 @@ class PaperEditPanelWidget(
         }
     }
 
-    fun handleChoosePrimaryFunction(id: Int) {
-        TODO("not implemented")
-    }
-
     // Edit tool //////////////////////////////////////////////////////////////
 
     private var mToolIndex = -1
-    private val mEditingTools = BehaviorSubject.create<UpdateEditingToolsEvent>()
+    private val mEditingTools = BehaviorSubject.create<UpdateEditToolsEvent>()
 
     private val mUnsupportedToolMsg = PublishSubject.create<Any>()
 
-    fun handleClickTool(toolID: Int) {
+    fun handleClickTool(toolID: ToolType) {
         val toolIDs = getEditToolIDs()
         val usingIndex = when (toolID) {
-            EditingToolFactory.TOOL_PEN,
-            EditingToolFactory.TOOL_ERASER -> {
+            ToolType.PEN,
+            ToolType.ERASER -> {
                 toolIDs.indexOf(toolID)
             }
             else -> {
                 mUnsupportedToolMsg.onNext(0)
-                toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
+                toolIDs.indexOf(ToolType.PEN)
             }
         }
-//        if (toolID != EditingToolFactory.TOOL_PEN) {
-//            mUnsupportedToolMsg.onNext(0)
-//            toolIDs.indexOf(EditingToolFactory.TOOL_PEN)
-//        } else {
-//            toolIDs.indexOf(toolID)
-//        }
 
-        mEditingTools.onNext(UpdateEditingToolsEvent(
+        mEditingTools.onNext(UpdateEditToolsEvent(
             toolIDs = toolIDs,
             usingIndex = usingIndex))
     }
 
-    fun onUpdateEditToolList(): Observable<UpdateEditingToolsEvent> {
+    fun onUpdateEditToolList(): Observable<UpdateEditToolsEvent> {
         return mEditingTools
     }
 
@@ -137,11 +128,11 @@ class PaperEditPanelWidget(
         return mUnsupportedToolMsg
     }
 
-    private fun getEditToolIDs(): List<Int> {
+    private fun getEditToolIDs(): List<ToolType> {
         return listOf(
-            EditingToolFactory.TOOL_ERASER,
-            EditingToolFactory.TOOL_PEN,
-            EditingToolFactory.TOOL_SCISSOR)
+            ToolType.ERASER,
+            ToolType.PEN,
+            ToolType.LASSO)
     }
 
     // Pen Color & size //////////////////////////////////////////////////////

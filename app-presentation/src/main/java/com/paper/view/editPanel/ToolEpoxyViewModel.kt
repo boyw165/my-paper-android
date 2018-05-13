@@ -21,22 +21,22 @@
 package com.paper.view.editPanel
 
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import com.airbnb.epoxy.EpoxyModel
 import com.bumptech.glide.RequestManager
 import com.paper.R
+import com.paper.domain.data.ToolType
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 
 class ToolEpoxyViewModel(
-    toolID: Int,
+    toolType: ToolType,
     resourceId: Int,
     imgLoader: RequestManager,
     isUsing: Boolean = false,
     widget: PaperEditPanelWidget? = null)
     : EpoxyModel<View>() {
 
-    private val mToolID = toolID
+    private val mToolID = toolType
     private val mImgLoader = imgLoader
     private val mResourceId = resourceId
     private val mIsUsing = isUsing
@@ -60,11 +60,6 @@ class ToolEpoxyViewModel(
 
         mImgView?.setImageResource(mResourceId)
         mImgView?.isSelected = mIsUsing
-//        if (mIsUsing) {
-//            mImgView.setImageResource(mResourceId)
-//        } else {
-//            mImgView.setImageResource(mFadeResourceId)
-//        }
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
@@ -84,7 +79,7 @@ class ToolEpoxyViewModel(
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + mToolID
+        result = 31 * result + mToolID.hashCode()
         result = 31 * result + mIsUsing.hashCode()
         return result
     }

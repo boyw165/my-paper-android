@@ -61,13 +61,13 @@ class PaperJSONTranslatorTest {
         Assert.assertEquals(2, paper.getSketch().size)
 
         // Stroke #1
-        Assert.assertEquals(Color.parseColor("#123456"), paper.getSketch()[0].color)
-        Assert.assertEquals(0.2f, paper.getSketch()[0].width)
+        Assert.assertEquals(Color.parseColor("#123456"), paper.getSketch()[0].penColor)
+        Assert.assertEquals(0.2f, paper.getSketch()[0].penSize)
         Assert.assertEquals(2, paper.getSketch()[0].pointList.size)
 
         // Stroke #2
-        Assert.assertEquals(Color.parseColor("#654321"), paper.getSketch()[1].color)
-        Assert.assertEquals(0.8f, paper.getSketch()[1].width)
+        Assert.assertEquals(Color.parseColor("#654321"), paper.getSketch()[1].penColor)
+        Assert.assertEquals(0.8f, paper.getSketch()[1].penSize)
         Assert.assertEquals(1, paper.getSketch()[1].pointList.size)
     }
 
@@ -79,11 +79,10 @@ class PaperJSONTranslatorTest {
             .create()
 
         val paper = PaperAutoSaveImpl()
-        paper.pushStroke(SketchStroke(color = Color.parseColor("#123456"),
-                                      width = 0.5f,
-                                      isEraser = false)
-                                    .addPath(Point(0f, 0f, 0))
-                                    .addPath(Point(1f, 1f, 100)))
+        paper.pushStroke(SketchStroke(penColor = Color.parseColor("#123456"),
+                                      penSize = 0.5f)
+                             .addPath(Point(0f, 0f, 0))
+                             .addPath(Point(1f, 1f, 100)))
 
         val json = translator.toJson(paper, IPaper::class.java)
         Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"(0.0,0.0,0) (1.0,1.0,100)\"}],\"scraps\":[]}",

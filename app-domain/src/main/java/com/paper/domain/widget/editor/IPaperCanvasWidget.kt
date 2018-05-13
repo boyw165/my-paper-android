@@ -20,6 +20,7 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.data.DrawingMode
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.model.IPaper
 import com.paper.model.Rect

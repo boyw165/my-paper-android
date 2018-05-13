@@ -22,8 +22,11 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.DomainConst
 import com.paper.domain.ISharedPreferenceService
+import com.paper.domain.data.DrawingMode
 import com.paper.domain.event.ProgressEvent
+import com.paper.domain.data.ToolType
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.model.IPaperTransformRepo
@@ -114,10 +117,20 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
             mEditPanelWidget
                 .onUpdateEditToolList()
                 .observeOn(mUiScheduler)
-                .subscribe {
-                    // TODO
-//                    val toolID = event.toolIDs[event.usingIndex]
-//                    mCanvasWidget.handleChooseTool()
+                .subscribe { event ->
+                    val toolID = event.toolIDs[event.usingIndex]
+
+                    when (toolID) {
+                        ToolType.ERASER -> {
+                            mCanvasWidget.setDrawingMode(DrawingMode.ERASER)
+                        }
+                        ToolType.PEN -> {
+                            mCanvasWidget.setDrawingMode(DrawingMode.SKETCH)
+                        }
+                        else -> {
+                            println("${DomainConst.TAG}: Yet supported")
+                        }
+                    }
                 })
 
         // Pen colors

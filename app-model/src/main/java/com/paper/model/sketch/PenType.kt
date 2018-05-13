@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright May 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,17 +20,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.model.sketch
 
-import com.paper.model.Point
-import com.paper.model.sketch.PenType
-
-sealed class DrawSVGEvent
-
-data class StartSketchEvent(val point: Point,
-                            val penColor: Int = 0,
-                            val penSize: Float = 0f,
-                            val penType: PenType) : DrawSVGEvent()
-data class OnSketchEvent(val point: Point) : DrawSVGEvent()
-class StopSketchEvent : DrawSVGEvent()
-class ClearAllSketchEvent : DrawSVGEvent()
+enum class PenType {
+    ERASER,
+    PEN
+}
