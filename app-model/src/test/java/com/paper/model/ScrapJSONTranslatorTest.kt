@@ -26,6 +26,7 @@ package com.paper.model
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.SketchStrokeJSONTranslator
+import com.paper.model.sketch.PenType
 import com.paper.model.sketch.SketchStroke
 import org.junit.Assert
 import org.junit.Test
@@ -50,7 +51,7 @@ class ScrapJSONTranslatorTest {
 
         model.addStrokeToSketch(SketchStroke(penColor = Color.parseColor("#FF0000"),
                                              penSize = 0.5f,
-                                             isEraser = false)
+                                             penType = PenType.PEN)
                                     .addAllPath(listOf(Point(0.18075603f,
                                                              0.25663146f,
                                                              0),
@@ -58,11 +59,11 @@ class ScrapJSONTranslatorTest {
                                                              0.5f,
                                                              100))))
 
-        Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"color\":\"#ffff0000\",\"width\":0.5,\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\"}]}",
+        Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"penType\":\"pen\",\"penColor\":\"#ffff0000\",\"penSize\":0.5,\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\"}]}",
                 translator.toJson(model, ScrapModel::class.java))
     }
 
-    private val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"color\":\"#00000000\",\"width\":0.5,\"isEraser\":false}]}"
+    private val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"penType\":\"pen\",\"penColor\":\"#00000000\",\"penSize\":0.5,\"isEraser\":false}]}"
 
     @Test
     fun deserializeScrap_With_Sketch() {

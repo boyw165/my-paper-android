@@ -35,13 +35,15 @@ class PaperJSONTranslatorTest {
     private val PAPER_1 = "{\n" +
                           "    \"sketch\": [\n" +
                           "        {\n" +
-                          "            \"color\": \"#123456\",\n" +
-                          "            \"width\": 0.2,\n" +
+                          "            \"penType\": \"pen\",\n" +
+                          "            \"penColor\": \"#123456\",\n" +
+                          "            \"penSize\": 0.2,\n" +
                           "            \"path\": \"(0.0,0.0,0) (0.5,0.5,100)\"\n" +
                           "        },\n" +
                           "        {\n" +
-                          "            \"color\": \"#654321\",\n" +
-                          "            \"width\": 0.8,\n" +
+                          "            \"penType\": \"pen\",\n" +
+                          "            \"penColor\": \"#654321\",\n" +
+                          "            \"penSize\": 0.8,\n" +
                           "            \"path\": \"(0.5,0.5,0)\"\n" +
                           "        }\n" +
                           "    ],\n" +
@@ -85,7 +87,7 @@ class PaperJSONTranslatorTest {
                              .addPath(Point(1f, 1f, 100)))
 
         val json = translator.toJson(paper, IPaper::class.java)
-        Assert.assertEquals("{\"sketch\":[{\"color\":\"#ff123456\",\"width\":0.5,\"path\":\"(0.0,0.0,0) (1.0,1.0,100)\"}],\"scraps\":[]}",
+        Assert.assertEquals("{\"sketch\":[{\"penType\":\"pen\",\"penColor\":\"#ff123456\",\"penSize\":0.5,\"path\":\"(0.0,0.0,0) (1.0,1.0,100)\"}],\"scraps\":[]}",
                             json)
     }
 }
