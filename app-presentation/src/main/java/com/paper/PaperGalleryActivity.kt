@@ -40,8 +40,8 @@ import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
-import com.paper.model.ModelConst
 import com.paper.model.IPaper
+import com.paper.model.ModelConst
 import com.paper.view.gallery.PaperThumbnailEpoxyController
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
@@ -50,6 +50,8 @@ import com.yarolegovich.discretescrollview.transform.ScaleTransformer
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Observables
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
@@ -94,8 +96,6 @@ class PaperGalleryActivity : AppCompatActivity() {
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
     // Error signal
     private val mErrorSignal = PublishSubject.create<Throwable>()
-
-    private val mUiScheduler = AndroidSchedulers.mainThread()
 
     // Disposables
     private val mDisposables = CompositeDisposable()
@@ -157,7 +157,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         mDisposables.add(
             onClickShowExpMenu()
                 .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(mUiScheduler)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     showExpMenu()
                 })
@@ -166,7 +166,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         mDisposables.add(
             onClickExpMenu()
                 .debounce(150, TimeUnit.MILLISECONDS)
-                .observeOn(mUiScheduler)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
                     navigateToExpById(id)
                 })
@@ -176,17 +176,19 @@ class PaperGalleryActivity : AppCompatActivity() {
             onClickNewPaper()
                 .switchMap {
                     requestPermissions()
+                        .observeOn(Schedulers.io())
+                        .doOnNext {
+                            mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+                        }
                 }
-                .observeOn(mUiScheduler)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
-                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
-
                     navigateToPaperEditor(ModelConst.TEMP_ID)
                 })
         // Button of existing paper.
         mDisposables.add(
             onClickPaper()
-                .observeOn(mUiScheduler)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
                     navigateToPaperEditor(id)
                     hideProgressBar()
@@ -194,6 +196,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         // Button of delete paper.
         mDisposables.add(
             onClickDeletePaper()
+                .observeOn(Schedulers.io())
                 .map {
                     val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
                                                          ModelConst.INVALID_ID)
@@ -214,8 +217,10 @@ class PaperGalleryActivity : AppCompatActivity() {
 
                     return@map toDeletePaperID
                 }
+                .observeOn(AndroidSchedulers.mainThread())
                 .switchMap { toDeletePaperID ->
                     requestPermissions()
+                        .observeOn(Schedulers.io())
                         .switchMap {
                             DeletePaper(paperID = toDeletePaperID,
                                         paperRepo = mRepo,
@@ -223,18 +228,19 @@ class PaperGalleryActivity : AppCompatActivity() {
                                 .toObservable()
                         }
                 }
-                .observeOn(mUiScheduler)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     hideProgressBar()
                 })
         // Browse papers.
         mDisposables.add(
             onBrowsePaper()
-                .observeOn(mUiScheduler)
-                .subscribe { id ->
-
+                .observeOn(Schedulers.io())
+                .doOnNext { id ->
                     mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, id)
-
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { id ->
                     if (id == ModelConst.INVALID_ID) {
                         setDeleteButtonVisibility(false)
                     } else {
@@ -244,19 +250,25 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Load papers
         mDisposables.add(
-            requestPermissions()
-                .switchMap {
-                    // Note: Any database update will emit new result
-                    mRepo.getPapers(isSnapshot = true)
-                }
-                .observeOn(mUiScheduler)
-                .subscribe { papers ->
+            Observables.zip(
+                requestPermissions()
+                    .observeOn(Schedulers.io())
+                    .switchMap {
+                        // Note: Any database update will emit new result
+                        mRepo.getPapers(isSnapshot = true)
+                    },
+                Observable
+                    .fromCallable {
+                        mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                    }
+                    .subscribeOn(Schedulers.io()))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { (papers, savedID) ->
                     // Hold the paper snapshots.
                     mPaperSnapshots.clear()
                     mPaperSnapshots.addAll(papers)
 
-                    val id = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-                    val position = papers.indexOfFirst { it.getId() == id }
+                    val position = papers.indexOfFirst { it.getId() == savedID }
 
                     if (position >= 0 && position <= papers.size) {
                         setDeleteButtonVisibility(true)

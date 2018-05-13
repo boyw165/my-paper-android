@@ -55,11 +55,19 @@ class PaperApplication : MultiDexApplication(),
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(
                 StrictMode.ThreadPolicy.Builder()
-                    .detectAll()
+                    // Temporarily disable this because there're too many
+                    // system calls implicitly do IO.
+                    //.detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork()
+                    .penaltyFlashScreen()
                     .build())
             StrictMode.setVmPolicy(
                 StrictMode.VmPolicy.Builder()
-                    .detectAll()
+                    .detectLeakedSqlLiteObjects()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .penaltyDeath()
                     .build())
         }
     }

@@ -24,6 +24,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 
 class SplashScreenActivity : AppCompatActivity() {
@@ -35,7 +37,7 @@ class SplashScreenActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // Init Fabric crashlytics.
-        //        Fabric.with(this, new Crashlytics());
+//        Fabric.with(this, new Crashlytics());
 
         setContentView(R.layout.activity_splash_screen)
     }
@@ -46,7 +48,8 @@ class SplashScreenActivity : AppCompatActivity() {
         // Do nothing but wait few seconds and launch the start page.
         Observable
             .just(true)
-            .delay(650, TimeUnit.MILLISECONDS)
+            .delay(650, TimeUnit.MILLISECONDS, Schedulers.computation())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
                 startActivity(Intent(this@SplashScreenActivity,
                                      PaperGalleryActivity::class.java))
