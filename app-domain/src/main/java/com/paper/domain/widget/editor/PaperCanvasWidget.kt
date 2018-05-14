@@ -109,6 +109,22 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     mModel?.setThumbnail(bmpFile)
                     mModel?.setThumbnailWidth(bmpWidth)
                     mModel?.setThumbnailHeight(bmpHeight)
+
+                    // Flag one task is done
+                    val busyFlag = mBusyFlagSignal.value!!
+                    mBusyFlagSignal.onNext(busyFlag.and(BusyFlag.THUMBNAIL.inv()))
+                })
+
+        // Busy state
+        mDisposables.add(
+            mBusyFlagSignal
+                .observeOn(mUiScheduler)
+                .subscribe { busyFlag ->
+                    if (busyFlag == 0) {
+                        mBusySignal.onNext(false)
+                    } else {
+                        mBusySignal.onNext(true)
+                    }
                 })
     }
 
@@ -124,6 +140,18 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     private fun hasModelBinding(): Boolean {
         return mModel != null && mDisposables.size() > 0
     }
+
+    // Number of on-going task ////////////////////////////////////////////////
+
+    object BusyFlag {
+        const val THUMBNAIL = 1
+    }
+
+    private val mBusyFlagSignal = BehaviorSubject.createDefault(0)
+    private val mBusySignal = BehaviorSubject.createDefault(false)
+
+    fun onBusy(): Observable<Boolean> {
+        return mBusySignal
     }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
@@ -249,6 +277,12 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                               bmpWidth: Int,
                               bmpHeight: Int) {
         mUpdateBitmapSignal.onNext(Triple(bmpFile, bmpWidth, bmpHeight))
+    }
+
+    override fun invalidateThumbnail() {
+        // Flag one thing need to be done
+        val busyFlag = mBusyFlagSignal.value!!
+        mBusyFlagSignal.onNext(busyFlag.or(BusyFlag.THUMBNAIL))
     }
 
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()

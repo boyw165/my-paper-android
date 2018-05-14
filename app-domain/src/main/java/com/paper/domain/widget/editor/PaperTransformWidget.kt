@@ -29,6 +29,7 @@ import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
@@ -93,6 +94,15 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
     private fun ensureNoLeakedBinding() {
         if (mDisposables.size() > 0)
             throw IllegalStateException("Already bind a model")
+    }
+
+    // Number of on-going task ////////////////////////////////////////////////
+
+    private val mBusySignal = BehaviorSubject.createDefault(false)
+
+    // TODO: Utilize it
+    fun onBusy(): Observable<Boolean> {
+        return mBusySignal
     }
 
     // Undo & redo ////////////////////////////////////////////////////////////

@@ -95,6 +95,15 @@ class PaperEditPanelWidget(
         }
     }
 
+    // Number of on-going task ////////////////////////////////////////////////
+
+    private val mBusySignal = BehaviorSubject.createDefault(false)
+
+    // TODO: Utilize it
+    fun onBusy(): Observable<Boolean> {
+        return mBusySignal
+    }
+
     // Edit tool //////////////////////////////////////////////////////////////
 
     private var mToolIndex = -1

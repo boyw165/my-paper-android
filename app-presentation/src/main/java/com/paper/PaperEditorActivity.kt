@@ -141,9 +141,14 @@ class PaperEditorActivity : AppCompatActivity() {
         // Close button.
         mDisposables.add(
             onClickCloseButton()
+                .switchMap {
+                    mWidget.requestStop()
+                }
                 .observeOn(mUiScheduler)
-                .subscribe {
-                    close()
+                .subscribe { granted ->
+                    if (granted) {
+                        close()
+                    }
                 })
 
         // View port indicator
