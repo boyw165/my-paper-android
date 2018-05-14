@@ -250,18 +250,19 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Load papers
         mDisposables.add(
-            Observables.zip(
-                requestPermissions()
-                    .observeOn(Schedulers.io())
-                    .switchMap {
-                        // Note: Any database update will emit new result
-                        mRepo.getPapers(isSnapshot = true)
-                    },
-                Observable
-                    .fromCallable {
-                        mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-                    }
-                    .subscribeOn(Schedulers.io()))
+            Observables
+                .combineLatest(
+                    requestPermissions()
+                        .observeOn(Schedulers.io())
+                        .switchMap {
+                            // Note: Any database update will emit new result
+                            mRepo.getPapers(isSnapshot = true)
+                        },
+                    Observable
+                        .fromCallable {
+                            mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                        }
+                        .subscribeOn(Schedulers.io()))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (papers, savedID) ->
                     // Hold the paper snapshots.
