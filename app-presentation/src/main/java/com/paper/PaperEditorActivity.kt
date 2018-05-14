@@ -77,7 +77,6 @@ class PaperEditorActivity : AppCompatActivity() {
     // Delete button
     private val mBtnDelete by lazy { findViewById<View>(R.id.btn_delete) }
 
-
     private val mUiScheduler = AndroidSchedulers.mainThread()
     private val mWorkerScheduler = Schedulers.io()
 

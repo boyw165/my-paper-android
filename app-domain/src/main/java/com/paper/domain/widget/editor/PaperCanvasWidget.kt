@@ -51,7 +51,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     // Model
     private var mModel: IPaper? = null
-    private val mModelDisposables = CompositeDisposable()
+    private val mDisposables = CompositeDisposable()
 
     // Scrap controllers
     private val mScrapWidgets = hashMapOf<UUID, IScrapWidget>()
@@ -75,7 +75,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mSetCanvasSize.onNext(Rect(0f, 0f, model.getWidth(), model.getHeight()))
 
         // Add or remove scrap
-        mModelDisposables.add(
+        mDisposables.add(
             model.onAddScrap()
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
@@ -88,7 +88,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     // Signal the adding event.
                     mAddWidgetSignal.onNext(widget)
                 })
-        mModelDisposables.add(
+        mDisposables.add(
             model.onRemoveScrap()
                 .observeOn(mUiScheduler)
                 .subscribe { scrapM ->
@@ -102,7 +102,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                 })
 
         // Thumbnail
-        mModelDisposables.add(
+        mDisposables.add(
             mUpdateBitmapSignal
                 .observeOn(mUiScheduler)
                 .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
@@ -113,16 +113,17 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     }
 
     override fun unbindModel() {
-        mModelDisposables.clear()
+        mDisposables.clear()
     }
 
     private fun ensureNoLeakedBinding() {
-        if (mModelDisposables.size() > 0)
+        if (mDisposables.size() > 0)
             throw IllegalStateException("Already bind a model")
     }
 
     private fun hasModelBinding(): Boolean {
-        return mModel != null && mModelDisposables.size() > 0
+        return mModel != null && mDisposables.size() > 0
+    }
     }
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
