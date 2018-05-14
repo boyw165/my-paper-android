@@ -20,6 +20,7 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.data.DrawingMode
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.model.IPaper
 import com.paper.model.Rect
@@ -30,12 +31,6 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
-
-    fun handleUpdateThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
-
-    fun handleChoosePenColor(color: Int)
-
-    fun handleUpdatePenSize(size: Float)
 
     fun handleActionBegin()
 
@@ -48,6 +43,21 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
     fun handleDrag(x: Float, y: Float)
 
     fun handleDragEnd(x: Float, y: Float)
+
+    fun setDrawingMode(mode: DrawingMode)
+
+    fun setChosenPenColor(color: Int)
+
+    fun setPenSize(size: Float)
+
+    fun setThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
+
+    /**
+     * If the view wants to update the thumbnail but not immediately, call this
+     * method to indicate the thumbnail is dirty. The dirty state is reset when
+     * call [setThumbnail].
+     */
+    fun invalidateThumbnail()
 
     // For output /////////////////////////////////////////////////////////////
 

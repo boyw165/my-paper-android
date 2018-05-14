@@ -22,8 +22,11 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.DomainConst
 import com.paper.domain.ISharedPreferenceService
+import com.paper.domain.data.DrawingMode
 import com.paper.domain.event.ProgressEvent
+import com.paper.domain.data.ToolType
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.model.IPaperTransformRepo
@@ -32,10 +35,13 @@ import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Scheduler
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.functions.Function4
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.SingleSubject
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
@@ -61,6 +67,19 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     fun start(paperID: Long) {
         ensureNoLeakingSubscription()
+
+        // Busy state
+        mDisposables.add(
+            Observables
+                .combineLatest(
+                    onBusy(),
+                    mCanvasWidget.onBusy(),
+                    mHistoryWidget.onBusy(),
+                    mEditPanelWidget.onBusy()) { a, b, c, d -> a || b || c || d }
+                .observeOn(mUiScheduler)
+                .subscribe { busy ->
+                    mReadyToStopSignal.onNext(!busy)
+                })
 
         // Load paper and establish the paper (canvas) and transform bindings.
         val paperSrc = mPaperRepo
@@ -114,10 +133,20 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
             mEditPanelWidget
                 .onUpdateEditToolList()
                 .observeOn(mUiScheduler)
-                .subscribe {
-                    // TODO
-//                    val toolID = event.toolIDs[event.usingIndex]
-//                    mCanvasWidget.handleChooseTool()
+                .subscribe { event ->
+                    val toolID = event.toolIDs[event.usingIndex]
+
+                    when (toolID) {
+                        ToolType.ERASER -> {
+                            mCanvasWidget.setDrawingMode(DrawingMode.ERASER)
+                        }
+                        ToolType.PEN -> {
+                            mCanvasWidget.setDrawingMode(DrawingMode.SKETCH)
+                        }
+                        else -> {
+                            println("${DomainConst.TAG}: Yet supported")
+                        }
+                    }
                 })
 
         // Pen colors
@@ -127,7 +156,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
                     val color = event.colorTickets[event.usingIndex]
-                    mCanvasWidget.handleChoosePenColor(color)
+                    mCanvasWidget.setChosenPenColor(color)
                 })
         // Pen size
         mDisposables.add(
@@ -135,7 +164,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 .onUpdatePenSize()
                 .observeOn(mUiScheduler)
                 .subscribe { penSize ->
-                    mCanvasWidget.handleUpdatePenSize(penSize)
+                    mCanvasWidget.setPenSize(penSize)
                 })
 
         // Following are about undo and redo:
@@ -156,9 +185,34 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         mDisposables.clear()
     }
 
+    private val mReadyToStopSignal = BehaviorSubject.create<Boolean>()
+
+    fun requestStop(): Observable<Boolean> {
+        println("${DomainConst.TAG}: request editor widget to stop")
+        return mReadyToStopSignal
+            .doOnNext { ready ->
+                if (ready) {
+                    println("${DomainConst.TAG}: editor widget is ready to stop")
+                    mUpdateProgressSignal.onNext(ProgressEvent.stop(100))
+                } else {
+                    println("${DomainConst.TAG}: editor widget is NOT ready to stop")
+                    mUpdateProgressSignal.onNext(ProgressEvent.start(0))
+                }
+            }
+    }
+
     private fun ensureNoLeakingSubscription() {
         if (mDisposables.size() > 0) throw IllegalStateException(
             "Already bind to a widget")
+    }
+
+    // Number of on-going task ////////////////////////////////////////////////
+
+    private val mBusySignal = BehaviorSubject.createDefault(false)
+
+    // TODO: Utilize it
+    private fun onBusy(): Observable<Boolean> {
+        return mBusySignal
     }
 
     // Paper widget ///////////////////////////////////////////////////////////

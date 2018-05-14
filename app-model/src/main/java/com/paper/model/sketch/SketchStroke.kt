@@ -31,9 +31,9 @@ import com.paper.model.Rect
  */
 data class SketchStroke(
     // The byte order is ARGB.
-    var color: Int = 0,
-    var width: Float = 0.toFloat(),
-    var isEraser: Boolean = false) {
+    val penColor: Int = 0,
+    val penSize: Float = 0.toFloat(),
+    val penType: PenType = PenType.PEN) {
 
     private var mIsHashDirty = true
     private var mHashCode = 0
@@ -91,9 +91,9 @@ data class SketchStroke(
 
         other as SketchStroke
 
-        if (color != other.color) return false
-        if (width != other.width) return false
-        if (isEraser != other.isEraser) return false
+        if (penColor != other.penColor) return false
+        if (penSize != other.penSize) return false
+        if (penType != other.penType) return false
         if (mPointList != other.mPointList) return false
 
         return true
@@ -101,9 +101,9 @@ data class SketchStroke(
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = color
-            mHashCode = 31 * mHashCode + java.lang.Float.floatToIntBits(width)
-            mHashCode = 31 * mHashCode + if (isEraser) 1 else 0
+            mHashCode = penColor
+            mHashCode = 31 * mHashCode + java.lang.Float.floatToIntBits(penSize)
+            mHashCode = 31 * mHashCode + penType.hashCode()
             mPointList.forEach { p ->
                 mHashCode = 31 * mHashCode + p.hashCode()
             }
@@ -116,9 +116,9 @@ data class SketchStroke(
 
     override fun toString(): String {
         return "stroke{" +
-               ", color=" + color +
-               ", width=" + width +
-               ", mPointList=" + mPointList +
+               ", penColor=" + penColor +
+               ", penSize=" + penSize +
+               ", pointList=" + mPointList +
                '}'
     }
 

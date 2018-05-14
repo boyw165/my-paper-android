@@ -22,6 +22,7 @@ package com.paper.model.repository.json
 
 import com.google.gson.*
 import com.paper.model.Color
+import com.paper.model.sketch.PenType
 import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
 
@@ -33,11 +34,12 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
-        // Stroke color, #ARGB
-        root.addProperty("color", "#${Integer.toHexString(src.color)}")
-        // Stroke width.
-        root.addProperty("width", src.width)
-
+        // Pen type
+        root.addProperty("penType", encodePenType(src.penType))
+        // Pen color, #ARGB
+        root.addProperty("penColor", "#${Integer.toHexString(src.penColor)}")
+        // Pen size
+        root.addProperty("penSize", src.penSize)
 
         // Save via points format
         val pathTransJson = PathTranslator.toPath(src.pointList)
@@ -51,20 +53,42 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
                              typeOfT: Type,
                              context: JsonDeserializationContext): SketchStroke {
         val root = json.asJsonObject
-        val model = SketchStroke()
+
+        // Pen type
+        val penType = if (root.has("penType")) {
+            decodePenType(root["penType"].asString)
+        } else {
+            PenType.PEN
+        }
+        // Pen color, #ARGB
+        val penColor = Color.parseColor(root.get("penColor").asString)
+        // Pen width
+        val penSize = root.get("penSize").asFloat
+
+        val model = SketchStroke(penColor = penColor,
+                                 penSize = penSize,
+                                 penType = penType)
 
         // Parse path-tuple
         val pathString = root.get("path").asString
         // Add pointPath to the stroke.
         model.addAllPath(PathTranslator.fromPath(pathString))
 
-        // Stroke color, #ARGB
-        val colorTicket = root.get("color").asString
-        model.color = Color.parseColor(colorTicket)
-
-        // Stroke width.
-        model.width = root.get("width").asFloat
-
         return model
+    }
+
+    private fun encodePenType(type: PenType): String {
+        return when (type) {
+            PenType.PEN -> "pen"
+            PenType.ERASER -> "eraser"
+        }
+    }
+
+    private fun decodePenType(typeString: String): PenType {
+        return when (typeString) {
+            "pen" -> PenType.PEN
+            "eraser" -> PenType.ERASER
+            else -> PenType.PEN
+        }
     }
 }

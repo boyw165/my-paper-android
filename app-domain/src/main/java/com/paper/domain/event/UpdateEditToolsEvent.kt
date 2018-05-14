@@ -18,11 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.domain.event
 
-object EditingToolFactory {
+import com.paper.domain.data.ToolType
 
-    const val TOOL_ERASER = 0
-    const val TOOL_PEN = 1
-    const val TOOL_SCISSOR = 2
-}
+data class UpdateEditToolsEvent(
+    val toolIDs: List<ToolType>,
+    val usingIndex: Int = -1)

@@ -2,7 +2,7 @@
     <string name="app_name">Paper</string>
 
     <!-- Common -->
-    <string name="loading">Loading</string>
+    <string name="processing">Processing, please wait</string>
     <string name="yes">OK</string>
     <string name="no">Cancel</string>
     <string name="close">Close</string>

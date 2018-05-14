@@ -26,7 +26,7 @@ import android.view.MotionEvent
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.AppConst
-import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.*
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.Point
@@ -35,9 +35,12 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import java.util.*
 
-open class ScrapView : IScrapView {
+open class ScrapView(drawMode: PorterDuffXfermode,
+                     eraserMode: PorterDuffXfermode) : IScrapView {
 
     private lateinit var mWidget: IScrapWidget
+    private val mDrawMode = drawMode
+    private val mEraserMode = eraserMode
 
     private var mContext: IPaperContext? = null
     private var mParent: IParentView? = null
@@ -185,28 +188,33 @@ open class ScrapView : IScrapView {
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
-        val nx = event.point.x
-        val ny = event.point.y
-        val (x, y) = mContext!!.mapM2V(nx, ny)
 
-        when (event.action) {
-            DrawSVGEvent.Action.MOVE -> {
-                val d = SVGDrawable(context = mContext!!,
-                                    penColor = event.penColor,
-                                    penSize = event.penSize)
+        when (event) {
+            is StartSketchEvent -> {
+                val nx = event.point.x
+                val ny = event.point.y
+                val (x, y) = mContext!!.mapM2V(nx, ny)
+                val d = SVGDrawable(
+                    context = mContext!!,
+                    penColor = event.penColor,
+                    penSize = event.penSize,
+                    porterDuffMode = mDrawMode)
                 d.moveTo(Point(x, y, event.point.time))
 
                 mDrawables.add(d)
             }
-            DrawSVGEvent.Action.LINE_TO -> {
+            is OnSketchEvent -> {
+                val nx = event.point.x
+                val ny = event.point.y
+                val (x, y) = mContext!!.mapM2V(nx, ny)
                 val d = mDrawables.last()
                 d.lineTo(Point(x, y, event.point.time))
             }
-            DrawSVGEvent.Action.CLOSE -> {
+            is StopSketchEvent -> {
                 val d = mDrawables.last()
                 d.close()
             }
-            DrawSVGEvent.Action.CLEAR_ALL -> {
+            is ClearAllSketchEvent -> {
                 val d = mDrawables.last()
                 d.clear()
                 mDrawables.clear()

@@ -23,6 +23,9 @@
 package com.paper.domain.useCase
 
 import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.OnSketchEvent
+import com.paper.domain.event.StartSketchEvent
+import com.paper.domain.event.StopSketchEvent
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Observer
@@ -46,21 +49,13 @@ class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent
                 if (d.isDisposed) break
 
                 when (i) {
-                    0 -> observer.onNext(DrawSVGEvent(
-                        action = DrawSVGEvent.Action.MOVE,
+                    0 -> observer.onNext(StartSketchEvent(
                         point = pt,
-                        penColor = stroke.color,
-                        penSize = stroke.width))
-                    stroke.pointList.lastIndex -> observer.onNext(DrawSVGEvent(
-                        action = DrawSVGEvent.Action.CLOSE,
-                        point = pt,
-                        penColor = stroke.color,
-                        penSize = stroke.width))
-                    else -> observer.onNext(DrawSVGEvent(
-                        action = DrawSVGEvent.Action.LINE_TO,
-                        point = pt,
-                        penColor = stroke.color,
-                        penSize = stroke.width))
+                        penColor = stroke.penColor,
+                        penSize = stroke.penSize,
+                        penType = stroke.penType))
+                    stroke.pointList.lastIndex -> observer.onNext(StopSketchEvent())
+                    else -> observer.onNext(OnSketchEvent(point = pt))
                 }
 
                 try {

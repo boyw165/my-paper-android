@@ -20,16 +20,15 @@
 
 package com.paper.view.canvas
 
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
+import android.graphics.*
 import com.paper.AppConst
 import com.paper.domain.data.Bezier
 import com.paper.model.Point
 
 class SVGDrawable(context: IPaperContext,
                   penColor: Int = 0,
-                  penSize: Float = 1f) {
+                  penSize: Float = 1f,
+                  porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)) {
 
     private val mContext = context
     private val mPenColor = penColor
@@ -59,6 +58,7 @@ class SVGDrawable(context: IPaperContext,
         mStrokePaint.color = mPenColor
         mStrokePaint.style = Paint.Style.FILL_AND_STROKE
         mStrokePaint.strokeCap = Paint.Cap.ROUND
+        mStrokePaint.xfermode = porterDuffMode
 
         println("${AppConst.TAG}: SVGDrawable(size=$mPenSize, color=#${Integer.toHexString(mPenColor)})")
 

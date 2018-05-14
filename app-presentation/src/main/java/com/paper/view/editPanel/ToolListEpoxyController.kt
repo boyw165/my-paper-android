@@ -23,43 +23,33 @@ package com.paper.view.editPanel
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.R
-import com.paper.domain.event.UpdateEditingToolsEvent
+import com.paper.domain.data.ToolType
+import com.paper.domain.event.UpdateEditToolsEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
-import com.paper.domain.widget.editor.EditingToolFactory
 
 class ToolListEpoxyController(imageLoader: RequestManager)
-    : TypedEpoxyController<UpdateEditingToolsEvent>() {
+    : TypedEpoxyController<UpdateEditToolsEvent>() {
 
     private val mImgLoader = imageLoader
 
-    override fun buildModels(data: UpdateEditingToolsEvent) {
-        data.toolIDs.forEachIndexed { i, toolId ->
+    override fun buildModels(data: UpdateEditToolsEvent) {
+        data.toolIDs.forEachIndexed { i, toolType ->
             ToolEpoxyViewModel(
-                toolID = toolId,
+                toolType = toolType,
                 imgLoader = mImgLoader,
-                resourceId = getResourceId(toolId),
-                fadeResourceId = getFadeResourceId(toolId),
+                resourceId = getResourceId(toolType),
                 isUsing = data.usingIndex == i,
                 widget = mWidget)
-                .id(toolId)
+                .id(toolType.ordinal)
                 .addTo(this)
         }
     }
 
-    private fun getResourceId(toolId: Int): Int {
+    private fun getResourceId(toolId: ToolType): Int {
         return when (toolId) {
-            EditingToolFactory.TOOL_ERASER -> R.drawable.sel_img_e_eraser
-            EditingToolFactory.TOOL_PEN -> R.drawable.sel_img_e_pen
-            EditingToolFactory.TOOL_SCISSOR -> R.drawable.sel_img_e_scissor
-            else -> throw IllegalArgumentException("Unsupported tool ID")
-        }
-    }
-
-    private fun getFadeResourceId(toolId: Int): Int {
-        return when (toolId) {
-            EditingToolFactory.TOOL_ERASER -> R.drawable.img_e_tool_eraser_unselected
-            EditingToolFactory.TOOL_PEN -> R.drawable.img_e_tool_pen_unselected
-            EditingToolFactory.TOOL_SCISSOR -> R.drawable.img_e_tool_scissor_unselected
+            ToolType.ERASER -> R.drawable.sel_img_e_eraser
+            ToolType.PEN -> R.drawable.sel_img_e_pen
+            ToolType.LASSO -> R.drawable.sel_img_e_scissor
             else -> throw IllegalArgumentException("Unsupported tool ID")
         }
     }

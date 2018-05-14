@@ -384,10 +384,10 @@ class PaperRepoSqliteImpl(authority: String,
                 }
 
                 val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-                val bmpFile = File(mFileDir, "$ts.jpg")
+                val bmpFile = File(mFileDir, "$ts.png")
 
                 FileOutputStream(bmpFile).use { out ->
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                    bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
                 }
 
                 // TODO: Use LruCache?

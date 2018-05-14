@@ -63,9 +63,11 @@ class PaperThumbnailEpoxyModel(
         // Update thumbnail size by fixing width and changing the height.
         val layoutParams = view.layoutParams
         val layoutWidth = layoutParams.width
-        val thumbRatio = mThumbWidth / mThumbHeight
-        layoutParams.height = layoutWidth / thumbRatio
-        view.layoutParams = layoutParams
+        if (mThumbWidth > 0 && mThumbHeight > 0) {
+            val thumbRatio = mThumbWidth / mThumbHeight
+            layoutParams.height = layoutWidth / thumbRatio
+            view.layoutParams = layoutParams
+        }
 
         // Click
         view.setOnClickListener {

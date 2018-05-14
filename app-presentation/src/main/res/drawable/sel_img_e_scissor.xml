@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Default -->
-    <item android:drawable="@drawable/img_e_tool_scissor"/>
-    <item android:drawable="@drawable/img_e_tool_scissor_unselected" android:state_pressed="true"/>
     <item android:drawable="@drawable/img_e_tool_scissor_unselected" android:state_enabled="false"/>
     <item android:drawable="@drawable/img_e_tool_scissor_unselected" android:state_selected="false"/>
+    <!-- Default -->
+    <item android:drawable="@drawable/img_e_tool_scissor" android:state_selected="true"/>
+    <item android:drawable="@drawable/img_e_tool_scissor" android:state_enabled="true"/>
+    <item android:drawable="@drawable/img_e_tool_scissor"/>
 </selector>

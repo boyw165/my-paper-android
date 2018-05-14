@@ -77,7 +77,6 @@ class PaperEditorActivity : AppCompatActivity() {
     // Delete button
     private val mBtnDelete by lazy { findViewById<View>(R.id.btn_delete) }
 
-
     private val mUiScheduler = AndroidSchedulers.mainThread()
     private val mWorkerScheduler = Schedulers.io()
 
@@ -142,9 +141,14 @@ class PaperEditorActivity : AppCompatActivity() {
         // Close button.
         mDisposables.add(
             onClickCloseButton()
+                .switchMap {
+                    mWidget.requestStop()
+                }
                 .observeOn(mUiScheduler)
-                .subscribe {
-                    close()
+                .subscribe { granted ->
+                    if (granted) {
+                        close()
+                    }
                 })
 
         // View port indicator
@@ -248,12 +252,11 @@ class PaperEditorActivity : AppCompatActivity() {
     }
 
     private fun showProgressBar(progress: Int) {
+        mProgressBar.setMessage("${getString(R.string.processing)}...")
+
         if (!mProgressBar.isShowing) {
             mProgressBar.show()
         }
-
-        mProgressBar.setMessage(
-            "%s: %d".format(getString(R.string.loading), progress))
     }
 
     private fun hideProgressBar() {
