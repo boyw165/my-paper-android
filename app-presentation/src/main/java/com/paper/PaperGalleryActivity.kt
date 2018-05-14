@@ -317,7 +317,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     }
 
     private fun showProgressBar() {
-        mProgressBar.setMessage(getString(R.string.loading))
+        mProgressBar.setMessage(getString(R.string.processing))
         mProgressBar.show()
     }
 

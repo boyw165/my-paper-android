@@ -247,12 +247,11 @@ class PaperEditorActivity : AppCompatActivity() {
     }
 
     private fun showProgressBar(progress: Int) {
+        mProgressBar.setMessage("${getString(R.string.processing)}...")
+
         if (!mProgressBar.isShowing) {
             mProgressBar.show()
         }
-
-        mProgressBar.setMessage(
-            "%s: %d".format(getString(R.string.loading), progress))
     }
 
     private fun hideProgressBar() {
