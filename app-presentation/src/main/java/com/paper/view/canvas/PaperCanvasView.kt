@@ -777,10 +777,9 @@ class PaperCanvasView : View,
 
         // The point is still in the View world, we still need to map it to the
         // Model world.
-        val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
         val scaleM2V = mScaleM2V.value!!
-        mTmpPoint[0] = mTmpPoint[0] / scaleVP / scaleM2V
-        mTmpPoint[1] = mTmpPoint[1] / scaleVP / scaleM2V
+        mTmpPoint[0] = mTmpPoint[0] / scaleM2V
+        mTmpPoint[1] = mTmpPoint[1] / scaleM2V
 
         return mTmpPoint
     }
@@ -790,14 +789,13 @@ class PaperCanvasView : View,
      */
     private fun toViewWorld(x: Float,
                             y: Float): FloatArray {
-        val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
         ensureMainThread()
 
         val scaleM2V = mScaleM2V.value!!
 
         // Map the point from Model world to View world.
-        mTmpPoint[0] = scaleVP * scaleM2V * x
-        mTmpPoint[1] = scaleVP * scaleM2V * y
+        mTmpPoint[0] = scaleM2V * x
+        mTmpPoint[1] = scaleM2V * y
 
         return mTmpPoint
     }
