@@ -134,21 +134,17 @@ class PaperCanvasView : View,
         mDisposables.add(
             mUpdateBitmapSignal
                 .map { bmp -> Pair(hashCode(), bmp) }
+                .filter { (hashCode, _) -> hashCode != AppConst.EMPTY_HASH }
                 // Notify widget the thumbnail need to be update
                 .doOnNext { widget.invalidateThumbnail() }
                 // Debounce Bitmap writes
                 .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
                 .switchMap { (hashCode, bmp) ->
-                    if (hashCode == AppConst.EMPTY_HASH) {
-                        // Don't write thumbnail if canvas is empty
-                        Observable.never()
-                    } else {
-                        mBitmapRepo
-                            ?.putBitmap(hashCode, bmp)
-                            ?.toObservable()
-                            ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
-                        ?: Observable.never<Triple<File, Int, Int>>()
-                    }
+                    mBitmapRepo
+                        ?.putBitmap(hashCode, bmp)
+                        ?.toObservable()
+                        ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
+                    ?: Observable.never<Triple<File, Int, Int>>()
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
