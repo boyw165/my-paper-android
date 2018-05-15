@@ -172,6 +172,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
+    // TODO: Is the mode necessary?
     private var mDrawingMode = DrawingMode.IDLE
 
     private lateinit var mTmpStroke: SketchStroke

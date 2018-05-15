@@ -29,7 +29,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IBitmapRepoProvider
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.IPaperTransformRepoProvider
-import com.paper.domain.ISharedPreferenceService
+import com.paper.model.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.ModelConst
@@ -85,11 +85,11 @@ class PaperEditorActivity : AppCompatActivity() {
     // Error signal
     private val mErrorSignal = PublishSubject.create<Throwable>()
 
+    private val mSharedPrefs by lazy { application as ISharedPreferenceService }
     private val mWidget by lazy {
         PaperEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
             paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),
-            sharedPrefs = application as ISharedPreferenceService,
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
             uiScheduler = AndroidSchedulers.mainThread(),
@@ -103,19 +103,6 @@ class PaperEditorActivity : AppCompatActivity() {
         super.onCreate(savedState)
 
         setContentView(R.layout.activity_paper_editor)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Force to hide the progress-bar.
-        hideProgressBar()
-        // Force to hide the error dialog.
-        mErrorThenFinishDialog.dismiss()
-    }
-
-    override fun onResume() {
-        super.onResume()
 
         // Progress
         mDisposables.add(
@@ -223,16 +210,25 @@ class PaperEditorActivity : AppCompatActivity() {
                 }
                 .subscribe())
 
-        val paperID = intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
+        val paperID = if (savedState == null) {
+            intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
+        } else {
+            mSharedPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+        }
         mWidget.start(paperID)
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onDestroy() {
+        super.onDestroy()
 
         mWidget.stop()
 
         mDisposables.clear()
+
+        // Force to hide the progress-bar.
+        hideProgressBar()
+        // Force to hide the error dialog.
+        mErrorThenFinishDialog.dismiss()
     }
 
     override fun onBackPressed() {

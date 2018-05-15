@@ -23,12 +23,28 @@ package com.paper.domain.event
 import com.paper.model.Point
 import com.paper.model.sketch.PenType
 
+/**
+ * The abstract drawing SVG event.
+ */
 sealed class DrawSVGEvent
 
+/**
+ * A starting sketch event, where it may provide the pen color, pen size, and
+ * pen type information.
+ */
 data class StartSketchEvent(val point: Point,
                             val penColor: Int = 0,
                             val penSize: Float = 0f,
                             val penType: PenType) : DrawSVGEvent()
+/**
+ * An on-drawing sketch event.
+ */
 data class OnSketchEvent(val point: Point) : DrawSVGEvent()
+/**
+ * A stopping sketch event.
+ */
 class StopSketchEvent : DrawSVGEvent()
+/**
+ * A event to clear all the cached sketch.
+ */
 class ClearAllSketchEvent : DrawSVGEvent()

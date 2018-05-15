@@ -21,7 +21,6 @@
 package com.paper.view.canvas
 
 import android.graphics.*
-import com.paper.AppConst
 import com.paper.domain.data.Bezier
 import com.paper.model.Point
 
@@ -60,7 +59,7 @@ class SVGDrawable(context: IPaperContext,
         mStrokePaint.strokeCap = Paint.Cap.ROUND
         mStrokePaint.xfermode = porterDuffMode
 
-        println("${AppConst.TAG}: SVGDrawable(size=$mPenSize, color=#${Integer.toHexString(mPenColor)})")
+        //println("${AppConst.TAG}: SVGDrawable(size=$mPenSize, color=#${Integer.toHexString(mPenColor)})")
 
         mMinWidth = 1f * paintSize
         mMaxWidth = 2.5f * paintSize
@@ -86,8 +85,8 @@ class SVGDrawable(context: IPaperContext,
 //        // Try #1: simple points
 //        mStrokePoint.add(Point(x, y))
 //        mStrokePointTransformed.add(Point(x, y))
-
-        // Try #2: Bezier points
+//
+//        // Try #2: Bezier points
 //        addPoint(getNewPoint(x, y))
 
         // Try #3
@@ -98,8 +97,8 @@ class SVGDrawable(context: IPaperContext,
 //        // Try #1: simple points
 //        mStrokePoint.add(Point(x, y))
 //        mStrokePointTransformed.add(Point(x, y))
-
-        // Try #2: Bezier points
+//
+//        // Try #2: Bezier points
 //        addPoint(getNewPoint(x, y))
 
         // Try #3
@@ -110,8 +109,12 @@ class SVGDrawable(context: IPaperContext,
         // DO NOTHING
     }
 
+    /**
+     * @return true if there is canvas update; false no canvas update.
+     */
     fun onDraw(canvas: Canvas,
-               transform: Matrix? = null) {
+               transform: Matrix? = null): Boolean {
+        val dirty: Boolean
         if (transform != null) {
             mStrokePointTransformed.forEachIndexed { i, point ->
                 mPointMap[0] = mStrokePoint[i].x
@@ -125,6 +128,8 @@ class SVGDrawable(context: IPaperContext,
                 mStrokePaint.strokeWidth = mStrokeWidth[i]
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
+
+            dirty = true
         } else {
             // Only draw those points not consumed
             val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
@@ -133,9 +138,13 @@ class SVGDrawable(context: IPaperContext,
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
 
+            dirty = newPoints.size > 0
+
             // Update consumed number
             mConsumedPointCount = mStrokePoint.size
         }
+
+        return dirty
     }
 
     // Start of Bezier functions

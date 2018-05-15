@@ -37,7 +37,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.domain.DomainConst
 import com.paper.domain.IPaperRepoProvider
-import com.paper.domain.ISharedPreferenceService
+import com.paper.model.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
 import com.paper.model.IPaper
@@ -178,7 +178,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     requestPermissions()
                         .observeOn(Schedulers.io())
                         .doOnNext {
-                            mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
                         }
                 }
                 .observeOn(AndroidSchedulers.mainThread())
@@ -198,7 +198,7 @@ class PaperGalleryActivity : AppCompatActivity() {
             onClickDeletePaper()
                 .observeOn(Schedulers.io())
                 .map {
-                    val toDeletePaperID = mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID,
+                    val toDeletePaperID = mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID,
                                                          ModelConst.INVALID_ID)
                     val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.getId() == toDeletePaperID }
                     val newPaperPosition = if (toDeletePaperPosition + 1 < mPaperSnapshots.size) {
@@ -213,7 +213,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     }
 
                     // Save new paper ID.
-                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, newPaperID)
+                    mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newPaperID)
 
                     return@map toDeletePaperID
                 }
@@ -237,7 +237,7 @@ class PaperGalleryActivity : AppCompatActivity() {
             onBrowsePaper()
                 .observeOn(Schedulers.io())
                 .doOnNext { id ->
-                    mPrefs.putLong(DomainConst.PREFS_BROWSE_PAPER_ID, id)
+                    mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, id)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
@@ -260,7 +260,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                         },
                     Observable
                         .fromCallable {
-                            mPrefs.getLong(DomainConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
                         }
                         .subscribeOn(Schedulers.io()))
                 .observeOn(AndroidSchedulers.mainThread())
