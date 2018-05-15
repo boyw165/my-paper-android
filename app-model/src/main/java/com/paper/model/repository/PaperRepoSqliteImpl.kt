@@ -386,8 +386,7 @@ class PaperRepoSqliteImpl(authority: String,
                     mFileDir.mkdir()
                 }
 
-                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
-                val bmpFile = File(mFileDir, "$ts.png")
+                val bmpFile = File(mFileDir, "$key.png")
 
                 FileOutputStream(bmpFile).use { out ->
                     bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
