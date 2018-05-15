@@ -60,7 +60,7 @@ class SVGDrawable(context: IPaperContext,
         mStrokePaint.strokeCap = Paint.Cap.ROUND
         mStrokePaint.xfermode = porterDuffMode
 
-        println("${AppConst.TAG}: SVGDrawable(size=$mPenSize, color=#${Integer.toHexString(mPenColor)})")
+        //println("${AppConst.TAG}: SVGDrawable(size=$mPenSize, color=#${Integer.toHexString(mPenColor)})")
 
         mMinWidth = 1f * paintSize
         mMaxWidth = 2.5f * paintSize
@@ -86,8 +86,8 @@ class SVGDrawable(context: IPaperContext,
 //        // Try #1: simple points
 //        mStrokePoint.add(Point(x, y))
 //        mStrokePointTransformed.add(Point(x, y))
-
-        // Try #2: Bezier points
+//
+//        // Try #2: Bezier points
 //        addPoint(getNewPoint(x, y))
 
         // Try #3
@@ -98,8 +98,8 @@ class SVGDrawable(context: IPaperContext,
 //        // Try #1: simple points
 //        mStrokePoint.add(Point(x, y))
 //        mStrokePointTransformed.add(Point(x, y))
-
-        // Try #2: Bezier points
+//
+//        // Try #2: Bezier points
 //        addPoint(getNewPoint(x, y))
 
         // Try #3

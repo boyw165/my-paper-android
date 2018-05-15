@@ -765,6 +765,8 @@ class PaperCanvasView : View,
      */
     private fun toModelWorld(x: Float,
                              y: Float): FloatArray {
+        ensureMainThread()
+
         // View might have padding, if so we need to subtract the padding to get
         // the position in the real view port.
         mTmpPoint[0] = x - ViewCompat.getPaddingStart(this)
@@ -789,6 +791,8 @@ class PaperCanvasView : View,
     private fun toViewWorld(x: Float,
                             y: Float): FloatArray {
         val scaleVP = mViewPortBase.width() / mViewPort.value!!.width()
+        ensureMainThread()
+
         val scaleM2V = mScaleM2V.value!!
 
         // Map the point from Model world to View world.
