@@ -46,11 +46,9 @@ import com.paper.model.repository.IBitmapRepo
 import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
@@ -175,7 +173,7 @@ class PaperCanvasView : View,
                 })
         // View port and canvas matrix change
         mDisposables.add(
-            mViewPort
+            mViewPortSignal
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { vp ->
                     // Would trigger onDraw() call
@@ -192,8 +190,7 @@ class PaperCanvasView : View,
 
         // Debug
         mDisposables.add(
-            widget
-                .onPrintDebugMessage()
+            widget.onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -260,7 +257,7 @@ class PaperCanvasView : View,
     private val mReadySignal = PublishSubject.create<Boolean>()
 
     /**
-     * A signal of updating the rendering cache.
+     * A signal of updating the canvas hash and Bitmap.
      */
     private val mUpdateBitmapSignal = PublishSubject.create<Bitmap>()
 
@@ -511,23 +508,6 @@ class PaperCanvasView : View,
         invalidate()
     }
 
-    fun takeSnapshot(): Single<Bitmap> {
-        // TODO: Make sure no transform is on going
-        return Single
-            .fromCallable {
-                // FIXME: Quick close might crash because mBitmap is not present!
-                val bmp = Bitmap.createBitmap(mBitmap!!.width,
-                                              mBitmap!!.height,
-                                              Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(bmp)
-                canvas.drawColor(Color.WHITE)
-                canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
-
-                return@fromCallable bmp
-            }
-            .subscribeOn(Schedulers.io())
-    }
-
     private var mBitmapRepo: IBitmapRepo? = null
 
     fun setBitmapRepo(repo: IBitmapRepo) {
@@ -545,13 +525,13 @@ class PaperCanvasView : View,
     /**
      * The view-port boundary in the model world.
      */
-    private val mViewPort = BehaviorSubject.create<RectF>()
+    private val mViewPortSignal = BehaviorSubject.create<RectF>()
     /**
-     * Minimum size of [mViewPort].
+     * Minimum size of [mViewPortSignal].
      */
     private val mViewPortMin = RectF()
     /**
-     * Maximum size of [mViewPort].
+     * Maximum size of [mViewPortSignal].
      */
     private val mViewPortMax = RectF()
     /**
@@ -573,8 +553,8 @@ class PaperCanvasView : View,
         val mh = mMSize.value!!.height
 
         mTmpBound.set(x, y,
-                      x + mViewPort.value!!.width(),
-                      y + mViewPort.value!!.height())
+                      x + mViewPortSignal.value!!.width(),
+                      y + mViewPortSignal.value!!.height())
 
         // Constraint view port
         val minWidth = mViewPortMin.width()
@@ -591,7 +571,7 @@ class PaperCanvasView : View,
                            maxWidth = maxWidth,
                            maxHeight = maxHeight)
 
-        mViewPort.onNext(mTmpBound)
+        mViewPortSignal.onNext(mTmpBound)
     }
 
     private fun resetViewPort(mw: Float,
@@ -605,24 +585,24 @@ class PaperCanvasView : View,
         // Place the view port left in the model world.
         val viewPortX = 0f
         val viewPortY = 0f
-        mViewPort.onNext(RectF(viewPortX, viewPortY,
+        mViewPortSignal.onNext(RectF(viewPortX, viewPortY,
                                viewPortX + defaultW,
                                viewPortY + defaultH))
     }
 
     /**
-     * Compute the [mCanvasMatrix] given [mViewPort].
+     * Compute the [mCanvasMatrix] given [mViewPortSignal].
      *
      * @param scaleM2V The scale from model to view.
      */
     private fun computeCanvasMatrix(scaleM2V: Float) {
-        if (mCanvasMatrixDirty && mViewPort.hasValue()) {
+        if (mCanvasMatrixDirty && mViewPortSignal.hasValue()) {
             // View port x
-            val vx = mViewPort.value!!.left
+            val vx = mViewPortSignal.value!!.left
             // View port y
-            val vy = mViewPort.value!!.top
+            val vy = mViewPortSignal.value!!.top
             // View port width
-            val vw = mViewPort.value!!.width()
+            val vw = mViewPortSignal.value!!.width()
             val scaleVP = mViewPortBase.width() / vw
 
             mCanvasMatrix.reset()
@@ -704,7 +684,7 @@ class PaperCanvasView : View,
                            maxHeight = maxHeight)
 
         // Apply final view port boundary
-        mViewPort.onNext(RectF(mTmpBound))
+        mViewPortSignal.onNext(RectF(mTmpBound))
     }
 
     private fun stopUpdateViewport() {
@@ -1054,7 +1034,7 @@ class PaperCanvasView : View,
         get() = mScaleM2V.value != Float.NaN &&
                 (mMSize.value!!.width > 0f &&
                  mMSize.value!!.height > 0f) &&
-                mViewPort.hasValue()
+                mViewPortSignal.hasValue()
 
     private fun drawBackground(canvas: Canvas,
                                vw: Float,
@@ -1079,7 +1059,7 @@ class PaperCanvasView : View,
         //       vpW - baseW
         // a = --------------
         //      minW - baseW
-        val alpha = (mViewPort.value!!.width() - mViewPortBase.width()) /
+        val alpha = (mViewPortSignal.value!!.width() - mViewPortBase.width()) /
                     (mViewPortMin.width() - mViewPortBase.width())
         mGridPaint.alpha = (alpha * 0xFF).toInt()
 

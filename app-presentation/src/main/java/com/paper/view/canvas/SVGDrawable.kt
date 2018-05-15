@@ -21,7 +21,6 @@
 package com.paper.view.canvas
 
 import android.graphics.*
-import com.paper.AppConst
 import com.paper.domain.data.Bezier
 import com.paper.model.Point
 
