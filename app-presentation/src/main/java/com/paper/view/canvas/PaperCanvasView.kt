@@ -133,12 +133,12 @@ class PaperCanvasView : View,
                 })
         mDisposables.add(
             mUpdateBitmapSignal
+                .map { bmp -> Pair(hashCode(), bmp) }
                 // Notify widget the thumbnail need to be update
                 .doOnNext { widget.invalidateThumbnail() }
                 // Debounce Bitmap writes
                 .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
-                .switchMap { bmp ->
-                    val hashCode = hashCode()
+                .switchMap { (hashCode, bmp) ->
                     if (hashCode == AppConst.EMPTY_HASH) {
                         // Don't write thumbnail if canvas is empty
                         Observable.never()
@@ -437,12 +437,15 @@ class PaperCanvasView : View,
         drawBackground(canvas, vw, vh, tx, ty, scaleVP)
 
         // Draw sketch and scraps
+        var dirty = false
         if (mIfSharpenDrawing) {
             dispatchDrawScraps(mBitmapCanvas, mScrapViews, true)
 
             mStrokeDrawables.forEach { drawable ->
                 drawable.onDraw(canvas, mCanvasMatrix)
             }
+
+            dirty = true
         } else {
             // To view canvas world.
             canvas.concat(mCanvasMatrix)
@@ -454,14 +457,16 @@ class PaperCanvasView : View,
             dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
 
             mStrokeDrawables.forEach { drawable ->
-                drawable.onDraw(mBitmapCanvas)
+                dirty = drawable.onDraw(mBitmapCanvas) || dirty
             }
         }
 
         canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
         // Notify Bitmap update
-        mBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+        if (dirty) {
+            mBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+        }
 
         // Turn off the sharpening draw because it's costly.
         mIfSharpenDrawing = false
@@ -470,6 +475,8 @@ class PaperCanvasView : View,
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
+        mIsHashDirty = true
+
         when (event) {
             is StartSketchEvent -> {
                 val nx = event.point.x
