@@ -31,10 +31,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.GsonBuilder
-import com.paper.model.IPaper
-import com.paper.model.ModelConst
-import com.paper.model.PaperAutoSaveImpl
-import com.paper.model.ScrapModel
+import com.paper.model.*
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
@@ -55,12 +52,14 @@ import kotlin.collections.HashMap
 class PaperRepoSqliteImpl(authority: String,
                           resolver: ContentResolver,
                           fileDir: File,
+                          prefs: ISharedPreferenceService,
                           dbIoScheduler: Scheduler) : IPaperRepo,
                                                       IBitmapRepo {
 
     private val mAuthority = authority
     private val mResolver = resolver
     private val mFileDir = fileDir
+    private val mPrefs = prefs
     /**
      * A DB specific scheduler with only one thread in the thread pool.
      */
@@ -297,6 +296,10 @@ class PaperRepoSqliteImpl(authority: String,
                                     successful = true,
                                     id = newURI.lastPathSegment.toLong()))
                             }
+
+                            // Remember the ID
+                            val newID = newURI.lastPathSegment.toLong()
+                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID)
 
                             // Notify a addition just happens
                             mResolver.notifyChange(Uri.parse("$newURI/$CHANGE_ADD"), null)

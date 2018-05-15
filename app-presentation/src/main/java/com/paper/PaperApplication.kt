@@ -26,6 +26,7 @@ import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.paper.domain.*
 import com.paper.model.IPaperTransformRepo
+import com.paper.model.ISharedPreferenceService
 import com.paper.model.repository.IBitmapRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.IPaperRepo
@@ -78,6 +79,7 @@ class PaperApplication : MultiDexApplication(),
         PaperRepoSqliteImpl(authority = packageName,
                             resolver = contentResolver,
                             fileDir = getExternalFilesDir("media"),
+                            prefs = this@PaperApplication,
                             dbIoScheduler = getScheduler())
     }
 
