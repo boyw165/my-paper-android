@@ -26,8 +26,6 @@ object DomainConst {
 
     const val TAG = "paper domain"
 
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
-
     // Paper editor ///////////////////////////////////////////////////////////
 
     const val VIEW_PORT_MIN_SCALE = 8f

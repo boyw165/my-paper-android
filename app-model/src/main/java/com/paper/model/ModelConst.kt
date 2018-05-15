@@ -27,4 +27,6 @@ object ModelConst {
     const val TEMP_ID = -1L
 
     const val INVALID_ID = Long.MAX_VALUE
+
+    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
 }

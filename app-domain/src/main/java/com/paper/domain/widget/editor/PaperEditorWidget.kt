@@ -23,10 +23,10 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
-import com.paper.domain.ISharedPreferenceService
+import com.paper.model.ISharedPreferenceService
 import com.paper.domain.data.DrawingMode
-import com.paper.domain.event.ProgressEvent
 import com.paper.domain.data.ToolType
+import com.paper.domain.event.ProgressEvent
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.model.IPaperTransformRepo
@@ -35,13 +35,10 @@ import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Scheduler
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.functions.Function4
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.SingleSubject
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
@@ -49,14 +46,12 @@ import io.reactivex.subjects.SingleSubject
 
 class PaperEditorWidget(paperRepo: IPaperRepo,
                         paperTransformRepo: IPaperTransformRepo,
-                        sharedPrefs: ISharedPreferenceService,
                         penPrefs: ICommonPenPrefsRepo,
                         caughtErrorSignal: Observer<Throwable>,
                         uiScheduler: Scheduler,
                         ioScheduler: Scheduler) {
 
     private val mPaperRepo = paperRepo
-    private val mSharedPrefs = sharedPrefs
     private val mPenPrefs = penPrefs
     private val mCaughtErrorSignal = caughtErrorSignal
 

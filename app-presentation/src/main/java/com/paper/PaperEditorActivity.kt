@@ -29,7 +29,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IBitmapRepoProvider
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.IPaperTransformRepoProvider
-import com.paper.domain.ISharedPreferenceService
+import com.paper.model.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.ModelConst
@@ -89,7 +89,6 @@ class PaperEditorActivity : AppCompatActivity() {
         PaperEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
             paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),
-            sharedPrefs = application as ISharedPreferenceService,
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
             uiScheduler = AndroidSchedulers.mainThread(),
