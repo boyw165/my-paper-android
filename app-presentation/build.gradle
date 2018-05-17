@@ -76,6 +76,9 @@ dependencies {
     // Multi-dex.
     implementation rootProject.ext.dep.supportMultidex
 
+    // Firebase
+    implementation rootProject.ext.dep.firebaseMlVision
+
     // Dependency Injection.
     implementation rootProject.ext.dep.dagger2
 //    implementation rootProject.ext.dep.dagger2Support
