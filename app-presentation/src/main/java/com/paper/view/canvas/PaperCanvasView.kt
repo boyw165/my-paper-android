@@ -32,6 +32,8 @@ import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.cardinalblue.gesture.MyMotionEvent
+import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.paper.AppConst
 import com.paper.R
 import com.paper.domain.DomainConst
@@ -49,6 +51,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
@@ -86,6 +89,9 @@ class PaperCanvasView : View,
      * rotationInDegrees from a [Matrix]
      */
     private val mTransformHelper = TransformUtils()
+
+    private val mTextDetector by lazy { FirebaseVision.getInstance().visionTextDetector }
+    private var mTextDetectorImage: FirebaseVisionImage? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -139,6 +145,41 @@ class PaperCanvasView : View,
                 .doOnNext { widget.invalidateThumbnail() }
                 // Debounce Bitmap writes
                 .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
+                // TEST: text recognition
+                .observeOn(Schedulers.computation())
+                .doOnNext { (_, bmp) ->
+                    println("${AppConst.TAG}: Ready to feed Bitmap to text detector")
+                    val image = FirebaseVisionImage.fromBitmap(bmp)
+                    mTextDetector.detectInImage(image)
+                        .addOnSuccessListener { visionText ->
+                            val builder = StringBuilder()
+                            visionText.blocks.forEach { block ->
+                                builder.append("[")
+                                block.lines.forEachIndexed { i, line ->
+                                    line.elements.forEachIndexed { j, element ->
+                                        builder.append(element.text)
+
+                                        if (line.elements.size > 1 &&
+                                            j < line.elements.lastIndex) {
+                                            builder.append(" ")
+                                        }
+                                    }
+
+                                    if (block.lines.size > 1 &&
+                                        i < block.lines.lastIndex) {
+                                        builder.append(",")
+                                    }
+                                }
+                                builder.append("]")
+                            }
+                            println("${AppConst.TAG}: successful => $builder")
+                            Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener { err ->
+                            println("${AppConst.TAG}: failed => $err")
+                            Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
+                        }
+                }
                 .switchMap { (hashCode, bmp) ->
                     mBitmapRepo
                         ?.putBitmap(hashCode, bmp)

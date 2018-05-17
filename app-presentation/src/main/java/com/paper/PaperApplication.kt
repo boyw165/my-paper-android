@@ -24,6 +24,7 @@ import android.content.Context
 import android.os.StrictMode
 import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
+import com.google.firebase.FirebaseApp
 import com.paper.domain.*
 import com.paper.model.IPaperTransformRepo
 import com.paper.model.ISharedPreferenceService
@@ -45,6 +46,7 @@ class PaperApplication : MultiDexApplication(),
     override fun onCreate() {
         super.onCreate()
 
+        FirebaseApp.initializeApp(this)
         Fresco.initialize(this)
 
         // RxJava global exception

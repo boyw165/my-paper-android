@@ -80,6 +80,7 @@ dependencies {
     implementation rootProject.ext.dep.supportMultidex
 
     // Firebase
+    implementation rootProject.ext.dep.firebaseCore
     implementation rootProject.ext.dep.firebaseMlVision
 
     // Dependency Injection.
@@ -123,3 +124,5 @@ dependencies {
     // Instrumentation tests.
     androidTestImplementation rootProject.ext.dep.testEspressoCore
 }
+
+apply plugin: 'com.google.gms.google-services'
