@@ -27,12 +27,14 @@ class SQLiteHelper(context: Context,
     val listener: DbHelperListener = dbHelperListener
 
     override fun onCreate(db: SQLiteDatabase) {
+        // DO NOT MODIFY
         listener.onDbCreate(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase,
                            oldVersion: Int,
                            newVersion: Int) {
+        // DO NOT MODIFY
         listener.onDbUpgrade(db, oldVersion, newVersion)
     }
 

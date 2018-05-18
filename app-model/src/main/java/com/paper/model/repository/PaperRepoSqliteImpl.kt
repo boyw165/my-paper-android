@@ -124,7 +124,7 @@ class PaperRepoSqliteImpl(authority: String,
         // Database writes
         mDisposables.add(
             mPutSignal
-                .debounce(850, TimeUnit.MILLISECONDS, dbIoScheduler)
+                .debounce(150, TimeUnit.MILLISECONDS, dbIoScheduler)
                 // Writes operation should be atomic and not stoppable, thus
                 // guarantees the database integrity.
                 .flatMap { (paper, doneSignal) ->

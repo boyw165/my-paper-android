@@ -20,7 +20,10 @@ object PaperTable {
 
     // Table names.
     const val TABLE_NAME: String = "paper"
-    const val TABLE_NAME_TEMP: String = "paper_temp"
+
+    internal const val TABLE_VERSION_CODE_10000_BETA = 1
+    internal const val TABLE_VERSION_CODE_10001_BETA = 2
+    const val TABLE_VERSION_CODE = TABLE_VERSION_CODE_10001_BETA
 
     // Common.
     const val COL_DATA: String = "data"
