@@ -17,38 +17,45 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        applicationId "com.paper"
+        applicationId 'com.paperr'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger(): 999999
+        versionName project.findProperty('versionName') ?: '99.99.99-dev'
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
 
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
     }
 
     lintOptions {
-        disable "MissingTranslation"
+        disable 'MissingTranslation'
     }
 
+    aaptOptions {
+        noCompress "tflite"
+    }
+
+    // TODO: Use Google Play upload key to sign
+
     // How to sign the APK.
-//    signingConfigs {
-//        release {
-//            keyAlias keystoreProperties['keyAlias']
-//            keyPassword keystoreProperties['keyPassword']
-//            storeFile rootProject.file(keystoreProperties['storeFile'])
-//            storePassword keystoreProperties['storePassword']
-//        }
-//    }
+    signingConfigs {
+        release {
+            keyAlias project.findProperty('keyAlias') ?: System.getenv('SIGNING_KEY_ALIAS')
+            keyPassword project.findProperty('keyPassword') ?: System.getenv('SIGNING_KEY_PASSWORD')
+            storeFile new File(project.findProperty('storeFile') ?:
+                    System.getenv('HOME') + '/Developer/my-keystore/paper.keystore')
+            storePassword project.findProperty('storePassword') ?: System.getenv('SIGNING_KEY_STORE_PASSWORD')
+        }
+    }
 
     buildTypes {
         debug {
             // Configurable ProGuard testing, for example,
             // "./gradlew assembleDebug -PtestProguard=true"
-            minifyEnabled project.hasProperty("testProguard")
-            shrinkResources project.hasProperty("testProguard")
+            minifyEnabled project.hasProperty('testProguard')
+            shrinkResources project.hasProperty('testProguard')
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         release {
@@ -56,8 +63,8 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 
-            // Enable the sign process.
-//            signingConfig signingConfigs.release
+            // Enable the signing
+            signingConfig signingConfigs.release
         }
     }
 }
@@ -75,6 +82,11 @@ dependencies {
     implementation rootProject.ext.dep.supportTransition
     // Multi-dex.
     implementation rootProject.ext.dep.supportMultidex
+
+    // Firebase
+    implementation rootProject.ext.dep.firebaseCore
+    implementation rootProject.ext.dep.firebaseMlVision
+    implementation rootProject.ext.dep.firebaseMLCustomModel
 
     // Dependency Injection.
     implementation rootProject.ext.dep.dagger2
@@ -117,3 +129,5 @@ dependencies {
     // Instrumentation tests.
     androidTestImplementation rootProject.ext.dep.testEspressoCore
 }
+
+apply plugin: 'com.google.gms.google-services'

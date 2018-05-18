@@ -7,9 +7,7 @@ ext {
     targetCompatibilityVersion = JavaVersion.VERSION_1_7
 
     SUPPORT_LIB_VER = '27.0.2'
-    PLAY_SERVICES_VER = '11.6.0'
     KOTLIN_VER = '1.2.21'
-    FIREBASE_VER = '11.6.0'
     RX_BINDING_VER = '2.1.1'
     DAGGER2_VER = '2.13'
     BOLTS_VER = '1.4.0'
@@ -35,20 +33,24 @@ ext {
             supportTransition      : "com.android.support:transition:${SUPPORT_LIB_VER}",
             supportConstraintLayout: "com.android.support.constraint:constraint-layout:1.0.2",
             supportMultidex        : 'com.android.support:multidex:1.0.1',
+            // Google Services Gradle Plugin
+            googleServices         : 'com.google.gms:google-services:3.2.0',
             // Google Play Service.
-            playServicesAds        : "com.google.android.gms:play-services-ads:${PLAY_SERVICES_VER}",
-            playServicesAnalytics  : "com.google.android.gms:play-services-analytics:${PLAY_SERVICES_VER}",
-            playServicesVision     : "com.google.android.gms:play-services-vision:${PLAY_SERVICES_VER}",
-            playServicesGcm        : "com.google.android.gms:play-services-gcm:${PLAY_SERVICES_VER}",
+            playServicesAds        : "com.google.android.gms:play-services-ads:15.0.1",
+            playServicesAnalytics  : "com.google.android.gms:play-services-analytics:15.0.1",
+            playServicesVision     : "com.google.android.gms:play-services-vision:15.0.1",
+            playServicesGcm        : "com.google.android.gms:play-services-gcm:15.0.1",
             // Google Firebase.
-            firebaseCore           : "com.google.firebase:firebase-core:${FIREBASE_VER}",
-            firebaseAnalytics      : "com.google.firebase:firebase-analytics:${FIREBASE_VER}",
-            firebaseAuth           : "com.google.firebase:firebase-auth:${FIREBASE_VER}",
-            firebaseConfig         : "com.google.firebase:firebase-config:${FIREBASE_VER}",
-            firebaseCrash          : "com.google.firebase:firebase-crash:${FIREBASE_VER}",
-            firebaseMessaging      : "com.google.firebase:firebase-messaging:${FIREBASE_VER}",
-            firebaseInvites        : "com.google.firebase:firebase-invites:${FIREBASE_VER}",
-            firebasePerf           : "com.google.firebase:firebase-perf:${FIREBASE_VER}",
+            firebaseCore           : 'com.google.firebase:firebase-core:15.0.2',
+            firebaseAnalytics      : 'com.google.firebase:firebase-analytics:15.0.2',
+            firebaseAuth           : 'com.google.firebase:firebase-auth:15.1.0',
+            firebaseConfig         : 'com.google.firebase:firebase-config:15.0.2',
+            firebaseCrash          : 'com.google.firebase:firebase-crash:15.0.2',
+            firebaseMessaging      : 'com.google.firebase:firebase-messaging:15.0.2',
+            firebaseInvites        : 'com.google.firebase:firebase-invites:15.0.1',
+            firebasePerf           : 'com.google.firebase:firebase-perf:15.2.0',
+            firebaseMlVision       : 'com.google.firebase:firebase-ml-vision:15.0.0',
+            firebaseMLCustomModel  : 'com.google.firebase:firebase-ml-model-interpreter:15.0.0',
             // Kotlin.
             kotlinGradle           : "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN_VER",
             kotlinStdlib           : "org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VER",
