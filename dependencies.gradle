@@ -50,6 +50,7 @@ ext {
             firebaseInvites        : 'com.google.firebase:firebase-invites:15.0.1',
             firebasePerf           : 'com.google.firebase:firebase-perf:15.2.0',
             firebaseMlVision       : 'com.google.firebase:firebase-ml-vision:15.0.0',
+            firebaseMLCustomModel  : 'com.google.firebase:firebase-ml-model-interpreter:15.0.0',
             // Kotlin.
             kotlinGradle           : "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN_VER",
             kotlinStdlib           : "org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VER",
