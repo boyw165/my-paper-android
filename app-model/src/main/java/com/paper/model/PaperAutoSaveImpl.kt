@@ -20,12 +20,9 @@
 
 package com.paper.model
 
-import androidx.work.WorkManager
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
-import io.reactivex.Scheduler
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.util.*
@@ -43,7 +40,7 @@ class PaperAutoSaveImpl(
 
     // General ////////////////////////////////////////////////////////////////
 
-    private var mID = id
+    internal var mID = id
 
     override fun getId(): Long {
         return mID
@@ -249,44 +246,17 @@ class PaperAutoSaveImpl(
 
     // Auto-save //////////////////////////////////////////////////////////////
 
-    private val mSaveSignal = PublishSubject.create<Any>()
-    private val mAutoSaveDisposables = CompositeDisposable()
+    private var mRepo: IPaperRepo? = null
 
     /**
      * Enable the auto-save function.
      */
-    fun setAutoSaveRepo(repo: IPaperRepo,
-                        workerScheduler: Scheduler) {
-        mAutoSaveDisposables.clear()
-        mAutoSaveDisposables.add(
-            mSaveSignal
-                // TODO: Make sure the operation is processed one by one
-                // TODO: (on single thread pool)
-                .debounce(850, TimeUnit.MILLISECONDS, workerScheduler)
-                .flatMap {
-                    repo.putPaperById(getId(), this@PaperAutoSaveImpl)
-                        .toObservable()
-                }
-                .subscribe { event ->
-                    mLock.lock()
-                    if (event.id != mID) {
-                        mID = event.id
-                    }
-                    mLock.unlock()
-
-                    println("${ModelConst.TAG}: model saved! (auto-save impl)")
-                })
-    }
-
-    // FIXME: Call it somewhere!
-    fun unsetAutoSave() {
-        mAutoSaveDisposables.clear()
+    fun setAutoSaveRepo(repo: IPaperRepo) {
+        mRepo = repo
     }
 
     private fun requestAutoSave() {
-        if (!mSaveSignal.hasObservers()) return
-
-        mSaveSignal.onNext(0)
+        mRepo?.putPaper(this@PaperAutoSaveImpl)
     }
 
     // Thread save ////////////////////////////////////////////////////////////

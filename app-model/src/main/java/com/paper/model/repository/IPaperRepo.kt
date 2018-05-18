@@ -23,11 +23,25 @@ interface IPaperRepo {
 
     // For persistent store.
 
+    /**
+     * Get all papers, and return a stoppable concurrent [Observable] instance.
+     * Remaining the subscription to the returned observable lets the observer
+     * get notified if there is any new update.
+     */
     fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>>
 
+    /**
+     * Get specific paper by ID, and return a stoppable concurrent [Single]
+     * instance.
+     */
     fun getPaperById(id: Long): Single<IPaper>
 
-    fun putPaperById(id: Long, paper: IPaper): Single<UpdateDatabaseEvent>
+    /**
+     * Put the paper to repository, and return a non-stoppable [Single], which
+     * means event you destroy the reactive graph, the writes operation is
+     * eventually executed, and you're just not interested to the result.
+     */
+    fun putPaper(paper: IPaper): Single<UpdateDatabaseEvent>
 
     fun duplicatePaperById(id: Long): Observable<IPaper>
 
