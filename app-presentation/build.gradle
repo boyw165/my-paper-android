@@ -82,6 +82,10 @@ dependencies {
     implementation rootProject.ext.dep.supportTransition
     // Multi-dex.
     implementation rootProject.ext.dep.supportMultidex
+    // Arch component
+    implementation rootProject.ext.dep.androidArcViewModel
+    implementation rootProject.ext.dep.androidArcLiveData
+    implementation rootProject.ext.dep.androidArchWorker
 
     // Firebase
     implementation rootProject.ext.dep.firebaseCore

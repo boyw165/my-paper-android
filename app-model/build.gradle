@@ -32,6 +32,8 @@ dependencies {
 
     // Google Support Library.
     api rootProject.ext.dep.supportAppcompatV7
+    // Arch component
+    api rootProject.ext.dep.androidArchWorker
 
     // Kotlin.
     api rootProject.ext.dep.kotlinStdlibJre7

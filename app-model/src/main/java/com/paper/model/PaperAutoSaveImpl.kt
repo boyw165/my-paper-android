@@ -20,6 +20,7 @@
 
 package com.paper.model
 
+import androidx.work.WorkManager
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
