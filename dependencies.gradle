@@ -6,7 +6,7 @@ ext {
     sourceCompatibilityVersion = JavaVersion.VERSION_1_7
     targetCompatibilityVersion = JavaVersion.VERSION_1_7
 
-    SUPPORT_LIB_VER = '27.0.2'
+    SUPPORT_LIB_VER = '27.1.1'
     KOTLIN_VER = '1.2.21'
     RX_BINDING_VER = '2.1.1'
     DAGGER2_VER = '2.13'
