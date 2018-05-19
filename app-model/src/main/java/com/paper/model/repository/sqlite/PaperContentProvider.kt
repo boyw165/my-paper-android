@@ -53,7 +53,7 @@ class PaperContentProvider : ContentProvider(),
         mUriMatcher?.addURI(authority, "paper/#", MATCHER_CODE_PAPER_ID)
 
         // TODO: Dynamic DB version?
-        mDbHelper = SQLiteHelper(context, dbName, 1, this)
+        mDbHelper = SQLiteHelper(context, dbName, PaperTable.TABLE_VERSION_CODE, this)
         mResolver = context.contentResolver
 
         return true
@@ -68,30 +68,33 @@ class PaperContentProvider : ContentProvider(),
     override fun onDbCreate(db: SQLiteDatabase) {
         val sharedCommand: String =
             "_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT $COMMA" +
-            "${PaperTable.COL_UUID} STRING NOT NULL $COMMA" +
+            "${PaperTable.COL_UUID} TEXT NOT NULL $COMMA" +
             "${PaperTable.COL_CREATED_AT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_WIDTH} REAL NOT NULL $COMMA" +
             "${PaperTable.COL_HEIGHT} REAL NOT NULL $COMMA" +
-            "${PaperTable.COL_CAPTION} STRING $COMMA" +
-            "${PaperTable.COL_TAG} STRING $COMMA" +
-            "${PaperTable.COL_THUMB_PATH} STRING NOT NULL $COMMA" +
+            "${PaperTable.COL_CAPTION} TEXT $COMMA" +
+            "${PaperTable.COL_TAG} TEXT $COMMA" +
+            "${PaperTable.COL_THUMB_PATH} TEXT NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +
-            "${PaperTable.COL_DATA} STRING"
+            "${PaperTable.COL_DATA} TEXT"
 
         // Normal table.
-        db.execSQL("create table ${PaperTable.TABLE_NAME} ($sharedCommand)")
-
-        // TODO: Remove it.
-        // Temporary table.
-        db.execSQL("create table ${PaperTable.TABLE_NAME_TEMP} ($sharedCommand)")
+        db.execSQL("CREATE TABLE ${PaperTable.TABLE_NAME} ($sharedCommand)")
     }
 
     override fun onDbUpgrade(db: SQLiteDatabase,
                              oldVersion: Int,
                              newVersion: Int) {
-        TODO("onDbUpgrade")
+        // Don't support downgrade
+        if (oldVersion == PaperTable.TABLE_VERSION_CODE_10000_BETA &&
+            newVersion == PaperTable.TABLE_VERSION_CODE_10001_BETA) {
+            db.execSQL("DROP TABLE IF EXISTS ${PaperTable.TABLE_NAME}")
+            onDbCreate(db)
+        }
+
+        // e.g. db.execSQL("ALTER TABLE ${PaperTable.TABLE_NAME} ADD COLUMN ${PaperTable.COL_THUMB_DIRTY} INTEGER DEFAULT 0")
     }
 
     override fun insert(uri: Uri,

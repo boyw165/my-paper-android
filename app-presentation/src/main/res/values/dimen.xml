@@ -9,6 +9,10 @@
     <dimen name="fling_min_vec">400dp</dimen>
     <dimen name="fling_max_vec">1000dp</dimen>
 
+    <!-- Paper gallery -->
+    <dimen name="default_thumb_width">200dp</dimen>
+    <dimen name="default_thumb_height">200dp</dimen>
+
     <!-- Paper editor -->
     <dimen name="sketch_min_stroke_width">1dp</dimen>
     <dimen name="sketch_max_stroke_width">16dp</dimen>

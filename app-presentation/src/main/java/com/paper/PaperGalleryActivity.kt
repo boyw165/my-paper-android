@@ -35,13 +35,14 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.domain.DomainConst
 import com.paper.domain.IPaperRepoProvider
-import com.paper.model.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
 import com.paper.model.IPaper
+import com.paper.model.ISharedPreferenceService
 import com.paper.model.ModelConst
+import com.paper.view.PaperSizeDialogFragment
+import com.paper.view.PaperSizeDialogSingle
 import com.paper.view.gallery.PaperThumbnailEpoxyController
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
@@ -139,19 +140,6 @@ class PaperGalleryActivity : AppCompatActivity() {
                                        adapterPosition: Int) {
             }
         })
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Paper thumbnail list view.
-        // Break the reference to the Epoxy controller's adapter so that the
-        // context reference would be recycled.
-        mPapersView.adapter = null
-    }
-
-    override fun onResume() {
-        super.onResume()
 
         // Exp menu button.
         mDisposables.add(
@@ -180,17 +168,26 @@ class PaperGalleryActivity : AppCompatActivity() {
                         .doOnNext {
                             mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
                         }
+                        .switchMap {
+                            PaperSizeDialogSingle(PaperSizeDialogFragment(),
+                                                  supportFragmentManager)
+                                .flatMap { (w, h) ->
+                                    mRepo.setTmpPaperSize(w, h)
+                                }
+                                .toObservable()
+                        }
                 }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    navigateToPaperEditor(ModelConst.TEMP_ID)
+                .subscribe { done ->
+                    if (!done) return@subscribe
+                    openPaperInEditor(ModelConst.TEMP_ID)
                 })
         // Button of existing paper.
         mDisposables.add(
             onClickPaper()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
-                    navigateToPaperEditor(id)
+                    openPaperInEditor(id)
                     hideProgressBar()
                 })
         // Button of delete paper.
@@ -282,10 +279,15 @@ class PaperGalleryActivity : AppCompatActivity() {
                 })
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onDestroy() {
+        super.onDestroy()
 
         mDisposables.clear()
+
+        // Paper thumbnail list view.
+        // Break the reference to the Epoxy controller's adapter so that the
+        // context reference would be recycled.
+        mPapersView.adapter = null
     }
 
     private fun showPaperThumbnails(papers: List<IPaper>) {
@@ -386,7 +388,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         }
     }
 
-    private fun navigateToPaperEditor(id: Long) {
+    private fun openPaperInEditor(id: Long) {
         startActivity(Intent(this@PaperGalleryActivity,
                              PaperEditorActivity::class.java)
                           .putExtra(AppConst.PARAMS_PAPER_ID, id)

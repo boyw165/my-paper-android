@@ -25,8 +25,11 @@ object ModelConst {
     const val TAG = "paper model"
 
     const val TEMP_ID = -1L
-
     const val INVALID_ID = Long.MAX_VALUE
+
+    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
+    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
+    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
 
     const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
 }

@@ -78,10 +78,17 @@ dependencies {
     implementation rootProject.ext.dep.supportRecyclerViewV7
     implementation rootProject.ext.dep.supportConstraintLayout
     implementation rootProject.ext.dep.supportCardViewV7
+    implementation rootProject.ext.dep.supportDesign
     // Transition
     implementation rootProject.ext.dep.supportTransition
     // Multi-dex.
     implementation rootProject.ext.dep.supportMultidex
+    // Arch component
+    implementation rootProject.ext.dep.androidArcViewModel
+    implementation rootProject.ext.dep.androidArcLiveData
+    implementation rootProject.ext.dep.androidArchWork
+    // Firebase JobDispatcher support
+    implementation rootProject.ext.dep.androidArchWorkFirebaseJob
 
     // Firebase
     implementation rootProject.ext.dep.firebaseCore

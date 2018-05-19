@@ -88,8 +88,8 @@
         android:layout_height="0dp"
         android:layout_marginEnd="36dp"
         android:layout_marginStart="36dp"
+        app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toBottomOf="@+id/guide_tertiary_bound"
-        app:layout_constraintHeight_default="wrap"
         app:layout_constraintLeft_toLeftOf="@+id/guide_tertiary_bound"
         app:layout_constraintRight_toRightOf="@+id/guide_tertiary_bound"
         app:layout_constraintTop_toBottomOf="@+id/list_color_tickets"/>
@@ -103,10 +103,10 @@
         android:paddingEnd="20dp"
         android:paddingStart="16dp"
         android:paddingTop="5dp"
+        app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"
         app:layout_constraintLeft_toLeftOf="@+id/guide_secondary_bound"
-        app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"
-        app:layout_constraintWidth_default="wrap"/>
+        app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"/>
 
     <View
         android:id="@+id/separator"
@@ -115,10 +115,10 @@
         android:layout_marginBottom="20dp"
         android:layout_marginTop="20dp"
         android:background="#4AB3B3B3"
+        app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toBottomOf="@+id/guide_secondary_bound"
         app:layout_constraintLeft_toRightOf="@+id/view_port_indicator"
-        app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"
-        app:layout_constraintWidth_default="wrap"/>
+        app:layout_constraintTop_toTopOf="@+id/guide_secondary_bound"/>
 
     <!-- Pen, brush, scissor, ... tools -->
     <android.support.v7.widget.RecyclerView

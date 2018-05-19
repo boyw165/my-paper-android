@@ -38,15 +38,15 @@ import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.SketchStrokeJSONTranslator
 import com.paper.model.repository.sqlite.PaperTable
 import com.paper.model.sketch.SketchStroke
+import io.reactivex.*
 import io.reactivex.Observable
-import io.reactivex.Scheduler
-import io.reactivex.Single
-import io.reactivex.SingleEmitter
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.SingleSubject
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 
 class PaperRepoSqliteImpl(authority: String,
@@ -55,7 +55,6 @@ class PaperRepoSqliteImpl(authority: String,
                           prefs: ISharedPreferenceService,
                           dbIoScheduler: Scheduler) : IPaperRepo,
                                                       IBitmapRepo {
-
     private val mAuthority = authority
     private val mResolver = resolver
     private val mFileDir = fileDir
@@ -65,7 +64,9 @@ class PaperRepoSqliteImpl(authority: String,
      */
     private val mDbIoScheduler = dbIoScheduler
 
-    // JSON translator.
+    /**
+     * JSON translator.
+     */
     private val mTranslator by lazy {
         GsonBuilder()
             .registerTypeAdapter(PaperAutoSaveImpl::class.java,
@@ -91,7 +92,7 @@ class PaperRepoSqliteImpl(authority: String,
                     CHANGE_UPDATE -> {
                         if (!mPaperListSignal.hasObservers()) return
 
-                        getPapersThenFinish(true)
+                        getPapersSingleImpl(true)
                             .subscribe(
                                 { papers ->
                                     mPaperListSignal.onNext(papers)
@@ -105,6 +106,12 @@ class PaperRepoSqliteImpl(authority: String,
         }
     }
 
+    /**
+     * A signal to put paper in the database.
+     */
+    private val mPutSignal = PublishSubject.create<Pair<IPaper, SingleSubject<UpdateDatabaseEvent>>>()
+    private val mDisposables = CompositeDisposable()
+
     init {
         val uri: Uri = Uri.Builder()
             .scheme("content")
@@ -112,9 +119,51 @@ class PaperRepoSqliteImpl(authority: String,
             .path("paper")
             .build()
         mResolver.registerContentObserver(uri, true, mObserver)
+
+        // Database writes
+        mDisposables.add(
+            mPutSignal
+                .debounce(150, TimeUnit.MILLISECONDS, dbIoScheduler)
+                // Writes operation should be atomic and not stoppable, thus
+                // guarantees the database integrity.
+                .flatMap { (paper, doneSignal) ->
+                    putPaperImpl(paper)
+                        .doOnSuccess { event ->
+                            doneSignal.onSuccess(event)
+                        }
+                        .toObservable()
+                }
+                .observeOn(dbIoScheduler)
+                .subscribe())
     }
 
-    private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<IPaper>> {
+    private var mTmpPaperWidth: Float = 297f
+    private var mTmpPaperHeight: Float = 210f
+
+    override fun setTmpPaperSize(width: Float,
+                                 height: Float): Single<Boolean> {
+        mTmpPaperWidth = width
+        mTmpPaperHeight = height
+
+        return Single.just(true)
+    }
+
+    private val mPaperListSignal = PublishSubject.create<List<IPaper>>()
+
+    /**
+     * Get paper list.
+     *
+     * @param isSnapshot Readying the whole paper structure is sometimes
+     *                   time-consuming. True to ready part only matter with
+     *                   thumbnails; False is fully read.
+     */
+    override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
+        return Observable.merge(
+            getPapersSingleImpl(isSnapshot).toObservable(),
+            mPaperListSignal)
+    }
+
+    private fun getPapersSingleImpl(isSnapshot: Boolean): Single<List<IPaper>> {
         return Single
             .create { observer: SingleEmitter<List<IPaper>> ->
                 var cursor: Cursor? = null
@@ -180,26 +229,10 @@ class PaperRepoSqliteImpl(authority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    private val mPaperListSignal = PublishSubject.create<List<IPaper>>()
-
-    /**
-     * Get paper list.
-     *
-     * @param isSnapshot Readying the whole paper structure is sometimes
-     *                   time-consuming. True to ready part only matter with
-     *                   thumbnails; False is fully read.
-     */
-    override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
-        return Observable.merge(
-            getPapersThenFinish(isSnapshot).toObservable(),
-            mPaperListSignal)
-    }
-
     /**
      * Read full structure of the paper by ID.
      */
     override fun getPaperById(id: Long): Single<IPaper> {
-        // FIXME: Workaround.
         return if (id == ModelConst.TEMP_ID) {
             Single
                 .fromCallable {
@@ -207,9 +240,11 @@ class PaperRepoSqliteImpl(authority: String,
                     val newPaper = PaperAutoSaveImpl(
                         createdAt = timestamp)
                     newPaper.setModifiedAt(timestamp)
+                    newPaper.setWidth(mTmpPaperWidth)
+                    newPaper.setHeight(mTmpPaperHeight)
 
                     // Enable auto-save
-                    newPaper.setAutoSaveRepo(this@PaperRepoSqliteImpl, mDbIoScheduler)
+                    newPaper.setAutoSaveRepo(this@PaperRepoSqliteImpl)
 
                     return@fromCallable newPaper as IPaper
                 }
@@ -257,7 +292,7 @@ class PaperRepoSqliteImpl(authority: String,
 
                         // Enable auto-save
                         if (paper is PaperAutoSaveImpl) {
-                            paper.setAutoSaveRepo(this@PaperRepoSqliteImpl, mDbIoScheduler)
+                            paper.setAutoSaveRepo(this@PaperRepoSqliteImpl)
                         }
 
                         if (!observer.isDisposed) {
@@ -269,12 +304,34 @@ class PaperRepoSqliteImpl(authority: String,
         }
     }
 
-    override fun putPaperById(id: Long,
-                              paper: IPaper): Single<UpdateDatabaseEvent> {
-        paper.setModifiedAt(getCurrentTime())
+    override fun putPaper(paper: IPaper): Single<UpdateDatabaseEvent> {
+//        val requestConstraint = Constraints.Builder()
+//            .setRequiresStorageNotLow(true)
+//            .build()
+//        val request = OneTimeWorkRequestBuilder<WritePaperWork>()
+//            .setConstraints(requestConstraint)
+//            .setInputData()
+//            .setInitialDelay(550, TimeUnit.MILLISECONDS)
+//            .build()
+//
+//        WorkManager.getInstance()
+//            .beginUniqueWork(WORK_TAG_PUT_PAPER, ExistingWorkPolicy.REPLACE, request)
 
+        val doneSignal = SingleSubject.create<UpdateDatabaseEvent>()
+
+        mPutSignal.onNext(Pair(paper, doneSignal))
+
+        return doneSignal
+    }
+
+    private fun putPaperImpl(paper: IPaper): Single<UpdateDatabaseEvent> {
         return Single
             .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
+                paper.lock()
+                val id = paper.getId()
+                paper.setModifiedAt(getCurrentTime())
+                paper.unlock()
+
                 if (id == ModelConst.TEMP_ID) {
                     val uri = Uri.Builder()
                         .scheme("content")
@@ -291,15 +348,23 @@ class PaperRepoSqliteImpl(authority: String,
 
                         val newURI = mResolver.insert(uri, values)
                         if (newURI != null) {
+                            // Remember the ID
+                            val newID = newURI.lastPathSegment.toLong()
+                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID)
+
+                            paper.lock()
+                            if (paper is PaperAutoSaveImpl) {
+                                paper.mID = newID
+                            }
+                            paper.unlock()
+
                             if (!emitter.isDisposed) {
+                                println("${ModelConst.TAG}: put paper (id=$newID) successfully")
+
                                 emitter.onSuccess(UpdateDatabaseEvent(
                                     successful = true,
                                     id = newURI.lastPathSegment.toLong()))
                             }
-
-                            // Remember the ID
-                            val newID = newURI.lastPathSegment.toLong()
-                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID)
 
                             // Notify a addition just happens
                             mResolver.notifyChange(Uri.parse("$newURI/$CHANGE_ADD"), null)
@@ -325,6 +390,8 @@ class PaperRepoSqliteImpl(authority: String,
 
                         if (0 < mResolver.update(uri, values, null, null)) {
                             if (!emitter.isDisposed) {
+                                println("${ModelConst.TAG}: put paper (id=$id) successfully")
+
                                 emitter.onSuccess(UpdateDatabaseEvent(
                                     successful = true,
                                     id = id))
@@ -471,8 +538,10 @@ class PaperRepoSqliteImpl(authority: String,
     // Clazz //////////////////////////////////////////////////////////////////
 
     companion object {
-        const val CHANGE_ADD = "add"
-        const val CHANGE_REMOVE = "remove"
-        const val CHANGE_UPDATE = "update"
+        private const val CHANGE_ADD = "add"
+        private const val CHANGE_REMOVE = "remove"
+        private const val CHANGE_UPDATE = "update"
+
+        private const val WORK_TAG_PUT_PAPER = "put_paper"
     }
 }

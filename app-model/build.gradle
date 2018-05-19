@@ -32,6 +32,11 @@ dependencies {
 
     // Google Support Library.
     api rootProject.ext.dep.supportAppcompatV7
+    // Arch component
+    api rootProject.ext.dep.androidArcLiveData
+    api rootProject.ext.dep.androidArchWork
+    // Firebase JobDispatcher support
+    api rootProject.ext.dep.androidArchWorkFirebaseJob
 
     // Kotlin.
     api rootProject.ext.dep.kotlinStdlibJre7

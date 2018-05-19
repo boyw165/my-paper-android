@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        android:paddingTop="24dp">
+
+        <include
+            android:id="@+id/item_a_four_landscape"
+            layout="@layout/item_paper_size_of_a_four_landscape"/>
+
+        <include
+            android:id="@+id/item_a_four_portrait"
+            layout="@layout/item_paper_size_of_a_four_portrait"/>
+
+        <include
+            android:id="@+id/item_a_four_square"
+            layout="@layout/item_paper_size_of_a_four_square"/>
+    </LinearLayout>
+</ScrollView>
