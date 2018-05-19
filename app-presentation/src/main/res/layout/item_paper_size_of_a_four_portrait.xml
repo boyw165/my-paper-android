@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginStart="6dp">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp">
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/option_checkbox"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:scaleType="centerInside"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/icon_done_24px"/>
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/preview_background"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            app:layout_constraintStart_toEndOf="@+id/option_checkbox"
+            app:srcCompat="@color/black_50"/>
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/preview_foreground"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:padding="8dp"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toBottomOf="@+id/preview_background"
+            app:layout_constraintDimensionRatio="210:297"
+            app:layout_constraintEnd_toEndOf="@+id/preview_background"
+            app:layout_constraintStart_toStartOf="@+id/preview_background"
+            app:layout_constraintTop_toTopOf="@+id/preview_background"
+            app:srcCompat="@color/white"/>
+
+        <TextView
+            android:id="@+id/label_preview"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:text="@string/paper_size_a_four"
+            app:layout_constraintBottom_toBottomOf="@+id/preview_foreground"
+            app:layout_constraintEnd_toEndOf="@+id/preview_foreground"
+            app:layout_constraintStart_toStartOf="@+id/preview_foreground"
+            app:layout_constraintTop_toTopOf="@+id/preview_foreground"/>
+
+        <TextView
+            android:id="@+id/label_description"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="start|center_vertical"
+            android:paddingEnd="22dp"
+            android:paddingStart="22dp"
+            android:text="@string/paper_size_a_four_portrait"
+            app:layout_constraintBottom_toBottomOf="@+id/preview_background"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/label_preview"
+            app:layout_constraintTop_toTopOf="@+id/preview_background"/>
+    </android.support.constraint.ConstraintLayout>
+</android.support.v7.widget.CardView>

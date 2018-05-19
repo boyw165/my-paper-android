@@ -21,7 +21,7 @@ import io.reactivex.Single
 
 interface IPaperRepo {
 
-    // For persistent store.
+    fun setTmpPaperSize(width: Float, height: Float): Single<Boolean>
 
     /**
      * Get all papers, and return a stoppable concurrent [Observable] instance.

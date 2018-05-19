@@ -55,7 +55,6 @@ class PaperRepoSqliteImpl(authority: String,
                           prefs: ISharedPreferenceService,
                           dbIoScheduler: Scheduler) : IPaperRepo,
                                                       IBitmapRepo {
-
     private val mAuthority = authority
     private val mResolver = resolver
     private val mFileDir = fileDir
@@ -93,7 +92,7 @@ class PaperRepoSqliteImpl(authority: String,
                     CHANGE_UPDATE -> {
                         if (!mPaperListSignal.hasObservers()) return
 
-                        getPapersThenFinish(true)
+                        getPapersSingleImpl(true)
                             .subscribe(
                                 { papers ->
                                     mPaperListSignal.onNext(papers)
@@ -138,7 +137,33 @@ class PaperRepoSqliteImpl(authority: String,
                 .subscribe())
     }
 
-    private fun getPapersThenFinish(isSnapshot: Boolean): Single<List<IPaper>> {
+    private var mTmpPaperWidth: Float = 297f
+    private var mTmpPaperHeight: Float = 210f
+
+    override fun setTmpPaperSize(width: Float,
+                                 height: Float): Single<Boolean> {
+        mTmpPaperWidth = width
+        mTmpPaperHeight = height
+
+        return Single.just(true)
+    }
+
+    private val mPaperListSignal = PublishSubject.create<List<IPaper>>()
+
+    /**
+     * Get paper list.
+     *
+     * @param isSnapshot Readying the whole paper structure is sometimes
+     *                   time-consuming. True to ready part only matter with
+     *                   thumbnails; False is fully read.
+     */
+    override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
+        return Observable.merge(
+            getPapersSingleImpl(isSnapshot).toObservable(),
+            mPaperListSignal)
+    }
+
+    private fun getPapersSingleImpl(isSnapshot: Boolean): Single<List<IPaper>> {
         return Single
             .create { observer: SingleEmitter<List<IPaper>> ->
                 var cursor: Cursor? = null
@@ -204,21 +229,6 @@ class PaperRepoSqliteImpl(authority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    private val mPaperListSignal = PublishSubject.create<List<IPaper>>()
-
-    /**
-     * Get paper list.
-     *
-     * @param isSnapshot Readying the whole paper structure is sometimes
-     *                   time-consuming. True to ready part only matter with
-     *                   thumbnails; False is fully read.
-     */
-    override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
-        return Observable.merge(
-            getPapersThenFinish(isSnapshot).toObservable(),
-            mPaperListSignal)
-    }
-
     /**
      * Read full structure of the paper by ID.
      */
@@ -230,6 +240,8 @@ class PaperRepoSqliteImpl(authority: String,
                     val newPaper = PaperAutoSaveImpl(
                         createdAt = timestamp)
                     newPaper.setModifiedAt(timestamp)
+                    newPaper.setWidth(mTmpPaperWidth)
+                    newPaper.setHeight(mTmpPaperHeight)
 
                     // Enable auto-save
                     newPaper.setAutoSaveRepo(this@PaperRepoSqliteImpl)

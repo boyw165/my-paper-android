@@ -64,8 +64,8 @@ class PaperThumbnailEpoxyModel(
         val layoutParams = view.layoutParams
         val layoutWidth = layoutParams.width
         if (mThumbWidth > 0 && mThumbHeight > 0) {
-            val thumbRatio = mThumbWidth / mThumbHeight
-            layoutParams.height = layoutWidth / thumbRatio
+            val thumbRatio = mThumbWidth.toFloat() / mThumbHeight
+            layoutParams.height = (layoutWidth / thumbRatio).toInt()
             view.layoutParams = layoutParams
         }
 
