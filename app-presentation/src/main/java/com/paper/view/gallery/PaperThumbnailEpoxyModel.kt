@@ -45,6 +45,8 @@ class PaperThumbnailEpoxyModel(
     // View
     private var mThumbView: ImageView? = null
     private var mThumbViewContainer: ViewGroup? = null
+    private var mDefaultThumbWidth = 0f
+    private var mDefaultThumbHeight = 0f
 
     override fun getDefaultLayout(): Int {
         return R.layout.item_paper_thumbnail
@@ -53,6 +55,14 @@ class PaperThumbnailEpoxyModel(
     override fun bind(view: View) {
         super.bind(view)
 
+        if (mDefaultThumbWidth == 0f) {
+            mDefaultThumbWidth = view.layoutParams.width.toFloat() -
+                view.paddingStart - view.paddingEnd
+        }
+        if (mDefaultThumbHeight == 0f) {
+            mDefaultThumbHeight = view.layoutParams.height.toFloat() -
+                view.paddingTop - view.paddingBottom
+        }
         if (mThumbView == null) {
             mThumbView = view.findViewById(R.id.image_view)
         }
@@ -61,12 +71,13 @@ class PaperThumbnailEpoxyModel(
         }
 
         // Update thumbnail size by fixing width and changing the height.
-        val layoutParams = view.layoutParams
-        val layoutWidth = layoutParams.width
         if (mThumbWidth > 0 && mThumbHeight > 0) {
-            val thumbRatio = mThumbWidth.toFloat() / mThumbHeight
-            layoutParams.height = (layoutWidth / thumbRatio).toInt()
-            view.layoutParams = layoutParams
+            val scale = Math.min(mDefaultThumbWidth / mThumbWidth,
+                                 mDefaultThumbHeight / mThumbHeight)
+            val layoutParams = mThumbViewContainer!!.layoutParams
+            layoutParams.width = (mThumbWidth * scale).toInt()
+            layoutParams.height = (mThumbHeight * scale).toInt()
+            mThumbViewContainer!!.layoutParams = layoutParams
         }
 
         // Click
