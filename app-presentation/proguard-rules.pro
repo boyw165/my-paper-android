@@ -81,3 +81,7 @@
 -dontwarn javax.annotation.**
 -dontwarn com.android.volley.toolbox.**
 -dontwarn com.facebook.infer.**
+
+# Facebook Ads --------------------------------------------------------------->
+
+-keep class com.facebook.ads.** { *; }

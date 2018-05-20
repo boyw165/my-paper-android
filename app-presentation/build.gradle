@@ -104,6 +104,7 @@ dependencies {
     implementation rootProject.ext.dep.gson
 
     // ADs mediator
+    implementation rootProject.ext.dep.playServicesAds
     implementation rootProject.ext.dep.facebookAudienceNetwork
 
     // Image loader.
