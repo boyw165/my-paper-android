@@ -144,17 +144,18 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Exp menu button.
         mDisposables.add(
-            onClickShowExpMenu()
-                .debounce(150, TimeUnit.MILLISECONDS)
+            onClickSettings()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
-                    showExpMenu()
+                    Toast.makeText(this@PaperGalleryActivity,
+                                   R.string.msg_under_construction,
+                                   Toast.LENGTH_SHORT).show()
+                    //showExpMenu()
                 })
 
         // Exp menu.
         mDisposables.add(
             onClickExpMenu()
-                .debounce(150, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
                     navigateToExpById(id)
@@ -424,6 +425,7 @@ class PaperGalleryActivity : AppCompatActivity() {
 
     private fun onClickPaper(): Observable<Long> {
         return mOnClickPaperSignal
+            .debounce(150, TimeUnit.MILLISECONDS)
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
@@ -431,6 +433,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         return Observable
             .merge(RxView.clicks(mBtnNewPaper),
                    mOnClickNewPaperSignal)
+            .debounce(150, TimeUnit.MILLISECONDS)
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
@@ -439,11 +442,17 @@ class PaperGalleryActivity : AppCompatActivity() {
     }
 
     private fun onClickDeletePaper(): Observable<Any> {
-        return RxView.clicks(mBtnDelPaper)
+        return RxView
+            .clicks(mBtnDelPaper)
+            .debounce(150, TimeUnit.MILLISECONDS)
+            .throttleFirst(150, TimeUnit.MILLISECONDS)
     }
 
-    private fun onClickShowExpMenu(): Observable<Any> {
-        return RxView.clicks(mBtnSettings)
+    private fun onClickSettings(): Observable<Any> {
+        return RxView
+            .clicks(mBtnSettings)
+            .debounce(150, TimeUnit.MILLISECONDS)
+            .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
     private fun onClickExpMenu(): Observable<Int> {
