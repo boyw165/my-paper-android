@@ -20,30 +20,26 @@
 
 package com.paper.view.gallery
 
+import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import com.airbnb.epoxy.EpoxyModel
-import com.bumptech.glide.Priority
-import com.bumptech.glide.RequestManager
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.RequestOptions
+import com.facebook.drawee.view.SimpleDraweeView
 import com.paper.R
-import io.reactivex.subjects.Subject
+import io.reactivex.Observer
 import java.io.File
 
 class PaperThumbnailEpoxyModel(
     private var mPaperId: Long)
     : EpoxyModel<View>() {
 
-    private var mGlide: RequestManager? = null
     private var mThumbFile: File? = null
     private var mThumbWidth = 0
     private var mThumbHeight = 0
     private var mModifiedAt = 0L
 
     // View
-    private var mThumbView: ImageView? = null
+    private var mThumbView: SimpleDraweeView? = null
     private var mThumbViewContainer: ViewGroup? = null
     private var mDefaultThumbWidth = 0f
     private var mDefaultThumbHeight = 0f
@@ -87,13 +83,7 @@ class PaperThumbnailEpoxyModel(
 
         // Thumb
         mThumbFile?.let { file ->
-            mGlide?.load(file)
-                ?.apply(RequestOptions
-                            .skipMemoryCacheOf(true)
-                            .priority(Priority.NORMAL)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE)
-                            .dontTransform())
-                ?.into(mThumbView)
+            mThumbView?.setImageURI(Uri.fromFile(file).toString())
         }
     }
 
@@ -133,11 +123,9 @@ class PaperThumbnailEpoxyModel(
         return this
     }
 
-    fun setThumbnail(glide: RequestManager?,
-                     file: File?,
+    fun setThumbnail(file: File?,
                      width: Int,
                      height: Int): PaperThumbnailEpoxyModel {
-        mGlide = glide
         mThumbFile = file
         mThumbWidth = width
         mThumbHeight = height
@@ -146,9 +134,9 @@ class PaperThumbnailEpoxyModel(
 
     // Click //////////////////////////////////////////////////////////////////
 
-    private var mOnClickPaperSignal: Subject<Long>? = null
+    private var mOnClickPaperSignal: Observer<Long>? = null
 
-    fun onClick(signal: Subject<Long>): PaperThumbnailEpoxyModel {
+    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyModel {
         mOnClickPaperSignal = signal
         return this
     }

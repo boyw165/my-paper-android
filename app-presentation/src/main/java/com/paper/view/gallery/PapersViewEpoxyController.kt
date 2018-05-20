@@ -26,7 +26,7 @@ import com.paper.model.IPaper
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
-class PaperThumbnailEpoxyController(
+class PapersViewEpoxyController(
     private val mGlide: RequestManager)
     : TypedEpoxyController<List<IPaper>>() {
 
@@ -42,8 +42,7 @@ class PaperThumbnailEpoxyController(
             PaperThumbnailEpoxyModel(id)
                 .onClick(mOnClickPaperSignal)
                 .setModifiedTime(paper.getModifiedAt())
-                .setThumbnail(mGlide,
-                              paper.getThumbnail(),
+                .setThumbnail(paper.getThumbnail(),
                               paper.getThumbnailWidth(),
                               paper.getThumbnailHeight())
                 // Epoxy view-model ID.

@@ -43,7 +43,7 @@ import com.paper.model.ISharedPreferenceService
 import com.paper.model.ModelConst
 import com.paper.view.PaperSizeDialogFragment
 import com.paper.view.PaperSizeDialogSingle
-import com.paper.view.gallery.PaperThumbnailEpoxyController
+import com.paper.view.gallery.PapersViewEpoxyController
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
 import com.yarolegovich.discretescrollview.transform.Pivot
@@ -84,7 +84,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     // Paper thumbnail list view and controller.
     private val mPapersView by lazy { findViewById<DiscreteScrollView>(R.id.paper_list) }
     private val mPapersViewController by lazy {
-        PaperThumbnailEpoxyController(mImgLoader)
+        PapersViewEpoxyController(mImgLoader)
     }
 
     private val mPaperSnapshots = mutableListOf<IPaper>()

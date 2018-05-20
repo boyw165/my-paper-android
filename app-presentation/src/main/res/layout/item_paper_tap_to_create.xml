@@ -2,10 +2,10 @@
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="200dp"
-    android:layout_height="200dp"
+    android:layout_width="@dimen/default_thumb_width"
+    android:layout_height="@dimen/default_thumb_height"
     android:clipToPadding="false"
-    android:padding="16dp">
+    android:padding="8dp">
 
     <android.support.v7.widget.AppCompatTextView
         android:id="@+id/txt_tap_to_create"
