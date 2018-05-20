@@ -45,7 +45,7 @@ class PaperThumbnailEpoxyModel(
     private var mDefaultThumbHeight = 0f
 
     override fun getDefaultLayout(): Int {
-        return R.layout.item_paper_thumbnail
+        return R.layout.gallery_item_of_paper_thumbnail
     }
 
     override fun bind(view: View) {

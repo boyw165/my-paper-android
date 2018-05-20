@@ -103,6 +103,9 @@ dependencies {
     // JSON.
     implementation rootProject.ext.dep.gson
 
+    // ADs mediator
+    implementation rootProject.ext.dep.facebookAudienceNetwork
+
     // Image loader.
     implementation rootProject.ext.dep.glide
     kapt rootProject.ext.dep.glideAnnotation

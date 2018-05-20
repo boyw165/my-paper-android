@@ -3,10 +3,12 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fresco="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="@dimen/default_thumb_width"
     android:layout_height="@dimen/default_thumb_height"
     android:clipToPadding="false"
-    android:padding="12dp">
+    android:padding="12dp"
+    tools:layout_gravity="center">
 
     <android.support.v7.widget.CardView
         android:id="@+id/image_view_container"

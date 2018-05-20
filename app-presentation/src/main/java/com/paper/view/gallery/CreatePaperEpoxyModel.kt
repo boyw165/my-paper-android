@@ -26,10 +26,10 @@ import com.airbnb.epoxy.EpoxyModel
 import com.paper.R
 import io.reactivex.Observer
 
-class TapToCreateEpoxyModel : EpoxyModel<View>() {
+class CreatePaperEpoxyModel : EpoxyModel<View>() {
 
     override fun getDefaultLayout(): Int {
-        return R.layout.item_paper_tap_to_create
+        return R.layout.gallery_item_of_create_paper
     }
 
     override fun buildView(parent: ViewGroup): View {
@@ -46,7 +46,7 @@ class TapToCreateEpoxyModel : EpoxyModel<View>() {
 
     private var mOnClickSignal: Observer<Any>? = null
 
-    fun onClick(clickSignal: Observer<Any>): TapToCreateEpoxyModel {
+    fun onClick(clickSignal: Observer<Any>): CreatePaperEpoxyModel {
         mOnClickSignal = clickSignal
         return this
     }

@@ -10,14 +10,18 @@
     <string name="sample_dialog_title">Sample Title</string>
     <string name="sample_dialog_message">Sample message</string>
 
-    <!-- For Gallery -->
+    <!-- Advertisement -->
+    <string name="facebook_native_ads_placement_id">180983152476384_180983339143032</string>
+    <string name="sponsored">Sponsored</string>
+
+    <!-- Gallery -->
     <string name="title_of_choose_paper_size">Choose a paper size</string>
     <string name="paper_size_square">Square</string>
     <string name="paper_size_a_four">A4</string>
     <string name="paper_size_a_four_landscape">A4 Landscape</string>
     <string name="paper_size_a_four_portrait">A4 Portrait</string>
 
-    <!-- For Editor -->
+    <!-- Editor -->
     <string name="doodle_clear_title">Clear All</string>
     <string name="doodle_clear_message">Clear all your strokes and it is not a reversible action. Are you sure to continue?</string>
     <string name="doodle_clear_ok">OK</string>
