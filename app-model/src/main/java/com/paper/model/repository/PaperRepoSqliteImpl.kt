@@ -410,7 +410,7 @@ class PaperRepoSqliteImpl(authority: String,
             .subscribeOn(mDbIoScheduler)
     }
 
-    override fun duplicatePaperById(id: Long): Observable<IPaper> {
+    override fun duplicatePaperById(id: Long): Single<IPaper> {
         TODO("not implemented")
     }
 

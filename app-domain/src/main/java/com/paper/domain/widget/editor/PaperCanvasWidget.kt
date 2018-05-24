@@ -78,12 +78,13 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mDisposables.add(
             model.onAddScrap()
                 .observeOn(mUiScheduler)
-                .subscribe { scrapM ->
+                // TODO: Use BindWidgetWithModel observable
+                .subscribe { scrapModel ->
                     val widget = ScrapWidget(mUiScheduler,
                                              mWorkerScheduler)
-                    mScrapWidgets[scrapM.uuid] = widget
+                    mScrapWidgets[scrapModel.uuid] = widget
 
-                    widget.bindModel(scrapM)
+                    widget.bindModel(scrapModel)
 
                     // Signal the adding event.
                     mAddWidgetSignal.onNext(widget)

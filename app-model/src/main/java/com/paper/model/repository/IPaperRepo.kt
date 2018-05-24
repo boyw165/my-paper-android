@@ -43,7 +43,7 @@ interface IPaperRepo {
      */
     fun putPaper(paper: IPaper): Single<UpdateDatabaseEvent>
 
-    fun duplicatePaperById(id: Long): Observable<IPaper>
+    fun duplicatePaperById(id: Long): Single<IPaper>
 
     fun deletePaperById(id: Long): Single<UpdateDatabaseEvent>
 }
