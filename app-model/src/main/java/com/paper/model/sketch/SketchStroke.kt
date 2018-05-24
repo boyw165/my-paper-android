@@ -64,12 +64,12 @@ data class SketchStroke(
      * The z-order, where the value should be greater than or equal to 0.
      * @see [ModelConst.INVALID_Z]
      */
-    var z: Int = ModelConst.INVALID_Z
+    var z = ModelConst.INVALID_Z
         set(value) {
+            field = value
+
             // Flag hash code dirty
             mIsHashDirty = true
-
-            field = value
         }
 
     fun addPath(p: Point): SketchStroke {
@@ -102,11 +102,22 @@ data class SketchStroke(
         mPointList.forEach { p ->
             p.x += offsetX
             p.y += offsetY
+
+            calculateBound(p.x, p.y)
         }
 
         // Flag hash code dirty
         mIsHashDirty = true
     }
+
+    private fun calculateBound(x: Float, y: Float) {
+        mBound.left = Math.min(mBound.left, x)
+        mBound.top = Math.min(mBound.top, y)
+        mBound.right = Math.max(mBound.right, x)
+        mBound.bottom = Math.max(mBound.bottom, y)
+    }
+
+    // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -124,13 +135,11 @@ data class SketchStroke(
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = z
-            mHashCode = 31 * mHashCode + penColor
-            mHashCode = 31 * mHashCode + java.lang.Float.floatToIntBits(penSize)
+            mHashCode = z.hashCode()
+            mHashCode = 31 * mHashCode + penColor.hashCode()
+            mHashCode = 31 * mHashCode + penSize.hashCode()
             mHashCode = 31 * mHashCode + penType.hashCode()
-            mPointList.forEach { p ->
-                mHashCode = 31 * mHashCode + p.hashCode()
-            }
+            mHashCode = 31 * mHashCode + mPointList.hashCode()
 
             mIsHashDirty = false
         }
@@ -145,15 +154,5 @@ data class SketchStroke(
                ", penSize=" + penSize +
                ", pointList=" + mPointList +
                '}'
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
-
-    private fun calculateBound(x: Float, y: Float) {
-        mBound.left = Math.min(mBound.left, x)
-        mBound.top = Math.min(mBound.top, y)
-        mBound.right = Math.max(mBound.right, x)
-        mBound.bottom = Math.max(mBound.bottom, y)
     }
 }

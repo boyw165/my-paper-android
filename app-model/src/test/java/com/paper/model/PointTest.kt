@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright May 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,20 +22,22 @@
 
 package com.paper.model
 
-object ModelConst {
+import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-    const val TAG = "paper model"
+@RunWith(MockitoJUnitRunner::class)
+class PointTest {
 
-    const val TEMP_ID = -1L
-    const val INVALID_ID = Long.MAX_VALUE
+    @Test
+    fun differentValue() {
+        Assert.assertNotEquals(Point(1f, 2f), Point(2f, 2f))
+    }
 
-    const val MOST_TOP_Z = Long.MAX_VALUE
-    const val MOST_BOTTOM_Z = 0L
-    const val INVALID_Z = -2L
-
-    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
-    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
-    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
-
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
+    @Test
+    fun sameValue() {
+        Assert.assertEquals(Point(1f, 2f), Point(1f, 2f))
+    }
 }
+

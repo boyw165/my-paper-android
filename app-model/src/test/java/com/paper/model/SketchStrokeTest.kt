@@ -32,6 +32,23 @@ import org.mockito.junit.MockitoJUnitRunner
 class SketchStrokeTest {
 
     @Test
+    fun listHashCode() {
+        val randomList = mutableListOf<Point>()
+        val hashCode1 = randomList.hashCode()
+
+        randomList.add(Point(1f, 2f))
+        val hashCode2 = randomList.hashCode()
+
+        Assert.assertNotEquals(hashCode1, hashCode2)
+
+        randomList.remove(Point(1f, 2f))
+        val hashCode3 = randomList.hashCode()
+
+        Assert.assertNotEquals(hashCode2, hashCode3)
+        Assert.assertEquals(hashCode1, hashCode3)
+    }
+
+    @Test
     fun addPath_hashCodeShouldBeDifferent() {
         val stroke = SketchStroke()
 
@@ -39,7 +56,7 @@ class SketchStrokeTest {
 
         val hashCode1 = stroke.hashCode()
 
-        stroke.addPath(Point(0f, 0f))
+        stroke.addPath(Point(1f, 1f))
 
         val hashCode2 = stroke.hashCode()
 
@@ -47,16 +64,12 @@ class SketchStrokeTest {
     }
 
     @Test
-    fun updateZ_hashCodeShouldBeDifferent() {
+    fun changeZ_hashCodeShouldBeDifferent() {
         val stroke = SketchStroke()
-
-        stroke.addPath(Point(0f, 0f))
-        stroke.addPath(Point(1f, 1f))
-        stroke.addPath(Point(2f, 2f))
 
         val hashCode1 = stroke.hashCode()
 
-        stroke.z = 0
+        stroke.z = ModelConst.MOST_TOP_Z
 
         val hashCode2 = stroke.hashCode()
 
