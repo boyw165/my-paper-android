@@ -28,10 +28,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
+private const val SKETCH_STROKE_1 = "{\"penColor\":\"#FFED4956\",\"penSize\":0.09569436,\"path\":\"(0.18075603,0.25663146,0)\",\"z\":1}"
+
 @RunWith(MockitoJUnitRunner::class)
 class SketchStrokeJSONTranslatorTest {
-
-    private val SKETCH_STROKE_1 = "{\"penColor\":\"#FFED4956\",\"penSize\":0.09569436,\"path\":\"(0.18075603,0.25663146,0)\"}"
 
     @Test
     fun deserializeDummyScrap() {
@@ -44,6 +44,7 @@ class SketchStrokeJSONTranslatorTest {
         Assert.assertEquals(Color.parseColor("#FFED4956"), sketchStroke.penColor)
         Assert.assertEquals(0.09569436f, sketchStroke.penSize)
         Assert.assertEquals(1, sketchStroke.pointList.size)
+        Assert.assertEquals(1L, sketchStroke.z)
     }
 }
 
