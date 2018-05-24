@@ -38,6 +38,7 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
 
         root.addProperty("x", src.x)
         root.addProperty("y", src.y)
+        root.addProperty("z", src.z)
 
         root.addProperty("scale", src.scale)
         root.addProperty("rotationInRadians", src.rotationInRadians)
@@ -60,6 +61,10 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
 
         model.x = root.get("x").asFloat
         model.y = root.get("y").asFloat
+
+        if (root.has("z")) {
+            model.z = root["z"].asLong
+        }
 
         model.scale = root.get("scale").asFloat
         model.rotationInRadians = root.get("rotationInRadians").asFloat
