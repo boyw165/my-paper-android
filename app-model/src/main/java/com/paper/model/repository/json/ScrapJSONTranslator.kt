@@ -21,15 +21,15 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
-import com.paper.model.ScrapModel
+import com.paper.model.Scrap
 import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
 import java.util.*
 
-class ScrapJSONTranslator : JsonSerializer<ScrapModel>,
-                            JsonDeserializer<ScrapModel> {
+class ScrapJSONTranslator : JsonSerializer<Scrap>,
+                            JsonDeserializer<Scrap> {
 
-    override fun serialize(src: ScrapModel,
+    override fun serialize(src: Scrap,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -52,10 +52,10 @@ class ScrapJSONTranslator : JsonSerializer<ScrapModel>,
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): ScrapModel {
+                             context: JsonDeserializationContext): Scrap {
         val root = json.asJsonObject
 
-        val model = ScrapModel(
+        val model = Scrap(
             uuid = UUID.fromString(root.get("uuid").asString))
 
         model.x = root.get("x").asFloat

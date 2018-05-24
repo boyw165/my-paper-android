@@ -73,13 +73,13 @@ interface IPaper : Lock {
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    fun getScraps(): List<ScrapModel>
+    fun getScraps(): List<Scrap>
 
-    fun addScrap(scrap: ScrapModel)
+    fun addScrap(scrap: Scrap)
 
-    fun removeScrap(scrap: ScrapModel)
+    fun removeScrap(scrap: Scrap)
 
-    fun onAddScrap(replayAll: Boolean = true): Observable<ScrapModel>
+    fun onAddScrap(replayAll: Boolean = true): Observable<Scrap>
 
-    fun onRemoveScrap(): Observable<ScrapModel>
+    fun onRemoveScrap(): Observable<Scrap>
 }

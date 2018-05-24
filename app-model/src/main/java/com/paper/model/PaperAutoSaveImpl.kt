@@ -197,11 +197,11 @@ class PaperAutoSaveImpl(
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    private var mScraps = mutableListOf<ScrapModel>()
-    private val mAddScrapSignal = PublishSubject.create<ScrapModel>()
-    private val mRemoveScrapSignal = PublishSubject.create<ScrapModel>()
+    private var mScraps = mutableListOf<Scrap>()
+    private val mAddScrapSignal = PublishSubject.create<Scrap>()
+    private val mRemoveScrapSignal = PublishSubject.create<Scrap>()
 
-    override fun getScraps(): List<ScrapModel> {
+    override fun getScraps(): List<Scrap> {
         mLock.lock()
         // Must clone the list in case concurrent modification
         val scraps = mScraps.toList()
@@ -210,7 +210,7 @@ class PaperAutoSaveImpl(
         return scraps
     }
 
-    override fun addScrap(scrap: ScrapModel) {
+    override fun addScrap(scrap: Scrap) {
         mLock.lock()
         mScraps.add(scrap)
         mAddScrapSignal.onNext(scrap)
@@ -220,7 +220,7 @@ class PaperAutoSaveImpl(
         requestAutoSave()
     }
 
-    override fun removeScrap(scrap: ScrapModel) {
+    override fun removeScrap(scrap: Scrap) {
         mLock.lock()
         mScraps.remove(scrap)
         mRemoveScrapSignal.onNext(scrap)
@@ -230,7 +230,7 @@ class PaperAutoSaveImpl(
         requestAutoSave()
     }
 
-    override fun onAddScrap(replayAll: Boolean): Observable<ScrapModel> {
+    override fun onAddScrap(replayAll: Boolean): Observable<Scrap> {
         return if (replayAll) {
             Observable.merge(
                 Observable.fromIterable(getScraps()),
@@ -240,7 +240,7 @@ class PaperAutoSaveImpl(
         }
     }
 
-    override fun onRemoveScrap(): Observable<ScrapModel> {
+    override fun onRemoveScrap(): Observable<Scrap> {
         return mRemoveScrapSignal
     }
 

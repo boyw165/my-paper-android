@@ -39,11 +39,11 @@ class ScrapJSONTranslatorTest {
     @Test
     fun serializeDummyScrap() {
         val translator = GsonBuilder()
-            .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
+            .registerTypeAdapter(Scrap::class.java, ScrapJSONTranslator())
             .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
             .create()
 
-        val model = ScrapModel()
+        val model = Scrap()
         val uuid = model.uuid
         model.x = 100f
         model.y = 200f
@@ -60,7 +60,7 @@ class ScrapJSONTranslatorTest {
                                                              100))))
 
         Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"penType\":\"pen\",\"penColor\":\"#ffff0000\",\"penSize\":0.5,\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\"}]}",
-                translator.toJson(model, ScrapModel::class.java))
+                translator.toJson(model, Scrap::class.java))
     }
 
     private val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"penType\":\"pen\",\"penColor\":\"#00000000\",\"penSize\":0.5,\"isEraser\":false}]}"
@@ -68,10 +68,10 @@ class ScrapJSONTranslatorTest {
     @Test
     fun deserializeScrap_With_Sketch() {
         val gson = GsonBuilder()
-            .registerTypeAdapter(ScrapModel::class.java, ScrapJSONTranslator())
+            .registerTypeAdapter(Scrap::class.java, ScrapJSONTranslator())
             .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
             .create()
-        val model = gson.fromJson<ScrapModel>(TEST_SCRAP_JSON, ScrapModel::class.java)
+        val model = gson.fromJson<Scrap>(TEST_SCRAP_JSON, Scrap::class.java)
 
         Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.uuid.toString())
 

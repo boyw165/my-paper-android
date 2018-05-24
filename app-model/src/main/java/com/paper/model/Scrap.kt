@@ -25,7 +25,7 @@ import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import java.util.*
 
-open class ScrapModel(
+open class Scrap(
     val uuid: UUID = UUID.randomUUID()) {
 
     // X and y

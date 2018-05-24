@@ -21,12 +21,12 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.event.DrawSVGEvent
-import com.paper.model.ScrapModel
-import com.paper.model.TransformModel
+import com.paper.model.Scrap
+import com.paper.model.Transform
 import io.reactivex.Observable
 import java.util.*
 
-interface IScrapWidget: IWidget<ScrapModel> {
+interface IScrapWidget: IWidget<Scrap> {
 
     // For input //////////////////////////////////////////////////////////////
 
@@ -38,5 +38,5 @@ interface IScrapWidget: IWidget<ScrapModel> {
 
     fun onDrawSVG(): Observable<DrawSVGEvent>
 
-    fun onTransform(): Observable<TransformModel>
+    fun onTransform(): Observable<Transform>
 }

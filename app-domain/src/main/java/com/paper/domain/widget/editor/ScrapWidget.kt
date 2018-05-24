@@ -23,8 +23,8 @@ package com.paper.domain.widget.editor
 import com.paper.domain.DomainConst
 import com.paper.domain.event.DrawSVGEvent
 import com.paper.domain.useCase.TranslateSketchToSVG
-import com.paper.model.ScrapModel
-import com.paper.model.TransformModel
+import com.paper.model.Scrap
+import com.paper.model.Transform
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -37,21 +37,21 @@ class ScrapWidget(
     private val mWorkerScheduler: Scheduler)
     : IScrapWidget {
 
-    private lateinit var mModel: ScrapModel
+    private lateinit var mModel: Scrap
 
     private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
 
-    private val mSetTransformSignal = BehaviorSubject.create<TransformModel>()
+    private val mSetTransformSignal = BehaviorSubject.create<Transform>()
 
     private val mCancelSignal = PublishSubject.create<Any>()
     private val mDisposables = CompositeDisposable()
 
-    override fun bindModel(model: ScrapModel) {
+    override fun bindModel(model: Scrap) {
         ensureNoLeakedBinding()
 
         mModel = model
 
-        mSetTransformSignal.onNext(TransformModel(
+        mSetTransformSignal.onNext(Transform(
             translationX = mModel.x,
             translationY = mModel.y,
             scaleX = mModel.scale,
@@ -89,7 +89,7 @@ class ScrapWidget(
         TODO()
     }
 
-    override fun onTransform(): Observable<TransformModel> {
+    override fun onTransform(): Observable<Transform> {
         return mSetTransformSignal
     }
 

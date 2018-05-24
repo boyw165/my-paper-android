@@ -30,7 +30,7 @@ import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.IPaper
 import com.paper.model.Point
 import com.paper.model.Rect
-import com.paper.model.ScrapModel
+import com.paper.model.Scrap
 import com.paper.model.sketch.PenType
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
@@ -354,7 +354,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     private fun addScrapAtPosition(x: Float,
                                    y: Float) {
-        val scrap = ScrapModel(UUID.randomUUID())
+        val scrap = Scrap(UUID.randomUUID())
         scrap.x = x
         scrap.y = y
 
