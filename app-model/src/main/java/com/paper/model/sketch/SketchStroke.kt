@@ -20,6 +20,7 @@
 
 package com.paper.model.sketch
 
+import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
 
@@ -38,18 +39,40 @@ data class SketchStroke(
     private var mIsHashDirty = true
     private var mHashCode = 0
 
+    /**
+     * A stroke essentially is a list of points.
+     */
     private val mPointList = mutableListOf<Point>()
-
+    /**
+     * A stroke essentially is a list of points.
+     */
     val pointList: List<Point> get() = mPointList.toList()
 
+    /**
+     * The upright rectangle just covering all the points.
+     */
     private val mBound = Rect(java.lang.Float.MAX_VALUE,
                               java.lang.Float.MAX_VALUE,
                               java.lang.Float.MIN_VALUE,
                               java.lang.Float.MIN_VALUE)
+    /**
+     * The upright rectangle just covering all the points.
+     */
     val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
-    fun addPath(p: Point): SketchStroke {
+    /**
+     * The z-order, where the value should be greater than or equal to 0.
+     * @see [ModelConst.INVALID_Z]
+     */
+    var z: Int = ModelConst.INVALID_Z
+        set(value) {
+            // Flag hash code dirty
+            mIsHashDirty = true
 
+            field = value
+        }
+
+    fun addPath(p: Point): SketchStroke {
         // Calculate new boundary.
         calculateBound(p.x, p.y)
 
@@ -101,7 +124,8 @@ data class SketchStroke(
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = penColor
+            mHashCode = z
+            mHashCode = 31 * mHashCode + penColor
             mHashCode = 31 * mHashCode + java.lang.Float.floatToIntBits(penSize)
             mHashCode = 31 * mHashCode + penType.hashCode()
             mPointList.forEach { p ->
@@ -116,6 +140,7 @@ data class SketchStroke(
 
     override fun toString(): String {
         return "stroke{" +
+               "  z=" + z +
                ", penColor=" + penColor +
                ", penSize=" + penSize +
                ", pointList=" + mPointList +

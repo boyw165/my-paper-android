@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright May 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,18 +22,45 @@
 
 package com.paper.model
 
-object ModelConst {
+import com.paper.model.sketch.SketchStroke
+import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-    const val TAG = "paper model"
+@RunWith(MockitoJUnitRunner::class)
+class SketchStrokeTest {
 
-    const val TEMP_ID = -1L
-    const val INVALID_ID = Long.MAX_VALUE
+    @Test
+    fun addPath_hashCodeShouldBeDifferent() {
+        val stroke = SketchStroke()
 
-    const val INVALID_Z = -1
+        stroke.addPath(Point(0f, 0f))
 
-    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
-    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
-    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
+        val hashCode1 = stroke.hashCode()
 
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
+        stroke.addPath(Point(0f, 0f))
+
+        val hashCode2 = stroke.hashCode()
+
+        Assert.assertNotEquals(hashCode2, hashCode1)
+    }
+
+    @Test
+    fun updateZ_hashCodeShouldBeDifferent() {
+        val stroke = SketchStroke()
+
+        stroke.addPath(Point(0f, 0f))
+        stroke.addPath(Point(1f, 1f))
+        stroke.addPath(Point(2f, 2f))
+
+        val hashCode1 = stroke.hashCode()
+
+        stroke.z = 0
+
+        val hashCode2 = stroke.hashCode()
+
+        Assert.assertNotEquals(hashCode2, hashCode1)
+    }
 }
+
