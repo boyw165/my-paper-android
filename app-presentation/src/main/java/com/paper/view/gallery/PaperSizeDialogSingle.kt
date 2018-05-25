@@ -20,7 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view
+package com.paper.view.gallery
 
 import android.support.v4.app.FragmentManager
 import io.reactivex.Single

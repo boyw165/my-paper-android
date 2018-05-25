@@ -44,8 +44,8 @@ import com.paper.domain.useCase.DeletePaper
 import com.paper.model.IPaper
 import com.paper.model.ISharedPreferenceService
 import com.paper.model.ModelConst
-import com.paper.view.PaperSizeDialogFragment
-import com.paper.view.PaperSizeDialogSingle
+import com.paper.view.gallery.PaperSizeDialogFragment
+import com.paper.view.gallery.PaperSizeDialogSingle
 import com.paper.view.gallery.*
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
@@ -172,7 +172,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                         }
                         .switchMap {
                             PaperSizeDialogSingle(PaperSizeDialogFragment(),
-                                                  supportFragmentManager)
+                                                                         supportFragmentManager)
                                 .flatMap { (w, h) ->
                                     mRepo.setTmpPaperSize(w, h)
                                 }

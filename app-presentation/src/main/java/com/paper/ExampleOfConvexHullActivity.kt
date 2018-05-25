@@ -26,7 +26,7 @@ package com.paper
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.view.DrawableView
+import com.paper.view.canvas.DrawableView
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
