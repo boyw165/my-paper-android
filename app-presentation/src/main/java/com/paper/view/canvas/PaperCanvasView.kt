@@ -658,6 +658,7 @@ class PaperCanvasView : View,
      * The view-port boundary in the model world.
      */
     private val mViewPortSignal = BehaviorSubject.create<RectF>()
+    private val mViewPortStart = RectF()
     /**
      * Minimum size of [mViewPortSignal].
      */
@@ -760,6 +761,7 @@ class PaperCanvasView : View,
     private fun startUpdateViewport() {
         // Hold necessary starting states.
         mTmpMatrixStart.set(mCanvasMatrix)
+        mViewPortStart.set(mViewPortSignal.value!!)
     }
 
     // TODO: Make the view-port code a component.
@@ -781,10 +783,6 @@ class PaperCanvasView : View,
         mTmpMatrix.postScale(dScale, dScale, px, py)
         mTmpMatrix.postTranslate(dx, dy)
         mTmpMatrix.invert(mTmpMatrixInverse)
-
-        mBitmapVpMatrix.reset()
-        mBitmapVpMatrix.postScale(dScale, dScale, px, py)
-        mBitmapVpMatrix.postTranslate(dx, dy)
 
         // Compute new view port bound in the view world:
         // .-------------------------.
@@ -818,6 +816,15 @@ class PaperCanvasView : View,
                            minHeight = minHeight,
                            maxWidth = maxWidth,
                            maxHeight = maxHeight)
+
+        // After applying the constraint, calculate the matrix for anti-aliasing
+        // Bitmap
+        val vpDs = mViewPortStart.width() / mTmpBound.width()
+        val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVP
+        val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVP
+        mBitmapVpMatrix.reset()
+        mBitmapVpMatrix.postScale(vpDs, vpDs)
+        mBitmapVpMatrix.postTranslate(vpDx, vpDy)
 
         // Apply final view port boundary
         mViewPortSignal.onNext(RectF(mTmpBound))
