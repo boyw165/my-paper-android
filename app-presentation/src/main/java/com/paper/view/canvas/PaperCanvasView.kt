@@ -169,6 +169,7 @@ class PaperCanvasView : View,
                 .subscribe { vp ->
                     // Would trigger onDraw() call
                     markCanvasMatrixDirty()
+                    requestAntiAliasDrawing()
 
                     // Notify any external observers
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
@@ -540,8 +541,7 @@ class PaperCanvasView : View,
             }
         }
 
-        // Do anti-aliasing drawing
-        mAntiAliasingSignal.onNext(0)
+        requestAntiAliasDrawing()
 
         invalidate()
     }
@@ -628,11 +628,12 @@ class PaperCanvasView : View,
 
     private fun markCanvasMatrixDirty() {
         mCanvasMatrixDirty = true
+        invalidate()
+    }
 
+    private fun requestAntiAliasDrawing() {
         // Request anti-aliasing drawing
         mAntiAliasingSignal.onNext(0)
-
-        invalidate()
     }
 
     // View port //////////////////////////////////////////////////////////////
