@@ -439,6 +439,26 @@ class PaperCanvasView : View,
         }
     }
 
+    /**
+     * Apply the padding transform to the canvas before processing the given
+     * lambda.
+     */
+    private inline fun<T> Canvas.withPadding(lambda: (canvas: Canvas) -> T):T {
+        val count = save()
+
+        clipRect(0f, 0f, width.toFloat(), height.toFloat())
+        // View might have padding, if so we need to shift canvas to show
+        // padding on the screen.
+        translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
+                  paddingTop.toFloat())
+
+        val ret = lambda(this)
+
+        restoreToCount(count)
+
+        return ret
+    }
+
     override fun onDraw(canvas: Canvas) {
         if (!isAllSet) return
 
@@ -455,47 +475,41 @@ class PaperCanvasView : View,
         // Calculate the view port matrix.
         computeCanvasMatrix(scaleM2V)
 
-        var count = canvas.save()
-        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-        // View might have padding, if so we need to shift canvas to show
-        // padding on the screen.
-        canvas.translate(ViewCompat.getPaddingStart(this).toFloat(), paddingTop.toFloat())
+        canvas.withPadding { c ->
+            // Extract the transform from the canvas matrix.
+            mTransformHelper.getValues(mCanvasMatrix)
+            val tx = mTransformHelper.translationX
+            val ty = mTransformHelper.translationY
+            val scaleVP = mTransformHelper.scaleX
 
-        // Extract the transform from the canvas matrix.
-        mTransformHelper.getValues(mCanvasMatrix)
-        val tx = mTransformHelper.translationX
-        val ty = mTransformHelper.translationY
-        val scaleVP = mTransformHelper.scaleX
-
-        // Manually calculate position and size of the background cross/grids so
-        // that they keep sharp!
-        drawBackground(canvas, vw, vh, tx, ty, scaleVP)
-
-        // To view canvas world.
-        canvas.concat(mCanvasMatrix)
-
-        // Draw sketch and scraps
-        // TODO: Both scraps and sketch need to explicitly define the z-order
-        // TODO: so that the paper knows how to render them in the correct
-        // TODO: order.
-        dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
-
-        var dirty = false
-        mStrokeDrawables.forEach { drawable ->
-            dirty = drawable.onDraw(canvas = mBitmapCanvas) || dirty
+            // Manually calculate position and size of the background cross/grids so
+            // that they keep sharp!
+            drawBackground(c, vw, vh, tx, ty, scaleVP)
         }
 
-        canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
-        canvas.restoreToCount(count)
+        // Draw sketch and scraps (thumbnail resolution)
+        val dirty = canvas.withPadding { c ->
+            c.concat(mCanvasMatrix)
 
-        count = canvas.save()
-        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-        // View might have padding, if so we need to shift canvas to show
-        // padding on the screen.
-        canvas.translate(ViewCompat.getPaddingStart(this).toFloat(),
-                         paddingTop.toFloat())
-        canvas.drawBitmap(mBitmapVp, 0f, 0f, mBitmapPaint)
-        canvas.restoreToCount(count)
+            // TODO: Both scraps and sketch need to explicitly define the z-order
+            // TODO: so that the paper knows how to render them in the correct
+            // TODO: order.
+            dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
+
+            var dirty = false
+            mStrokeDrawables.forEach { drawable ->
+                dirty = drawable.onDraw(canvas = mBitmapCanvas) || dirty
+            }
+
+            c.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
+
+            dirty
+        }
+
+        // Draw sketch and scraps (anti-aliasing resolution)
+        canvas.withPadding { c ->
+            c.drawBitmap(mBitmapVp, 0f, 0f, mBitmapPaint)
+        }
 
         // Notify Bitmap update
         if (dirty) {
