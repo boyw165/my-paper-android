@@ -108,18 +108,21 @@ class PaperCanvasView : View,
 
         mWidget = widget
 
-        // Add or remove scraps
+        // Canvas size change
         mDisposables.add(
-            widget.onAddScrapWidget()
+            Observables.combineLatest(
+                mOnLayoutChangeSignal,
+                widget.onSetCanvasSize())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { scrapWidget ->
-                    addScrap(scrapWidget)
-                })
-        mDisposables.add(
-            widget.onRemoveScrapWidget()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { scrapWidget ->
-                    removeScrap(scrapWidget)
+                .subscribe { (changed, size) ->
+                    if (changed &&
+                        size.width > 0 &&
+                        size.height > 0) {
+                        println("${AppConst.TAG}: the layout is done, and canvas " +
+                                "size is ${size.width} x ${size.height}")
+                        onUpdateLayoutOrCanvas(size.width,
+                                               size.height)
+                    }
                 })
 
         // Drawing
@@ -138,79 +141,29 @@ class PaperCanvasView : View,
                     onDrawSVG(event)
                 })
         mDisposables.add(
-            mUpdateBitmapSignal
-                .map { bmp -> Pair(hashCode(), bmp) }
-                .filter { (hashCode, _) -> hashCode != AppConst.EMPTY_HASH }
-                // Notify widget the thumbnail need to be update
-                .doOnNext { widget.invalidateThumbnail() }
-                // Debounce Bitmap writes
-                .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
-                // TEST: text recognition
-                .observeOn(Schedulers.computation())
-                .doOnNext { (_, bmp) ->
-                    println("${AppConst.TAG}: Ready to feed Bitmap to text detector")
-                    val image = FirebaseVisionImage.fromBitmap(bmp)
-                    mTextDetector.detectInImage(image)
-                        .addOnSuccessListener { visionText ->
-                            val builder = StringBuilder()
-                            visionText.blocks.forEach { block ->
-                                builder.append("[")
-                                block.lines.forEachIndexed { i, line ->
-                                    line.elements.forEachIndexed { j, element ->
-                                        builder.append(element.text)
-
-                                        if (line.elements.size > 1 &&
-                                            j < line.elements.lastIndex) {
-                                            builder.append(" ")
-                                        }
-                                    }
-
-                                    if (block.lines.size > 1 &&
-                                        i < block.lines.lastIndex) {
-                                        builder.append(",")
-                                    }
-                                }
-                                builder.append("]")
-                            }
-                            println("${AppConst.TAG}: successful => $builder")
-                            Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener { err ->
-                            println("${AppConst.TAG}: failed => $err")
-                            Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
-                        }
-                }
-                .switchMap { (hashCode, bmp) ->
-                    mBitmapRepo
-                        ?.putBitmap(hashCode, bmp)
-                        ?.toObservable()
-                        ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
-                    ?: Observable.never<Triple<File, Int, Int>>()
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        onSaveBitmap()
+                    } else {
+                        Observable.never()
+                    }
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
                     widget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
                 })
 
-        // Canvas size change
-        mDisposables.add(
-            Observables.combineLatest(
-                mOnLayoutChangeSignal,
-                widget.onSetCanvasSize())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { (changed, size) ->
-                    if (changed &&
-                        size.width > 0 &&
-                        size.height > 0) {
-                        println("${AppConst.TAG}: the layout is done, and canvas " +
-                                "size is ${size.width} x ${size.height}")
-                        onUpdateLayoutOrCanvas(size.width,
-                                               size.height)
-                    }
-                })
         // View port and canvas matrix change
         mDisposables.add(
-            mViewPortSignal
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        mViewPortSignal
+                    } else {
+                        Observable.never<RectF>()
+                    }
+                }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { vp ->
                     // Would trigger onDraw() call
@@ -223,6 +176,34 @@ class PaperCanvasView : View,
                                         vp.top,
                                         vp.right,
                                         vp.bottom)))
+                })
+
+        // Add or remove scraps
+        mDisposables.add(
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        widget.onAddScrapWidget()
+                    } else {
+                        Observable.never()
+                    }
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scrapWidget ->
+                    addScrap(scrapWidget)
+                })
+        mDisposables.add(
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        widget.onRemoveScrapWidget()
+                    } else {
+                        Observable.never()
+                    }
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scrapWidget ->
+                    removeScrap(scrapWidget)
                 })
 
         // Debug
@@ -407,9 +388,7 @@ class PaperCanvasView : View,
         val vh = scaleM2V * mh
         mBitmap?.recycle()
         mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
-        mBitmap?.let { bmp ->
-            mBitmapCanvas = Canvas(bmp)
-        }
+        mBitmapCanvas = Canvas(mBitmap)
 
         invalidate()
 
@@ -550,6 +529,58 @@ class PaperCanvasView : View,
         }
 
         invalidate()
+    }
+
+    private fun onSaveBitmap(): Observable<Triple<File, Int, Int>> {
+        return mUpdateBitmapSignal
+            .map { bmp -> Pair(hashCode(), bmp) }
+            .filter { (hashCode, _) -> hashCode != AppConst.EMPTY_HASH }
+            // Notify widget the thumbnail need to be update
+            .doOnNext { mWidget.invalidateThumbnail() }
+            // Debounce Bitmap writes
+            .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
+            // TEST: text recognition
+            .observeOn(Schedulers.computation())
+            .doOnNext { (_, bmp) ->
+                println("${AppConst.TAG}: Ready to feed Bitmap to text detector")
+                val image = FirebaseVisionImage.fromBitmap(bmp)
+                mTextDetector.detectInImage(image)
+                    .addOnSuccessListener { visionText ->
+                        val builder = StringBuilder()
+                        visionText.blocks.forEach { block ->
+                            builder.append("[")
+                            block.lines.forEachIndexed { i, line ->
+                                line.elements.forEachIndexed { j, element ->
+                                    builder.append(element.text)
+
+                                    if (line.elements.size > 1 &&
+                                        j < line.elements.lastIndex) {
+                                        builder.append(" ")
+                                    }
+                                }
+
+                                if (block.lines.size > 1 &&
+                                    i < block.lines.lastIndex) {
+                                    builder.append(",")
+                                }
+                            }
+                            builder.append("]")
+                        }
+                        println("${AppConst.TAG}: successful => $builder")
+                        Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener { err ->
+                        println("${AppConst.TAG}: failed => $err")
+                        Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .switchMap { (hashCode, bmp) ->
+                mBitmapRepo
+                    ?.putBitmap(hashCode, bmp)
+                    ?.toObservable()
+                    ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
+                ?: Observable.never<Triple<File, Int, Int>>()
+            }
     }
 
     private var mBitmapRepo: IBitmapRepo? = null
