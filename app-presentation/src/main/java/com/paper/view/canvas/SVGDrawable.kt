@@ -175,6 +175,9 @@ class SVGDrawable(context: IPaperContext,
             val firstPoint = mCachedPoints[0]
             mCachedPoints.add(firstPoint)
         }
+
+        // Flag the hash code dirty
+        mIsHashDirty = true
     }
 
     private fun calculateCurveControlPoints(s1: Point, s2: Point, s3: Point): Pair<Point, Point> {
@@ -260,15 +263,19 @@ class SVGDrawable(context: IPaperContext,
         return true
     }
 
-    override fun hashCode(): Int {
-        var result = mPenColor
-        result = 31 * result + mPenSize.hashCode()
-        result = 31 * result + mStrokeWidth.hashCode()
+    private var mIsHashDirty = false
+    private var mHashCode = 0
 
-        mStrokePoint.forEach { p ->
-            result = 31 * result + p.hashCode()
+    override fun hashCode(): Int {
+        if (mIsHashDirty) {
+            mHashCode = mPenColor.hashCode()
+            mHashCode = 31 * mHashCode + mPenSize.hashCode()
+            mHashCode = 31 * mHashCode + mStrokeWidth.hashCode()
+            mHashCode = 31 * mHashCode + mStrokePoint.hashCode()
+
+            mIsHashDirty = true
         }
 
-        return result
+        return mHashCode
     }
 }
