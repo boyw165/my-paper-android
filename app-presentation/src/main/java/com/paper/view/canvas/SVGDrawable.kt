@@ -37,7 +37,6 @@ class SVGDrawable(context: IPaperContext,
 
     private var mConsumedPointCount = 0
     private val mStrokePoint = mutableListOf<Point>()
-    private val mStrokePointTransformed = mutableListOf<Point>()
     private val mStrokeWidth = mutableListOf<Float>()
     private val mStrokePaint = Paint()
 
@@ -78,7 +77,6 @@ class SVGDrawable(context: IPaperContext,
 
         mStrokePoint.clear()
         mStrokeWidth.clear()
-        mStrokePointTransformed.clear()
     }
 
     fun moveTo(point: Point) {
@@ -232,7 +230,6 @@ class SVGDrawable(context: IPaperContext,
             // Set the incremental stroke width and draw.
             mStrokeWidth.add(startWidth + ttt * widthDelta)
             mStrokePoint.add(Point(x, y))
-            mStrokePointTransformed.add(Point(x, y))
 
             i++
         }
