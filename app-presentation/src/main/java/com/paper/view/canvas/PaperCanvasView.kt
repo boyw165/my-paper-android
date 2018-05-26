@@ -337,6 +337,7 @@ class PaperCanvasView : View,
      */
     private var mBitmap: Bitmap? = null
     private var mBitmapVp: Bitmap? = null
+    private val mBitmapVpMatrix = Matrix()
     private val mBitmapPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
@@ -508,6 +509,7 @@ class PaperCanvasView : View,
 
         // Draw sketch and scraps (anti-aliasing resolution)
         canvas.withPadding { c ->
+            c.concat(mBitmapVpMatrix)
             c.drawBitmap(mBitmapVp, 0f, 0f, mBitmapPaint)
         }
 
@@ -780,6 +782,10 @@ class PaperCanvasView : View,
         mTmpMatrix.postTranslate(dx, dy)
         mTmpMatrix.invert(mTmpMatrixInverse)
 
+        mBitmapVpMatrix.reset()
+        mBitmapVpMatrix.postScale(dScale, dScale, px, py)
+        mBitmapVpMatrix.postTranslate(dx, dy)
+
         // Compute new view port bound in the view world:
         // .-------------------------.
         // |          .---.          |
@@ -818,6 +824,11 @@ class PaperCanvasView : View,
     }
 
     private fun stopUpdateViewport() {
+        mTmpMatrixStart.reset()
+        mTmpMatrix.reset()
+        mTmpMatrixInverse.reset()
+        mBitmapVpMatrix.reset()
+
         // TODO: Upsample?
     }
 
@@ -1142,7 +1153,6 @@ class PaperCanvasView : View,
         return toViewWorld(x, y)
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
     private fun ensureMainThread() {
@@ -1209,6 +1219,8 @@ class PaperCanvasView : View,
     override fun toString(): String {
         return javaClass.simpleName
     }
+
+    // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
