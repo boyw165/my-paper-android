@@ -179,6 +179,21 @@ class PaperCanvasView : View,
                                         vp.bottom)))
                 })
 
+        // Anti-aliasing drawing
+        mDisposables.add(
+            mReadySignal
+                .switchMap { ready ->
+                    if (ready) {
+                        onAntiAliasingDraw()
+                    } else {
+                        Observable.never()
+                    }
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    invalidate()
+                })
+
         // Add or remove scraps
         mDisposables.add(
             mReadySignal
@@ -320,13 +335,16 @@ class PaperCanvasView : View,
      * The Bitmap in which the sketch and the scraps are drawn to.
      */
     private var mBitmap: Bitmap? = null
+    private var mBitmapVp: Bitmap? = null
     private val mBitmapPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+    private val mAntiAliasingSignal = PublishSubject.create<Any>()
     /**
      * The canvas used in the [dispatchDrawScraps] call.
      */
     private lateinit var mBitmapCanvas: Canvas
+    private lateinit var mBitmapVpCanvas: Canvas
 
     // Background & grids
     private val mGridPaint = Paint()
@@ -391,6 +409,10 @@ class PaperCanvasView : View,
         mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
         mBitmapCanvas = Canvas(mBitmap)
 
+        mBitmapVp?.recycle()
+        mBitmapVp = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
+        mBitmapVpCanvas = Canvas(mBitmapVp)
+
         invalidate()
 
         mReadySignal.onNext(true)
@@ -429,10 +451,10 @@ class PaperCanvasView : View,
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
 
-        val count = canvas.save()
-
         // Calculate the view port matrix.
         computeCanvasMatrix(scaleM2V)
+
+        var count = canvas.save()
         canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         // View might have padding, if so we need to shift canvas to show
         // padding on the screen.
@@ -448,42 +470,36 @@ class PaperCanvasView : View,
         // that they keep sharp!
         drawBackground(canvas, vw, vh, tx, ty, scaleVP)
 
+        // To view canvas world.
+        canvas.concat(mCanvasMatrix)
+
         // Draw sketch and scraps
+        // TODO: Both scraps and sketch need to explicitly define the z-order
+        // TODO: so that the paper knows how to render them in the correct
+        // TODO: order.
+        dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
+
         var dirty = false
-        if (mIfSharpenDrawing) {
-            dispatchDrawScraps(mBitmapCanvas, mScrapViews, true)
-
-            mStrokeDrawables.forEach { drawable ->
-                drawable.onDraw(canvas, mCanvasMatrix)
-            }
-
-            dirty = true
-        } else {
-            // To view canvas world.
-            canvas.concat(mCanvasMatrix)
-
-            // TODO: Both scraps and sketch need to explicitly define the z-order
-            // TODO: so that the paper knows how to render them in the correct
-            // TODO: order.
-
-            dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
-
-            mStrokeDrawables.forEach { drawable ->
-                dirty = drawable.onDraw(mBitmapCanvas) || dirty
-            }
+        mStrokeDrawables.forEach { drawable ->
+            dirty = drawable.onDraw(canvas = mBitmapCanvas) || dirty
         }
 
         canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
+        canvas.restoreToCount(count)
+
+        count = canvas.save()
+        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+        // View might have padding, if so we need to shift canvas to show
+        // padding on the screen.
+        canvas.translate(ViewCompat.getPaddingStart(this).toFloat(),
+                         paddingTop.toFloat())
+        canvas.drawBitmap(mBitmapVp, 0f, 0f, mBitmapPaint)
+        canvas.restoreToCount(count)
 
         // Notify Bitmap update
         if (dirty) {
             mBitmap?.let { mUpdateBitmapSignal.onNext(it) }
         }
-
-        // Turn off the sharpening draw because it's costly.
-        mIfSharpenDrawing = false
-
-        canvas.restoreToCount(count)
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
@@ -524,7 +540,32 @@ class PaperCanvasView : View,
             }
         }
 
+        // Do anti-aliasing drawing
+        mAntiAliasingSignal.onNext(0)
+
         invalidate()
+    }
+
+    private fun onAntiAliasingDraw(): Observable<Any> {
+        return mAntiAliasingSignal
+            .debounce(1000, TimeUnit.MILLISECONDS,
+                      AndroidSchedulers.mainThread())
+            .switchMap {
+                Observable.fromCallable {
+                    val count = mBitmapVpCanvas.save()
+
+                    mBitmapVp?.eraseColor(Color.TRANSPARENT)
+                    mBitmapVpCanvas.concat(mCanvasMatrix)
+
+                    mStrokeDrawables.forEach { d ->
+                        d.onDraw(canvas = mBitmapVpCanvas,
+                                 startOver = true)
+                    }
+
+                    mBitmapVpCanvas.restoreToCount(count)
+                    return@fromCallable true
+                }
+            }
     }
 
     private fun onSaveBitmap(): Observable<Triple<File, Int, Int>> {
@@ -587,6 +628,9 @@ class PaperCanvasView : View,
 
     private fun markCanvasMatrixDirty() {
         mCanvasMatrixDirty = true
+
+        // Request anti-aliasing drawing
+        mAntiAliasingSignal.onNext(0)
 
         invalidate()
     }
