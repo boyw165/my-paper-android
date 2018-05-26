@@ -441,23 +441,31 @@ class PaperCanvasView : View,
     }
 
     /**
+     * Process the given lambda in a session environment so that this operation
+     * won't contribute permanent change.
+     */
+    private inline fun<T> Canvas.with(lambda: (canvas: Canvas) -> T):T {
+        val count = save()
+
+        clipRect(0f, 0f, width.toFloat(), height.toFloat())
+        val ret = lambda(this)
+
+        restoreToCount(count)
+        return ret
+    }
+
+    /**
      * Apply the padding transform to the canvas before processing the given
      * lambda.
      */
     private inline fun<T> Canvas.withPadding(lambda: (canvas: Canvas) -> T):T {
-        val count = save()
-
-        clipRect(0f, 0f, width.toFloat(), height.toFloat())
-        // View might have padding, if so we need to shift canvas to show
-        // padding on the screen.
-        translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
-                  paddingTop.toFloat())
-
-        val ret = lambda(this)
-
-        restoreToCount(count)
-
-        return ret
+        return with {
+            // View might have padding, if so we need to shift canvas to show
+            // padding on the screen.
+            translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
+                      paddingTop.toFloat())
+            lambda(this)
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -490,18 +498,22 @@ class PaperCanvasView : View,
 
         // Draw sketch and scraps (thumbnail resolution)
         val dirty = canvas.withPadding { c ->
-            c.concat(mCanvasMatrix)
-
             // TODO: Both scraps and sketch need to explicitly define the z-order
             // TODO: so that the paper knows how to render them in the correct
             // TODO: order.
-            dispatchDrawScraps(mBitmapCanvas, mScrapViews, false)
+            dispatchDrawScraps(canvas = mBitmapCanvas,
+                               scrapViews = mScrapViews,
+                               ifSharpenDrawing = false)
 
             var dirty = false
+            // Draw the strokes on the Bitmap
             mStrokeDrawables.forEach { drawable ->
-                dirty = drawable.onDraw(canvas = mBitmapCanvas) || dirty
+                dirty = dirty || drawable.isDirty()
+                drawable.onDraw(canvas = mBitmapCanvas)
             }
 
+            // Print the Bitmap to the view canvas
+            c.concat(mCanvasMatrix)
             c.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
 
             dirty
@@ -567,20 +579,22 @@ class PaperCanvasView : View,
             .debounce(1000, TimeUnit.MILLISECONDS,
                       AndroidSchedulers.mainThread())
             .switchMap {
-                Observable.fromCallable {
-                    val count = mBitmapVpCanvas.save()
+                Observable
+                    .fromCallable {
+                        mBitmapVpCanvas.with { c ->
+                            c.concat(mCanvasMatrix)
 
-                    mBitmapVp?.eraseColor(Color.TRANSPARENT)
-                    mBitmapVpCanvas.concat(mCanvasMatrix)
+                            // Erase the Bitmap
+                            mBitmapVp?.eraseColor(Color.TRANSPARENT)
 
-                    mStrokeDrawables.forEach { d ->
-                        d.onDraw(canvas = mBitmapVpCanvas,
-                                 startOver = true)
+                            mStrokeDrawables.forEach { d ->
+                                d.onDraw(canvas = c, startOver = true)
+                            }
+                        }
+
+                        return@fromCallable true
                     }
-
-                    mBitmapVpCanvas.restoreToCount(count)
-                    return@fromCallable true
-                }
+                    .subscribeOn(Schedulers.computation())
             }
     }
 
