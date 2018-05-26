@@ -66,7 +66,6 @@ class PaperCanvasView : View,
 
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapView>()
-    private var mIfSharpenDrawing = true
 
     // Widget.
     private lateinit var mWidget: IPaperCanvasWidget
@@ -100,6 +99,8 @@ class PaperCanvasView : View,
         mGridPaint.color = Color.LTGRAY
         mGridPaint.style = Paint.Style.STROKE
         mGridPaint.strokeWidth = 2f * mOneDp
+
+        mBitmapPaint.isAntiAlias = true
     }
 
     override fun bindWidget(widget: IPaperCanvasWidget) {
@@ -393,11 +394,6 @@ class PaperCanvasView : View,
         invalidate()
 
         mReadySignal.onNext(true)
-    }
-
-    override fun requestSharpDrawing() {
-        mIfSharpenDrawing = true
-        invalidate()
     }
 
     private fun dispatchDrawScraps(canvas: Canvas,
@@ -907,10 +903,6 @@ class PaperCanvasView : View,
                                target: Any?,
                                context: Any?) {
         mGestureHistory.clear()
-
-        // Prevent the following transform applied to the event from do the
-        // sharp rendering.
-        mIfSharpenDrawing = false
 
         mWidget.handleActionBegin()
     }

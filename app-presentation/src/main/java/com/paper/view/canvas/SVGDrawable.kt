@@ -113,23 +113,13 @@ class SVGDrawable(context: IPaperContext,
      * @return true if there is canvas update; false no canvas update.
      */
     fun onDraw(canvas: Canvas,
-               transform: Matrix? = null): Boolean {
-        val dirty: Boolean
-        if (transform != null) {
-            mStrokePointTransformed.forEachIndexed { i, point ->
-                mPointMap[0] = mStrokePoint[i].x
-                mPointMap[1] = mStrokePoint[i].y
-                transform.mapPoints(mPointMap)
-                point.x = mPointMap[0]
-                point.y = mPointMap[1]
-            }
-
-            mStrokePointTransformed.forEachIndexed { i, point ->
-                mStrokePaint.strokeWidth = mStrokeWidth[i]
+               startOver: Boolean = false): Boolean {
+        return if (startOver) {
+            mStrokePoint.forEach { point ->
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
 
-            dirty = true
+            true
         } else {
             // Only draw those points not consumed
             val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
@@ -138,13 +128,11 @@ class SVGDrawable(context: IPaperContext,
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
 
-            dirty = newPoints.size > 0
-
             // Update consumed number
             mConsumedPointCount = mStrokePoint.size
-        }
 
-        return dirty
+            newPoints.size > 0
+        }
     }
 
     // Start of Bezier functions

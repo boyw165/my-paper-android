@@ -25,7 +25,5 @@ package com.paper.view.canvas
  */
 interface IParentView {
 
-    fun requestSharpDrawing()
-
     fun invalidate()
 }

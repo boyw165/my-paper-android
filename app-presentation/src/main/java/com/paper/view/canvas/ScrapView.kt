@@ -156,23 +156,9 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         computeMatrix()
 
         // Draw itself
-        if (ifSharpenDrawing) {
-            // Concatenate all the previous transform
-            mSharpeningMatrix.reset()
-            previousXforms.forEach { m ->
-                mSharpeningMatrix.preConcat(m)
-            }
-            mSharpeningMatrix.preConcat(mMatrix)
-            mSharpeningMatrix.invert(mSharpeningMatrixInverse)
-
-            mDrawables.forEach { d ->
-                d.onDraw(canvas, mSharpeningMatrix)
-            }
-        } else {
-            canvas.concat(mMatrix)
-            mDrawables.forEach { d ->
-                d.onDraw(canvas)
-            }
+        canvas.concat(mMatrix)
+        mDrawables.forEach { d ->
+            d.onDraw(canvas = canvas)
         }
 
         // Then children
