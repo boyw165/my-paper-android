@@ -113,7 +113,8 @@ class SVGDrawable(context: IPaperContext,
     fun onDraw(canvas: Canvas,
                startOver: Boolean = false): Boolean {
         return if (startOver) {
-            mStrokePoint.forEach { point ->
+            mStrokePoint.forEachIndexed { i, point ->
+                mStrokePaint.strokeWidth = mStrokeWidth[i]
                 canvas.drawPoint(point.x, point.y, mStrokePaint)
             }
 
