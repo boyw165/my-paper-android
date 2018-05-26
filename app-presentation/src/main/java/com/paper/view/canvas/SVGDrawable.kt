@@ -110,29 +110,32 @@ class SVGDrawable(context: IPaperContext,
     }
 
     /**
+     * Check if this Drawable still gets something not drew.
+     */
+    fun isSomethingToDraw(): Boolean {
+        val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
+        return newPoints.size > 0
+    }
+
+    /**
+     * Mark nothing need to be drew of the Drawable.
+     */
+    fun markAllDrew() {
+        mConsumedPointCount = mStrokePoint.size
+    }
+
+    /**
      * @return true if there is canvas update; false no canvas update.
      */
     fun onDraw(canvas: Canvas,
-               startOver: Boolean = false): Boolean {
-        return if (startOver) {
-            mStrokePoint.forEachIndexed { i, point ->
-                mStrokePaint.strokeWidth = mStrokeWidth[i]
-                canvas.drawPoint(point.x, point.y, mStrokePaint)
-            }
+               startOver: Boolean = false) {
+        val startIndex = if (startOver) 0 else mConsumedPointCount
 
-            true
-        } else {
-            // Only draw those points not consumed
-            val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
-            newPoints.forEachIndexed { i, point ->
-                mStrokePaint.strokeWidth = mStrokeWidth[i + mConsumedPointCount]
-                canvas.drawPoint(point.x, point.y, mStrokePaint)
-            }
-
-            // Update consumed number
-            mConsumedPointCount = mStrokePoint.size
-
-            newPoints.size > 0
+        // Only draw those points not consumed
+        val newPoints = mStrokePoint.subList(startIndex, mStrokePoint.size)
+        newPoints.forEachIndexed { i, point ->
+            mStrokePaint.strokeWidth = mStrokeWidth[i + startIndex]
+            canvas.drawPoint(point.x, point.y, mStrokePaint)
         }
     }
 

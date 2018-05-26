@@ -169,7 +169,6 @@ class PaperCanvasView : View,
                 .subscribe { vp ->
                     // Would trigger onDraw() call
                     markCanvasMatrixDirty()
-                    requestAntiAliasDrawing()
 
                     // Notify any external observers
                     mDrawViewPortSignal.onNext(DrawViewPortEvent(
@@ -508,7 +507,7 @@ class PaperCanvasView : View,
             var dirty = false
             // Draw the strokes on the Bitmap
             mStrokeDrawables.forEach { drawable ->
-                dirty = dirty || drawable.isDirty()
+                dirty = dirty || drawable.isSomethingToDraw()
                 drawable.onDraw(canvas = mBitmapCanvas)
             }
 
@@ -520,9 +519,23 @@ class PaperCanvasView : View,
         }
 
         // Draw sketch and scraps (anti-aliasing resolution)
+        mBitmapVpCanvas.with { c ->
+            c.concat(mCanvasMatrix)
+            c.drawColor(Color.TRANSPARENT)
+            mStrokeDrawables.forEach { d ->
+                d.onDraw(canvas = c)
+            }
+        }
+
+        // Print the anti-aliasing Bitmap to the view canvas
         canvas.withPadding { c ->
             c.concat(mBitmapVpMatrix)
             c.drawBitmap(mBitmapVp, 0f, 0f, mBitmapPaint)
+        }
+
+        // By marking drawables not dirty, the drawable's cache is renewed.
+        mStrokeDrawables.forEach { d ->
+            d.markAllDrew()
         }
 
         // Notify Bitmap update
@@ -568,8 +581,6 @@ class PaperCanvasView : View,
                 // NOT SUPPORT
             }
         }
-
-        requestAntiAliasDrawing()
 
         invalidate()
     }
@@ -850,7 +861,7 @@ class PaperCanvasView : View,
         mTmpMatrixInverse.reset()
         mBitmapVpMatrix.reset()
 
-        // TODO: Upsample?
+        requestAntiAliasDrawing()
     }
 
     private fun constraintViewPort(viewPort: RectF,
