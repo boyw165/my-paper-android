@@ -102,6 +102,10 @@ class PaperCanvasView : View,
         mGridPaint.strokeWidth = 2f * mOneDp
 
         mBitmapPaint.isAntiAlias = true
+
+        mEraserPaint.style = Paint.Style.FILL
+        mEraserPaint.color = Color.WHITE
+        mEraserPaint.xfermode = mEraserMode
     }
 
     override fun bindWidget(widget: IPaperCanvasWidget) {
@@ -337,8 +341,10 @@ class PaperCanvasView : View,
      */
     private var mThumbBitmap: Bitmap? = null
     private var mViewPortFgBitmap: Bitmap? = null
+    private var mMergedBitmap: Bitmap? = null
     private val mViewPortFgBitmapMatrix = Matrix()
     private val mBitmapPaint = Paint()
+    private val mEraserPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     private val mAntiAliasingSignal = PublishSubject.create<Any>()
@@ -346,6 +352,7 @@ class PaperCanvasView : View,
      * The canvas used in the [dispatchDrawScraps] call.
      */
     private lateinit var mBitmapCanvas: Canvas
+    private lateinit var mViewPortFgBitmapCanvas: Canvas
     private lateinit var mMergedBitmapCanvas: Canvas
 
     // Background & grids
@@ -415,6 +422,9 @@ class PaperCanvasView : View,
         mViewPortFgBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         mViewPortFgBitmapCanvas = Canvas(mViewPortFgBitmap)
 
+        mMergedBitmap?.recycle()
+        mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        mMergedBitmapCanvas = Canvas(mMergedBitmap)
 
         invalidate()
 
@@ -498,26 +508,21 @@ class PaperCanvasView : View,
         }
 
         // Draw sketch and scraps (thumbnail resolution)
-        val dirty = canvas.withPadding { c ->
-            // TODO: Both scraps and sketch need to explicitly define the z-order
-            // TODO: so that the paper knows how to render them in the correct
-            // TODO: order.
-            dispatchDrawScraps(canvas = mBitmapCanvas,
-                               scrapViews = mScrapViews,
-                               ifSharpenDrawing = false)
-
-            var dirty = false
-            // Draw the strokes on the Bitmap
-            mStrokeDrawables.forEach { drawable ->
-                dirty = dirty || drawable.isSomethingToDraw()
-                drawable.onDraw(canvas = mBitmapCanvas)
-            }
-
-            // Print the Bitmap to the view canvas
-            c.concat(mCanvasMatrix)
-            c.drawBitmap(mThumbBmp, 0f, 0f, mBitmapPaint)
-
-            dirty
+        // TODO: Both scraps and sketch need to explicitly define the z-order
+        // TODO: so that the paper knows how to render them in the correct
+        // TODO: order.
+        var dirty = false
+        dispatchDrawScraps(canvas = mBitmapCanvas,
+                           scrapViews = mScrapViews,
+                           ifSharpenDrawing = false)
+        // Draw the strokes on the Bitmap
+        mStrokeDrawables.forEach { drawable ->
+            dirty = dirty || drawable.isSomethingToDraw()
+            drawable.onDraw(canvas = mBitmapCanvas)
+        }
+        // Notify Bitmap update
+        if (dirty) {
+            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
         }
 
         // Draw sketch and scraps (anti-aliasing resolution)
@@ -528,20 +533,39 @@ class PaperCanvasView : View,
             }
         }
 
-        // Print the anti-aliasing Bitmap to the view canvas
-        canvas.withPadding { c ->
-            c.concat(mViewPortBmpMatrix)
-            c.drawBitmap(mViewPortBmp, 0f, 0f, mBitmapPaint)
-        }
-
         // By marking drawables not dirty, the drawable's cache is renewed.
         mStrokeDrawables.forEach { d ->
             d.markAllDrew()
         }
 
-        // Notify Bitmap update
-        if (dirty) {
-            mThumbBmp?.let { mUpdateBitmapSignal.onNext(it) }
+        // Layers blending ////////////////////////////////////////////////////
+
+        mMergedBitmap?.eraseColor(Color.TRANSPARENT)
+
+        // Print the Bitmap to the pre-final Bitmap
+        mMergedBitmapCanvas.with { c ->
+            c.concat(mCanvasMatrix)
+            c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
+        }
+
+        // Print the anti-aliasing Bitmap to pre-final Bitmap
+        mMergedBitmapCanvas.with { c ->
+            c.concat(mViewPortFgBitmapMatrix)
+
+            // Cut a space for anti-aliasing drawing.
+            mBitmapPaint.xfermode = mEraserMode
+            mTmpBound.set(1f, 1f,
+                          mViewPortFgBitmap!!.width.toFloat() - 1f,
+                          mViewPortFgBitmap!!.height.toFloat() - 1f)
+            c.drawRect(mTmpBound, mBitmapPaint)
+            mBitmapPaint.xfermode = null
+
+            c.drawBitmap(mViewPortFgBitmap, 0f, 0f, mBitmapPaint)
+        }
+
+        // Print the merged layer to view canvas
+        canvas.withPadding { c ->
+            c.drawBitmap(mMergedBitmap, 0f, 0f, mBitmapPaint)
         }
     }
 
