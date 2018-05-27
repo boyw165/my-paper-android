@@ -335,9 +335,9 @@ class PaperCanvasView : View,
     /**
      * The Bitmap in which the sketch and the scraps are drawn to.
      */
-    private var mThumbBmp: Bitmap? = null
-    private var mViewPortBmp: Bitmap? = null
-    private val mViewPortBmpMatrix = Matrix()
+    private var mThumbBitmap: Bitmap? = null
+    private var mViewPortFgBitmap: Bitmap? = null
+    private val mViewPortFgBitmapMatrix = Matrix()
     private val mBitmapPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
@@ -346,7 +346,7 @@ class PaperCanvasView : View,
      * The canvas used in the [dispatchDrawScraps] call.
      */
     private lateinit var mBitmapCanvas: Canvas
-    private lateinit var mBitmapVpCanvas: Canvas
+    private lateinit var mMergedBitmapCanvas: Canvas
 
     // Background & grids
     private val mGridPaint = Paint()
@@ -407,13 +407,14 @@ class PaperCanvasView : View,
         val mh = mMSize.value!!.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
-        mThumbBmp?.recycle()
-        mThumbBmp = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
-        mBitmapCanvas = Canvas(mThumbBmp)
+        mThumbBitmap?.recycle()
+        mThumbBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
+        mBitmapCanvas = Canvas(mThumbBitmap)
 
-        mViewPortBmp?.recycle()
-        mViewPortBmp = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
-        mBitmapVpCanvas = Canvas(mViewPortBmp)
+        mViewPortFgBitmap?.recycle()
+        mViewPortFgBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        mViewPortFgBitmapCanvas = Canvas(mViewPortFgBitmap)
+
 
         invalidate()
 
@@ -520,9 +521,8 @@ class PaperCanvasView : View,
         }
 
         // Draw sketch and scraps (anti-aliasing resolution)
-        mBitmapVpCanvas.with { c ->
+        mViewPortFgBitmapCanvas.with { c ->
             c.concat(mCanvasMatrix)
-            c.drawColor(Color.TRANSPARENT)
             mStrokeDrawables.forEach { d ->
                 d.onDraw(canvas = c)
             }
@@ -596,11 +596,11 @@ class PaperCanvasView : View,
                         ProfilerUtils.startProfiling()
 
                         // Anti-aliasing drawing
-                        mBitmapVpCanvas.with { c ->
+                        mViewPortFgBitmapCanvas.with { c ->
                             c.concat(mCanvasMatrix)
 
                             // Erase the Bitmap
-                            mViewPortBmp?.eraseColor(Color.TRANSPARENT)
+                            mViewPortFgBitmap?.eraseColor(Color.TRANSPARENT)
 
                             mStrokeDrawables.forEach { d ->
                                 d.onDraw(canvas = c, startOver = true)
@@ -608,7 +608,7 @@ class PaperCanvasView : View,
                         }
 
                         // Reset the matrix because the anti-aliasing drawing is finished
-                        mViewPortBmpMatrix.reset()
+                        mViewPortFgBitmapMatrix.reset()
 
                         // TODO: The computation generally takes time proportional to the amount
                         // TODO: of strokes. e.g. 20 strokes drawing takes 157 ms.
@@ -861,9 +861,9 @@ class PaperCanvasView : View,
         val vpDs = mViewPortStart.width() / mTmpBound.width()
         val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVP
         val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVP
-        mViewPortBmpMatrix.reset()
-        mViewPortBmpMatrix.postScale(vpDs, vpDs)
-        mViewPortBmpMatrix.postTranslate(vpDx, vpDy)
+        mViewPortFgBitmapMatrix.reset()
+        mViewPortFgBitmapMatrix.postScale(vpDs, vpDs)
+        mViewPortFgBitmapMatrix.postTranslate(vpDx, vpDy)
 
         // Apply final view port boundary
         mViewPortSignal.onNext(RectF(mTmpBound))
