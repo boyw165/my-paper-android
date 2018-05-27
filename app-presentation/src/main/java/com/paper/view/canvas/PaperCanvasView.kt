@@ -672,7 +672,7 @@ class PaperCanvasView : View,
         invalidate()
     }
 
-    private fun requestAntiAliasDrawing() {
+    private fun requestAntiAliasingDrawing() {
         // Request anti-aliasing drawing
         mAntiAliasingSignal.onNext(0)
     }
@@ -861,7 +861,7 @@ class PaperCanvasView : View,
         mTmpMatrixInverse.reset()
         mBitmapVpMatrix.reset()
 
-        requestAntiAliasDrawing()
+        requestAntiAliasingDrawing()
     }
 
     private fun constraintViewPort(viewPort: RectF,
