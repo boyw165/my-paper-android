@@ -39,6 +39,7 @@ import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.*
+import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
@@ -587,11 +588,14 @@ class PaperCanvasView : View,
 
     private fun onAntiAliasingDraw(): Observable<Any> {
         return mAntiAliasingSignal
-            .debounce(1000, TimeUnit.MILLISECONDS,
-                      AndroidSchedulers.mainThread())
+            .debounce(150, TimeUnit.MILLISECONDS, Schedulers.computation())
             .switchMap {
                 Observable
                     .fromCallable {
+                        println("${AppConst.TAG}: request anti-aliasing drawing...")
+                        ProfilerUtils.startProfiling()
+
+                        // Anti-aliasing drawing
                         mBitmapVpCanvas.with { c ->
                             c.concat(mCanvasMatrix)
 
@@ -605,6 +609,11 @@ class PaperCanvasView : View,
 
                         // Reset the matrix because the anti-aliasing drawing is finished
                         mBitmapVpMatrix.reset()
+
+                        // TODO: The computation generally takes time proportional to the amount
+                        // TODO: of strokes. e.g. 20 strokes drawing takes 157 ms.
+                        // TODO: Make this process performant
+                        println("${AppConst.TAG}: request anti-aliasing drawing, took ${ProfilerUtils.stopProfiling()} ms")
 
                         return@fromCallable true
                     }
