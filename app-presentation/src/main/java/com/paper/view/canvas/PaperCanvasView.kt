@@ -603,9 +603,14 @@ class PaperCanvasView : View,
                             }
                         }
 
+                        // Reset the matrix because the anti-aliasing drawing is finished
+                        mBitmapVpMatrix.reset()
+
                         return@fromCallable true
                     }
                     .subscribeOn(Schedulers.computation())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext { invalidate() }
             }
     }
 
@@ -859,7 +864,6 @@ class PaperCanvasView : View,
         mTmpMatrixStart.reset()
         mTmpMatrix.reset()
         mTmpMatrixInverse.reset()
-        mBitmapVpMatrix.reset()
 
         requestAntiAliasingDrawing()
     }
