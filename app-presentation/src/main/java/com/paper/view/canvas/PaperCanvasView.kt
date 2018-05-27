@@ -335,9 +335,9 @@ class PaperCanvasView : View,
     /**
      * The Bitmap in which the sketch and the scraps are drawn to.
      */
-    private var mBitmap: Bitmap? = null
-    private var mBitmapVp: Bitmap? = null
-    private val mBitmapVpMatrix = Matrix()
+    private var mThumbBmp: Bitmap? = null
+    private var mViewPortBmp: Bitmap? = null
+    private val mViewPortBmpMatrix = Matrix()
     private val mBitmapPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
@@ -407,13 +407,13 @@ class PaperCanvasView : View,
         val mh = mMSize.value!!.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
-        mBitmap?.recycle()
-        mBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
-        mBitmapCanvas = Canvas(mBitmap)
+        mThumbBmp?.recycle()
+        mThumbBmp = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
+        mBitmapCanvas = Canvas(mThumbBmp)
 
-        mBitmapVp?.recycle()
-        mBitmapVp = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
-        mBitmapVpCanvas = Canvas(mBitmapVp)
+        mViewPortBmp?.recycle()
+        mViewPortBmp = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
+        mBitmapVpCanvas = Canvas(mViewPortBmp)
 
         invalidate()
 
@@ -514,7 +514,7 @@ class PaperCanvasView : View,
 
             // Print the Bitmap to the view canvas
             c.concat(mCanvasMatrix)
-            c.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
+            c.drawBitmap(mThumbBmp, 0f, 0f, mBitmapPaint)
 
             dirty
         }
@@ -530,8 +530,8 @@ class PaperCanvasView : View,
 
         // Print the anti-aliasing Bitmap to the view canvas
         canvas.withPadding { c ->
-            c.concat(mBitmapVpMatrix)
-            c.drawBitmap(mBitmapVp, 0f, 0f, mBitmapPaint)
+            c.concat(mViewPortBmpMatrix)
+            c.drawBitmap(mViewPortBmp, 0f, 0f, mBitmapPaint)
         }
 
         // By marking drawables not dirty, the drawable's cache is renewed.
@@ -541,7 +541,7 @@ class PaperCanvasView : View,
 
         // Notify Bitmap update
         if (dirty) {
-            mBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+            mThumbBmp?.let { mUpdateBitmapSignal.onNext(it) }
         }
     }
 
@@ -600,7 +600,7 @@ class PaperCanvasView : View,
                             c.concat(mCanvasMatrix)
 
                             // Erase the Bitmap
-                            mBitmapVp?.eraseColor(Color.TRANSPARENT)
+                            mViewPortBmp?.eraseColor(Color.TRANSPARENT)
 
                             mStrokeDrawables.forEach { d ->
                                 d.onDraw(canvas = c, startOver = true)
@@ -608,7 +608,7 @@ class PaperCanvasView : View,
                         }
 
                         // Reset the matrix because the anti-aliasing drawing is finished
-                        mBitmapVpMatrix.reset()
+                        mViewPortBmpMatrix.reset()
 
                         // TODO: The computation generally takes time proportional to the amount
                         // TODO: of strokes. e.g. 20 strokes drawing takes 157 ms.
@@ -861,9 +861,9 @@ class PaperCanvasView : View,
         val vpDs = mViewPortStart.width() / mTmpBound.width()
         val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVP
         val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVP
-        mBitmapVpMatrix.reset()
-        mBitmapVpMatrix.postScale(vpDs, vpDs)
-        mBitmapVpMatrix.postTranslate(vpDx, vpDy)
+        mViewPortBmpMatrix.reset()
+        mViewPortBmpMatrix.postScale(vpDs, vpDs)
+        mViewPortBmpMatrix.postTranslate(vpDx, vpDy)
 
         // Apply final view port boundary
         mViewPortSignal.onNext(RectF(mTmpBound))
