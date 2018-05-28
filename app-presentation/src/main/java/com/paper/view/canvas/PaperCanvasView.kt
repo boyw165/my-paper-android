@@ -127,8 +127,17 @@ class PaperCanvasView : View,
                         size.height > 0) {
                         println("${AppConst.TAG}: the layout is done, and canvas " +
                                 "size is ${size.width} x ${size.height}")
+
+                        // Mark it not ready for interacting with user.
+                        mReadySignal.onNext(false)
+
                         onUpdateLayoutOrCanvas(size.width,
                                                size.height)
+
+                        // Mark it ready!
+                        mReadySignal.onNext(true)
+
+                        invalidate()
                     }
                 })
 
@@ -182,6 +191,7 @@ class PaperCanvasView : View,
                 .switchMap { ready ->
                     if (ready) {
                         widget.onAddScrapWidget()
+                            .subscribeOn(AndroidSchedulers.mainThread())
                     } else {
                         Observable.never()
                     }
@@ -195,6 +205,7 @@ class PaperCanvasView : View,
                 .switchMap { ready ->
                     if (ready) {
                         widget.onRemoveScrapWidget()
+                            .subscribeOn(AndroidSchedulers.mainThread())
                     } else {
                         Observable.never()
                     }
@@ -322,22 +333,44 @@ class PaperCanvasView : View,
     private val mMatrixStack = Stack<Matrix>()
 
     /**
-     * The Bitmap in which the sketch and the scraps are drawn to.
+     * The Bitmap in which the sketch and the scraps are drawn to, yet thumbnail
+     * resolution.
      */
     private var mThumbBitmap: Bitmap? = null
-    private var mViewPortFgBitmap: Bitmap? = null
+    /**
+     * The canvas hiding [mThumbBitmap].
+     */
+    private lateinit var mThumbCanvas: Canvas
+
+    /**
+     * The Bitmap in which the sketch and the scraps are drawn to, which is the
+     * best resolution but cut to the rectangle as big as the view's visible
+     * area.
+     */
+    private var mClearBitmap: Bitmap? = null
+    /**
+     * The canvas hiding [mClearBitmap].
+     */
+    private lateinit var mClearCanvas: Canvas
+    /**
+     * The transform for drawing [mClearBitmap] on the [mMergedBitmap].
+     */
+    private val mClearBitmapMatrix = Matrix()
+
+    /**
+     * The Bitmap that all the layers merge to, of size of the rectangle as big
+     * as the view's visible area.
+     */
     private var mMergedBitmap: Bitmap? = null
-    private val mViewPortFgBitmapMatrix = Matrix()
+    /**
+     * The canvas hiding [mMergedBitmap].
+     */
+    private lateinit var mMergedCanvas: Canvas
+
     private val mBitmapPaint = Paint()
     private val mEraserPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-    /**
-     * The canvas used in the [dispatchDrawScraps] call.
-     */
-    private lateinit var mBitmapCanvas: Canvas
-    private lateinit var mViewPortFgBitmapCanvas: Canvas
-    private lateinit var mMergedBitmapCanvas: Canvas
 
     // Background & grids
     private val mGridPaint = Paint()
@@ -347,9 +380,6 @@ class PaperCanvasView : View,
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
-        // Flag not ready for interacting with user.
-        mReadySignal.onNext(false)
-
         // The maximum view port, a rectangle as the same width over
         // height ratio and it just fits in the canvas rectangle as
         // follow:
@@ -379,7 +409,7 @@ class PaperCanvasView : View,
         mViewPortBase.set(mViewPortMax)
 
         // Hold canvas size.
-        mMSize.set(0f, 0f, canvasWidth, canvasHeight)
+        mMSize = Rect(0f, 0f, canvasWidth, canvasHeight)
 
         // Initially the model-to-view scale is derived by the scale
         // from min view port boundary to the view boundary.
@@ -400,19 +430,15 @@ class PaperCanvasView : View,
         val vh = scaleM2V * mh
         mThumbBitmap?.recycle()
         mThumbBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
-        mBitmapCanvas = Canvas(mThumbBitmap)
+        mThumbCanvas = Canvas(mThumbBitmap)
 
-        mViewPortFgBitmap?.recycle()
-        mViewPortFgBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        mViewPortFgBitmapCanvas = Canvas(mViewPortFgBitmap)
+        mClearBitmap?.recycle()
+        mClearBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        mClearCanvas = Canvas(mClearBitmap)
 
         mMergedBitmap?.recycle()
         mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        mMergedBitmapCanvas = Canvas(mMergedBitmap)
-
-        invalidate()
-
-        mReadySignal.onNext(true)
+        mMergedCanvas = Canvas(mMergedBitmap)
     }
 
     private fun dispatchDrawScraps(canvas: Canvas,
@@ -454,8 +480,6 @@ class PaperCanvasView : View,
 
         // Scale from model to view.
         val scaleM2V = mScaleM2V
-        // Scale from view to model
-        val scaleV2M = 1f / scaleM2V
         // Scale contributed by view port.
         val mw = mMSize.width
         val mh = mMSize.height
@@ -482,13 +506,13 @@ class PaperCanvasView : View,
         // TODO: so that the paper knows how to render them in the correct
         // TODO: order.
         var dirty = false
-        dispatchDrawScraps(canvas = mBitmapCanvas,
+        dispatchDrawScraps(canvas = mThumbCanvas,
                            scrapViews = mScrapViews,
                            ifSharpenDrawing = false)
         // Draw the strokes on the Bitmap
         mStrokeDrawables.forEach { drawable ->
             dirty = dirty || drawable.isSomethingToDraw()
-            drawable.onDraw(canvas = mBitmapCanvas)
+            drawable.onDraw(canvas = mThumbCanvas)
         }
         // Notify Bitmap update
         if (dirty) {
@@ -496,7 +520,7 @@ class PaperCanvasView : View,
         }
 
         // Draw sketch and scraps (anti-aliasing resolution)
-        mViewPortFgBitmapCanvas.with { c ->
+        mClearCanvas.with { c ->
             c.concat(mCanvasMatrix)
             mStrokeDrawables.forEach { d ->
                 d.onDraw(canvas = c)
@@ -513,24 +537,24 @@ class PaperCanvasView : View,
         mMergedBitmap?.eraseColor(Color.TRANSPARENT)
 
         // Print the Bitmap to the pre-final Bitmap
-        mMergedBitmapCanvas.with { c ->
+        mMergedCanvas.with { c ->
             c.concat(mCanvasMatrix)
             c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
         }
 
         // Print the anti-aliasing Bitmap to pre-final Bitmap
-        mMergedBitmapCanvas.with { c ->
-            c.concat(mViewPortFgBitmapMatrix)
+        mMergedCanvas.with { c ->
+            c.concat(mClearBitmapMatrix)
 
             // Cut a space for anti-aliasing drawing.
             mBitmapPaint.xfermode = mEraserMode
             mTmpBound.set(1f, 1f,
-                          mViewPortFgBitmap!!.width.toFloat() - 1f,
-                          mViewPortFgBitmap!!.height.toFloat() - 1f)
+                          mClearBitmap!!.width.toFloat() - 1f,
+                          mClearBitmap!!.height.toFloat() - 1f)
             c.drawRect(mTmpBound, mBitmapPaint)
             mBitmapPaint.xfermode = null
 
-            c.drawBitmap(mViewPortFgBitmap, 0f, 0f, mBitmapPaint)
+            c.drawBitmap(mClearBitmap, 0f, 0f, mBitmapPaint)
         }
 
         // Print the merged layer to view canvas
@@ -590,11 +614,11 @@ class PaperCanvasView : View,
                         ProfilerUtils.startProfiling()
 
                         // Anti-aliasing drawing
-                        mViewPortFgBitmapCanvas.with { c ->
+                        mClearCanvas.with { c ->
                             c.concat(mCanvasMatrix)
 
                             // Erase the Bitmap
-                            mViewPortFgBitmap?.eraseColor(Color.TRANSPARENT)
+                            mClearBitmap?.eraseColor(Color.TRANSPARENT)
 
                             mStrokeDrawables.forEach { d ->
                                 d.onDraw(canvas = c, startOver = true)
@@ -602,7 +626,7 @@ class PaperCanvasView : View,
                         }
 
                         // Reset the matrix because the anti-aliasing drawing is finished
-                        mViewPortFgBitmapMatrix.reset()
+                        mClearBitmapMatrix.reset()
 
                         // TODO: The computation generally takes time proportional to the amount
                         // TODO: of strokes. e.g. 20 strokes drawing takes 157 ms.
@@ -866,9 +890,9 @@ class PaperCanvasView : View,
         val vpDs = mViewPortStart.width() / mTmpBound.width()
         val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVP
         val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVP
-        mViewPortFgBitmapMatrix.reset()
-        mViewPortFgBitmapMatrix.postScale(vpDs, vpDs)
-        mViewPortFgBitmapMatrix.postTranslate(vpDx, vpDy)
+        mClearBitmapMatrix.reset()
+        mClearBitmapMatrix.postScale(vpDs, vpDs)
+        mClearBitmapMatrix.postTranslate(vpDx, vpDy)
 
         // Apply final view port boundary
         mViewPort = mTmpBound
