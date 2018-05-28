@@ -863,11 +863,11 @@ class PaperCanvasView : View,
         mTransformHelper.getValues(mTmpMatrix)
         val tx = mTransformHelper.translationX
         val ty = mTransformHelper.translationY
-        val scaleVP = mTransformHelper.scaleX
-        val vx = -tx / scaleVP / scaleM2V
-        val vy = -ty / scaleVP / scaleM2V
-        val vw = mViewPortMax.width() / scaleVP
-        val vh = mViewPortMax.height() / scaleVP
+        val s = mTransformHelper.scaleX
+        val vx = -tx / s / scaleM2V
+        val vy = -ty / s / scaleM2V
+        val vw = mViewPortMax.width() / s
+        val vh = mViewPortMax.height() / s
         mTmpBound.set(vx, vy, vx + vw, vy + vh)
 
         // Constraint view port
@@ -887,9 +887,10 @@ class PaperCanvasView : View,
 
         // After applying the constraint, calculate the matrix for anti-aliasing
         // Bitmap
+        val scaleVp = mViewPortBase.width() / mTmpBound.width()
         val vpDs = mViewPortStart.width() / mTmpBound.width()
-        val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVP
-        val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVP
+        val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVp
+        val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVp
         mClearBitmapMatrix.reset()
         mClearBitmapMatrix.postScale(vpDs, vpDs)
         mClearBitmapMatrix.postTranslate(vpDx, vpDy)
