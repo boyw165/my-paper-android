@@ -441,7 +441,7 @@ class PaperCanvasView : View,
         mThumbCanvas = Canvas(mThumbBitmap)
 
         mClearBitmap?.recycle()
-        mClearBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        mClearBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
         mClearCanvas = Canvas(mClearBitmap)
 
         mMergedBitmap?.recycle()
@@ -550,15 +550,15 @@ class PaperCanvasView : View,
 
         mMergedBitmap?.eraseColor(Color.TRANSPARENT)
 
-        // Print the Bitmap to the pre-final Bitmap
-        mMergedCanvas.with { c ->
+        // Print the thumbnail Bitmap to the merged layer
+        mMergedCanvas.withPadding { c ->
             c.concat(mCanvasMatrix)
             c.scale(mScaleThumb, mScaleThumb)
             c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
         }
 
-        // Print the anti-aliasing Bitmap to pre-final Bitmap
-        mMergedCanvas.with { c ->
+        // Print the anti-aliasing Bitmap to the merged layer
+        mMergedCanvas.withPadding { c ->
             c.concat(mClearBitmapMatrix)
 
             // Cut a space for anti-aliasing drawing.
@@ -573,7 +573,7 @@ class PaperCanvasView : View,
         }
 
         // Print the merged layer to view canvas
-        canvas.withPadding { c ->
+        canvas.with { c ->
             c.drawBitmap(mMergedBitmap, 0f, 0f, mBitmapPaint)
         }
     }
