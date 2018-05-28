@@ -301,9 +301,13 @@ class PaperCanvasView : View,
             field.set(value)
         }
     /**
-     * Scale factor from Model world to View world.
+     * Scale factor from Model size to View size.
      */
     private var mScaleM2V = Float.NaN
+    /**
+     * Scale factor from thumbnail size to View size.
+     */
+    private var mScaleThumb = Float.NaN
 
     /**
      * The matrix used for mapping a point from the canvas world to view port
@@ -428,8 +432,12 @@ class PaperCanvasView : View,
         val mh = mMSize.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
+        mScaleThumb = Math.max(vw / DomainConst.BASE_THUMBNAIL_WIDTH,
+                               vh / DomainConst.BASE_THUMBNAIL_HEIGHT)
+        val bw = vw / mScaleThumb
+        val bh = vh / mScaleThumb
         mThumbBitmap?.recycle()
-        mThumbBitmap = Bitmap.createBitmap(vw.toInt(), vh.toInt(), Bitmap.Config.ARGB_8888)
+        mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
         mThumbCanvas = Canvas(mThumbBitmap)
 
         mClearBitmap?.recycle()
@@ -489,6 +497,8 @@ class PaperCanvasView : View,
         // Calculate the view port matrix.
         computeCanvasMatrix(scaleM2V)
 
+        // Layers rendering ///////////////////////////////////////////////////
+
         canvas.withPadding { c ->
             // Extract the transform from the canvas matrix.
             mTransformHelper.getValues(mCanvasMatrix)
@@ -501,25 +511,29 @@ class PaperCanvasView : View,
             drawBackground(c, vw, vh, tx, ty, scaleVP)
         }
 
-        // Draw sketch and scraps (thumbnail resolution)
+        // Draw sketch and scraps on thumbnail Bitmap
         // TODO: Both scraps and sketch need to explicitly define the z-order
         // TODO: so that the paper knows how to render them in the correct
         // TODO: order.
-        var dirty = false
-        dispatchDrawScraps(canvas = mThumbCanvas,
-                           scrapViews = mScrapViews,
-                           ifSharpenDrawing = false)
-        // Draw the strokes on the Bitmap
-        mStrokeDrawables.forEach { drawable ->
-            dirty = dirty || drawable.isSomethingToDraw()
-            drawable.onDraw(canvas = mThumbCanvas)
-        }
-        // Notify Bitmap update
-        if (dirty) {
-            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+        mThumbCanvas.with { c ->
+            c.scale(1f / mScaleThumb, 1f / mScaleThumb)
+
+            var dirty = false
+            dispatchDrawScraps(canvas = c,
+                               scrapViews = mScrapViews,
+                               ifSharpenDrawing = false)
+            // Draw the strokes on the Bitmap
+            mStrokeDrawables.forEach { drawable ->
+                dirty = dirty || drawable.isSomethingToDraw()
+                drawable.onDraw(canvas = c)
+            }
+            // Notify Bitmap update
+            if (dirty) {
+                mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+            }
         }
 
-        // Draw sketch and scraps (anti-aliasing resolution)
+        // Draw sketch and scraps on full-resolution Bitmap
         mClearCanvas.with { c ->
             c.concat(mCanvasMatrix)
             mStrokeDrawables.forEach { d ->
@@ -539,6 +553,7 @@ class PaperCanvasView : View,
         // Print the Bitmap to the pre-final Bitmap
         mMergedCanvas.with { c ->
             c.concat(mCanvasMatrix)
+            c.scale(mScaleThumb, mScaleThumb)
             c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
         }
 
