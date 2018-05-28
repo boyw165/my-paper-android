@@ -278,13 +278,21 @@ class PaperCanvasView : View,
     private val mUpdateBitmapSignal = PublishSubject.create<Bitmap>()
 
     /**
+     * A signal of requesting the anti-aliasing drawing.
+     */
+    private val mAntiAliasingSignal = PublishSubject.create<Any>()
+
+    /**
      * Model canvas size.
      */
-    private val mMSize = BehaviorSubject.createDefault(Rect())
+    private var mMSize = Rect()
+        set(value) {
+            field.set(value)
+        }
     /**
      * Scale factor from Model world to View world.
      */
-    private val mScaleM2V = BehaviorSubject.createDefault(Float.NaN)
+    private var mScaleM2V = Float.NaN
 
     /**
      * The matrix used for mapping a point from the canvas world to view port
@@ -324,7 +332,6 @@ class PaperCanvasView : View,
     private val mEraserPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
     private val mEraserMode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-    private val mAntiAliasingSignal = PublishSubject.create<Any>()
     /**
      * The canvas used in the [dispatchDrawScraps] call.
      */
@@ -372,12 +379,12 @@ class PaperCanvasView : View,
         mViewPortBase.set(mViewPortMax)
 
         // Hold canvas size.
-        mMSize.onNext(Rect(0f, 0f, canvasWidth, canvasHeight))
+        mMSize.set(0f, 0f, canvasWidth, canvasHeight)
 
         // Initially the model-to-view scale is derived by the scale
         // from min view port boundary to the view boundary.
         // Check out the figure above :D
-        mScaleM2V.onNext(scaleM2V)
+        mScaleM2V = scaleM2V
 
         // Determine the default view-port (makes sense when view
         // layout is changed).
@@ -387,8 +394,8 @@ class PaperCanvasView : View,
                       mViewPortMax.height())
 
         // Backed the canvas Bitmap.
-        val mw = mMSize.value!!.width
-        val mh = mMSize.value!!.height
+        val mw = mMSize.width
+        val mh = mMSize.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
         mThumbBitmap?.recycle()
@@ -446,12 +453,12 @@ class PaperCanvasView : View,
         if (!isAllSet) return
 
         // Scale from model to view.
-        val scaleM2V = mScaleM2V.value!!
+        val scaleM2V = mScaleM2V
         // Scale from view to model
         val scaleV2M = 1f / scaleM2V
         // Scale contributed by view port.
-        val mw = mMSize.value!!.width
-        val mh = mMSize.value!!.height
+        val mw = mMSize.width
+        val mh = mMSize.height
         val vw = scaleM2V * mw
         val vh = scaleM2V * mh
 
@@ -686,7 +693,7 @@ class PaperCanvasView : View,
 
             // Notify any external observers
             mDrawViewPortSignal.onNext(DrawViewPortEvent(
-                canvas = mMSize.value!!.copy(),
+                canvas = mMSize.copy(),
                 viewPort = Rect(value.left,
                                 value.top,
                                 value.right,
@@ -719,8 +726,8 @@ class PaperCanvasView : View,
     }
 
     fun setViewPortPosition(x: Float, y: Float) {
-        val mw = mMSize.value!!.width
-        val mh = mMSize.value!!.height
+        val mw = mMSize.width
+        val mh = mMSize.height
 
         mTmpBound.set(x, y,
                       x + mViewPort.width(),
@@ -804,9 +811,9 @@ class PaperCanvasView : View,
     // TODO: Make the view-port code a component.
     private fun onUpdateViewport(startPointers: Array<PointF>,
                                  stopPointers: Array<PointF>) {
-        val mw = mMSize.value!!.width
-        val mh = mMSize.value!!.height
-        val scaleM2V = mScaleM2V.value!!
+        val mw = mMSize.width
+        val mh = mMSize.height
+        val scaleM2V = mScaleM2V
 
         // Compute new canvas matrix.
         val transform = TransformUtils.getTransformFromPointers(
@@ -941,7 +948,7 @@ class PaperCanvasView : View,
 
         // The point is still in the View world, we still need to map it to the
         // Model world.
-        val scaleM2V = mScaleM2V.value!!
+        val scaleM2V = mScaleM2V
         mTmpPoint[0] = mTmpPoint[0] / scaleM2V
         mTmpPoint[1] = mTmpPoint[1] / scaleM2V
 
@@ -955,7 +962,7 @@ class PaperCanvasView : View,
                             y: Float): FloatArray {
         ensureMainThread()
 
-        val scaleM2V = mScaleM2V.value!!
+        val scaleM2V = mScaleM2V
 
         // Map the point from Model world to View world.
         mTmpPoint[0] = scaleM2V * x
@@ -1210,9 +1217,8 @@ class PaperCanvasView : View,
     }
 
     private val isAllSet
-        get() = mScaleM2V.value != Float.NaN &&
-                (mMSize.value!!.width > 0f &&
-                 mMSize.value!!.height > 0f))
+        get() = mScaleM2V != Float.NaN &&
+                (mMSize.width > 0f && mMSize.height > 0f)
 
     private fun drawBackground(canvas: Canvas,
                                vw: Float,
