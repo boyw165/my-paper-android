@@ -161,30 +161,6 @@ class PaperCanvasView : View,
                     widget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
                 })
 
-        // View port and canvas matrix change
-        mDisposables.add(
-            mReadySignal
-                .switchMap { ready ->
-                    if (ready) {
-                        mViewPortSignal
-                    } else {
-                        Observable.never<RectF>()
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { vp ->
-                    // Would trigger onDraw() call
-                    markCanvasMatrixDirty()
-
-                    // Notify any external observers
-                    mDrawViewPortSignal.onNext(DrawViewPortEvent(
-                        canvas = mMSize.value!!.copy(),
-                        viewPort = Rect(vp.left,
-                                        vp.top,
-                                        vp.right,
-                                        vp.bottom)))
-                })
-
         // Anti-aliasing drawing
         mDisposables.add(
             mReadySignal
@@ -692,11 +668,6 @@ class PaperCanvasView : View,
         mBitmapRepo = repo
     }
 
-    private fun markCanvasMatrixDirty() {
-        mCanvasMatrixDirty = true
-        invalidate()
-    }
-
     private fun requestAntiAliasingDrawing() {
         // Request anti-aliasing drawing
         mAntiAliasingSignal.onNext(0)
@@ -707,14 +678,30 @@ class PaperCanvasView : View,
     /**
      * The view-port boundary in the model world.
      */
-    private val mViewPortSignal = BehaviorSubject.create<RectF>()
+    private var mViewPort = RectF()
+        set(value) {
+            field.set(value)
+
+            mCanvasMatrixDirty = true
+
+            // Notify any external observers
+            mDrawViewPortSignal.onNext(DrawViewPortEvent(
+                canvas = mMSize.value!!.copy(),
+                viewPort = Rect(value.left,
+                                value.top,
+                                value.right,
+                                value.bottom)))
+
+            invalidate()
+        }
+
     private val mViewPortStart = RectF()
     /**
-     * Minimum size of [mViewPortSignal].
+     * Minimum size of [mViewPort].
      */
     private val mViewPortMin = RectF()
     /**
-     * Maximum size of [mViewPortSignal].
+     * Maximum size of [mViewPort].
      */
     private val mViewPortMax = RectF()
     /**
@@ -723,7 +710,7 @@ class PaperCanvasView : View,
      */
     private val mViewPortBase = RectF()
     /**
-     * The signal for external observers
+     * The signal for external observers.
      */
     private val mDrawViewPortSignal = BehaviorSubject.create<DrawViewPortEvent>()
 
@@ -736,8 +723,8 @@ class PaperCanvasView : View,
         val mh = mMSize.value!!.height
 
         mTmpBound.set(x, y,
-                      x + mViewPortSignal.value!!.width(),
-                      y + mViewPortSignal.value!!.height())
+                      x + mViewPort.width(),
+                      y + mViewPort.height())
 
         // Constraint view port
         val minWidth = mViewPortMin.width()
@@ -754,7 +741,7 @@ class PaperCanvasView : View,
                            maxWidth = maxWidth,
                            maxHeight = maxHeight)
 
-        mViewPortSignal.onNext(mTmpBound)
+        mViewPort = mTmpBound
     }
 
     private fun resetViewPort(mw: Float,
@@ -768,24 +755,24 @@ class PaperCanvasView : View,
         // Place the view port left in the model world.
         val viewPortX = 0f
         val viewPortY = 0f
-        mViewPortSignal.onNext(RectF(viewPortX, viewPortY,
-                               viewPortX + defaultW,
-                               viewPortY + defaultH))
+        mViewPort = RectF(viewPortX, viewPortY,
+                          viewPortX + defaultW,
+                          viewPortY + defaultH)
     }
 
     /**
-     * Compute the [mCanvasMatrix] given [mViewPortSignal].
+     * Compute the [mCanvasMatrix] given [mViewPort].
      *
      * @param scaleM2V The scale from model to view.
      */
     private fun computeCanvasMatrix(scaleM2V: Float) {
-        if (mCanvasMatrixDirty && mViewPortSignal.hasValue()) {
+        if (mCanvasMatrixDirty) {
             // View port x
-            val vx = mViewPortSignal.value!!.left
+            val vx = mViewPort.left
             // View port y
-            val vy = mViewPortSignal.value!!.top
+            val vy = mViewPort.top
             // View port width
-            val vw = mViewPortSignal.value!!.width()
+            val vw = mViewPort.width()
             val scaleVP = mViewPortBase.width() / vw
 
             mCanvasMatrix.reset()
@@ -811,7 +798,7 @@ class PaperCanvasView : View,
     private fun startUpdateViewport() {
         // Hold necessary starting states.
         mTmpMatrixStart.set(mCanvasMatrix)
-        mViewPortStart.set(mViewPortSignal.value!!)
+        mViewPortStart.set(mViewPort)
     }
 
     // TODO: Make the view-port code a component.
@@ -877,7 +864,7 @@ class PaperCanvasView : View,
         mViewPortFgBitmapMatrix.postTranslate(vpDx, vpDy)
 
         // Apply final view port boundary
-        mViewPortSignal.onNext(RectF(mTmpBound))
+        mViewPort = mTmpBound
     }
 
     private fun stopUpdateViewport() {
@@ -1225,8 +1212,7 @@ class PaperCanvasView : View,
     private val isAllSet
         get() = mScaleM2V.value != Float.NaN &&
                 (mMSize.value!!.width > 0f &&
-                 mMSize.value!!.height > 0f) &&
-                mViewPortSignal.hasValue()
+                 mMSize.value!!.height > 0f))
 
     private fun drawBackground(canvas: Canvas,
                                vw: Float,
@@ -1251,7 +1237,7 @@ class PaperCanvasView : View,
         //       vpW - baseW
         // a = --------------
         //      minW - baseW
-        val alpha = (mViewPortSignal.value!!.width() - mViewPortBase.width()) /
+        val alpha = (mViewPort.width() - mViewPortBase.width()) /
                     (mViewPortMin.width() - mViewPortBase.width())
         mGridPaint.alpha = (alpha * 0xFF).toInt()
 
