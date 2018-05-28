@@ -48,6 +48,7 @@ import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepo
 import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
+import com.paper.view.with
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -449,20 +450,6 @@ class PaperCanvasView : View,
         if (mTmpMatrix != mCanvasMatrix) {
             throw IllegalStateException("Canvas matrix is changed")
         }
-    }
-
-    /**
-     * Process the given lambda in a session environment so that this operation
-     * won't contribute permanent change.
-     */
-    private inline fun<T> Canvas.with(lambda: (canvas: Canvas) -> T):T {
-        val count = save()
-
-        clipRect(0f, 0f, width.toFloat(), height.toFloat())
-        val ret = lambda(this)
-
-        restoreToCount(count)
-        return ret
     }
 
     /**
