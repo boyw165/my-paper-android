@@ -137,6 +137,7 @@ dependencies {
 
     // My Libraries.
     implementation rootProject.ext.dep.collageGestureDetector
+    implementation rootProject.ext.dep.collageGestureDetectorRx
     implementation project(path: ':app-domain')
 
     // Unit tests.
