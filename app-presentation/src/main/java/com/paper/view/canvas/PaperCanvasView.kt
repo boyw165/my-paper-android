@@ -763,6 +763,7 @@ class PaperCanvasView : View,
         return mDrawViewPortSignal
     }
 
+    // TODO: Duplicated to onUpdateViewPort()
     fun setViewPortPosition(x: Float, y: Float) {
         val mw = mMSize.width
         val mh = mMSize.height
@@ -786,7 +787,23 @@ class PaperCanvasView : View,
                            maxWidth = maxWidth,
                            maxHeight = maxHeight)
 
+        // After applying the constraint, calculate the matrix for anti-aliasing
+        // Bitmap
+        val scaleVp = mViewPortBase.width() / mTmpBound.width()
+        val vpDs = mViewPortStart.width() / mTmpBound.width()
+        val vpDx = (mViewPortStart.left - mTmpBound.left) * mScaleM2V * scaleVp
+        val vpDy = (mViewPortStart.top - mTmpBound.top) * mScaleM2V * scaleVp
+        mTmpMatrix.reset()
+        mTmpMatrix.postScale(vpDs, vpDs)
+        mTmpMatrix.postTranslate(vpDx, vpDy)
+        mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
+
         mViewPort = mTmpBound
+
+        // Calculate the canvas matrix contributed by view-port boundary.
+        computeCanvasMatrix(mScaleM2V)
+
+        requestAntiAliasingDrawing()
     }
 
     private fun resetViewPort(mw: Float,
