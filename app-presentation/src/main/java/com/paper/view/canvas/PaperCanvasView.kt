@@ -52,6 +52,7 @@ import com.paper.view.with
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
@@ -152,7 +153,7 @@ class PaperCanvasView : View,
                         Observable.never()
                     }
                 }
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(mRenderingScheduler)
                 .subscribe { event ->
                     onDrawSVG(event)
                 })
@@ -181,7 +182,9 @@ class PaperCanvasView : View,
                     }
                 }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
+                .subscribe { scene ->
+                    mSceneBuffer.setCurrentScene(scene)
+
                     invalidate()
                 })
 
@@ -277,11 +280,13 @@ class PaperCanvasView : View,
 
     // Drawing ////////////////////////////////////////////////////////////////
 
+    private val mRenderingScheduler = SingleScheduler()
+
     /**
      * A signal indicating whether it's ready to interact with the user. see
      * [onUpdateLayoutOrCanvas].
      */
-    private val mReadySignal = PublishSubject.create<Boolean>()
+    private val mReadySignal = BehaviorSubject.create<Boolean>()
 
     /**
      * A signal of updating the canvas hash and Bitmap.
@@ -291,7 +296,7 @@ class PaperCanvasView : View,
     /**
      * A signal of requesting the anti-aliasing drawing.
      */
-    private val mAntiAliasingSignal = PublishSubject.create<Any>()
+    private val mAntiAliasingSignal = PublishSubject.create<Boolean>()
 
     /**
      * Model canvas size.
@@ -347,19 +352,11 @@ class PaperCanvasView : View,
     private lateinit var mThumbCanvas: Canvas
 
     /**
-     * The Bitmap in which the sketch and the scraps are drawn to, which is the
-     * best resolution but cut to the rectangle as big as the view's visible
-     * area.
+     * The scene buffer in which the sketch and the scraps are drawn to, which
+     * is the best resolution but cut to the rectangle as big as the view's
+     * visible area.
      */
-    private var mClearBitmap: Bitmap? = null
-    /**
-     * The canvas hiding [mClearBitmap].
-     */
-    private lateinit var mClearCanvas: Canvas
-    /**
-     * The transform for drawing [mClearBitmap] on the [mMergedBitmap].
-     */
-    private val mClearBitmapMatrix = Matrix()
+    private lateinit var mSceneBuffer: SceneBuffer
 
     /**
      * The Bitmap that all the layers merge to, of size of the rectangle as big
@@ -440,9 +437,11 @@ class PaperCanvasView : View,
         mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
         mThumbCanvas = Canvas(mThumbBitmap)
 
-        mClearBitmap?.recycle()
-        mClearBitmap = Bitmap.createBitmap(spaceWidth, spaceHeight, Bitmap.Config.ARGB_8888)
-        mClearCanvas = Canvas(mClearBitmap)
+        mSceneBuffer = SceneBuffer(bufferSize = 2,
+                                   canvasWidth = spaceWidth,
+                                   canvasHeight = spaceHeight,
+                                   bitmapPaint = mBitmapPaint,
+                                   eraserPaint = mEraserPaint)
 
         mMergedBitmap?.recycle()
         mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -499,6 +498,7 @@ class PaperCanvasView : View,
 
         // Layers rendering ///////////////////////////////////////////////////
 
+        // Background layer
         canvas.withPadding { c ->
             // Extract the transform from the canvas matrix.
             mTransformHelper.getValues(mCanvasMatrix)
@@ -506,44 +506,9 @@ class PaperCanvasView : View,
             val ty = mTransformHelper.translationY
             val scaleVP = mTransformHelper.scaleX
 
-            // Manually calculate position and size of the background cross/grids so
-            // that they keep sharp!
+            // Manually calculate position and size of the background cross/grids
+            // so that they keep sharp!
             drawBackground(c, vw, vh, tx, ty, scaleVP)
-        }
-
-        // Draw sketch and scraps on thumbnail Bitmap
-        // TODO: Both scraps and sketch need to explicitly define the z-order
-        // TODO: so that the paper knows how to render them in the correct
-        // TODO: order.
-        mThumbCanvas.with { c ->
-            c.scale(1f / mScaleThumb, 1f / mScaleThumb)
-
-            var dirty = false
-            dispatchDrawScraps(canvas = c,
-                               scrapViews = mScrapViews,
-                               ifSharpenDrawing = false)
-            // Draw the strokes on the Bitmap
-            mStrokeDrawables.forEach { drawable ->
-                dirty = dirty || drawable.isSomethingToDraw()
-                drawable.onDraw(canvas = c)
-            }
-            // Notify Bitmap update
-            if (dirty) {
-                mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
-            }
-        }
-
-        // Draw sketch and scraps on full-resolution Bitmap
-        mClearCanvas.with { c ->
-            c.concat(mCanvasMatrix)
-            mStrokeDrawables.forEach { d ->
-                d.onDraw(canvas = c)
-            }
-        }
-
-        // By marking drawables not dirty, the drawable's cache is renewed.
-        mStrokeDrawables.forEach { d ->
-            d.markAllDrew()
         }
 
         // Layers blending ////////////////////////////////////////////////////
@@ -559,17 +524,7 @@ class PaperCanvasView : View,
 
         // Print the anti-aliasing Bitmap to the merged layer
         mMergedCanvas.withPadding { c ->
-            c.concat(mClearBitmapMatrix)
-
-            // Cut a space for anti-aliasing drawing.
-            mBitmapPaint.xfermode = mEraserMode
-            mTmpBound.set(1f, 1f,
-                          mClearBitmap!!.width.toFloat() - 1f,
-                          mClearBitmap!!.height.toFloat() - 1f)
-            c.drawRect(mTmpBound, mBitmapPaint)
-            mBitmapPaint.xfermode = null
-
-            c.drawBitmap(mClearBitmap, 0f, 0f, mBitmapPaint)
+            mSceneBuffer.getCurrentScene().print(c)
         }
 
         // Print the merged layer to view canvas
@@ -579,6 +534,8 @@ class PaperCanvasView : View,
     }
 
     private fun onDrawSVG(event: DrawSVGEvent) {
+        // TODO: How to ensure it's on the rendering thread?
+
         mIsHashDirty = true
 
         when (event) {
@@ -616,43 +573,82 @@ class PaperCanvasView : View,
             }
         }
 
-        invalidate()
+        // Calculate the view port matrix.
+        computeCanvasMatrix(mScaleM2V)
+
+        // Draw sketch and scraps on thumbnail Bitmap
+        // TODO: Both scraps and sketch need to explicitly define the z-order
+        // TODO: so that the paper knows how to render them in the correct
+        // TODO: order.
+        mThumbCanvas.with { c ->
+            c.scale(1f / mScaleThumb, 1f / mScaleThumb)
+
+            var dirty = false
+            dispatchDrawScraps(canvas = c,
+                               scrapViews = mScrapViews,
+                               ifSharpenDrawing = false)
+            // Draw the strokes on the thumbnail canvas
+            mStrokeDrawables.forEach { drawable ->
+                dirty = dirty || drawable.isSomethingToDraw()
+                drawable.onDraw(canvas = c)
+            }
+            // Notify Bitmap update
+            if (dirty) {
+                mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+            }
+        }
+
+        // Draw sketch and scraps on full-resolution Bitmap
+        mSceneBuffer.getCurrentScene().draw { c ->
+            c.concat(mCanvasMatrix)
+            mStrokeDrawables.forEach { d ->
+                d.onDraw(canvas = c)
+            }
+        }
+
+        // By marking drawables not dirty, the drawable's cache is renewed.
+        mStrokeDrawables.forEach { d ->
+            d.markAllDrew()
+        }
+
+        postInvalidate()
     }
 
-    private fun onAntiAliasingDraw(): Observable<Any> {
+    private fun onAntiAliasingDraw(): Observable<Scene> {
         return mAntiAliasingSignal
-            .debounce(150, TimeUnit.MILLISECONDS, Schedulers.computation())
-            .switchMap {
-                Observable
-                    .fromCallable {
-                        println("${AppConst.TAG}: request anti-aliasing drawing...")
-                        ProfilerUtils.startProfiling()
+            .debounce(75, TimeUnit.MILLISECONDS, mRenderingScheduler)
+            // FIXME: The debounce is buggy when the interval is large
+            //.debounce(1750, TimeUnit.MILLISECONDS, mRenderingScheduler)
+            .switchMap { doIt ->
+                if (doIt) {
+                    Observable
+                        .fromCallable {
+                            println("${AppConst.TAG}: request anti-aliasing drawing...")
+                            ProfilerUtils.startProfiling()
 
-                        // Anti-aliasing drawing
-                        mClearCanvas.with { c ->
-                            c.concat(mCanvasMatrix)
+                            // Anti-aliasing drawing
+                            val scene = mSceneBuffer.getEmptyScene()
+                            scene.resetTransform()
+                            scene.eraseDraw { c ->
+                                c.concat(mCanvasMatrix)
 
-                            // Erase the Bitmap
-                            mClearBitmap?.eraseColor(Color.TRANSPARENT)
-
-                            mStrokeDrawables.forEach { d ->
-                                d.onDraw(canvas = c, startOver = true)
+                                mStrokeDrawables.forEach { d ->
+                                    d.onDraw(canvas = c, startOver = true)
+                                }
                             }
+
+                            // The computation generally takes time proportional to
+                            // the amount of strokes. e.g. 20 strokes drawing takes
+                            // 157 ms.
+                            println("${AppConst.TAG}: request anti-aliasing drawing, " +
+                                    "took ${ProfilerUtils.stopProfiling()} ms")
+
+                            return@fromCallable scene
                         }
-
-                        // Reset the matrix because the anti-aliasing drawing is finished
-                        mClearBitmapMatrix.reset()
-
-                        // TODO: The computation generally takes time proportional to the amount
-                        // TODO: of strokes. e.g. 20 strokes drawing takes 157 ms.
-                        // TODO: Make this process performant
-                        println("${AppConst.TAG}: request anti-aliasing drawing, took ${ProfilerUtils.stopProfiling()} ms")
-
-                        return@fromCallable true
-                    }
-                    .subscribeOn(Schedulers.computation())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext { invalidate() }
+                        .subscribeOn(mRenderingScheduler)
+                } else {
+                    Observable.never()
+                }
             }
     }
 
@@ -714,9 +710,12 @@ class PaperCanvasView : View,
         mBitmapRepo = repo
     }
 
+    private fun cancelAntiAliasingDrawing() {
+        mAntiAliasingSignal.onNext(false)
+    }
+
     private fun requestAntiAliasingDrawing() {
-        // Request anti-aliasing drawing
-        mAntiAliasingSignal.onNext(0)
+        mAntiAliasingSignal.onNext(true)
     }
 
     // View port //////////////////////////////////////////////////////////////
@@ -845,6 +844,8 @@ class PaperCanvasView : View,
         // Hold necessary starting states.
         mTmpMatrixStart.set(mCanvasMatrix)
         mViewPortStart.set(mViewPort)
+
+        cancelAntiAliasingDrawing()
     }
 
     // TODO: Make the view-port code a component.
@@ -906,18 +907,26 @@ class PaperCanvasView : View,
         val vpDs = mViewPortStart.width() / mTmpBound.width()
         val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVp
         val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVp
-        mClearBitmapMatrix.reset()
-        mClearBitmapMatrix.postScale(vpDs, vpDs)
-        mClearBitmapMatrix.postTranslate(vpDx, vpDy)
+        mTmpMatrix.reset()
+        mTmpMatrix.postScale(vpDs, vpDs)
+        mTmpMatrix.postTranslate(vpDx, vpDy)
+        mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
 
         // Apply final view port boundary
         mViewPort = mTmpBound
+
+        // Calculate the canvas matrix contributed by view-port boundary.
+        computeCanvasMatrix(mScaleM2V)
+
+        cancelAntiAliasingDrawing()
     }
 
     private fun stopUpdateViewport() {
         mTmpMatrixStart.reset()
         mTmpMatrix.reset()
         mTmpMatrixInverse.reset()
+
+        mSceneBuffer.getCurrentScene().commitNewTransform()
 
         requestAntiAliasingDrawing()
     }
@@ -976,8 +985,6 @@ class PaperCanvasView : View,
      */
     private fun toModelWorld(x: Float,
                              y: Float): FloatArray {
-        ensureMainThread()
-
         // View might have padding, if so we need to subtract the padding to get
         // the position in the real view port.
         mTmpPoint[0] = x - ViewCompat.getPaddingStart(this)
@@ -1000,8 +1007,6 @@ class PaperCanvasView : View,
      */
     private fun toViewWorld(x: Float,
                             y: Float): FloatArray {
-        ensureMainThread()
-
         val scaleM2V = mScaleM2V
 
         // Map the point from Model world to View world.
