@@ -1081,6 +1081,7 @@ class PaperCanvasView : View,
         }
     }
 
+    // TODO: To some action
     private fun handleTouchEvent(): ObservableTransformer<GestureEvent, Boolean> {
         return ObservableTransformer { upstream ->
             upstream.map { event ->
@@ -1095,8 +1096,8 @@ class PaperCanvasView : View,
                     is TapEvent -> {
                         mGestureHistory.add(GestureRecord.TAP)
 
-                        val (nx, ny) = toModelWorld(event.event.downFocusX,
-                                                    event.event.downFocusY)
+                        val (nx, ny) = toModelWorld(event.downX,
+                                                    event.downY)
                         mWidget.handleTap(nx, ny)
                     }
                     is DragBeginEvent -> {
@@ -1106,8 +1107,8 @@ class PaperCanvasView : View,
                         // If there is NO PINCH in the history, do drag; Otherwise,
                         // do view port transform.
                         if (mIfHandleDrag) {
-                            val (nx, ny) = toModelWorld(event.event.downFocusX,
-                                                        event.event.downFocusY)
+                            val (nx, ny) = toModelWorld(event.startPointer.x,
+                                                        event.startPointer.y)
                             mWidget.handleDragBegin(nx, ny)
                         } else {
                             startUpdateViewport()
@@ -1117,8 +1118,8 @@ class PaperCanvasView : View,
                         // If there is NO PINCH in the history, do drag; Otherwise,
                         // do view port transform.
                         if (mIfHandleDrag) {
-                            val (nx, ny) = toModelWorld(event.event.downFocusX,
-                                                        event.event.downFocusY)
+                            val (nx, ny) = toModelWorld(event.stopPointer.x,
+                                                        event.stopPointer.y)
                             mWidget.handleDrag(nx, ny)
                         } else {
                             onUpdateViewport(Array(2, { _ -> event.startPointer }),
@@ -1129,8 +1130,8 @@ class PaperCanvasView : View,
                         // If there is NO PINCH in the history, do drag;
                         // Otherwise, do view port transform.
                         if (mIfHandleDrag) {
-                            val (nx, ny) = toModelWorld(event.event.downFocusX,
-                                                        event.event.downFocusY)
+                            val (nx, ny) = toModelWorld(event.stopPointer.x,
+                                                        event.stopPointer.y)
                             mWidget.handleDragEnd(nx, ny)
                         } else {
                             stopUpdateViewport()
