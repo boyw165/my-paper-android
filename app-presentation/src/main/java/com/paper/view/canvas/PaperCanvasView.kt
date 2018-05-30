@@ -30,8 +30,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
-import com.cardinalblue.gesture.IAllGesturesListener
-import com.cardinalblue.gesture.MyMotionEvent
+import com.cardinalblue.gesture.rx.*
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.paper.AppConst
@@ -50,6 +49,7 @@ import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
 import com.paper.view.with
 import io.reactivex.Observable
+import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.internal.schedulers.SingleScheduler
@@ -64,8 +64,7 @@ import java.util.concurrent.TimeUnit
 class PaperCanvasView : View,
                         IWidgetView<IPaperCanvasWidget>,
                         IPaperContext,
-                        IParentView,
-                        IAllGesturesListener {
+                        IParentView {
 
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapView>()
@@ -217,6 +216,12 @@ class PaperCanvasView : View,
                 .subscribe { scrapWidget ->
                     removeScrap(scrapWidget)
                 })
+
+        // Touch
+        mDisposables.add(
+            GestureEventObservable(mGestureDetector)
+                .compose(handleTouchEvent())
+                .subscribe())
 
         // Debug
         mDisposables.add(
@@ -1049,11 +1054,6 @@ class PaperCanvasView : View,
                                        mMinFlingVec,
                                        mMaxFlingVec)
 
-        // Set mapper as the listener.
-        detector.tapGestureListener = this@PaperCanvasView
-        detector.dragGestureListener = this@PaperCanvasView
-        detector.pinchGestureListener = this@PaperCanvasView
-
         return@lazy detector
     }
     private var mIfHandleAction = false
@@ -1081,150 +1081,76 @@ class PaperCanvasView : View,
         }
     }
 
-    override fun onActionBegin(event: MyMotionEvent,
-                               target: Any?,
-                               context: Any?) {
-        mGestureHistory.clear()
+    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, Boolean> {
+        return ObservableTransformer { upstream ->
+            upstream.map { event ->
+                when (event) {
+                    is TouchBeginEvent -> {
+                        mGestureHistory.clear()
+                        mWidget.handleActionBegin()
+                    }
+                    is TouchEndEvent -> {
+                        mWidget.handleActionEnd()
+                    }
+                    is TapEvent -> {
+                        mGestureHistory.add(GestureRecord.TAP)
 
-        mWidget.handleActionBegin()
-    }
+                        val (nx, ny) = toModelWorld(event.event.downFocusX,
+                                                    event.event.downFocusY)
+                        mWidget.handleTap(nx, ny)
+                    }
+                    is DragBeginEvent -> {
+                        mGestureHistory.add(GestureRecord.DRAG)
 
-    override fun onActionEnd(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mWidget.handleActionEnd()
-
-//        // Prevent the following transform applied to the event from do the
-//        // sharp rendering.
-//        requestSharpDrawing()
-    }
-
-    // Tap Gesture ////////////////////////////////////////////////////////////
-
-    override fun onSingleTap(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mGestureHistory.add(GestureRecord.TAP)
-
-        val (nx, ny) = toModelWorld(event.downFocusX, event.downFocusY)
-
-        mWidget.handleTap(nx, ny)
-    }
-
-    override fun onDoubleTap(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mGestureHistory.add(GestureRecord.TAP)
-    }
-
-    override fun onLongPress(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-    }
-
-    override fun onLongTap(event: MyMotionEvent,
-                           target: Any?,
-                           context: Any?) {
-    }
-
-    override fun onMoreTap(event: MyMotionEvent,
-                           target: Any?,
-                           context: Any?,
-                           tapCount: Int) {
-    }
-
-    // Drag Gesture ///////////////////////////////////////////////////////////
-
-    override fun onDragBegin(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?) {
-        mGestureHistory.add(GestureRecord.DRAG)
-
-        mIfHandleDrag = mGestureHistory.indexOf(GestureRecord.PINCH) == -1
-        // If there is NO PINCH in the history, do drag; Otherwise, do view
-        // port transform.
-        if (mIfHandleDrag) {
-            val (nx, ny) = toModelWorld(event.downFocusX,
-                                        event.downFocusY)
-            mWidget.handleDragBegin(nx, ny)
-        } else {
-            startUpdateViewport()
+                        mIfHandleDrag = mGestureHistory.indexOf(GestureRecord.PINCH) == -1
+                        // If there is NO PINCH in the history, do drag; Otherwise,
+                        // do view port transform.
+                        if (mIfHandleDrag) {
+                            val (nx, ny) = toModelWorld(event.event.downFocusX,
+                                                        event.event.downFocusY)
+                            mWidget.handleDragBegin(nx, ny)
+                        } else {
+                            startUpdateViewport()
+                        }
+                    }
+                    is OnDragEvent -> {
+                        // If there is NO PINCH in the history, do drag; Otherwise,
+                        // do view port transform.
+                        if (mIfHandleDrag) {
+                            val (nx, ny) = toModelWorld(event.event.downFocusX,
+                                                        event.event.downFocusY)
+                            mWidget.handleDrag(nx, ny)
+                        } else {
+                            onUpdateViewport(Array(2, { _ -> event.startPointer }),
+                                             Array(2, { _ -> event.stopPointer }))
+                        }
+                    }
+                    is DragEndEvent -> {
+                        // If there is NO PINCH in the history, do drag;
+                        // Otherwise, do view port transform.
+                        if (mIfHandleDrag) {
+                            val (nx, ny) = toModelWorld(event.event.downFocusX,
+                                                        event.event.downFocusY)
+                            mWidget.handleDragEnd(nx, ny)
+                        } else {
+                            stopUpdateViewport()
+                        }
+                    }
+                    is PinchBeginEvent -> {
+                        mGestureHistory.add(GestureRecord.PINCH)
+                        startUpdateViewport()
+                    }
+                    is OnPinchEvent -> {
+                        onUpdateViewport(event.startPointers,
+                                         event.stopPointers)
+                    }
+                    is PinchEndEvent -> {
+                        stopUpdateViewport()
+                    }
+                }
+                true
+            }
         }
-    }
-
-    override fun onDrag(event: MyMotionEvent,
-                        target: Any?,
-                        context: Any?,
-                        startPointer: PointF,
-                        stopPointer: PointF) {
-        // If there is NO PINCH in the history, do drag; Otherwise, do view
-        // port transform.
-        if (mIfHandleDrag) {
-            val (nx, ny) = toModelWorld(event.downFocusX,
-                                        event.downFocusY)
-            mWidget.handleDrag(nx, ny)
-        } else {
-            onUpdateViewport(Array(2, { _ -> startPointer }),
-                             Array(2, { _ -> stopPointer }))
-        }
-    }
-
-    override fun onDragFling(event: MyMotionEvent,
-                             target: Any?,
-                             context: Any?,
-                             startPointer: PointF,
-                             stopPointer: PointF,
-                             velocityX: Float,
-                             velocityY: Float) {
-    }
-
-    override fun onDragEnd(event: MyMotionEvent,
-                           target: Any?,
-                           context: Any?,
-                           startPointer: PointF,
-                           stopPointer: PointF) {
-        // If there is NO PINCH in the history, do drag; Otherwise, do view
-        // port transform.
-        if (mIfHandleDrag) {
-            val (nx, ny) = toModelWorld(event.downFocusX,
-                                        event.downFocusY)
-            mWidget.handleDragEnd(nx, ny)
-        } else {
-            stopUpdateViewport()
-        }
-    }
-
-    // Pinch Gesture //////////////////////////////////////////////////////////
-
-    override fun onPinchBegin(event: MyMotionEvent,
-                              target: Any?,
-                              context: Any?,
-                              startPointers: Array<PointF>) {
-        mGestureHistory.add(GestureRecord.PINCH)
-
-        startUpdateViewport()
-    }
-
-    override fun onPinch(event: MyMotionEvent,
-                         target: Any?,
-                         context: Any?,
-                         startPointers: Array<PointF>,
-                         stopPointers: Array<PointF>) {
-        onUpdateViewport(startPointers, stopPointers)
-    }
-
-    override fun onPinchFling(event: MyMotionEvent,
-                              target: Any?,
-                              context: Any?) {
-        // DO NOTHING.
-    }
-
-    override fun onPinchEnd(event: MyMotionEvent,
-                            target: Any?,
-                            context: Any?,
-                            startPointers: Array<PointF>,
-                            stopPointers: Array<PointF>) {
-        stopUpdateViewport()
     }
 
     // Context ////////////////////////////////////////////////////////////////
