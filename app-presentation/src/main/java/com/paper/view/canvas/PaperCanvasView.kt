@@ -122,9 +122,7 @@ class PaperCanvasView : View,
                 widget.onSetCanvasSize())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (changed, size) ->
-                    if (changed &&
-                        size.width > 0 &&
-                        size.height > 0) {
+                    if (changed && !size.isAreaEmpty) {
                         println("${AppConst.TAG}: the layout is done, and canvas " +
                                 "size is ${size.width} x ${size.height}")
 

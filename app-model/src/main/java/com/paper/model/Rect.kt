@@ -44,4 +44,7 @@ data class Rect(var left: Float = 0f,
         this.right = right
         this.bottom = bottom
     }
+
+    val isAreaEmpty: Boolean
+        get() = width == 0f || height == 0f
 }
