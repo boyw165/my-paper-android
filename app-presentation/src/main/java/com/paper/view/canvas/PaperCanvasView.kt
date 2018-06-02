@@ -80,7 +80,6 @@ class PaperCanvasView : View,
 
     // Temporary utils.
     private val mTmpPoint = FloatArray(2)
-    private val mTmpBound = RectF()
     private val mTmpMatrix = Matrix()
     private val mTmpMatrixInverse = Matrix()
     private val mTmpMatrixStart = Matrix()
@@ -92,7 +91,6 @@ class PaperCanvasView : View,
     private val mTransformHelper = TransformUtils()
 
     private val mTextDetector by lazy { FirebaseVision.getInstance().visionTextDetector }
-    private var mTextDetectorImage: FirebaseVisionImage? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -423,10 +421,7 @@ class PaperCanvasView : View,
 
         // Determine the default view-port (makes sense when view
         // layout is changed).
-        resetViewPort(canvasWidth,
-                      canvasHeight,
-                      mViewPortMax.width(),
-                      mViewPortMax.height())
+        resetViewPort()
 
         // Backed the canvas Bitmap.
         val mw = mMSize.width
@@ -767,55 +762,9 @@ class PaperCanvasView : View,
         return mDrawViewPortSignal
     }
 
-    // TODO: Duplicated to onUpdateViewPort()
-    fun setViewPortPosition(x: Float, y: Float) {
-        val mw = mMSize.width
-        val mh = mMSize.height
-
-        // Constraint view port
-        val minWidth = mViewPortMin.width()
-        val minHeight = mViewPortMin.height()
-        val maxWidth = mViewPortMax.width()
-        val maxHeight = mViewPortMax.height()
-        val bound = constraintViewPort(
-            RectF(x, y,
-                  x + mViewPort.width(),
-                  y + mViewPort.height()),
-            left = 0f,
-            top = 0f,
-            right = mw,
-            bottom = mh,
-            minWidth = minWidth,
-            minHeight = minHeight,
-            maxWidth = maxWidth,
-            maxHeight = maxHeight)
-
-        // After applying the constraint, calculate the matrix for anti-aliasing
-        // Bitmap
-        val scaleVp = mViewPortBase.width() / bound.width()
-        val vpDs = mViewPortStart.width() / bound.width()
-        val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
-        val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
-        mTmpMatrix.reset()
-        mTmpMatrix.postScale(vpDs, vpDs)
-        mTmpMatrix.postTranslate(vpDx, vpDy)
-        mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
-
-        mViewPort = bound
-
-        // Calculate the canvas matrix contributed by view-port boundary.
-        computeCanvasMatrix(mScaleM2V)
-
-        requestAntiAliasingDrawing()
-    }
-
-    private fun resetViewPort(mw: Float,
-                              mh: Float,
-                              defaultW: Float,
-                              defaultH: Float) {
-//        // Place the view port center in the model world.
-//        val viewPortX = (mw - defaultW) / 2
-//        val viewPortY = (mh - defaultH) / 2
+    private fun resetViewPort() {
+        val defaultW = mViewPortMax.width()
+        val defaultH = mViewPortMax.height()
 
         // Place the view port left in the model world.
         val viewPortX = 0f
