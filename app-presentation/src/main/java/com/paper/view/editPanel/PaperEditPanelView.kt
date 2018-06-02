@@ -35,6 +35,7 @@ import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
+import com.paper.view.canvas.ViewPortAction
 import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -148,7 +149,7 @@ class PaperEditPanelView : ConstraintLayout,
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
 
-    fun onUpdateViewPortPosition(): Observable<Point> {
+    fun onUpdateViewPortPosition(): Observable<ViewPortAction> {
         return mViewPortIndicatorView.onUpdateViewPortPosition()
     }
 

@@ -860,7 +860,7 @@ class PaperCanvasView : View,
         }
     }
 
-    private fun handleViewPortAction(action: ViewPortAction) {
+    fun handleViewPortAction(action: ViewPortAction) {
         when (action) {
             is ViewPortBeginUpdateAction -> {
                 // Hold necessary starting states.

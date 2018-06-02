@@ -151,9 +151,8 @@ class PaperEditorActivity : AppCompatActivity() {
         mDisposables.add(
             mEditPanelView
                 .onUpdateViewPortPosition()
-                .observeOn(mUiScheduler)
-                .subscribe { position ->
-                    mCanvasView.setViewPortPosition(position.x, position.y)
+                .subscribe { action ->
+                    mCanvasView.handleViewPortAction(action)
                 })
 
         // Undo & redo buttons
