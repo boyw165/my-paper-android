@@ -39,8 +39,6 @@ class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent
         val d = SimpleDisposable()
         observer.onSubscribe(d)
 
-        var sleepCount = 0
-
         for (stroke in mSketch) {
             if (d.isDisposed) break
 
@@ -56,15 +54,6 @@ class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent
                         penType = stroke.penType))
                     stroke.pointList.lastIndex -> observer.onNext(StopSketchEvent())
                     else -> observer.onNext(OnSketchEvent(point = pt))
-                }
-
-                try {
-                    if (++sleepCount == 64) {
-                        Thread.sleep(66)
-                        sleepCount = 0
-                    }
-                } catch (err: Throwable) {
-                    // IGNORE
                 }
             }
         }

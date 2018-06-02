@@ -23,7 +23,7 @@ package com.paper.model.repository.json
 import com.google.gson.*
 import com.paper.model.IPaper
 import com.paper.model.PaperAutoSaveImpl
-import com.paper.model.ScrapModel
+import com.paper.model.Scrap
 import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
 
@@ -43,7 +43,7 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
         root.add("sketch", sketchJson)
 
         val scrapJson = JsonArray()
-        src.getScraps().forEach { scrapJson.add(context.serialize(it, ScrapModel::class.java)) }
+        src.getScraps().forEach { scrapJson.add(context.serialize(it, Scrap::class.java)) }
         root.add("scraps", scrapJson)
 
         return root
@@ -65,7 +65,7 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
         if (root.has("scraps")) {
             root["scraps"].asJsonArray.forEach {
                 paperDetails.addScrap(context.deserialize(
-                    it, ScrapModel::class.java))
+                    it, Scrap::class.java))
             }
         }
 

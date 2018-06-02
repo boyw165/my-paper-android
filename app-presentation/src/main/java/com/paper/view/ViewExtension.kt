@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Paper-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,22 +20,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.view
 
-object ModelConst {
+import android.graphics.Canvas
 
-    const val TAG = "paper model"
+/**
+ * Process the given lambda in a session environment so that this operation
+ * won't contribute permanent change.
+ */
+inline fun<T> Canvas.with(lambda: (canvas: Canvas) -> T):T {
+    val count = save()
 
-    const val TEMP_ID = -1L
-    const val INVALID_ID = Long.MAX_VALUE
+    clipRect(0f, 0f, width.toFloat(), height.toFloat())
+    val ret = lambda(this)
 
-    const val MOST_TOP_Z = Long.MAX_VALUE
-    const val MOST_BOTTOM_Z = 0L
-    const val INVALID_Z = -2L
-
-    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
-    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
-    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
-
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
+    restoreToCount(count)
+    return ret
 }

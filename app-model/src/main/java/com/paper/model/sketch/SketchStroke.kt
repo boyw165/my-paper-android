@@ -20,6 +20,7 @@
 
 package com.paper.model.sketch
 
+import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
 
@@ -38,18 +39,40 @@ data class SketchStroke(
     private var mIsHashDirty = true
     private var mHashCode = 0
 
+    /**
+     * A stroke essentially is a list of points.
+     */
     private val mPointList = mutableListOf<Point>()
-
+    /**
+     * A stroke essentially is a list of points.
+     */
     val pointList: List<Point> get() = mPointList.toList()
 
+    /**
+     * The upright rectangle just covering all the points.
+     */
     private val mBound = Rect(java.lang.Float.MAX_VALUE,
                               java.lang.Float.MAX_VALUE,
                               java.lang.Float.MIN_VALUE,
                               java.lang.Float.MIN_VALUE)
+    /**
+     * The upright rectangle just covering all the points.
+     */
     val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
-    fun addPath(p: Point): SketchStroke {
+    /**
+     * The z-order, where the value should be greater than or equal to 0.
+     * @see [ModelConst.INVALID_Z]
+     */
+    var z = ModelConst.INVALID_Z
+        set(value) {
+            field = value
 
+            // Flag hash code dirty
+            mIsHashDirty = true
+        }
+
+    fun addPath(p: Point): SketchStroke {
         // Calculate new boundary.
         calculateBound(p.x, p.y)
 
@@ -79,11 +102,22 @@ data class SketchStroke(
         mPointList.forEach { p ->
             p.x += offsetX
             p.y += offsetY
+
+            calculateBound(p.x, p.y)
         }
 
         // Flag hash code dirty
         mIsHashDirty = true
     }
+
+    private fun calculateBound(x: Float, y: Float) {
+        mBound.left = Math.min(mBound.left, x)
+        mBound.top = Math.min(mBound.top, y)
+        mBound.right = Math.max(mBound.right, x)
+        mBound.bottom = Math.max(mBound.bottom, y)
+    }
+
+    // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -101,12 +135,11 @@ data class SketchStroke(
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = penColor
-            mHashCode = 31 * mHashCode + java.lang.Float.floatToIntBits(penSize)
+            mHashCode = z.hashCode()
+            mHashCode = 31 * mHashCode + penColor.hashCode()
+            mHashCode = 31 * mHashCode + penSize.hashCode()
             mHashCode = 31 * mHashCode + penType.hashCode()
-            mPointList.forEach { p ->
-                mHashCode = 31 * mHashCode + p.hashCode()
-            }
+            mHashCode = 31 * mHashCode + mPointList.hashCode()
 
             mIsHashDirty = false
         }
@@ -116,19 +149,10 @@ data class SketchStroke(
 
     override fun toString(): String {
         return "stroke{" +
+               "  z=" + z +
                ", penColor=" + penColor +
                ", penSize=" + penSize +
                ", pointList=" + mPointList +
                '}'
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
-
-    private fun calculateBound(x: Float, y: Float) {
-        mBound.left = Math.min(mBound.left, x)
-        mBound.top = Math.min(mBound.top, y)
-        mBound.right = Math.max(mBound.right, x)
-        mBound.bottom = Math.max(mBound.bottom, y)
     }
 }

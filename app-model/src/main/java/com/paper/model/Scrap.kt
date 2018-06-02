@@ -25,18 +25,25 @@ import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import java.util.*
 
-open class ScrapModel(
+open class Scrap(
     val uuid: UUID = UUID.randomUUID()) {
 
-    // X and y
+    private var mIsHashDirty = true
+    private var mHashCode = 0
+
     private val mSetXSignal = BehaviorSubject.createDefault(0f)
     private val mSetYSignal = BehaviorSubject.createDefault(0f)
+    /**
+     * The center x.
+     */
     var x: Float
         get() = mSetXSignal.value!!
-        set(value) = mSetXSignal.onNext(value)
-    var y: Float
-        get() = mSetYSignal.value!!
-        set(value) = mSetYSignal.onNext(value)
+        set(value) {
+            mSetXSignal.onNext(value)
+
+            // Flag hash code dirty
+            mIsHashDirty = true
+        }
     /**
      * Observe x update.
      */
@@ -44,16 +51,36 @@ open class ScrapModel(
         return mSetXSignal
     }
     /**
+     * The center y.
+     */
+    var y: Float
+        get() = mSetYSignal.value!!
+        set(value) {
+            mSetYSignal.onNext(value)
+
+            // Flag hash code dirty
+            mIsHashDirty = true
+        }
+    /**
      * Observe y update.
      */
     fun onSetY(): Observable<Float> {
         return mSetYSignal
     }
 
+    /**
+     * The z-order, where the value should be greater than or equal to 0.
+     * @see [ModelConst.INVALID_Z]
+     */
     var z: Long
         get() = mSetZSignal.value!!
-        set(value) = mSetZSignal.onNext(value)
-    private val mSetZSignal = BehaviorSubject.createDefault(0L)
+        set(value) {
+            mSetZSignal.onNext(value)
+
+            // Flag hash code dirty
+            mIsHashDirty = true
+        }
+    private val mSetZSignal = BehaviorSubject.createDefault(ModelConst.INVALID_Z)
     /**
      * Observe z order update.
      */
@@ -63,10 +90,20 @@ open class ScrapModel(
 
     var scale: Float
         get() = mSetScaleSignal.value!!
-        set(value) = mSetScaleSignal.onNext(value)
+        set(value) {
+            mSetScaleSignal.onNext(value)
+
+            // Flag hash code dirty
+            mIsHashDirty = true
+        }
     var rotationInRadians: Float
         get() = mSetRotationSignal.value!!
-        set(value) = mSetRotationSignal.onNext(value)
+        set(value) {
+            mSetRotationSignal.onNext(value)
+
+            // Flag hash code dirty
+            mIsHashDirty = true
+        }
     private val mSetScaleSignal = BehaviorSubject.createDefault(1f)
     private val mSetRotationSignal = BehaviorSubject.createDefault(0f)
 
@@ -90,4 +127,39 @@ open class ScrapModel(
     // Image //////////////////////////////////////////////////////////////////
 
     // TODO: Support image?
+
+    // Equality & Hash ////////////////////////////////////////////////////////
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Scrap
+
+        if (uuid != other.uuid) return false
+        if (mSetXSignal.value!! != other.mSetXSignal.value!!) return false
+        if (mSetYSignal.value!! != other.mSetYSignal.value!!) return false
+        if (mSetZSignal.value!! != other.mSetZSignal.value!!) return false
+        if (mSetScaleSignal.value!! != other.mSetScaleSignal.value!!) return false
+        if (mSetRotationSignal.value!! != other.mSetRotationSignal.value!!) return false
+        if (mSketch != other.mSketch) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        if (mIsHashDirty) {
+            mHashCode = uuid.hashCode()
+            mHashCode = 31 * mHashCode + mSetXSignal.value!!.hashCode()
+            mHashCode = 31 * mHashCode + mSetYSignal.value!!.hashCode()
+            mHashCode = 31 * mHashCode + mSetZSignal.value!!.hashCode()
+            mHashCode = 31 * mHashCode + mSetScaleSignal.value!!.hashCode()
+            mHashCode = 31 * mHashCode + mSetRotationSignal.value!!.hashCode()
+            mHashCode = 31 * mHashCode + mSketch.hashCode()
+
+            mIsHashDirty = false
+        }
+
+        return mHashCode
+    }
 }

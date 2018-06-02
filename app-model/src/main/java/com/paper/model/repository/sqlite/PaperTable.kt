@@ -21,8 +21,18 @@ object PaperTable {
     // Table names.
     const val TABLE_NAME: String = "paper"
 
+    /**
+     * The initial version with basic x, y, scale, rotation, sketch strokes,
+     * and scraps.
+     */
     internal const val TABLE_VERSION_CODE_10000_BETA = 1
+    /**
+     * Change STRING to TEXT.
+     */
     internal const val TABLE_VERSION_CODE_10001_BETA = 2
+    /**
+     * The SQLite database version.
+     */
     const val TABLE_VERSION_CODE = TABLE_VERSION_CODE_10001_BETA
 
     // Common.

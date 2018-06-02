@@ -45,6 +45,8 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         val pathTransJson = PathTranslator.toPath(src.pointList)
         root.addProperty("path", pathTransJson)
 
+        // Z index
+        root.addProperty("z", src.z)
 
         return root
     }
@@ -73,6 +75,11 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         val pathString = root.get("path").asString
         // Add pointPath to the stroke.
         model.addAllPath(PathTranslator.fromPath(pathString))
+
+        // Z index
+        if (root.has("z")) {
+            model.z = root["z"].asLong
+        }
 
         return model
     }

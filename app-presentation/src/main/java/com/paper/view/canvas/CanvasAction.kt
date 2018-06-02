@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Jun 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,22 +20,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.view.canvas
 
-object ModelConst {
+import android.graphics.RectF
 
-    const val TAG = "paper model"
+sealed class CanvasAction
 
-    const val TEMP_ID = -1L
-    const val INVALID_ID = Long.MAX_VALUE
+/**
+ * Null action
+ */
+class DummyCanvasAction : CanvasAction()
 
-    const val MOST_TOP_Z = Long.MAX_VALUE
-    const val MOST_BOTTOM_Z = 0L
-    const val INVALID_Z = -2L
+// View-port //////////////////////////////////////////////////////////////////
 
-    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
-    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
-    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
+/**
+ * The action representing the operation to view-port.
+ * @see [ViewPortBeginUpdateAction]
+ * @see [ViewPortOnUpdateAction]
+ * @see [ViewPortStopUpdateAction]
+ */
+abstract class ViewPortAction : CanvasAction()
 
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
-}
+/**
+ * A start signal indicating the view-port is about to update.
+ */
+class ViewPortBeginUpdateAction : ViewPortAction()
+
+/**
+ * A doing signal indicating the view-port is about to update.
+ *
+ * @param bound The desired boundary for the view-port.
+ */
+data class ViewPortOnUpdateAction(val bound: RectF) : ViewPortAction()
+
+/**
+ * A stop signal indicating the end of the view-port operation.
+ */
+class ViewPortStopUpdateAction : ViewPortAction()

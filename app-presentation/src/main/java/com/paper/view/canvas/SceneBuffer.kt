@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright May 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,10 +22,42 @@
 
 package com.paper.view.canvas
 
-/**
- * The parent View for the current [IScrapView].
- */
-interface IParentView {
+import android.graphics.Paint
 
-    fun invalidate()
+/**
+ *
+ */
+class SceneBuffer(bufferSize: Int,
+                  canvasWidth: Int,
+                  canvasHeight: Int,
+                  bitmapPaint: Paint,
+                  eraserPaint: Paint) {
+
+    // TODO: Use priority-queue
+    private val mScenes = Array(bufferSize, { _ ->
+        Scene(canvasWidth = canvasWidth,
+              canvasHeight = canvasHeight,
+              bitmapPaint = bitmapPaint,
+              eraserPaint = eraserPaint)
+    })
+    private var mCurrentScene: Scene = mScenes[0]
+
+    @Synchronized
+    fun getCurrentScene(): Scene {
+        return mCurrentScene
+    }
+
+    @Synchronized
+    fun setCurrentScene(scene: Scene) {
+        if (-1 == mScenes.indexOf(scene)) throw IllegalArgumentException("Invalid scene")
+
+        mCurrentScene = scene
+    }
+
+    @Synchronized
+    fun getEmptyScene(): Scene {
+        if (mScenes.size <= 1) throw NoSuchElementException("Can't find empty scene")
+
+        return mScenes.first { scene -> scene != mCurrentScene }
+    }
 }

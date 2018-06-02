@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,20 +20,8 @@
 
 package com.paper.model
 
-object ModelConst {
-
-    const val TAG = "paper model"
-
-    const val TEMP_ID = -1L
-    const val INVALID_ID = Long.MAX_VALUE
-
-    const val MOST_TOP_Z = Long.MAX_VALUE
-    const val MOST_BOTTOM_Z = 0L
-    const val INVALID_Z = -2L
-
-    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
-    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
-    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
-
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
-}
+data class Transform(var translationX: Float = 0f,
+                     var translationY: Float = 0f,
+                     var scaleX: Float = 1f,
+                     var scaleY: Float = 1f,
+                     var rotationInRadians: Float = 0f)

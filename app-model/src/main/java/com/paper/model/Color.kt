@@ -22,6 +22,7 @@ package com.paper.model
 
 object Color {
 
+    @JvmStatic
     fun parseColor(colorString: String): Int {
         if (colorString[0] == '#') {
             // Use a long to avoid rollovers on #ffXXXXXX

@@ -27,4 +27,24 @@ data class Rect(var left: Float = 0f,
 
     val width: Float get() = right - left
     val height: Float get() = bottom - top
+
+    fun set(other: Rect) {
+        left = other.left
+        top = other.top
+        right = other.right
+        bottom = other.bottom
+    }
+
+    fun set(left: Float,
+            top: Float,
+            right: Float,
+            bottom: Float) {
+        this.left = left
+        this.top = top
+        this.right = right
+        this.bottom = bottom
+    }
+
+    val isAreaEmpty: Boolean
+        get() = width == 0f || height == 0f
 }

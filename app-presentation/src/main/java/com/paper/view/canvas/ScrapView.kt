@@ -30,7 +30,7 @@ import com.paper.domain.event.*
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.Point
-import com.paper.model.TransformModel
+import com.paper.model.Transform
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import java.util.*
@@ -156,23 +156,9 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         computeMatrix()
 
         // Draw itself
-        if (ifSharpenDrawing) {
-            // Concatenate all the previous transform
-            mSharpeningMatrix.reset()
-            previousXforms.forEach { m ->
-                mSharpeningMatrix.preConcat(m)
-            }
-            mSharpeningMatrix.preConcat(mMatrix)
-            mSharpeningMatrix.invert(mSharpeningMatrixInverse)
-
-            mDrawables.forEach { d ->
-                d.onDraw(canvas, mSharpeningMatrix)
-            }
-        } else {
-            canvas.concat(mMatrix)
-            mDrawables.forEach { d ->
-                d.onDraw(canvas)
-            }
+        canvas.concat(mMatrix)
+        mDrawables.forEach { d ->
+            d.onDraw(canvas = canvas)
         }
 
         // Then children
@@ -227,7 +213,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         mParent?.invalidate()
     }
 
-    private fun onUpdateTransform(xform: TransformModel) {
+    private fun onUpdateTransform(xform: Transform) {
         mX = xform.translationX
         mY = xform.translationY
         mScale = xform.scaleX

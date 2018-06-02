@@ -60,8 +60,8 @@ data class Point(var x: Float = 0f,
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = if (x != +0.0f) java.lang.Float.floatToIntBits(x) else 0
-            mHashCode = 31 * mHashCode + if (y != +0.0f) java.lang.Float.floatToIntBits(y) else 0
+            mHashCode = x.hashCode()
+            mHashCode = 31 * mHashCode + y.hashCode()
 
             mIsHashDirty = false
         }

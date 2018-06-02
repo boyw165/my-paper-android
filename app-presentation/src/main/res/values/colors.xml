@@ -11,7 +11,7 @@
     <color name="navigationBarColor">@android:color/black</color>
 
     <!-- Paper palette -->
-    <color name="bg_editor_top_bar">#AAFFFFFF</color>
+    <color name="bg_editor_top_bar">#F2FFFFFF</color>
 
     <!-- Background -->
     <color name="bg_splash_screen">@color/windowBackground</color>

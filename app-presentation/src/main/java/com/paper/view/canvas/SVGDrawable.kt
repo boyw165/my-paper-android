@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -37,7 +39,6 @@ class SVGDrawable(context: IPaperContext,
 
     private var mConsumedPointCount = 0
     private val mStrokePoint = mutableListOf<Point>()
-    private val mStrokePointTransformed = mutableListOf<Point>()
     private val mStrokeWidth = mutableListOf<Float>()
     private val mStrokePaint = Paint()
 
@@ -78,7 +79,6 @@ class SVGDrawable(context: IPaperContext,
 
         mStrokePoint.clear()
         mStrokeWidth.clear()
-        mStrokePointTransformed.clear()
     }
 
     fun moveTo(point: Point) {
@@ -110,41 +110,33 @@ class SVGDrawable(context: IPaperContext,
     }
 
     /**
+     * Check if this Drawable still gets something not drew.
+     */
+    fun isSomethingToDraw(): Boolean {
+        val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
+        return newPoints.size > 0
+    }
+
+    /**
+     * Mark nothing need to be drew of the Drawable.
+     */
+    fun markAllDrew() {
+        mConsumedPointCount = mStrokePoint.size
+    }
+
+    /**
      * @return true if there is canvas update; false no canvas update.
      */
     fun onDraw(canvas: Canvas,
-               transform: Matrix? = null): Boolean {
-        val dirty: Boolean
-        if (transform != null) {
-            mStrokePointTransformed.forEachIndexed { i, point ->
-                mPointMap[0] = mStrokePoint[i].x
-                mPointMap[1] = mStrokePoint[i].y
-                transform.mapPoints(mPointMap)
-                point.x = mPointMap[0]
-                point.y = mPointMap[1]
-            }
+               startOver: Boolean = false) {
+        val startIndex = if (startOver) 0 else mConsumedPointCount
 
-            mStrokePointTransformed.forEachIndexed { i, point ->
-                mStrokePaint.strokeWidth = mStrokeWidth[i]
-                canvas.drawPoint(point.x, point.y, mStrokePaint)
-            }
-
-            dirty = true
-        } else {
-            // Only draw those points not consumed
-            val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
-            newPoints.forEachIndexed { i, point ->
-                mStrokePaint.strokeWidth = mStrokeWidth[i + mConsumedPointCount]
-                canvas.drawPoint(point.x, point.y, mStrokePaint)
-            }
-
-            dirty = newPoints.size > 0
-
-            // Update consumed number
-            mConsumedPointCount = mStrokePoint.size
+        // Only draw those points not consumed
+        val newPoints = mStrokePoint.subList(startIndex, mStrokePoint.size)
+        newPoints.forEachIndexed { i, point ->
+            mStrokePaint.strokeWidth = mStrokeWidth[i + startIndex]
+            canvas.drawPoint(point.x, point.y, mStrokePaint)
         }
-
-        return dirty
     }
 
     // Start of Bezier functions
@@ -188,6 +180,9 @@ class SVGDrawable(context: IPaperContext,
             val firstPoint = mCachedPoints[0]
             mCachedPoints.add(firstPoint)
         }
+
+        // Flag the hash code dirty
+        mIsHashDirty = true
     }
 
     private fun calculateCurveControlPoints(s1: Point, s2: Point, s3: Point): Pair<Point, Point> {
@@ -244,7 +239,6 @@ class SVGDrawable(context: IPaperContext,
             // Set the incremental stroke width and draw.
             mStrokeWidth.add(startWidth + ttt * widthDelta)
             mStrokePoint.add(Point(x, y))
-            mStrokePointTransformed.add(Point(x, y))
 
             i++
         }
@@ -274,15 +268,19 @@ class SVGDrawable(context: IPaperContext,
         return true
     }
 
-    override fun hashCode(): Int {
-        var result = mPenColor
-        result = 31 * result + mPenSize.hashCode()
-        result = 31 * result + mStrokeWidth.hashCode()
+    private var mIsHashDirty = false
+    private var mHashCode = 0
 
-        mStrokePoint.forEach { p ->
-            result = 31 * result + p.hashCode()
+    override fun hashCode(): Int {
+        if (mIsHashDirty) {
+            mHashCode = mPenColor.hashCode()
+            mHashCode = 31 * mHashCode + mPenSize.hashCode()
+            mHashCode = 31 * mHashCode + mStrokeWidth.hashCode()
+            mHashCode = 31 * mHashCode + mStrokePoint.hashCode()
+
+            mIsHashDirty = true
         }
 
-        return result
+        return mHashCode
     }
 }

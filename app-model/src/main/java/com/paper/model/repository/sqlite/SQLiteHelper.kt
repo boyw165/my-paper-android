@@ -24,7 +24,7 @@ class SQLiteHelper(context: Context,
                    dbHelperListener: DbHelperListener)
     : SQLiteOpenHelper(context, name, null, version) {
 
-    val listener: DbHelperListener = dbHelperListener
+    private val listener: DbHelperListener = dbHelperListener
 
     override fun onCreate(db: SQLiteDatabase) {
         // DO NOT MODIFY

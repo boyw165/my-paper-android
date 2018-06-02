@@ -73,7 +73,7 @@ class PaperRepoSqliteImpl(authority: String,
                                  PaperJSONTranslator())
             .registerTypeAdapter(SketchStroke::class.java,
                                  SketchStrokeJSONTranslator())
-            .registerTypeAdapter(ScrapModel::class.java,
+            .registerTypeAdapter(Scrap::class.java,
                                  ScrapJSONTranslator())
             .create()
     }

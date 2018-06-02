@@ -146,13 +146,13 @@ class ViewPortIndicatorView : View,
         mSetViewPort.onNext(true)
     }
 
-    private val mUpdatePositionSignal = PublishSubject.create<Point>()
+    private val mUpdatePositionSignal = PublishSubject.create<ViewPortAction>()
 
     /**
      * The view recognizes DRAG gesture and will signal new position of
      * view-port.
      */
-    fun onUpdateViewPortPosition(): Observable<Point> {
+    fun onUpdateViewPortPosition(): Observable<ViewPortAction> {
         return mUpdatePositionSignal
     }
 
@@ -235,6 +235,8 @@ class ViewPortIndicatorView : View,
                              target: Any?,
                              context: Any?) {
         mViewPortBoundStart.set(mViewPortBound)
+
+        mUpdatePositionSignal.onNext(ViewPortBeginUpdateAction())
     }
 
     override fun onDrag(event: MyMotionEvent,
@@ -247,7 +249,11 @@ class ViewPortIndicatorView : View,
         val x = mViewPortBoundStart.left + dx
         val y = mViewPortBoundStart.top + dy
 
-        mUpdatePositionSignal.onNext(Point(x, y))
+        mUpdatePositionSignal.onNext(
+            ViewPortOnUpdateAction(
+                bound = RectF(x, y,
+                              x + mViewPortBound.width(),
+                              y + mViewPortBound.height())))
     }
 
     override fun onDragFling(event: MyMotionEvent,
@@ -265,6 +271,6 @@ class ViewPortIndicatorView : View,
                            context: Any?,
                            startPointer: PointF,
                            stopPointer: PointF) {
-        // DO NOTHING.
+        mUpdatePositionSignal.onNext(ViewPortStopUpdateAction())
     }
 }

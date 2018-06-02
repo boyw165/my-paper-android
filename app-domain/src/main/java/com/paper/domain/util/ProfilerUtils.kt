@@ -1,7 +1,4 @@
-// Copyright (c) 2017-present CardinalBlue
-//
-// Author: jack.huang@cardinalblue.com
-//         boy@cardinalblue.com
+// Copyright (c) 2017-present boyw165
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,37 +18,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper
+package com.paper.domain.util
 
-import android.support.v7.app.AppCompatActivity
-import android.view.View
-import com.jakewharton.rxbinding2.view.RxView
-import com.paper.view.canvas.DrawableView
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.Subject
+object ProfilerUtils {
 
-class ExampleOfConvexHullActivity : AppCompatActivity() {
+    ///////////////////////////////////////////////////////////////////////////
+    // Protected / Private Methods ////////////////////////////////////////////
 
-    // View.
-    private val mBtnBack: View by lazy { findViewById<View>(R.id.btn_close) }
-    private val mBtnRandom: View by lazy { findViewById<View>(R.id.btn_random) }
-    private val mDotCanvas: DrawableView by lazy { findViewById<View>(R.id.canvas) as DrawableView }
+    private val profiler: IProfiler
+        get() = SingletonHelper.INSTANCE
 
-    // Subjects.
-    private val mOnClickSystemBack: Subject<Any> = PublishSubject.create()
-
-    override fun onBackPressed() {
-        mOnClickSystemBack.onNext(0)
+    @JvmStatic
+    fun startProfiling() {
+        profiler.startProfiling()
     }
 
-    private fun onClickBack(): Observable<Any> {
-        return Observable.merge(
-            mOnClickSystemBack,
-            RxView.clicks(mBtnBack))
+    @JvmStatic
+    fun stopProfiling(): Float {
+        return profiler.stopProfilingAndCalculateInterval()
     }
 
-    private fun exit() {
-        finish()
+    ///////////////////////////////////////////////////////////////////////////
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    internal object SingletonHelper {
+        val INSTANCE = NanoSecondsProfilerImpl()
     }
 }
