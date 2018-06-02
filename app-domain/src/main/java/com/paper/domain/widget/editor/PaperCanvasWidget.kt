@@ -312,10 +312,10 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     // Gesture ////////////////////////////////////////////////////////////////
 
-    override fun handleActionBegin() {
+    override fun handleTouchBegin() {
     }
 
-    override fun handleActionEnd() {
+    override fun handleTouchEnd() {
         // Brutally stop the drawing filter.
         mCancelDrawingSignal.onNext(0)
     }

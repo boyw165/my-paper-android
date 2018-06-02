@@ -144,7 +144,7 @@ class PaperEditPanelView : ConstraintLayout,
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
 
     fun setCanvasAndViewPort(canvas: Rect,
-                                      viewPort: Rect) {
+                             viewPort: Rect) {
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
 

@@ -32,9 +32,9 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
     // For input //////////////////////////////////////////////////////////////
     // TODO: How to define the inbox?
 
-    fun handleActionBegin()
+    fun handleTouchBegin()
 
-    fun handleActionEnd()
+    fun handleTouchEnd()
 
     fun handleTap(x: Float, y: Float)
 

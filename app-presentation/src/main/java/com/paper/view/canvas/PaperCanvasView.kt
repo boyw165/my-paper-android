@@ -219,6 +219,7 @@ class PaperCanvasView : View,
         mDisposables.add(
             GestureEventObservable(mGestureDetector)
                 .compose(handleTouchEvent())
+                .compose(handleCanvasAction())
                 .subscribe())
 
         // Debug
@@ -771,37 +772,36 @@ class PaperCanvasView : View,
         val mw = mMSize.width
         val mh = mMSize.height
 
-        mTmpBound.set(x, y,
-                      x + mViewPort.width(),
-                      y + mViewPort.height())
-
         // Constraint view port
         val minWidth = mViewPortMin.width()
         val minHeight = mViewPortMin.height()
         val maxWidth = mViewPortMax.width()
         val maxHeight = mViewPortMax.height()
-        constraintViewPort(mTmpBound,
-                           left = 0f,
-                           top = 0f,
-                           right = mw,
-                           bottom = mh,
-                           minWidth = minWidth,
-                           minHeight = minHeight,
-                           maxWidth = maxWidth,
-                           maxHeight = maxHeight)
+        val bound = constraintViewPort(
+            RectF(x, y,
+                  x + mViewPort.width(),
+                  y + mViewPort.height()),
+            left = 0f,
+            top = 0f,
+            right = mw,
+            bottom = mh,
+            minWidth = minWidth,
+            minHeight = minHeight,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight)
 
         // After applying the constraint, calculate the matrix for anti-aliasing
         // Bitmap
-        val scaleVp = mViewPortBase.width() / mTmpBound.width()
-        val vpDs = mViewPortStart.width() / mTmpBound.width()
-        val vpDx = (mViewPortStart.left - mTmpBound.left) * mScaleM2V * scaleVp
-        val vpDy = (mViewPortStart.top - mTmpBound.top) * mScaleM2V * scaleVp
+        val scaleVp = mViewPortBase.width() / bound.width()
+        val vpDs = mViewPortStart.width() / bound.width()
+        val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
+        val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
         mTmpMatrix.reset()
         mTmpMatrix.postScale(vpDs, vpDs)
         mTmpMatrix.postTranslate(vpDx, vpDy)
         mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
 
-        mViewPort = mTmpBound
+        mViewPort = bound
 
         // Calculate the canvas matrix contributed by view-port boundary.
         computeCanvasMatrix(mScaleM2V)
@@ -860,21 +860,61 @@ class PaperCanvasView : View,
         }
     }
 
-    private fun startUpdateViewport() {
-        // Hold necessary starting states.
-        mTmpMatrixStart.set(mCanvasMatrix)
-        mViewPortStart.set(mViewPort)
+    private fun handleViewPortAction(action: ViewPortAction) {
+        when (action) {
+            is ViewPortBeginUpdateAction -> {
+                // Hold necessary starting states.
+                mTmpMatrixStart.set(mCanvasMatrix)
+                mViewPortStart.set(mViewPort)
 
-        cancelAntiAliasingDrawing()
+                cancelAntiAliasingDrawing()
+            }
+            is ViewPortOnUpdateAction -> {
+                val bound = constraintViewPort(
+                    action.bound,
+                    left = 0f,
+                    top = 0f,
+                    right = mMSize.width,
+                    bottom = mMSize.height,
+                    minWidth = mViewPortMin.width(),
+                    minHeight = mViewPortMin.height(),
+                    maxWidth = mViewPortMax.width(),
+                    maxHeight = mViewPortMax.height())
+
+                // After applying the constraint, calculate the matrix for anti-aliasing
+                // Bitmap
+                val scaleVp = mViewPortBase.width() / bound.width()
+                val vpDs = mViewPortStart.width() / bound.width()
+                val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
+                val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
+                mTmpMatrix.reset()
+                mTmpMatrix.postScale(vpDs, vpDs)
+                mTmpMatrix.postTranslate(vpDx, vpDy)
+                mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
+
+                // Apply final view port boundary
+                mViewPort = bound
+
+                // Calculate the canvas matrix contributed by view-port boundary.
+                computeCanvasMatrix(mScaleM2V)
+
+                cancelAntiAliasingDrawing()
+            }
+            is ViewPortStopUpdateAction -> {
+                mTmpMatrixStart.reset()
+                mTmpMatrix.reset()
+                mTmpMatrixInverse.reset()
+
+                mSceneBuffer.getCurrentScene().commitNewTransform()
+
+                requestAntiAliasingDrawing()
+            }
+        }
     }
 
     // TODO: Make the view-port code a component.
-    private fun onUpdateViewport(startPointers: Array<PointF>,
-                                 stopPointers: Array<PointF>) {
-        val mw = mMSize.width
-        val mh = mMSize.height
-        val scaleM2V = mScaleM2V
-
+    private fun calculateViewPortBound(startPointers: Array<PointF>,
+                                       stopPointers: Array<PointF>): RectF {
         // Compute new canvas matrix.
         val transform = TransformUtils.getTransformFromPointers(
             startPointers, stopPointers)
@@ -900,55 +940,12 @@ class PaperCanvasView : View,
         val tx = mTransformHelper.translationX
         val ty = mTransformHelper.translationY
         val s = mTransformHelper.scaleX
-        val vx = -tx / s / scaleM2V
-        val vy = -ty / s / scaleM2V
+        val vx = -tx / s / mScaleM2V
+        val vy = -ty / s / mScaleM2V
         val vw = mViewPortMax.width() / s
         val vh = mViewPortMax.height() / s
-        mTmpBound.set(vx, vy, vx + vw, vy + vh)
 
-        // Constraint view port
-        val minWidth = mViewPortMin.width()
-        val minHeight = mViewPortMin.height()
-        val maxWidth = mViewPortMax.width()
-        val maxHeight = mViewPortMax.height()
-        constraintViewPort(mTmpBound,
-                           left = 0f,
-                           top = 0f,
-                           right = mw,
-                           bottom = mh,
-                           minWidth = minWidth,
-                           minHeight = minHeight,
-                           maxWidth = maxWidth,
-                           maxHeight = maxHeight)
-
-        // After applying the constraint, calculate the matrix for anti-aliasing
-        // Bitmap
-        val scaleVp = mViewPortBase.width() / mTmpBound.width()
-        val vpDs = mViewPortStart.width() / mTmpBound.width()
-        val vpDx = (mViewPortStart.left - mTmpBound.left) * scaleM2V * scaleVp
-        val vpDy = (mViewPortStart.top - mTmpBound.top) * scaleM2V * scaleVp
-        mTmpMatrix.reset()
-        mTmpMatrix.postScale(vpDs, vpDs)
-        mTmpMatrix.postTranslate(vpDx, vpDy)
-        mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
-
-        // Apply final view port boundary
-        mViewPort = mTmpBound
-
-        // Calculate the canvas matrix contributed by view-port boundary.
-        computeCanvasMatrix(mScaleM2V)
-
-        cancelAntiAliasingDrawing()
-    }
-
-    private fun stopUpdateViewport() {
-        mTmpMatrixStart.reset()
-        mTmpMatrix.reset()
-        mTmpMatrixInverse.reset()
-
-        mSceneBuffer.getCurrentScene().commitNewTransform()
-
-        requestAntiAliasingDrawing()
+        return RectF(vx, vy, vx + vw, vy + vh)
     }
 
     private fun constraintViewPort(viewPort: RectF,
@@ -959,45 +956,49 @@ class PaperCanvasView : View,
                                    minWidth: Float,
                                    minHeight: Float,
                                    maxWidth: Float,
-                                   maxHeight: Float) {
+                                   maxHeight: Float): RectF {
+        val bound = RectF(viewPort)
+
         // In width...
-        if (viewPort.width() < minWidth) {
-            val cx = viewPort.centerX()
-            viewPort.left = cx - minWidth / 2f
-            viewPort.right = cx + minWidth / 2f
-        } else if (viewPort.width() > maxWidth) {
-            val cx = viewPort.centerX()
-            viewPort.left = cx - maxWidth / 2f
-            viewPort.right = cx + maxWidth / 2f
+        if (bound.width() < minWidth) {
+            val cx = bound.centerX()
+            bound.left = cx - minWidth / 2f
+            bound.right = cx + minWidth / 2f
+        } else if (bound.width() > maxWidth) {
+            val cx = bound.centerX()
+            bound.left = cx - maxWidth / 2f
+            bound.right = cx + maxWidth / 2f
         }
         // In height...
-        if (viewPort.height() < minHeight) {
-            val cy = viewPort.centerY()
-            viewPort.top = cy - minHeight / 2f
-            viewPort.bottom = cy + minHeight / 2f
-        } else if (viewPort.height() > maxHeight) {
-            val cy = viewPort.centerY()
-            viewPort.top = cy - maxHeight / 2f
-            viewPort.bottom = cy + maxHeight / 2f
+        if (bound.height() < minHeight) {
+            val cy = bound.centerY()
+            bound.top = cy - minHeight / 2f
+            bound.bottom = cy + minHeight / 2f
+        } else if (bound.height() > maxHeight) {
+            val cy = bound.centerY()
+            bound.top = cy - maxHeight / 2f
+            bound.bottom = cy + maxHeight / 2f
         }
         // In x...
-        val viewPortWidth = viewPort.width()
-        if (viewPort.left < left) {
-            viewPort.left = left
-            viewPort.right = viewPort.left + viewPortWidth
-        } else if (viewPort.right > right) {
-            viewPort.right = right
-            viewPort.left = viewPort.right - viewPortWidth
+        val viewPortWidth = bound.width()
+        if (bound.left < left) {
+            bound.left = left
+            bound.right = bound.left + viewPortWidth
+        } else if (bound.right > right) {
+            bound.right = right
+            bound.left = bound.right - viewPortWidth
         }
         // In y...
-        val viewPortHeight = viewPort.height()
-        if (viewPort.top < top) {
-            viewPort.top = top
-            viewPort.bottom = viewPort.top + viewPortHeight
-        } else if (viewPort.bottom > bottom) {
-            viewPort.bottom = bottom
-            viewPort.top = viewPort.bottom - viewPortHeight
+        val viewPortHeight = bound.height()
+        if (bound.top < top) {
+            bound.top = top
+            bound.bottom = bound.top + viewPortHeight
+        } else if (bound.bottom > bottom) {
+            bound.bottom = bottom
+            bound.top = bound.bottom - viewPortHeight
         }
+
+        return bound
     }
 
     /**
@@ -1045,14 +1046,12 @@ class PaperCanvasView : View,
     private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
 
     private val mGestureDetector by lazy {
-        val detector = GestureDetector(Looper.getMainLooper(),
-                                       ViewConfiguration.get(context),
-                                       mTouchSlop,
-                                       mTapSlop,
-                                       mMinFlingVec,
-                                       mMaxFlingVec)
-
-        return@lazy detector
+        GestureDetector(Looper.getMainLooper(),
+                        ViewConfiguration.get(context),
+                        mTouchSlop,
+                        mTapSlop,
+                        mMinFlingVec,
+                        mMaxFlingVec)
     }
     private var mIfHandleAction = false
     private var mIfHandleDrag = false
@@ -1079,75 +1078,144 @@ class PaperCanvasView : View,
         }
     }
 
-    // TODO: To some action
-    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, Boolean> {
+    /**
+     * Convert the [GestureEvent] to [CanvasAction].
+     */
+    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, CanvasAction> {
         return ObservableTransformer { upstream ->
-            upstream.map { event ->
-                when (event) {
-                    is TouchBeginEvent -> {
-                        mGestureHistory.clear()
-                        mWidget.handleActionBegin()
-                    }
-                    is TouchEndEvent -> {
-                        mWidget.handleActionEnd()
-                    }
-                    is TapEvent -> {
-                        mGestureHistory.add(GestureRecord.TAP)
+            upstream
+                .map { event ->
+                    when (event) {
+                        is TouchBeginEvent,
+                        is TouchEndEvent -> handleTouchLifecycleEvent(event)
 
-                        val (nx, ny) = toModelWorld(event.downX,
-                                                    event.downY)
-                        mWidget.handleTap(nx, ny)
-                    }
-                    is DragBeginEvent -> {
-                        mGestureHistory.add(GestureRecord.DRAG)
+                        is TapEvent -> handleTapEvent(event)
 
-                        mIfHandleDrag = mGestureHistory.indexOf(GestureRecord.PINCH) == -1
-                        // If there is NO PINCH in the history, do drag; Otherwise,
-                        // do view port transform.
-                        if (mIfHandleDrag) {
-                            val (nx, ny) = toModelWorld(event.startPointer.x,
-                                                        event.startPointer.y)
-                            mWidget.handleDragBegin(nx, ny)
-                        } else {
-                            startUpdateViewport()
-                        }
-                    }
-                    is OnDragEvent -> {
-                        // If there is NO PINCH in the history, do drag; Otherwise,
-                        // do view port transform.
-                        if (mIfHandleDrag) {
-                            val (nx, ny) = toModelWorld(event.stopPointer.x,
-                                                        event.stopPointer.y)
-                            mWidget.handleDrag(nx, ny)
-                        } else {
-                            onUpdateViewport(Array(2, { _ -> event.startPointer }),
-                                             Array(2, { _ -> event.stopPointer }))
-                        }
-                    }
-                    is DragEndEvent -> {
-                        // If there is NO PINCH in the history, do drag;
-                        // Otherwise, do view port transform.
-                        if (mIfHandleDrag) {
-                            val (nx, ny) = toModelWorld(event.stopPointer.x,
-                                                        event.stopPointer.y)
-                            mWidget.handleDragEnd(nx, ny)
-                        } else {
-                            stopUpdateViewport()
-                        }
-                    }
-                    is PinchBeginEvent -> {
-                        mGestureHistory.add(GestureRecord.PINCH)
-                        startUpdateViewport()
-                    }
-                    is OnPinchEvent -> {
-                        onUpdateViewport(event.startPointers,
-                                         event.stopPointers)
-                    }
-                    is PinchEndEvent -> {
-                        stopUpdateViewport()
+                        is DragBeginEvent,
+                        is OnDragEvent,
+                        is DragEndEvent -> handleDragEvent(event)
+
+                        is PinchBeginEvent,
+                        is OnPinchEvent,
+                        is PinchEndEvent -> handlePinchEvent(event)
+
+                        else -> DummyCanvasAction()
                     }
                 }
-                true
+        }
+    }
+
+    /**
+     * Consume the [CanvasAction].
+     */
+    private fun handleCanvasAction(): ObservableTransformer<in CanvasAction, out Unit> {
+        return ObservableTransformer { upstream ->
+            upstream
+                .map { event ->
+                    when (event) {
+                        is ViewPortAction -> handleViewPortAction(event)
+                        else -> Unit
+                    }
+                }
+        }
+    }
+
+    private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasAction {
+        when (event) {
+            is TouchBeginEvent -> {
+                mGestureHistory.clear()
+                mWidget.handleTouchBegin()
+            }
+            is TouchEndEvent -> {
+                mWidget.handleTouchEnd()
+            }
+        }
+
+        // Null action
+        return DummyCanvasAction()
+    }
+
+    private fun handleTapEvent(event: TapEvent): CanvasAction {
+        mGestureHistory.add(GestureRecord.TAP)
+
+        val (nx, ny) = toModelWorld(event.downX,
+                                    event.downY)
+        mWidget.handleTap(nx, ny)
+
+        // Null action
+        return DummyCanvasAction()
+    }
+
+    private fun handleDragEvent(event: GestureEvent): CanvasAction {
+        if (event is DragBeginEvent) {
+            mGestureHistory.add(GestureRecord.DRAG)
+
+            // If there is NO PINCH in the history, do drag;
+            // Otherwise, do view port transform.
+            mIfHandleDrag = mGestureHistory.indexOf(GestureRecord.PINCH) == -1
+        }
+
+        return if (mIfHandleDrag) {
+            when (event) {
+                is DragBeginEvent -> {
+                    val (nx, ny) = toModelWorld(event.startPointer.x,
+                                                event.startPointer.y)
+                    mWidget.handleDragBegin(nx, ny)
+                }
+                is OnDragEvent -> {
+                    val (nx, ny) = toModelWorld(event.stopPointer.x,
+                                                event.stopPointer.y)
+                    mWidget.handleDrag(nx, ny)
+                }
+                is DragEndEvent -> {
+                    val (nx, ny) = toModelWorld(event.stopPointer.x,
+                                                event.stopPointer.y)
+                    mWidget.handleDragEnd(nx, ny)
+                }
+            }
+
+            // Null action
+            DummyCanvasAction()
+        } else {
+            when (event) {
+                is DragBeginEvent -> {
+                    ViewPortBeginUpdateAction()
+                }
+                is OnDragEvent -> {
+                    ViewPortOnUpdateAction(
+                        calculateViewPortBound(
+                            startPointers = Array(2, { _ -> event.startPointer }),
+                            stopPointers = Array(2, { _ -> event.stopPointer })))
+                }
+                is DragEndEvent -> {
+                    ViewPortStopUpdateAction()
+                }
+                else -> {
+                    // Null action
+                    DummyCanvasAction()
+                }
+            }
+        }
+    }
+
+    private fun handlePinchEvent(event: GestureEvent): CanvasAction {
+        return when (event) {
+            is PinchBeginEvent -> {
+                mGestureHistory.add(GestureRecord.PINCH)
+                ViewPortBeginUpdateAction()
+            }
+            is OnPinchEvent -> {
+                ViewPortOnUpdateAction(
+                    calculateViewPortBound(
+                        startPointers = event.startPointers,
+                        stopPointers = event.stopPointers))
+            }
+            is PinchEndEvent -> {
+                ViewPortStopUpdateAction()
+            }
+            else -> {
+                // Null action
+                DummyCanvasAction()
             }
         }
     }
