@@ -125,21 +125,18 @@ class PaperCanvasView : View,
                                 "size is ${size.width} x ${size.height}")
 
                         // Mark it not ready for interacting with user.
-                        mReadySignal.onNext(false)
+                        mDrawReadySignal.onNext(false)
 
-                        onUpdateLayoutOrCanvas(size.width,
-                                               size.height)
+                        onUpdateLayoutOrCanvas(size.width, size.height)
 
                         // Mark it ready!
-                        mReadySignal.onNext(true)
-
-                        invalidate()
+                        mDrawReadySignal.onNext(true)
                     }
                 })
 
         // Drawing
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
@@ -153,7 +150,7 @@ class PaperCanvasView : View,
                     onDrawSVG(event)
                 })
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         onSaveBitmap()
@@ -168,7 +165,7 @@ class PaperCanvasView : View,
 
         // Anti-aliasing drawing
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         onAntiAliasingDraw()
@@ -185,7 +182,7 @@ class PaperCanvasView : View,
 
         // Add or remove scraps
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         widget.onAddScrapWidget()
@@ -199,7 +196,7 @@ class PaperCanvasView : View,
                     addScrap(scrapWidget)
                 })
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         widget.onRemoveScrapWidget()
@@ -216,7 +213,18 @@ class PaperCanvasView : View,
         // Touch
         mDisposables.add(
             GestureEventObservable(mGestureDetector)
+                .filter { event ->
+                    if (event is TouchBeginEvent) {
+//                        mIfHandleTouch = mDrawReadySignal.value!! &&
+//                                         mInteractionReadySignal.value!!
+                        mIfHandleTouch = mDrawReadySignal.value!!
+                    }
+
+                    mIfHandleTouch
+                }
+                // Consume the [GestureEvent] and produce [CanvasAction]
                 .compose(handleTouchEvent())
+                // Consume the [CanvasAction]
                 .compose(handleCanvasAction())
                 .subscribe())
 
@@ -226,6 +234,16 @@ class PaperCanvasView : View,
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                })
+        mDisposables.add(
+            mDrawReadySignal
+                .subscribe { drawReady ->
+                    println("${AppConst.TAG}: Draw ready=$drawReady")
+                })
+        mDisposables.add(
+            mInteractionReadySignal
+                .subscribe { interactionReady ->
+                    println("${AppConst.TAG}: Interaction ready=$interactionReady")
                 })
     }
 
@@ -285,10 +303,15 @@ class PaperCanvasView : View,
     private val mRenderingScheduler = SingleScheduler()
 
     /**
-     * A signal indicating whether it's ready to interact with the user. see
-     * [onUpdateLayoutOrCanvas].
+     * A signal indicating whether it's ready to render. see [onUpdateLayoutOrCanvas].
      */
-    private val mReadySignal = BehaviorSubject.create<Boolean>()
+    private val mDrawReadySignal = BehaviorSubject.createDefault(false)
+
+    /**
+     * A signal indicating whether it's ready to interact with the user. see
+     * [onDrawSVG].
+     */
+    private val mInteractionReadySignal = BehaviorSubject.createDefault(false)
 
     /**
      * A signal of updating the canvas hash and Bitmap.
@@ -482,7 +505,7 @@ class PaperCanvasView : View,
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (!isAllSet) return
+        if (!mDrawReadySignal.value!!) return
 
         // Scale from model to view.
         val scaleM2V = mScaleM2V
@@ -566,9 +589,6 @@ class PaperCanvasView : View,
             }
             is ClearAllSketchEvent -> {
                 mStrokeDrawables.clear()
-            }
-            else -> {
-                // NOT SUPPORT
             }
         }
 
@@ -662,7 +682,6 @@ class PaperCanvasView : View,
             // TEST: text recognition
             .observeOn(Schedulers.computation())
             .doOnNext { (_, bmp) ->
-                println("${AppConst.TAG}: Ready to feed Bitmap to text detector")
                 val image = FirebaseVisionImage.fromBitmap(bmp)
                 mTextDetector.detectInImage(image)
                     .addOnSuccessListener { visionText ->
@@ -686,11 +705,9 @@ class PaperCanvasView : View,
                             }
                             builder.append("]")
                         }
-                        println("${AppConst.TAG}: successful => $builder")
                         Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener { err ->
-                        println("${AppConst.TAG}: failed => $err")
                         Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
                     }
             }
@@ -993,7 +1010,6 @@ class PaperCanvasView : View,
     private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
     private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
     private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
-
     private val mGestureDetector by lazy {
         GestureDetector(Looper.getMainLooper(),
                         ViewConfiguration.get(context),
@@ -1002,29 +1018,12 @@ class PaperCanvasView : View,
                         mMinFlingVec,
                         mMaxFlingVec)
     }
-    private var mIfHandleAction = false
+    private var mIfHandleTouch = false
     private var mIfHandleDrag = false
     private val mGestureHistory = mutableListOf<GestureRecord>()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Interpret the event iff scale, canvas size is ready at ACTION_DOWN.
-        val action = event.actionMasked
-        if (action == MotionEvent.ACTION_DOWN) {
-            mIfHandleAction = isAllSet
-        }
-
-        return if (mIfHandleAction) {
-            val handled = mGestureDetector.onTouchEvent(event, this, null)
-
-            if (action == MotionEvent.ACTION_UP ||
-                action == MotionEvent.ACTION_CANCEL) {
-                mIfHandleAction = false
-            }
-
-            handled
-        } else {
-            false
-        }
+        return mGestureDetector.onTouchEvent(event, this, null)
     }
 
     /**
@@ -1219,10 +1218,6 @@ class PaperCanvasView : View,
         if (mDisposables.size() > 0) throw IllegalStateException(
             "Already bind to a widget")
     }
-
-    private val isAllSet
-        get() = mScaleM2V != Float.NaN &&
-                (mMSize.width > 0f && mMSize.height > 0f)
 
     private fun drawBackground(canvas: Canvas,
                                vw: Float,
