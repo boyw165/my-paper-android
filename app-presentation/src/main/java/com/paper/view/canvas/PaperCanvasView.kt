@@ -309,7 +309,7 @@ class PaperCanvasView : View,
 
     /**
      * A signal indicating whether it's ready to interact with the user. see
-     * [onDrawSVG].
+     * [handleDrawSVGEvent].
      */
     private val mInteractionReadySignal = BehaviorSubject.createDefault(false)
 

@@ -21,7 +21,7 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.data.DrawingMode
-import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.CanvasEvent
 import com.paper.model.IPaper
 import com.paper.model.Rect
 import io.reactivex.Observable
@@ -67,7 +67,7 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun onRemoveScrapWidget(): Observable<IScrapWidget>
 
-    fun onDrawSVG(replayAll: Boolean = true): Observable<DrawSVGEvent>
+    fun onDrawSVG(replayAll: Boolean = true): Observable<CanvasEvent>
 
     fun onPrintDebugMessage(): Observable<String>
 }

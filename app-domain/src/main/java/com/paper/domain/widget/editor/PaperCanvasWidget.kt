@@ -22,7 +22,7 @@ package com.paper.domain.widget.editor
 
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.data.GestureRecord
-import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.CanvasEvent
 import com.paper.domain.event.OnSketchEvent
 import com.paper.domain.event.StartSketchEvent
 import com.paper.domain.event.StopSketchEvent
@@ -188,7 +188,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     /**
      * The signal for the external world to know this widget wants to draw SVG.
      */
-    private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
+    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>()
     /**
      * The current stroke color.
      */
@@ -293,7 +293,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         return mSetCanvasSize
     }
 
-    override fun onDrawSVG(replayAll: Boolean): Observable<DrawSVGEvent> {
+    override fun onDrawSVG(replayAll: Boolean): Observable<CanvasEvent> {
         return if (hasModelBinding()) {
             if (replayAll) {
                 Observable

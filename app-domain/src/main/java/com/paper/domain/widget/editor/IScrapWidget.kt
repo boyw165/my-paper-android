@@ -20,7 +20,7 @@
 
 package com.paper.domain.widget.editor
 
-import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.CanvasEvent
 import com.paper.model.Scrap
 import com.paper.model.Transform
 import io.reactivex.Observable
@@ -36,7 +36,7 @@ interface IScrapWidget: IWidget<Scrap> {
 
     fun getId(): UUID
 
-    fun onDrawSVG(): Observable<DrawSVGEvent>
+    fun onDrawSVG(): Observable<CanvasEvent>
 
     fun onTransform(): Observable<Transform>
 }

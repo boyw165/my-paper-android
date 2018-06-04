@@ -22,22 +22,21 @@
 
 package com.paper.domain.useCase
 
-import com.paper.domain.event.DrawSVGEvent
-import com.paper.domain.event.OnSketchEvent
-import com.paper.domain.event.StartSketchEvent
-import com.paper.domain.event.StopSketchEvent
+import com.paper.domain.event.*
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 
-class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent>() {
+class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<CanvasEvent>() {
 
     private val mSketch = sketch.toList()
 
-    override fun subscribeActual(observer: Observer<in DrawSVGEvent>) {
+    override fun subscribeActual(observer: Observer<in CanvasEvent>) {
         val d = SimpleDisposable()
         observer.onSubscribe(d)
+
+        observer.onNext(InitializationBeginEvent())
 
         for (stroke in mSketch) {
             if (d.isDisposed) break
@@ -57,6 +56,8 @@ class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent
                 }
             }
         }
+
+        observer.onNext(InitializationEndEvent())
     }
 
     ///////////////////////////////////////////////////////////////////////////

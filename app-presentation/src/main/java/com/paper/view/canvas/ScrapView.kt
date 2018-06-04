@@ -173,7 +173,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         canvas.restoreToCount(count)
     }
 
-    private fun onDrawSVG(event: DrawSVGEvent) {
+    private fun onDrawSVG(event: CanvasEvent) {
 
         when (event) {
             is StartSketchEvent -> {
