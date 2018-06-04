@@ -212,20 +212,22 @@ class PaperCanvasView : View,
 
         // Touch
         mDisposables.add(
-            GestureEventObservable(mGestureDetector)
-                .filter { event ->
-                    if (event is TouchBeginEvent) {
-//                        mIfHandleTouch = mDrawReadySignal.value!! &&
-//                                         mInteractionReadySignal.value!!
-                        mIfHandleTouch = mDrawReadySignal.value!!
+            Observables
+                .combineLatest(
+                    mDrawReadySignal,
+                    mInteractionReadySignal)
+                .observeOn(AndroidSchedulers.mainThread())
+                .switchMap { (drawReady, interactionReady) ->
+                    if (drawReady && interactionReady) {
+                        GestureEventObservable(mGestureDetector)
+                            // Consume the [GestureEvent] and produce [CanvasAction]
+                            .compose(handleTouchEvent())
+                            // Consume the [CanvasAction]
+                            .compose(handleCanvasAction())
+                    } else {
+                        Observable.never()
                     }
-
-                    mIfHandleTouch
                 }
-                // Consume the [GestureEvent] and produce [CanvasAction]
-                .compose(handleTouchEvent())
-                // Consume the [CanvasAction]
-                .compose(handleCanvasAction())
                 .subscribe())
 
         // Debug
