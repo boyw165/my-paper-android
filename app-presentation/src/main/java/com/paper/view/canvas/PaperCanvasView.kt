@@ -232,10 +232,10 @@ class PaperCanvasView : View,
                 .switchMap { (drawReady, interactionReady) ->
                     if (drawReady && interactionReady) {
                         GestureEventObservable(mGestureDetector)
-                            // Consume the [GestureEvent] and produce [CanvasAction]
+                            // Consume the [GestureEvent] and produce [CanvasEvent]
                             .compose(handleTouchEvent())
-                            // Consume the [CanvasAction]
-                            .compose(handleCanvasAction())
+                            // Consume the [CanvasEvent]
+                            .compose(handleCanvasEvent())
                     } else {
                         Observable.never()
                     }
@@ -842,18 +842,18 @@ class PaperCanvasView : View,
         }
     }
 
-    fun handleViewPortAction(action: ViewPortAction) {
-        when (action) {
-            is ViewPortBeginUpdateAction -> {
+    fun handleViewPortEvent(event: ViewPortEvent) {
+        when (event) {
+            is ViewPortBeginUpdateEvent -> {
                 // Hold necessary starting states.
                 mTmpMatrixStart.set(mCanvasMatrix)
                 mViewPortStart.set(mViewPort)
 
                 cancelAntiAliasingDrawing()
             }
-            is ViewPortOnUpdateAction -> {
+            is ViewPortOnUpdateEvent -> {
                 val bound = constraintViewPort(
-                    action.bound,
+                    event.bound,
                     left = 0f,
                     top = 0f,
                     right = mMSize.width,
@@ -882,7 +882,7 @@ class PaperCanvasView : View,
 
                 cancelAntiAliasingDrawing()
             }
-            is ViewPortStopUpdateAction -> {
+            is ViewPortStopUpdateEvent -> {
                 mTmpMatrixStart.reset()
                 mTmpMatrix.reset()
                 mTmpMatrixInverse.reset()
@@ -1046,9 +1046,9 @@ class PaperCanvasView : View,
     }
 
     /**
-     * Convert the [GestureEvent] to [CanvasAction].
+     * Convert the [GestureEvent] to [CanvasEvent].
      */
-    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, CanvasAction> {
+    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, CanvasEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 .map { event ->
@@ -1066,28 +1066,28 @@ class PaperCanvasView : View,
                         is OnPinchEvent,
                         is PinchEndEvent -> handlePinchEvent(event)
 
-                        else -> DummyCanvasAction()
+                        else -> NullCanvasEvent()
                     }
                 }
         }
     }
 
     /**
-     * Consume the [CanvasAction].
+     * Consume the [CanvasEvent].
      */
-    private fun handleCanvasAction(): ObservableTransformer<in CanvasAction, out Unit> {
+    private fun handleCanvasEvent(): ObservableTransformer<in CanvasEvent, out Unit> {
         return ObservableTransformer { upstream ->
             upstream
                 .map { event ->
                     when (event) {
-                        is ViewPortAction -> handleViewPortAction(event)
+                        is ViewPortEvent -> handleViewPortEvent(event)
                         else -> Unit
                     }
                 }
         }
     }
 
-    private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasAction {
+    private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasEvent {
         when (event) {
             is TouchBeginEvent -> {
                 mGestureHistory.clear()
@@ -1099,10 +1099,10 @@ class PaperCanvasView : View,
         }
 
         // Null action
-        return DummyCanvasAction()
+        return NullCanvasEvent()
     }
 
-    private fun handleTapEvent(event: TapEvent): CanvasAction {
+    private fun handleTapEvent(event: TapEvent): CanvasEvent {
         mGestureHistory.add(GestureRecord.TAP)
 
         val (nx, ny) = toModelWorld(event.downX,
@@ -1110,10 +1110,10 @@ class PaperCanvasView : View,
         mWidget.handleTap(nx, ny)
 
         // Null action
-        return DummyCanvasAction()
+        return NullCanvasEvent()
     }
 
-    private fun handleDragEvent(event: GestureEvent): CanvasAction {
+    private fun handleDragEvent(event: GestureEvent): CanvasEvent {
         if (event is DragBeginEvent) {
             mGestureHistory.add(GestureRecord.DRAG)
 
@@ -1142,47 +1142,47 @@ class PaperCanvasView : View,
             }
 
             // Null action
-            DummyCanvasAction()
+            NullCanvasEvent()
         } else {
             when (event) {
                 is DragBeginEvent -> {
-                    ViewPortBeginUpdateAction()
+                    ViewPortBeginUpdateEvent()
                 }
                 is OnDragEvent -> {
-                    ViewPortOnUpdateAction(
+                    ViewPortOnUpdateEvent(
                         calculateViewPortBound(
                             startPointers = Array(2, { _ -> event.startPointer }),
                             stopPointers = Array(2, { _ -> event.stopPointer })))
                 }
                 is DragEndEvent -> {
-                    ViewPortStopUpdateAction()
+                    ViewPortStopUpdateEvent()
                 }
                 else -> {
                     // Null action
-                    DummyCanvasAction()
+                    NullCanvasEvent()
                 }
             }
         }
     }
 
-    private fun handlePinchEvent(event: GestureEvent): CanvasAction {
+    private fun handlePinchEvent(event: GestureEvent): CanvasEvent {
         return when (event) {
             is PinchBeginEvent -> {
                 mGestureHistory.add(GestureRecord.PINCH)
-                ViewPortBeginUpdateAction()
+                ViewPortBeginUpdateEvent()
             }
             is OnPinchEvent -> {
-                ViewPortOnUpdateAction(
+                ViewPortOnUpdateEvent(
                     calculateViewPortBound(
                         startPointers = event.startPointers,
                         stopPointers = event.stopPointers))
             }
             is PinchEndEvent -> {
-                ViewPortStopUpdateAction()
+                ViewPortStopUpdateEvent()
             }
             else -> {
                 // Null action
-                DummyCanvasAction()
+                NullCanvasEvent()
             }
         }
     }

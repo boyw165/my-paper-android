@@ -34,6 +34,10 @@ import com.cardinalblue.gesture.GesturePolicy
 import com.cardinalblue.gesture.IDragGestureListener
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.R
+import com.paper.domain.event.ViewPortEvent
+import com.paper.domain.event.ViewPortBeginUpdateEvent
+import com.paper.domain.event.ViewPortOnUpdateEvent
+import com.paper.domain.event.ViewPortStopUpdateEvent
 import com.paper.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -145,13 +149,13 @@ class ViewPortIndicatorView : View,
         mSetViewPort.onNext(true)
     }
 
-    private val mUpdatePositionSignal = PublishSubject.create<ViewPortAction>()
+    private val mUpdatePositionSignal = PublishSubject.create<ViewPortEvent>()
 
     /**
      * The view recognizes DRAG gesture and will signal new position of
      * view-port.
      */
-    fun onUpdateViewPortPosition(): Observable<ViewPortAction> {
+    fun onUpdateViewPortPosition(): Observable<ViewPortEvent> {
         return mUpdatePositionSignal
     }
 
@@ -235,7 +239,7 @@ class ViewPortIndicatorView : View,
                              context: Any?) {
         mViewPortBoundStart.set(mViewPortBound)
 
-        mUpdatePositionSignal.onNext(ViewPortBeginUpdateAction())
+        mUpdatePositionSignal.onNext(ViewPortBeginUpdateEvent())
     }
 
     override fun onDrag(event: MyMotionEvent,
@@ -249,7 +253,7 @@ class ViewPortIndicatorView : View,
         val y = mViewPortBoundStart.top + dy
 
         mUpdatePositionSignal.onNext(
-            ViewPortOnUpdateAction(
+            ViewPortOnUpdateEvent(
                 bound = Rect(x, y,
                              x + mViewPortBound.width,
                              y + mViewPortBound.height)))
@@ -270,6 +274,6 @@ class ViewPortIndicatorView : View,
                            context: Any?,
                            startPointer: PointF,
                            stopPointer: PointF) {
-        mUpdatePositionSignal.onNext(ViewPortStopUpdateAction())
+        mUpdatePositionSignal.onNext(ViewPortStopUpdateEvent())
     }
 }

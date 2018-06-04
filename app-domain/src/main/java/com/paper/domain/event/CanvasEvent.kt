@@ -21,12 +21,20 @@
 package com.paper.domain.event
 
 import com.paper.model.Point
+import com.paper.model.Rect
 import com.paper.model.sketch.PenType
 
 /**
  * Any operation relevant to the canvas.
  */
 sealed class CanvasEvent
+
+/**
+ * Null event means do nothing with it.
+ */
+class NullCanvasEvent : CanvasEvent()
+
+// Drawing ////////////////////////////////////////////////////////////////////
 
 /**
  * A start signal of drawing.
@@ -58,3 +66,30 @@ class StopSketchEvent : CanvasEvent()
  * A event to clear all the cached sketch.
  */
 class ClearAllSketchEvent : CanvasEvent()
+
+// View-port //////////////////////////////////////////////////////////////////
+
+/**
+ * The action representing the operation to view-port.
+ * @see [ViewPortBeginUpdateEvent]
+ * @see [ViewPortOnUpdateEvent]
+ * @see [ViewPortStopUpdateEvent]
+ */
+abstract class ViewPortEvent : CanvasEvent()
+
+/**
+ * A start signal indicating the view-port is about to update.
+ */
+class ViewPortBeginUpdateEvent : ViewPortEvent()
+
+/**
+ * A doing signal indicating the view-port is about to update.
+ *
+ * @param bound The desired boundary for the view-port.
+ */
+data class ViewPortOnUpdateEvent(val bound: Rect) : ViewPortEvent()
+
+/**
+ * A stop signal indicating the end of the view-port operation.
+ */
+class ViewPortStopUpdateEvent : ViewPortEvent()
