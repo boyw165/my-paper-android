@@ -755,7 +755,7 @@ class PaperCanvasView : View,
     /**
      * The view-port boundary in the model world.
      */
-    private var mViewPort = RectF()
+    private var mViewPort = Rect()
         set(value) {
             field.set(value)
 
@@ -772,20 +772,20 @@ class PaperCanvasView : View,
             invalidate()
         }
 
-    private val mViewPortStart = RectF()
+    private val mViewPortStart = Rect()
     /**
      * Minimum size of [mViewPort].
      */
-    private val mViewPortMin = RectF()
+    private val mViewPortMin = Rect()
     /**
      * Maximum size of [mViewPort].
      */
-    private val mViewPortMax = RectF()
+    private val mViewPortMax = Rect()
     /**
      * The initial view port size that is used to compute the scale factor from
      * Model to View, which is [mScaleM2V].
      */
-    private val mViewPortBase = RectF()
+    private val mViewPortBase = Rect()
     /**
      * The signal for external observers.
      */
@@ -796,15 +796,15 @@ class PaperCanvasView : View,
     }
 
     private fun resetViewPort() {
-        val defaultW = mViewPortMax.width()
-        val defaultH = mViewPortMax.height()
+        val defaultW = mViewPortMax.width
+        val defaultH = mViewPortMax.height
 
         // Place the view port left in the model world.
         val viewPortX = 0f
         val viewPortY = 0f
-        mViewPort = RectF(viewPortX, viewPortY,
-                          viewPortX + defaultW,
-                          viewPortY + defaultH)
+        mViewPort = Rect(viewPortX, viewPortY,
+                         viewPortX + defaultW,
+                         viewPortY + defaultH)
     }
 
     /**
@@ -819,8 +819,8 @@ class PaperCanvasView : View,
             // View port y
             val vy = mViewPort.top
             // View port width
-            val vw = mViewPort.width()
-            val scaleVP = mViewPortBase.width() / vw
+            val vw = mViewPort.width
+            val scaleVP = mViewPortBase.width / vw
 
             mCanvasMatrix.reset()
             //        canvas width
@@ -858,15 +858,15 @@ class PaperCanvasView : View,
                     top = 0f,
                     right = mMSize.width,
                     bottom = mMSize.height,
-                    minWidth = mViewPortMin.width(),
-                    minHeight = mViewPortMin.height(),
-                    maxWidth = mViewPortMax.width(),
-                    maxHeight = mViewPortMax.height())
+                    minWidth = mViewPortMin.width,
+                    minHeight = mViewPortMin.height,
+                    maxWidth = mViewPortMax.width,
+                    maxHeight = mViewPortMax.height)
 
                 // After applying the constraint, calculate the matrix for anti-aliasing
                 // Bitmap
-                val scaleVp = mViewPortBase.width() / bound.width()
-                val vpDs = mViewPortStart.width() / bound.width()
+                val scaleVp = mViewPortBase.width / bound.width
+                val vpDs = mViewPortStart.width / bound.width
                 val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
                 val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
                 mTmpMatrix.reset()
@@ -896,7 +896,7 @@ class PaperCanvasView : View,
 
     // TODO: Make the view-port code a component.
     private fun calculateViewPortBound(startPointers: Array<PointF>,
-                                       stopPointers: Array<PointF>): RectF {
+                                       stopPointers: Array<PointF>): Rect {
         // Compute new canvas matrix.
         val transform = TransformUtils.getTransformFromPointers(
             startPointers, stopPointers)
@@ -924,13 +924,13 @@ class PaperCanvasView : View,
         val s = mTransformHelper.scaleX
         val vx = -tx / s / mScaleM2V
         val vy = -ty / s / mScaleM2V
-        val vw = mViewPortMax.width() / s
-        val vh = mViewPortMax.height() / s
+        val vw = mViewPortMax.width / s
+        val vh = mViewPortMax.height / s
 
-        return RectF(vx, vy, vx + vw, vy + vh)
+        return Rect(vx, vy, vx + vw, vy + vh)
     }
 
-    private fun constraintViewPort(viewPort: RectF,
+    private fun constraintViewPort(viewPort: Rect,
                                    left: Float,
                                    top: Float,
                                    right: Float,
@@ -938,31 +938,34 @@ class PaperCanvasView : View,
                                    minWidth: Float,
                                    minHeight: Float,
                                    maxWidth: Float,
-                                   maxHeight: Float): RectF {
-        val bound = RectF(viewPort)
+                                   maxHeight: Float): Rect {
+        val bound = Rect(left = viewPort.left,
+                         top = viewPort.top,
+                         right = viewPort.right,
+                         bottom = viewPort.bottom)
 
         // In width...
-        if (bound.width() < minWidth) {
-            val cx = bound.centerX()
+        if (bound.width < minWidth) {
+            val cx = bound.centerX
             bound.left = cx - minWidth / 2f
             bound.right = cx + minWidth / 2f
-        } else if (bound.width() > maxWidth) {
-            val cx = bound.centerX()
+        } else if (bound.width > maxWidth) {
+            val cx = bound.centerX
             bound.left = cx - maxWidth / 2f
             bound.right = cx + maxWidth / 2f
         }
         // In height...
-        if (bound.height() < minHeight) {
-            val cy = bound.centerY()
+        if (bound.height < minHeight) {
+            val cy = bound.centerY
             bound.top = cy - minHeight / 2f
             bound.bottom = cy + minHeight / 2f
-        } else if (bound.height() > maxHeight) {
-            val cy = bound.centerY()
+        } else if (bound.height > maxHeight) {
+            val cy = bound.centerY
             bound.top = cy - maxHeight / 2f
             bound.bottom = cy + maxHeight / 2f
         }
         // In x...
-        val viewPortWidth = bound.width()
+        val viewPortWidth = bound.width
         if (bound.left < left) {
             bound.left = left
             bound.right = bound.left + viewPortWidth
@@ -971,7 +974,7 @@ class PaperCanvasView : View,
             bound.left = bound.right - viewPortWidth
         }
         // In y...
-        val viewPortHeight = bound.height()
+        val viewPortHeight = bound.height
         if (bound.top < top) {
             bound.top = top
             bound.bottom = bound.top + viewPortHeight
@@ -1258,8 +1261,8 @@ class PaperCanvasView : View,
         //       vpW - baseW
         // a = --------------
         //      minW - baseW
-        val alpha = (mViewPort.width() - mViewPortBase.width()) /
-                    (mViewPortMin.width() - mViewPortBase.width())
+        val alpha = (mViewPort.width - mViewPortBase.width) /
+                    (mViewPortMin.width - mViewPortBase.width)
         mGridPaint.alpha = (alpha * 0xFF).toInt()
 
         // Cross

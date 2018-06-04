@@ -22,7 +22,7 @@
 
 package com.paper.view.canvas
 
-import android.graphics.RectF
+import com.paper.model.Rect
 
 sealed class CanvasAction
 
@@ -51,7 +51,7 @@ class ViewPortBeginUpdateAction : ViewPortAction()
  *
  * @param bound The desired boundary for the view-port.
  */
-data class ViewPortOnUpdateAction(val bound: RectF) : ViewPortAction()
+data class ViewPortOnUpdateAction(val bound: Rect) : ViewPortAction()
 
 /**
  * A stop signal indicating the end of the view-port operation.
