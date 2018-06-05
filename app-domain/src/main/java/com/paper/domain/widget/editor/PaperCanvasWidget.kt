@@ -22,10 +22,7 @@ package com.paper.domain.widget.editor
 
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.data.GestureRecord
-import com.paper.domain.event.CanvasEvent
-import com.paper.domain.event.OnSketchEvent
-import com.paper.domain.event.StartSketchEvent
-import com.paper.domain.event.StopSketchEvent
+import com.paper.domain.event.*
 import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.IPaper
 import com.paper.model.Point
@@ -300,8 +297,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     .merge(
                         mDrawSVGSignal,
                         // For the first time subscription, send events one by one!
-                        TranslateSketchToSVG(mModel!!.getSketch())
-                            .subscribeOn(mWorkerScheduler))
+                        TranslateSketchToSVG(mModel!!.getSketch()))
+                    .startWith(ClearAllSketchEvent())
             } else {
                 mDrawSVGSignal
             }

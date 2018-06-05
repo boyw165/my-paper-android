@@ -140,7 +140,6 @@ class PaperCanvasView : View,
                 .switchMap { ready ->
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
-                            .startWith(ClearAllSketchEvent())
                             .compose(handleDrawSVGEvent())
                             // View invalidation
                             .observeOn(AndroidSchedulers.mainThread())
