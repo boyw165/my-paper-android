@@ -28,9 +28,13 @@ import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 
-class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<CanvasEvent>() {
+/**
+ * Produce a reactive stream of strokes enclosing by a [InitializationBeginEvent]
+ * and [InitializationEndEvent].
+ */
+class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent>() {
 
-    private val mSketch = sketch.toList()
+    private val mStrokes = strokes.toList()
 
     override fun subscribeActual(observer: Observer<in CanvasEvent>) {
         val d = SimpleDisposable()
@@ -38,7 +42,7 @@ class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<CanvasEvent>
 
         observer.onNext(InitializationBeginEvent())
 
-        for (stroke in mSketch) {
+        for (stroke in mStrokes) {
             if (d.isDisposed) break
 
             val points = stroke.pointList

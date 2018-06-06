@@ -149,7 +149,7 @@ class PaperEditPanelView : ConstraintLayout,
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
 
-    fun onUpdateViewPortPosition(): Observable<ViewPortEvent> {
+    fun onUpdateViewPortPosition(): Observable<CanvasEvent> {
         return mViewPortIndicatorView.onUpdateViewPortPosition()
     }
 

@@ -34,10 +34,7 @@ import com.cardinalblue.gesture.GesturePolicy
 import com.cardinalblue.gesture.IDragGestureListener
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.R
-import com.paper.domain.event.ViewPortEvent
-import com.paper.domain.event.ViewPortBeginUpdateEvent
-import com.paper.domain.event.ViewPortOnUpdateEvent
-import com.paper.domain.event.ViewPortStopUpdateEvent
+import com.paper.domain.event.*
 import com.paper.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -149,13 +146,13 @@ class ViewPortIndicatorView : View,
         mSetViewPort.onNext(true)
     }
 
-    private val mUpdatePositionSignal = PublishSubject.create<ViewPortEvent>()
+    private val mUpdatePositionSignal = PublishSubject.create<CanvasEvent>()
 
     /**
      * The view recognizes DRAG gesture and will signal new position of
      * view-port.
      */
-    fun onUpdateViewPortPosition(): Observable<ViewPortEvent> {
+    fun onUpdateViewPortPosition(): Observable<CanvasEvent> {
         return mUpdatePositionSignal
     }
 
