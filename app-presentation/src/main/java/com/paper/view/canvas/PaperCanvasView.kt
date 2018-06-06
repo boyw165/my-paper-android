@@ -230,9 +230,12 @@ class PaperCanvasView : View,
                 .observeOn(AndroidSchedulers.mainThread())
                 .switchMap { (drawReady, interactionReady) ->
                     if (drawReady && interactionReady) {
-                        GestureEventObservable(mGestureDetector)
-                            // Consume the [GestureEvent] and produce [CanvasEvent]
-                            .compose(handleTouchEvent())
+                        Observable.merge(
+                            GestureEventObservable(mGestureDetector)
+                                // Consume the [GestureEvent] and produce [CanvasEvent]
+                                .compose(handleTouchEvent()),
+                            // Other canvas event sources
+                            Observable.merge(mCanvasEventSources))
                             // Consume the [CanvasEvent]
                             .compose(handleCanvasEvent())
                     } else {
@@ -841,7 +844,7 @@ class PaperCanvasView : View,
         }
     }
 
-    fun handleViewPortEvent(event: ViewPortEvent) {
+    private fun handleViewPortEvent(event: ViewPortEvent) {
         when (event) {
             is ViewPortBeginUpdateEvent -> {
                 // Hold necessary starting states.
@@ -1069,6 +1072,15 @@ class PaperCanvasView : View,
                     }
                 }
         }
+    }
+
+    private val mCanvasEventSources = mutableListOf<Observable<CanvasEvent>>()
+
+    /**
+     * For [CanvasEvent] external sources.
+     */
+    fun addCanvasEventSource(source: Observable<CanvasEvent>) {
+        mCanvasEventSources.add(source)
     }
 
     /**
