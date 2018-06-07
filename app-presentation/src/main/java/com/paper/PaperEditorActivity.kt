@@ -29,9 +29,9 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.IBitmapRepoProvider
 import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.IPaperTransformRepoProvider
-import com.paper.model.ISharedPreferenceService
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.editor.PaperEditorWidget
+import com.paper.model.ISharedPreferenceService
 import com.paper.model.ModelConst
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.useCase.BindViewWithWidget
@@ -104,6 +104,8 @@ class PaperEditorActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_paper_editor)
 
+        mCanvasView.addCanvasEventSource(mEditPanelView.onUpdateViewPortPosition())
+
         // Progress
         mDisposables.add(
             mWidget.onUpdateProgress()
@@ -147,12 +149,6 @@ class PaperEditorActivity : AppCompatActivity() {
                     mEditPanelView.setCanvasAndViewPort(
                         event.canvas,
                         event.viewPort)
-                })
-        mDisposables.add(
-            mEditPanelView
-                .onUpdateViewPortPosition()
-                .subscribe { action ->
-                    mCanvasView.handleViewPortAction(action)
                 })
 
         // Undo & redo buttons

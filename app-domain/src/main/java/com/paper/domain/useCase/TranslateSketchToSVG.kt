@@ -22,24 +22,28 @@
 
 package com.paper.domain.useCase
 
-import com.paper.domain.event.DrawSVGEvent
-import com.paper.domain.event.OnSketchEvent
-import com.paper.domain.event.StartSketchEvent
-import com.paper.domain.event.StopSketchEvent
+import com.paper.domain.event.*
 import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
 
-class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent>() {
+/**
+ * Produce a reactive stream of strokes enclosing by a [InitializationBeginEvent]
+ * and [InitializationEndEvent].
+ */
+class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent>() {
 
-    private val mSketch = sketch.toList()
+    private val mStrokes = strokes.toList()
 
-    override fun subscribeActual(observer: Observer<in DrawSVGEvent>) {
+    override fun subscribeActual(observer: Observer<in CanvasEvent>) {
         val d = SimpleDisposable()
         observer.onSubscribe(d)
 
-        for (stroke in mSketch) {
+        observer.onNext(InitializationBeginEvent())
+        observer.onNext(ClearAllSketchEvent())
+
+        for (stroke in mStrokes) {
             if (d.isDisposed) break
 
             val points = stroke.pointList
@@ -52,11 +56,16 @@ class TranslateSketchToSVG(sketch: List<SketchStroke>) : Observable<DrawSVGEvent
                         penColor = stroke.penColor,
                         penSize = stroke.penSize,
                         penType = stroke.penType))
-                    stroke.pointList.lastIndex -> observer.onNext(StopSketchEvent())
+                    stroke.pointList.lastIndex -> {
+                        observer.onNext(OnSketchEvent(point = pt))
+                        observer.onNext(StopSketchEvent())
+                    }
                     else -> observer.onNext(OnSketchEvent(point = pt))
                 }
             }
         }
+
+        observer.onNext(InitializationEndEvent())
     }
 
     ///////////////////////////////////////////////////////////////////////////

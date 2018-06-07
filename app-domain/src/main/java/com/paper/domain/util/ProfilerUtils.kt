@@ -20,10 +20,9 @@
 
 package com.paper.domain.util
 
-object ProfilerUtils {
+import com.paper.domain.DomainConst
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
+object ProfilerUtils {
 
     private val profiler: IProfiler
         get() = SingletonHelper.INSTANCE
@@ -38,8 +37,14 @@ object ProfilerUtils {
         return profiler.stopProfilingAndCalculateInterval()
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Clazz //////////////////////////////////////////////////////////////////
+    @JvmStatic
+    fun with(msg: String, lambda: () -> Unit) {
+        startProfiling()
+        lambda()
+        val time = stopProfiling()
+
+        println("${DomainConst.TAG}: $msg... took $time ms")
+    }
 
     internal object SingletonHelper {
         val INSTANCE = NanoSecondsProfilerImpl()

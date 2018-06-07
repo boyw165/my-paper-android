@@ -27,6 +27,8 @@ data class Rect(var left: Float = 0f,
 
     val width: Float get() = right - left
     val height: Float get() = bottom - top
+    val centerX: Float get() = (left + right) / 2f
+    val centerY: Float get() = (top + bottom) / 2f
 
     fun set(other: Rect) {
         left = other.left

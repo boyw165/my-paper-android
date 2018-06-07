@@ -44,6 +44,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.SingleSubject
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -470,11 +471,15 @@ class PaperRepoSqliteImpl(authority: String,
     }
 
     override fun getBitmap(key: Int): Single<Bitmap> {
-        val file = mBitmapMap[key] ?: return Single.never()
+        val file = mBitmapMap[key] ?: File(mFileDir, "$key.png")
 
         return Single
                 .fromCallable {
-                    BitmapFactory.decodeFile(file.absolutePath)
+                    if (file.exists()) {
+                        BitmapFactory.decodeFile(file.absolutePath)
+                    } else {
+                        throw FileNotFoundException("cannot find the Bitmap")
+                    }
                 }
                 .subscribeOn(mDbIoScheduler)
     }

@@ -31,8 +31,6 @@ import android.view.ViewConfiguration
 import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.rx.*
-import com.google.firebase.ml.vision.FirebaseVision
-import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.paper.AppConst
 import com.paper.R
 import com.paper.domain.DomainConst
@@ -54,10 +52,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.rxkotlin.Observables
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.lang.NullPointerException
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -90,7 +88,7 @@ class PaperCanvasView : View,
      */
     private val mTransformHelper = TransformUtils()
 
-    private val mTextDetector by lazy { FirebaseVision.getInstance().visionTextDetector }
+//    private val mTextDetector by lazy { FirebaseVision.getInstance().visionTextDetector }
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -125,35 +123,29 @@ class PaperCanvasView : View,
                                 "size is ${size.width} x ${size.height}")
 
                         // Mark it not ready for interacting with user.
-                        mReadySignal.onNext(false)
+                        mDrawReadySignal.onNext(false)
 
-                        onUpdateLayoutOrCanvas(size.width,
-                                               size.height)
+                        onUpdateLayoutOrCanvas(size.width, size.height)
 
                         // Mark it ready!
-                        mReadySignal.onNext(true)
-
-                        invalidate()
+                        mDrawReadySignal.onNext(true)
                     }
                 })
 
         // Drawing
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
-                            .startWith(ClearAllSketchEvent())
+                            .compose(handleDrawSVGEvent())
                     } else {
                         Observable.never()
                     }
                 }
-                .observeOn(mRenderingScheduler)
-                .subscribe { event ->
-                    onDrawSVG(event)
-                })
+                .subscribe())
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         onSaveBitmap()
@@ -168,7 +160,7 @@ class PaperCanvasView : View,
 
         // Anti-aliasing drawing
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         onAntiAliasingDraw()
@@ -185,7 +177,7 @@ class PaperCanvasView : View,
 
         // Add or remove scraps
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         widget.onAddScrapWidget()
@@ -199,7 +191,7 @@ class PaperCanvasView : View,
                     addScrap(scrapWidget)
                 })
         mDisposables.add(
-            mReadySignal
+            mDrawReadySignal
                 .switchMap { ready ->
                     if (ready) {
                         widget.onRemoveScrapWidget()
@@ -215,9 +207,25 @@ class PaperCanvasView : View,
 
         // Touch
         mDisposables.add(
-            GestureEventObservable(mGestureDetector)
-                .compose(handleTouchEvent())
-                .compose(handleCanvasAction())
+            Observables
+                .combineLatest(
+                    mDrawReadySignal,
+                    mInteractionReadySignal)
+                .observeOn(AndroidSchedulers.mainThread())
+                .switchMap { (drawReady, interactionReady) ->
+                    if (drawReady && interactionReady) {
+                        Observable.merge(
+                            GestureEventObservable(mGestureDetector)
+                                // Consume the [GestureEvent] and produce [CanvasEvent]
+                                .compose(handleTouchEvent()),
+                            // Other canvas event sources
+                            Observable.merge(mCanvasEventSources))
+                            // Consume the [CanvasEvent]
+                            .compose(handleCanvasEvent())
+                    } else {
+                        Observable.never()
+                    }
+                }
                 .subscribe())
 
         // Debug
@@ -226,6 +234,16 @@ class PaperCanvasView : View,
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                })
+        mDisposables.add(
+            mDrawReadySignal
+                .subscribe { drawReady ->
+                    println("${AppConst.TAG}: Draw ready=$drawReady")
+                })
+        mDisposables.add(
+            mInteractionReadySignal
+                .subscribe { interactionReady ->
+                    println("${AppConst.TAG}: Interaction ready=$interactionReady")
                 })
     }
 
@@ -285,10 +303,15 @@ class PaperCanvasView : View,
     private val mRenderingScheduler = SingleScheduler()
 
     /**
-     * A signal indicating whether it's ready to interact with the user. see
-     * [onUpdateLayoutOrCanvas].
+     * A signal indicating whether it's ready to render. see [onUpdateLayoutOrCanvas].
      */
-    private val mReadySignal = BehaviorSubject.create<Boolean>()
+    private val mDrawReadySignal = BehaviorSubject.createDefault(false)
+
+    /**
+     * A signal indicating whether it's ready to interact with the user. see
+     * [handleDrawSVGEvent].
+     */
+    private val mInteractionReadySignal = BehaviorSubject.createDefault(false)
 
     /**
      * A signal of updating the canvas hash and Bitmap.
@@ -423,7 +446,9 @@ class PaperCanvasView : View,
         // layout is changed).
         resetViewPort()
 
-        // Backed the canvas Bitmap.
+        // Bitmap layers:
+
+        // The thumbnail layer
         val mw = mMSize.width
         val mh = mMSize.height
         val vw = scaleM2V * mw
@@ -436,12 +461,14 @@ class PaperCanvasView : View,
         mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
         mThumbCanvas = Canvas(mThumbBitmap)
 
+        // The view-port layer
         mSceneBuffer = SceneBuffer(bufferSize = 2,
                                    canvasWidth = spaceWidth,
                                    canvasHeight = spaceHeight,
                                    bitmapPaint = mBitmapPaint,
                                    eraserPaint = mEraserPaint)
 
+        // The merged layer
         mMergedBitmap?.recycle()
         mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         mMergedCanvas = Canvas(mMergedBitmap)
@@ -482,7 +509,7 @@ class PaperCanvasView : View,
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (!isAllSet) return
+        if (!mDrawReadySignal.value!!) return
 
         // Scale from model to view.
         val scaleM2V = mScaleM2V
@@ -532,85 +559,153 @@ class PaperCanvasView : View,
         }
     }
 
-    private fun onDrawSVG(event: DrawSVGEvent) {
-        // TODO: How to ensure it's on the rendering thread?
+    private fun handleDrawSVGEvent(): ObservableTransformer<CanvasEvent, Unit> {
+        return ObservableTransformer { upstream ->
+            upstream
+                .observeOn(mRenderingScheduler)
+                // To drawable (must do) and invalidation event
+                .map { event ->
+                    when (event) {
+                        is StartSketchEvent -> {
+                            val nx = event.point.x
+                            val ny = event.point.y
+                            val (x, y) = toViewWorld(nx, ny)
 
-        mIsHashDirty = true
+                            val drawable = SVGDrawable(
+                                context = this@PaperCanvasView,
+                                penColor = event.penColor,
+                                penSize = event.penSize,
+                                porterDuffMode = if (event.penType == PenType.ERASER) mEraserMode else mDrawMode)
+                            drawable.moveTo(Point(x, y, event.point.time))
 
-        when (event) {
-            is StartSketchEvent -> {
-                val nx = event.point.x
-                val ny = event.point.y
-                val (x, y) = toViewWorld(nx, ny)
+                            mStrokeDrawables.add(drawable)
 
-                val drawable = SVGDrawable(
-                    context = this@PaperCanvasView,
-                    penColor = event.penColor,
-                    penSize = event.penSize,
-                    porterDuffMode = if (event.penType == PenType.ERASER) mEraserMode else mDrawMode)
-                drawable.moveTo(Point(x, y, event.point.time))
+                            mIsHashDirty = true
 
-                mStrokeDrawables.add(drawable)
-            }
-            is OnSketchEvent -> {
-                val nx = event.point.x
-                val ny = event.point.y
-                val (x, y) = toViewWorld(nx, ny)
+                            InvalidationEvent()
+                        }
+                        is OnSketchEvent -> {
+                            val nx = event.point.x
+                            val ny = event.point.y
+                            val (x, y) = toViewWorld(nx, ny)
 
-                val drawable = mStrokeDrawables.last()
-                drawable.lineTo(Point(x, y, event.point.time))
-            }
-            is StopSketchEvent -> {
-                val drawable = mStrokeDrawables.last()
-                drawable.close()
-            }
-            is ClearAllSketchEvent -> {
-                mStrokeDrawables.clear()
-            }
-            else -> {
-                // NOT SUPPORT
-            }
+                            val drawable = mStrokeDrawables.last()
+                            drawable.lineTo(Point(x, y, event.point.time))
+
+                            mIsHashDirty = true
+
+                            InvalidationEvent()
+                        }
+                        is StopSketchEvent -> {
+                            val drawable = mStrokeDrawables.last()
+                            drawable.close()
+
+                            InvalidationEvent()
+                        }
+                        is ClearAllSketchEvent -> {
+                            mStrokeDrawables.clear()
+
+                            mIsHashDirty = true
+
+                            InvalidationEvent()
+                        }
+                        else -> event
+                    }
+                }
+                .observeOn(mRenderingScheduler)
+                // State
+                .scan { prev: CanvasEvent, now: CanvasEvent ->
+                    if (prev is InitializationBeginEvent ||
+                        (prev is InitializationDoingEvent &&
+                         now !is InitializationEndEvent)) {
+                        // This is only happening in the initialization process
+                        // e.g.
+                        // Given  [init begin, _whatever_, ..., init end]
+                        // Return [init begin, init doing, ..., init end]
+                        InitializationDoingEvent()
+                    } else {
+                        // Given  [..., init end, foo]
+                        // Return [..., init end, foo]
+                        now
+                    }
+                }
+                .observeOn(mRenderingScheduler)
+                .map { event ->
+                    when (event) {
+                        is InitializationBeginEvent -> {
+                            // Mark interaction disabled
+                            mInteractionReadySignal.onNext(false)
+                        }
+                        is InitializationEndEvent,
+                        is InvalidationEvent -> {
+                            // First try to load Bitmap from file;
+                            // secondly try to redraw
+                            try {
+                                // Load file
+                                val hash = hashCode()
+                                ProfilerUtils.with("load thumbnail", {
+                                    val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
+                                              ?: throw NullPointerException()
+                                    mThumbCanvas.with { c ->
+                                        c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
+                                    }
+                                    bmp.recycle()
+                                })
+                            } catch (err: Throwable) {
+                                // Redraw
+                                ProfilerUtils.with("draw thumbnail", {
+                                    // Draw sketch and scraps on thumbnail Bitmap
+                                    // TODO: Both scraps and sketch need to explicitly define the z-order
+                                    // TODO: so that the paper knows how to render them in the correct
+                                    // TODO: order.
+                                    mThumbCanvas.with { c ->
+                                        c.scale(1f / mScaleThumb, 1f / mScaleThumb)
+
+                                        var dirty = false
+                                        //dispatchDrawScraps(canvas = c,
+                                        //                   scrapViews = mScrapViews,
+                                        //                   ifSharpenDrawing = false)
+                                        // Draw the strokes on the thumbnail canvas
+                                        mStrokeDrawables.forEach { drawable ->
+                                            dirty = dirty || drawable.isSomethingToDraw()
+                                            drawable.onDraw(canvas = c)
+                                        }
+                                        // Notify Bitmap update
+                                        if (dirty) {
+                                            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+                                        }
+                                    }
+                                })
+                            }
+
+                            // Draw sketch on view-port Bitmap
+                            ProfilerUtils.with("draw view-port", {
+                                mSceneBuffer.getCurrentScene().draw { c ->
+                                    computeCanvasMatrix(mScaleM2V)
+                                    c.concat(mCanvasMatrix)
+
+                                    mStrokeDrawables.forEach { d ->
+                                        d.onDraw(canvas = c)
+                                    }
+                                }
+                            })
+
+                            // By marking drawables not dirty, the drawable's
+                            // cache is renewed.
+                            mStrokeDrawables.forEach { d ->
+                                d.markAllDrew()
+                            }
+
+                            postInvalidate()
+
+                            // Mark interaction enabled
+                            if (event is InitializationEndEvent) {
+                                mInteractionReadySignal.onNext(true)
+                            }
+                        }
+                    }
+                }
         }
-
-        // Calculate the view port matrix.
-        computeCanvasMatrix(mScaleM2V)
-
-        // Draw sketch and scraps on thumbnail Bitmap
-        // TODO: Both scraps and sketch need to explicitly define the z-order
-        // TODO: so that the paper knows how to render them in the correct
-        // TODO: order.
-        mThumbCanvas.with { c ->
-            c.scale(1f / mScaleThumb, 1f / mScaleThumb)
-
-            var dirty = false
-            dispatchDrawScraps(canvas = c,
-                               scrapViews = mScrapViews,
-                               ifSharpenDrawing = false)
-            // Draw the strokes on the thumbnail canvas
-            mStrokeDrawables.forEach { drawable ->
-                dirty = dirty || drawable.isSomethingToDraw()
-                drawable.onDraw(canvas = c)
-            }
-            // Notify Bitmap update
-            if (dirty) {
-                mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
-            }
-        }
-
-        // Draw sketch and scraps on full-resolution Bitmap
-        mSceneBuffer.getCurrentScene().draw { c ->
-            c.concat(mCanvasMatrix)
-            mStrokeDrawables.forEach { d ->
-                d.onDraw(canvas = c)
-            }
-        }
-
-        // By marking drawables not dirty, the drawable's cache is renewed.
-        mStrokeDrawables.forEach { d ->
-            d.markAllDrew()
-        }
-
-        postInvalidate()
     }
 
     private fun onAntiAliasingDraw(): Observable<Scene> {
@@ -622,25 +717,19 @@ class PaperCanvasView : View,
                 if (doIt) {
                     Observable
                         .fromCallable {
-                            println("${AppConst.TAG}: request anti-aliasing drawing...")
-                            ProfilerUtils.startProfiling()
-
-                            // Anti-aliasing drawing
+                            // View-port drawing
                             val scene = mSceneBuffer.getEmptyScene()
-                            scene.resetTransform()
-                            scene.eraseDraw { c ->
-                                c.concat(mCanvasMatrix)
 
-                                mStrokeDrawables.forEach { d ->
-                                    d.onDraw(canvas = c, startOver = true)
+                            ProfilerUtils.with("draw view-port", {
+                                scene.resetTransform()
+                                scene.eraseDraw { c ->
+                                    c.concat(mCanvasMatrix)
+
+                                    mStrokeDrawables.forEach { d ->
+                                        d.onDraw(canvas = c, startOver = true)
+                                    }
                                 }
-                            }
-
-                            // The computation generally takes time proportional to
-                            // the amount of strokes. e.g. 20 strokes drawing takes
-                            // 157 ms.
-                            println("${AppConst.TAG}: request anti-aliasing drawing, " +
-                                    "took ${ProfilerUtils.stopProfiling()} ms")
+                            })
 
                             return@fromCallable scene
                         }
@@ -659,41 +748,38 @@ class PaperCanvasView : View,
             .doOnNext { mWidget.invalidateThumbnail() }
             // Debounce Bitmap writes
             .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
-            // TEST: text recognition
-            .observeOn(Schedulers.computation())
-            .doOnNext { (_, bmp) ->
-                println("${AppConst.TAG}: Ready to feed Bitmap to text detector")
-                val image = FirebaseVisionImage.fromBitmap(bmp)
-                mTextDetector.detectInImage(image)
-                    .addOnSuccessListener { visionText ->
-                        val builder = StringBuilder()
-                        visionText.blocks.forEach { block ->
-                            builder.append("[")
-                            block.lines.forEachIndexed { i, line ->
-                                line.elements.forEachIndexed { j, element ->
-                                    builder.append(element.text)
-
-                                    if (line.elements.size > 1 &&
-                                        j < line.elements.lastIndex) {
-                                        builder.append(" ")
-                                    }
-                                }
-
-                                if (block.lines.size > 1 &&
-                                    i < block.lines.lastIndex) {
-                                    builder.append(",")
-                                }
-                            }
-                            builder.append("]")
-                        }
-                        println("${AppConst.TAG}: successful => $builder")
-                        Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
-                    }
-                    .addOnFailureListener { err ->
-                        println("${AppConst.TAG}: failed => $err")
-                        Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
-                    }
-            }
+//            // TEST: text recognition
+//            .observeOn(Schedulers.computation())
+//            .doOnNext { (_, bmp) ->
+//                val image = FirebaseVisionImage.fromBitmap(bmp)
+//                mTextDetector.detectInImage(image)
+//                    .addOnSuccessListener { visionText ->
+//                        val builder = StringBuilder()
+//                        visionText.blocks.forEach { block ->
+//                            builder.append("[")
+//                            block.lines.forEachIndexed { i, line ->
+//                                line.elements.forEachIndexed { j, element ->
+//                                    builder.append(element.text)
+//
+//                                    if (line.elements.size > 1 &&
+//                                        j < line.elements.lastIndex) {
+//                                        builder.append(" ")
+//                                    }
+//                                }
+//
+//                                if (block.lines.size > 1 &&
+//                                    i < block.lines.lastIndex) {
+//                                    builder.append(",")
+//                                }
+//                            }
+//                            builder.append("]")
+//                        }
+//                        Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
+//                    }
+//                    .addOnFailureListener { err ->
+//                        Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
+//                    }
+//            }
             .switchMap { (hashCode, bmp) ->
                 mBitmapRepo
                     ?.putBitmap(hashCode, bmp)
@@ -722,7 +808,7 @@ class PaperCanvasView : View,
     /**
      * The view-port boundary in the model world.
      */
-    private var mViewPort = RectF()
+    private var mViewPort = Rect()
         set(value) {
             field.set(value)
 
@@ -739,20 +825,20 @@ class PaperCanvasView : View,
             invalidate()
         }
 
-    private val mViewPortStart = RectF()
+    private val mViewPortStart = Rect()
     /**
      * Minimum size of [mViewPort].
      */
-    private val mViewPortMin = RectF()
+    private val mViewPortMin = Rect()
     /**
      * Maximum size of [mViewPort].
      */
-    private val mViewPortMax = RectF()
+    private val mViewPortMax = Rect()
     /**
      * The initial view port size that is used to compute the scale factor from
      * Model to View, which is [mScaleM2V].
      */
-    private val mViewPortBase = RectF()
+    private val mViewPortBase = Rect()
     /**
      * The signal for external observers.
      */
@@ -763,15 +849,15 @@ class PaperCanvasView : View,
     }
 
     private fun resetViewPort() {
-        val defaultW = mViewPortMax.width()
-        val defaultH = mViewPortMax.height()
+        val defaultW = mViewPortMax.width
+        val defaultH = mViewPortMax.height
 
         // Place the view port left in the model world.
         val viewPortX = 0f
         val viewPortY = 0f
-        mViewPort = RectF(viewPortX, viewPortY,
-                          viewPortX + defaultW,
-                          viewPortY + defaultH)
+        mViewPort = Rect(viewPortX, viewPortY,
+                         viewPortX + defaultW,
+                         viewPortY + defaultH)
     }
 
     /**
@@ -786,8 +872,8 @@ class PaperCanvasView : View,
             // View port y
             val vy = mViewPort.top
             // View port width
-            val vw = mViewPort.width()
-            val scaleVP = mViewPortBase.width() / vw
+            val vw = mViewPort.width
+            val scaleVP = mViewPortBase.width / vw
 
             mCanvasMatrix.reset()
             //        canvas width
@@ -809,31 +895,31 @@ class PaperCanvasView : View,
         }
     }
 
-    fun handleViewPortAction(action: ViewPortAction) {
-        when (action) {
-            is ViewPortBeginUpdateAction -> {
+    private fun handleViewPortEvent(event: ViewPortEvent) {
+        when (event) {
+            is ViewPortBeginUpdateEvent -> {
                 // Hold necessary starting states.
                 mTmpMatrixStart.set(mCanvasMatrix)
                 mViewPortStart.set(mViewPort)
 
                 cancelAntiAliasingDrawing()
             }
-            is ViewPortOnUpdateAction -> {
+            is ViewPortOnUpdateEvent -> {
                 val bound = constraintViewPort(
-                    action.bound,
+                    event.bound,
                     left = 0f,
                     top = 0f,
                     right = mMSize.width,
                     bottom = mMSize.height,
-                    minWidth = mViewPortMin.width(),
-                    minHeight = mViewPortMin.height(),
-                    maxWidth = mViewPortMax.width(),
-                    maxHeight = mViewPortMax.height())
+                    minWidth = mViewPortMin.width,
+                    minHeight = mViewPortMin.height,
+                    maxWidth = mViewPortMax.width,
+                    maxHeight = mViewPortMax.height)
 
                 // After applying the constraint, calculate the matrix for anti-aliasing
                 // Bitmap
-                val scaleVp = mViewPortBase.width() / bound.width()
-                val vpDs = mViewPortStart.width() / bound.width()
+                val scaleVp = mViewPortBase.width / bound.width
+                val vpDs = mViewPortStart.width / bound.width
                 val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
                 val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
                 mTmpMatrix.reset()
@@ -849,7 +935,7 @@ class PaperCanvasView : View,
 
                 cancelAntiAliasingDrawing()
             }
-            is ViewPortStopUpdateAction -> {
+            is ViewPortStopUpdateEvent -> {
                 mTmpMatrixStart.reset()
                 mTmpMatrix.reset()
                 mTmpMatrixInverse.reset()
@@ -863,7 +949,7 @@ class PaperCanvasView : View,
 
     // TODO: Make the view-port code a component.
     private fun calculateViewPortBound(startPointers: Array<PointF>,
-                                       stopPointers: Array<PointF>): RectF {
+                                       stopPointers: Array<PointF>): Rect {
         // Compute new canvas matrix.
         val transform = TransformUtils.getTransformFromPointers(
             startPointers, stopPointers)
@@ -891,13 +977,13 @@ class PaperCanvasView : View,
         val s = mTransformHelper.scaleX
         val vx = -tx / s / mScaleM2V
         val vy = -ty / s / mScaleM2V
-        val vw = mViewPortMax.width() / s
-        val vh = mViewPortMax.height() / s
+        val vw = mViewPortMax.width / s
+        val vh = mViewPortMax.height / s
 
-        return RectF(vx, vy, vx + vw, vy + vh)
+        return Rect(vx, vy, vx + vw, vy + vh)
     }
 
-    private fun constraintViewPort(viewPort: RectF,
+    private fun constraintViewPort(viewPort: Rect,
                                    left: Float,
                                    top: Float,
                                    right: Float,
@@ -905,31 +991,34 @@ class PaperCanvasView : View,
                                    minWidth: Float,
                                    minHeight: Float,
                                    maxWidth: Float,
-                                   maxHeight: Float): RectF {
-        val bound = RectF(viewPort)
+                                   maxHeight: Float): Rect {
+        val bound = Rect(left = viewPort.left,
+                         top = viewPort.top,
+                         right = viewPort.right,
+                         bottom = viewPort.bottom)
 
         // In width...
-        if (bound.width() < minWidth) {
-            val cx = bound.centerX()
+        if (bound.width < minWidth) {
+            val cx = bound.centerX
             bound.left = cx - minWidth / 2f
             bound.right = cx + minWidth / 2f
-        } else if (bound.width() > maxWidth) {
-            val cx = bound.centerX()
+        } else if (bound.width > maxWidth) {
+            val cx = bound.centerX
             bound.left = cx - maxWidth / 2f
             bound.right = cx + maxWidth / 2f
         }
         // In height...
-        if (bound.height() < minHeight) {
-            val cy = bound.centerY()
+        if (bound.height < minHeight) {
+            val cy = bound.centerY
             bound.top = cy - minHeight / 2f
             bound.bottom = cy + minHeight / 2f
-        } else if (bound.height() > maxHeight) {
-            val cy = bound.centerY()
+        } else if (bound.height > maxHeight) {
+            val cy = bound.centerY
             bound.top = cy - maxHeight / 2f
             bound.bottom = cy + maxHeight / 2f
         }
         // In x...
-        val viewPortWidth = bound.width()
+        val viewPortWidth = bound.width
         if (bound.left < left) {
             bound.left = left
             bound.right = bound.left + viewPortWidth
@@ -938,7 +1027,7 @@ class PaperCanvasView : View,
             bound.left = bound.right - viewPortWidth
         }
         // In y...
-        val viewPortHeight = bound.height()
+        val viewPortHeight = bound.height
         if (bound.top < top) {
             bound.top = top
             bound.bottom = bound.top + viewPortHeight
@@ -993,7 +1082,6 @@ class PaperCanvasView : View,
     private val mTapSlop by lazy { resources.getDimension(R.dimen.tap_slop) }
     private val mMinFlingVec by lazy { resources.getDimension(R.dimen.fling_min_vec) }
     private val mMaxFlingVec by lazy { resources.getDimension(R.dimen.fling_max_vec) }
-
     private val mGestureDetector by lazy {
         GestureDetector(Looper.getMainLooper(),
                         ViewConfiguration.get(context),
@@ -1002,35 +1090,18 @@ class PaperCanvasView : View,
                         mMinFlingVec,
                         mMaxFlingVec)
     }
-    private var mIfHandleAction = false
+    private var mIfHandleTouch = false
     private var mIfHandleDrag = false
     private val mGestureHistory = mutableListOf<GestureRecord>()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Interpret the event iff scale, canvas size is ready at ACTION_DOWN.
-        val action = event.actionMasked
-        if (action == MotionEvent.ACTION_DOWN) {
-            mIfHandleAction = isAllSet
-        }
-
-        return if (mIfHandleAction) {
-            val handled = mGestureDetector.onTouchEvent(event, this, null)
-
-            if (action == MotionEvent.ACTION_UP ||
-                action == MotionEvent.ACTION_CANCEL) {
-                mIfHandleAction = false
-            }
-
-            handled
-        } else {
-            false
-        }
+        return mGestureDetector.onTouchEvent(event, this, null)
     }
 
     /**
-     * Convert the [GestureEvent] to [CanvasAction].
+     * Convert the [GestureEvent] to [CanvasEvent].
      */
-    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, CanvasAction> {
+    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, CanvasEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 .map { event ->
@@ -1048,28 +1119,37 @@ class PaperCanvasView : View,
                         is OnPinchEvent,
                         is PinchEndEvent -> handlePinchEvent(event)
 
-                        else -> DummyCanvasAction()
+                        else -> NullCanvasEvent()
                     }
                 }
         }
     }
 
+    private val mCanvasEventSources = mutableListOf<Observable<CanvasEvent>>()
+
     /**
-     * Consume the [CanvasAction].
+     * For [CanvasEvent] external sources.
      */
-    private fun handleCanvasAction(): ObservableTransformer<in CanvasAction, out Unit> {
+    fun addCanvasEventSource(source: Observable<CanvasEvent>) {
+        mCanvasEventSources.add(source)
+    }
+
+    /**
+     * Consume the [CanvasEvent].
+     */
+    private fun handleCanvasEvent(): ObservableTransformer<in CanvasEvent, out Unit> {
         return ObservableTransformer { upstream ->
             upstream
                 .map { event ->
                     when (event) {
-                        is ViewPortAction -> handleViewPortAction(event)
+                        is ViewPortEvent -> handleViewPortEvent(event)
                         else -> Unit
                     }
                 }
         }
     }
 
-    private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasAction {
+    private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasEvent {
         when (event) {
             is TouchBeginEvent -> {
                 mGestureHistory.clear()
@@ -1081,10 +1161,10 @@ class PaperCanvasView : View,
         }
 
         // Null action
-        return DummyCanvasAction()
+        return NullCanvasEvent()
     }
 
-    private fun handleTapEvent(event: TapEvent): CanvasAction {
+    private fun handleTapEvent(event: TapEvent): CanvasEvent {
         mGestureHistory.add(GestureRecord.TAP)
 
         val (nx, ny) = toModelWorld(event.downX,
@@ -1092,10 +1172,10 @@ class PaperCanvasView : View,
         mWidget.handleTap(nx, ny)
 
         // Null action
-        return DummyCanvasAction()
+        return NullCanvasEvent()
     }
 
-    private fun handleDragEvent(event: GestureEvent): CanvasAction {
+    private fun handleDragEvent(event: GestureEvent): CanvasEvent {
         if (event is DragBeginEvent) {
             mGestureHistory.add(GestureRecord.DRAG)
 
@@ -1124,47 +1204,47 @@ class PaperCanvasView : View,
             }
 
             // Null action
-            DummyCanvasAction()
+            NullCanvasEvent()
         } else {
             when (event) {
                 is DragBeginEvent -> {
-                    ViewPortBeginUpdateAction()
+                    ViewPortBeginUpdateEvent()
                 }
                 is OnDragEvent -> {
-                    ViewPortOnUpdateAction(
+                    ViewPortOnUpdateEvent(
                         calculateViewPortBound(
                             startPointers = Array(2, { _ -> event.startPointer }),
                             stopPointers = Array(2, { _ -> event.stopPointer })))
                 }
                 is DragEndEvent -> {
-                    ViewPortStopUpdateAction()
+                    ViewPortStopUpdateEvent()
                 }
                 else -> {
                     // Null action
-                    DummyCanvasAction()
+                    NullCanvasEvent()
                 }
             }
         }
     }
 
-    private fun handlePinchEvent(event: GestureEvent): CanvasAction {
+    private fun handlePinchEvent(event: GestureEvent): CanvasEvent {
         return when (event) {
             is PinchBeginEvent -> {
                 mGestureHistory.add(GestureRecord.PINCH)
-                ViewPortBeginUpdateAction()
+                ViewPortBeginUpdateEvent()
             }
             is OnPinchEvent -> {
-                ViewPortOnUpdateAction(
+                ViewPortOnUpdateEvent(
                     calculateViewPortBound(
                         startPointers = event.startPointers,
                         stopPointers = event.stopPointers))
             }
             is PinchEndEvent -> {
-                ViewPortStopUpdateAction()
+                ViewPortStopUpdateEvent()
             }
             else -> {
                 // Null action
-                DummyCanvasAction()
+                NullCanvasEvent()
             }
         }
     }
@@ -1220,10 +1300,6 @@ class PaperCanvasView : View,
             "Already bind to a widget")
     }
 
-    private val isAllSet
-        get() = mScaleM2V != Float.NaN &&
-                (mMSize.width > 0f && mMSize.height > 0f)
-
     private fun drawBackground(canvas: Canvas,
                                vw: Float,
                                vh: Float,
@@ -1247,8 +1323,8 @@ class PaperCanvasView : View,
         //       vpW - baseW
         // a = --------------
         //      minW - baseW
-        val alpha = (mViewPort.width() - mViewPortBase.width()) /
-                    (mViewPortMin.width() - mViewPortBase.width())
+        val alpha = (mViewPort.width - mViewPortBase.width) /
+                    (mViewPortMin.width - mViewPortBase.width)
         mGridPaint.alpha = (alpha * 0xFF).toInt()
 
         // Cross

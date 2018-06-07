@@ -34,7 +34,7 @@ import com.cardinalblue.gesture.GesturePolicy
 import com.cardinalblue.gesture.IDragGestureListener
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.R
-import com.paper.model.Point
+import com.paper.domain.event.*
 import com.paper.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -118,11 +118,11 @@ class ViewPortIndicatorView : View,
 
     private var mScaleM2V = Float.NaN
 
-    private val mCanvasBound = RectF()
+    private val mCanvasBound = Rect()
     private val mCanvasPaint = Paint()
 
-    private val mViewPortBound = RectF()
-    private val mViewPortBoundStart = RectF()
+    private val mViewPortBound = Rect()
+    private val mViewPortBoundStart = Rect()
     private val mViewPortPaint = Paint()
 
     private val mTmpBound = RectF()
@@ -146,13 +146,13 @@ class ViewPortIndicatorView : View,
         mSetViewPort.onNext(true)
     }
 
-    private val mUpdatePositionSignal = PublishSubject.create<ViewPortAction>()
+    private val mUpdatePositionSignal = PublishSubject.create<CanvasEvent>()
 
     /**
      * The view recognizes DRAG gesture and will signal new position of
      * view-port.
      */
-    fun onUpdateViewPortPosition(): Observable<ViewPortAction> {
+    fun onUpdateViewPortPosition(): Observable<CanvasEvent> {
         return mUpdatePositionSignal
     }
 
@@ -164,8 +164,8 @@ class ViewPortIndicatorView : View,
         val spaceW = this.width - paddingStart - paddingEnd
         val spaceH = this.height - paddingTop - paddingBottom
 
-        mScaleM2V = Math.min(spaceW / mCanvasBound.width(),
-                             spaceH / mCanvasBound.height())
+        mScaleM2V = Math.min(spaceW / mCanvasBound.width,
+                             spaceH / mCanvasBound.height)
 
         invalidate()
     }
@@ -174,16 +174,16 @@ class ViewPortIndicatorView : View,
         super.onDraw(canvas)
 
         if (hasSetCanvasAndViewPort()) {
-            val mw = mScaleM2V * mCanvasBound.width()
-            val mh = mScaleM2V * mCanvasBound.height()
+            val mw = mScaleM2V * mCanvasBound.width
+            val mh = mScaleM2V * mCanvasBound.height
             val mx = (width - mw) / 2f
             val my = (height - mh) / 2f
 
             mTmpBound.set(mx, my, mx + mw, my + mh)
             canvas.drawRoundRect(mTmpBound, 2f * mOneDp, 2f * mOneDp, mCanvasPaint)
 
-            val vpW = mScaleM2V * mViewPortBound.width()
-            val vpH = mScaleM2V * mViewPortBound.height()
+            val vpW = mScaleM2V * mViewPortBound.width
+            val vpH = mScaleM2V * mViewPortBound.height
             val vpX = mScaleM2V * mViewPortBound.left
             val vpY = mScaleM2V * mViewPortBound.top
 
@@ -196,8 +196,8 @@ class ViewPortIndicatorView : View,
     }
 
     private fun hasSetCanvasAndViewPort(): Boolean {
-        return mCanvasBound.width() > 0f && mCanvasBound.height() > 0f &&
-               mViewPortBound.width() > 0f && mViewPortBound.height() > 0f &&
+        return mCanvasBound.width > 0f && mCanvasBound.height > 0f &&
+               mViewPortBound.width > 0f && mViewPortBound.height > 0f &&
                mScaleM2V != Float.NaN
     }
 
@@ -236,7 +236,7 @@ class ViewPortIndicatorView : View,
                              context: Any?) {
         mViewPortBoundStart.set(mViewPortBound)
 
-        mUpdatePositionSignal.onNext(ViewPortBeginUpdateAction())
+        mUpdatePositionSignal.onNext(ViewPortBeginUpdateEvent())
     }
 
     override fun onDrag(event: MyMotionEvent,
@@ -250,10 +250,10 @@ class ViewPortIndicatorView : View,
         val y = mViewPortBoundStart.top + dy
 
         mUpdatePositionSignal.onNext(
-            ViewPortOnUpdateAction(
-                bound = RectF(x, y,
-                              x + mViewPortBound.width(),
-                              y + mViewPortBound.height())))
+            ViewPortOnUpdateEvent(
+                bound = Rect(x, y,
+                             x + mViewPortBound.width,
+                             y + mViewPortBound.height)))
     }
 
     override fun onDragFling(event: MyMotionEvent,
@@ -271,6 +271,6 @@ class ViewPortIndicatorView : View,
                            context: Any?,
                            startPointer: PointF,
                            stopPointer: PointF) {
-        mUpdatePositionSignal.onNext(ViewPortStopUpdateAction())
+        mUpdatePositionSignal.onNext(ViewPortStopUpdateEvent())
     }
 }

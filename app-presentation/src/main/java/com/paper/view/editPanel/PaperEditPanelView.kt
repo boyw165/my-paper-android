@@ -30,12 +30,12 @@ import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
+import com.paper.domain.event.CanvasEvent
+import com.paper.domain.event.ViewPortEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
-import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
-import com.paper.view.canvas.ViewPortAction
 import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -149,7 +149,7 @@ class PaperEditPanelView : ConstraintLayout,
         mViewPortIndicatorView.setCanvasAndViewPort(canvas, viewPort)
     }
 
-    fun onUpdateViewPortPosition(): Observable<ViewPortAction> {
+    fun onUpdateViewPortPosition(): Observable<CanvasEvent> {
         return mViewPortIndicatorView.onUpdateViewPortPosition()
     }
 

@@ -21,7 +21,7 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
-import com.paper.domain.event.DrawSVGEvent
+import com.paper.domain.event.CanvasEvent
 import com.paper.domain.useCase.TranslateSketchToSVG
 import com.paper.model.Scrap
 import com.paper.model.Transform
@@ -39,7 +39,7 @@ class ScrapWidget(
 
     private lateinit var mModel: Scrap
 
-    private val mDrawSVGSignal = PublishSubject.create<DrawSVGEvent>()
+    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>()
 
     private val mSetTransformSignal = BehaviorSubject.create<Transform>()
 
@@ -74,7 +74,7 @@ class ScrapWidget(
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    override fun onDrawSVG(): Observable<DrawSVGEvent> {
+    override fun onDrawSVG(): Observable<CanvasEvent> {
         return Observable
             .merge(
                 mDrawSVGSignal,
