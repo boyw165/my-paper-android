@@ -98,8 +98,8 @@ dependencies {
 
     // Firebase
     implementation rootProject.ext.dep.firebaseCore
-    implementation rootProject.ext.dep.firebaseMlVision
-    implementation rootProject.ext.dep.firebaseMLCustomModel
+//    implementation rootProject.ext.dep.firebaseMlVision
+//    implementation rootProject.ext.dep.firebaseMLCustomModel
 
     // Dependency Injection.
     implementation rootProject.ext.dep.dagger2
