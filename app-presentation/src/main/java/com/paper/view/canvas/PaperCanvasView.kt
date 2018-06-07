@@ -54,10 +54,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.rxkotlin.Observables
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.lang.NullPointerException
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -141,21 +141,7 @@ class PaperCanvasView : View,
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
                             .compose(handleDrawSVGEvent())
-                            // View invalidation
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .doOnNext { event ->
-                                if (event is InitializationEndEvent &&
-                                    !mInteractionReadySignal.value!!) {
-                                    // Mark it could interact with the users
-                                    mInteractionReadySignal.onNext(true)
-                                }
-
-                                invalidate()
-                            }
                     } else {
-                        // Mark the status that it couldn't interact with the
-                        // users
-                        mInteractionReadySignal.onNext(false)
                         Observable.never()
                     }
                 }
@@ -462,7 +448,9 @@ class PaperCanvasView : View,
         // layout is changed).
         resetViewPort()
 
-        // Backed the canvas Bitmap.
+        // Bitmap layers:
+
+        // The thumbnail layer
         val mw = mMSize.width
         val mh = mMSize.height
         val vw = scaleM2V * mw
@@ -475,12 +463,14 @@ class PaperCanvasView : View,
         mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
         mThumbCanvas = Canvas(mThumbBitmap)
 
+        // The view-port layer
         mSceneBuffer = SceneBuffer(bufferSize = 2,
                                    canvasWidth = spaceWidth,
                                    canvasHeight = spaceHeight,
                                    bitmapPaint = mBitmapPaint,
                                    eraserPaint = mEraserPaint)
 
+        // The merged layer
         mMergedBitmap?.recycle()
         mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         mMergedCanvas = Canvas(mMergedBitmap)
@@ -571,13 +561,12 @@ class PaperCanvasView : View,
         }
     }
 
-    private fun handleDrawSVGEvent(): ObservableTransformer<CanvasEvent, CanvasEvent> {
+    private fun handleDrawSVGEvent(): ObservableTransformer<CanvasEvent, Unit> {
         return ObservableTransformer { upstream ->
             upstream
                 .observeOn(mRenderingScheduler)
-                .doOnNext { event ->
-                    mIsHashDirty = true
-
+                // To drawable (must do) and invalidation event
+                .map { event ->
                     when (event) {
                         is StartSketchEvent -> {
                             val nx = event.point.x
@@ -592,6 +581,10 @@ class PaperCanvasView : View,
                             drawable.moveTo(Point(x, y, event.point.time))
 
                             mStrokeDrawables.add(drawable)
+
+                            mIsHashDirty = true
+
+                            InvalidationEvent()
                         }
                         is OnSketchEvent -> {
                             val nx = event.point.x
@@ -600,52 +593,118 @@ class PaperCanvasView : View,
 
                             val drawable = mStrokeDrawables.last()
                             drawable.lineTo(Point(x, y, event.point.time))
+
+                            mIsHashDirty = true
+
+                            InvalidationEvent()
                         }
                         is StopSketchEvent -> {
                             val drawable = mStrokeDrawables.last()
                             drawable.close()
+
+                            InvalidationEvent()
                         }
                         is ClearAllSketchEvent -> {
                             mStrokeDrawables.clear()
+
+                            mIsHashDirty = true
+
+                            InvalidationEvent()
                         }
+                        else -> event
                     }
-
-                    // Calculate the view port matrix.
-                    computeCanvasMatrix(mScaleM2V)
-
-                    // Draw sketch and scraps on thumbnail Bitmap
-                    // TODO: Both scraps and sketch need to explicitly define the z-order
-                    // TODO: so that the paper knows how to render them in the correct
-                    // TODO: order.
-                    mThumbCanvas.with { c ->
-                        c.scale(1f / mScaleThumb, 1f / mScaleThumb)
-
-                        var dirty = false
-                        dispatchDrawScraps(canvas = c,
-                                           scrapViews = mScrapViews,
-                                           ifSharpenDrawing = false)
-                        // Draw the strokes on the thumbnail canvas
-                        mStrokeDrawables.forEach { drawable ->
-                            dirty = dirty || drawable.isSomethingToDraw()
-                            drawable.onDraw(canvas = c)
-                        }
-                        // Notify Bitmap update
-                        if (dirty) {
-                            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
-                        }
+                }
+                .observeOn(mRenderingScheduler)
+                // State
+                .scan { prev: CanvasEvent, now: CanvasEvent ->
+                    if (prev is InitializationBeginEvent ||
+                        (prev is InitializationDoingEvent &&
+                         now !is InitializationEndEvent)) {
+                        // This is only happening in the initialization process
+                        // e.g.
+                        // Given  [init begin, _whatever_, ..., init end]
+                        // Return [init begin, init doing, ..., init end]
+                        InitializationDoingEvent()
+                    } else {
+                        // Given  [..., init end, foo]
+                        // Return [..., init end, foo]
+                        now
                     }
-
-                    // Draw sketch and scraps on full-resolution Bitmap
-                    mSceneBuffer.getCurrentScene().draw { c ->
-                        c.concat(mCanvasMatrix)
-                        mStrokeDrawables.forEach { d ->
-                            d.onDraw(canvas = c)
+                }
+                .observeOn(mRenderingScheduler)
+                .map { event ->
+                    when (event) {
+                        is InitializationBeginEvent -> {
+                            // Mark interaction disabled
+                            mInteractionReadySignal.onNext(false)
                         }
-                    }
+                        is InitializationEndEvent,
+                        is InvalidationEvent -> {
+                            // First try to load Bitmap from file;
+                            // secondly try to redraw
+                            try {
+                                // Load file
+                                val hash = hashCode()
+                                ProfilerUtils.with("load thumbnail", {
+                                    val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
+                                              ?: throw NullPointerException()
+                                    mThumbCanvas.with { c ->
+                                        c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
+                                    }
+                                    bmp.recycle()
+                                })
+                            } catch (err: Throwable) {
+                                // Redraw
+                                ProfilerUtils.with("draw thumbnail", {
+                                    // Draw sketch and scraps on thumbnail Bitmap
+                                    // TODO: Both scraps and sketch need to explicitly define the z-order
+                                    // TODO: so that the paper knows how to render them in the correct
+                                    // TODO: order.
+                                    mThumbCanvas.with { c ->
+                                        c.scale(1f / mScaleThumb, 1f / mScaleThumb)
 
-                    // By marking drawables not dirty, the drawable's cache is renewed.
-                    mStrokeDrawables.forEach { d ->
-                        d.markAllDrew()
+                                        var dirty = false
+                                        //dispatchDrawScraps(canvas = c,
+                                        //                   scrapViews = mScrapViews,
+                                        //                   ifSharpenDrawing = false)
+                                        // Draw the strokes on the thumbnail canvas
+                                        mStrokeDrawables.forEach { drawable ->
+                                            dirty = dirty || drawable.isSomethingToDraw()
+                                            drawable.onDraw(canvas = c)
+                                        }
+                                        // Notify Bitmap update
+                                        if (dirty) {
+                                            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+                                        }
+                                    }
+                                })
+                            }
+
+                            // Draw sketch on view-port Bitmap
+                            ProfilerUtils.with("draw view-port", {
+                                mSceneBuffer.getCurrentScene().draw { c ->
+                                    computeCanvasMatrix(mScaleM2V)
+                                    c.concat(mCanvasMatrix)
+
+                                    mStrokeDrawables.forEach { d ->
+                                        d.onDraw(canvas = c)
+                                    }
+                                }
+                            })
+
+                            // By marking drawables not dirty, the drawable's
+                            // cache is renewed.
+                            mStrokeDrawables.forEach { d ->
+                                d.markAllDrew()
+                            }
+
+                            postInvalidate()
+
+                            // Mark interaction enabled
+                            if (event is InitializationEndEvent) {
+                                mInteractionReadySignal.onNext(true)
+                            }
+                        }
                     }
                 }
         }
@@ -660,25 +719,19 @@ class PaperCanvasView : View,
                 if (doIt) {
                     Observable
                         .fromCallable {
-                            println("${AppConst.TAG}: request anti-aliasing drawing...")
-                            ProfilerUtils.startProfiling()
-
-                            // Anti-aliasing drawing
+                            // View-port drawing
                             val scene = mSceneBuffer.getEmptyScene()
-                            scene.resetTransform()
-                            scene.eraseDraw { c ->
-                                c.concat(mCanvasMatrix)
 
-                                mStrokeDrawables.forEach { d ->
-                                    d.onDraw(canvas = c, startOver = true)
+                            ProfilerUtils.with("draw view-port", {
+                                scene.resetTransform()
+                                scene.eraseDraw { c ->
+                                    c.concat(mCanvasMatrix)
+
+                                    mStrokeDrawables.forEach { d ->
+                                        d.onDraw(canvas = c, startOver = true)
+                                    }
                                 }
-                            }
-
-                            // The computation generally takes time proportional to
-                            // the amount of strokes. e.g. 20 strokes drawing takes
-                            // 157 ms.
-                            println("${AppConst.TAG}: request anti-aliasing drawing, " +
-                                    "took ${ProfilerUtils.stopProfiling()} ms")
+                            })
 
                             return@fromCallable scene
                         }

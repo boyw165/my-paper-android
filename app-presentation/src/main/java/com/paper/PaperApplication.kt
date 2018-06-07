@@ -25,12 +25,15 @@ import android.os.StrictMode
 import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
-import com.paper.domain.*
+import com.paper.domain.IBitmapRepoProvider
+import com.paper.domain.IDatabaseIOSchedulerProvider
+import com.paper.domain.IPaperRepoProvider
+import com.paper.domain.IPaperTransformRepoProvider
 import com.paper.model.IPaperTransformRepo
 import com.paper.model.ISharedPreferenceService
 import com.paper.model.repository.IBitmapRepo
-import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.PaperTransformRepoFileImpl
 import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler

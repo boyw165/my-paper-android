@@ -34,17 +34,29 @@ sealed class CanvasEvent
  */
 class NullCanvasEvent : CanvasEvent()
 
-// Drawing ////////////////////////////////////////////////////////////////////
+// Lifecycle //////////////////////////////////////////////////////////////////
 
 /**
- * A start signal of drawing.
+ * A start signal of initialization.
  */
 class InitializationBeginEvent : CanvasEvent()
 
 /**
- * A stop signal of drawing.
+ * A signal of on-going initialization.
+ */
+class InitializationDoingEvent : CanvasEvent()
+
+/**
+ * A stop signal of initialization.
  */
 class InitializationEndEvent : CanvasEvent()
+
+// Drawing ////////////////////////////////////////////////////////////////////
+
+/**
+ * Indicate the view to renew its rendering buffer.
+ */
+class InvalidationEvent : CanvasEvent()
 
 /**
  * A starting sketch event, where it may provide the pen color, pen size, and

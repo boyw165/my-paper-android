@@ -55,7 +55,10 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
                         penColor = stroke.penColor,
                         penSize = stroke.penSize,
                         penType = stroke.penType))
-                    stroke.pointList.lastIndex -> observer.onNext(StopSketchEvent())
+                    stroke.pointList.lastIndex -> {
+                        observer.onNext(OnSketchEvent(point = pt))
+                        observer.onNext(StopSketchEvent())
+                    }
                     else -> observer.onNext(OnSketchEvent(point = pt))
                 }
             }
