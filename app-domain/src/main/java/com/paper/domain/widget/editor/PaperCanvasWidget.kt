@@ -298,7 +298,6 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                         mDrawSVGSignal,
                         // For the first time subscription, send events one by one!
                         TranslateSketchToSVG(mModel!!.getSketch()))
-                    .startWith(ClearAllSketchEvent())
             } else {
                 mDrawSVGSignal
             }

@@ -41,6 +41,7 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
         observer.onSubscribe(d)
 
         observer.onNext(InitializationBeginEvent())
+        observer.onNext(ClearAllSketchEvent())
 
         for (stroke in mStrokes) {
             if (d.isDisposed) break
