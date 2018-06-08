@@ -62,7 +62,7 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         mDisposables.add(
             mPaper.onAddStroke(replayAll = false)
                 .observeOn(mUiScheduler)
-                .switchMap {
+                .flatMap {
                     val key = UUID.randomUUID()
                     val value = AddStrokeTransform(
                         paper = mPaper)
@@ -77,14 +77,14 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
                         .toObservable()
                 }
                 .subscribe())
-        mDisposables.add(
-            mPaper.onRemoveStroke()
-                .observeOn(mUiScheduler)
-                .switchMap {
-                    // TODO
-                    Observable.never<Any>()
-                }
-                .subscribe())
+        // TODO
+        //mDisposables.add(
+        //    mPaper.onRemoveStroke()
+        //      .observeOn(mUiScheduler)
+        //      .flatMap {
+        //          Observable.never<Any>()
+        //      }
+        //      .subscribe())
     }
 
     private fun unbindPaperImpl() {

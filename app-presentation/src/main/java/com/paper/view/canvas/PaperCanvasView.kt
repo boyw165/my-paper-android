@@ -564,25 +564,25 @@ class PaperCanvasView : View,
             upstream
                 .observeOn(mRenderingScheduler)
                 // To drawable (must do) and invalidation event
-                .map { event ->
+                .flatMap { event ->
                     when (event) {
                         is StartSketchEvent -> {
                             val nx = event.point.x
                             val ny = event.point.y
                             val (x, y) = toViewWorld(nx, ny)
 
-                            val drawable = SVGDrawable(
-                                context = this@PaperCanvasView,
-                                penColor = event.penColor,
-                                penSize = event.penSize,
-                                porterDuffMode = if (event.penType == PenType.ERASER) mEraserMode else mDrawMode)
+                            val drawable = SVGDrawable(id = event.strokeID,
+                                                       context = this@PaperCanvasView,
+                                                       penColor = event.penColor,
+                                                       penSize = event.penSize,
+                                                       porterDuffMode = getPaintMode(event.penType))
                             drawable.moveTo(Point(x, y, event.point.time))
 
                             mStrokeDrawables.add(drawable)
 
                             mIsHashDirty = true
 
-                            InvalidationEvent()
+                            Observable.just(InvalidationEvent())
                         }
                         is OnSketchEvent -> {
                             val nx = event.point.x
@@ -594,22 +594,52 @@ class PaperCanvasView : View,
 
                             mIsHashDirty = true
 
-                            InvalidationEvent()
+                            Observable.just(InvalidationEvent())
                         }
                         is StopSketchEvent -> {
                             val drawable = mStrokeDrawables.last()
                             drawable.close()
 
-                            InvalidationEvent()
+                            Observable.just(InvalidationEvent())
                         }
-                        is ClearAllSketchEvent -> {
-                            mStrokeDrawables.clear()
+                        is AddSketchStrokeEvent -> {
+                            if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.strokeID }) {
+                                val drawable = SVGDrawable(id = event.strokeID,
+                                                           points = event.points.map { p ->
+                                                               val (x, y) = toViewWorld(p.x, p.y)
+                                                               Point(x, y)
+                                                           },
+                                                           context = this@PaperCanvasView,
+                                                           penColor = event.penColor,
+                                                           penSize = event.penSize,
+                                                           porterDuffMode = getPaintMode(event.penType))
+                                mStrokeDrawables.add(drawable)
+
+                                mIsHashDirty = true
+
+                                Observable.just(InvalidationEvent())
+                            } else {
+                                Observable.just(NullCanvasEvent())
+                            }
+                        }
+                        is RemoveSketchStrokeEvent -> {
+                            val i = mStrokeDrawables.indexOfFirst { d ->
+                                d.id == event.strokeID
+                            }
+                            if (i >= 0) {
+                                mStrokeDrawables.removeAt(i)
+                            }
+
+                            // Invalidate drawables
+                            mStrokeDrawables.forEach { d -> d.markUndrew() }
 
                             mIsHashDirty = true
 
-                            InvalidationEvent()
+                            Observable.just(
+                                EraseCanvasEvent(),
+                                InvalidationEvent())
                         }
-                        else -> event
+                        else -> Observable.just(event)
                     }
                 }
                 .observeOn(mRenderingScheduler)
@@ -703,9 +733,19 @@ class PaperCanvasView : View,
                                 mInteractionReadySignal.onNext(true)
                             }
                         }
+                        is EraseCanvasEvent -> {
+                            mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                            mSceneBuffer.getCurrentScene().draw { c ->
+                                c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                            }
+                        }
                     }
                 }
         }
+    }
+
+    private fun getPaintMode(penType: PenType): PorterDuffXfermode {
+        return if (penType == PenType.ERASER) mEraserMode else mDrawMode
     }
 
     private fun onAntiAliasingDraw(): Observable<Scene> {

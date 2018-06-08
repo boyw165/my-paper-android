@@ -163,16 +163,22 @@ class PaperAutoSaveImpl(
 
     override fun pushStroke(stroke: SketchStroke) {
         mLock.lock()
-        mSketch.add(stroke)
-        mAddStrokeSignal.onNext(stroke)
+        if (stroke.pointList.isNotEmpty()) {
+            mSketch.add(stroke)
+        }
         mLock.unlock()
+
+        mAddStrokeSignal.onNext(stroke)
 
         // Request to save file
         requestAutoSave()
     }
 
     override fun popStroke(): SketchStroke {
+        mLock.lock()
         val stroke = mSketch.removeAt(mSketch.lastIndex)
+        mLock.unlock()
+
         mRemoveStrokeSignal.onNext(stroke)
 
         // Request to save file

@@ -23,6 +23,7 @@ package com.paper.model.sketch
 import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
+import java.util.*
 
 /**
  * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
@@ -31,18 +32,16 @@ import com.paper.model.Rect
  * points are endpoints or control-points for describing a bezier curve.
  */
 data class SketchStroke(
+    val id: UUID = UUID.randomUUID(),
     // The byte order is ARGB.
     val penColor: Int = 0,
     val penSize: Float = 0.toFloat(),
-    val penType: PenType = PenType.PEN) {
+    val penType: PenType = PenType.PEN,
+    private val mPointList: MutableList<Point> = mutableListOf()) {
 
     private var mIsHashDirty = true
     private var mHashCode = 0
 
-    /**
-     * A stroke essentially is a list of points.
-     */
-    private val mPointList = mutableListOf<Point>()
     /**
      * A stroke essentially is a list of points.
      */

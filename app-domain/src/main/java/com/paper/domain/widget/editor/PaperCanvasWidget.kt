@@ -71,6 +71,25 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         // Canvas size
         mSetCanvasSize.onNext(Rect(0f, 0f, model.getWidth(), model.getHeight()))
 
+        // Add or remove stroke
+        mDisposables.add(
+            model.onAddStroke(replayAll = false)
+                .observeOn(mUiScheduler)
+                .subscribe { stroke ->
+                    mDrawSVGSignal.onNext(
+                        AddSketchStrokeEvent(strokeID = stroke.id,
+                                             points = stroke.pointList,
+                                             penColor = stroke.penColor,
+                                             penSize = stroke.penSize,
+                                             penType = stroke.penType))
+                })
+        mDisposables.add(
+            model.onRemoveStroke()
+                .observeOn(mUiScheduler)
+                .subscribe { stroke ->
+                    mDrawSVGSignal.onNext(RemoveSketchStrokeEvent(strokeID = stroke.id))
+                })
+
         // Add or remove scrap
         mDisposables.add(
             model.onAddScrap()
@@ -234,6 +253,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
         // Notify the observer the MOVE action
         mDrawSVGSignal.onNext(StartSketchEvent(
+            strokeID = mTmpStroke.id,
             point = p,
             penColor = mTmpStroke.penColor,
             penSize = mTmpStroke.penSize,
@@ -249,7 +269,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mTmpStroke.addPath(p)
 
         // Notify the observer the LINE_TO action
-        mDrawSVGSignal.onNext(OnSketchEvent(point = p))
+        mDrawSVGSignal.onNext(OnSketchEvent(strokeID = mTmpStroke.id,
+                                            point = p))
     }
 
     override fun handleDragEnd(x: Float,
@@ -332,6 +353,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
         // Notify the observer
         mDrawSVGSignal.onNext(StartSketchEvent(
+            strokeID = mTmpStroke.id,
             point = p,
             penColor = mTmpStroke.penColor,
             penSize = mTmpStroke.penSize,

@@ -162,7 +162,28 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     mCanvasWidget.setPenSize(penSize)
                 })
 
-        // Following are about undo and redo:
+        // Undo and redo
+        // TODO: Before really undo, check editor state. If it's free, do it
+        // TODO: immediately. While doing, please update the editor state to
+        // TODO: busy. Once finished, update it to free.
+        mDisposables.add(
+            Observable
+                .merge(mUndoSignals)
+                .flatMap {
+                    mHistoryWidget
+                        .undo()
+                        .toObservable()
+                }
+                .subscribe())
+        mDisposables.add(
+            Observable
+                .merge(mRedoSignals)
+                .flatMap {
+                    mHistoryWidget
+                        .redo()
+                        .toObservable()
+                }
+                .subscribe())
         mDisposables.add(
             mHistoryWidget
                 .onUpdateUndoRedoCapacity()
@@ -246,29 +267,41 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                              ioScheduler = mIoScheduler)
     }
 
+    private val mUndoSignals = mutableListOf<Observable<Any>>()
+
+    fun addUndoSignal(source: Observable<Any>) {
+        mUndoSignals.add(source)
+    }
+
+    private val mRedoSignals = mutableListOf<Observable<Any>>()
+
+    fun addRedoSignal(source: Observable<Any>) {
+        mRedoSignals.add(source)
+    }
+
+//    fun handleUndo() {
+//        // TODO: Before really undo, check editor state. If it's free, do it
+//        // TODO: immediately. While doing, please update the editor state to
+//        // TODO: busy. Once finished, update it to free.
+//
+//        if (!mUndoRedoEventSignal.value!!.canUndo) return
+//
+//        mHistoryWidget.undo()
+//    }
+//
+//    fun handleRedo() {
+//        // TODO: Before really undo, check editor state. If it's free, do it
+//        // TODO: immediately. While doing, please update the editor state to
+//        // TODO: busy. Once finished, update it to free.
+//
+//        if (!mUndoRedoEventSignal.value!!.canRedo) return
+//
+//        mHistoryWidget.redo()
+//    }
+
     private val mUndoRedoEventSignal = BehaviorSubject.createDefault(
         UndoRedoEvent(canUndo = false,
                       canRedo = false))
-
-    fun handleUndo() {
-        // TODO: Before really undo, check editor state. If it's free, do it
-        // TODO: immediately. While doing, please update the editor state to
-        // TODO: busy. Once finished, update it to free.
-
-        if (!mUndoRedoEventSignal.value!!.canUndo) return
-
-        mHistoryWidget.undo()
-    }
-
-    fun handleRedo() {
-        // TODO: Before really undo, check editor state. If it's free, do it
-        // TODO: immediately. While doing, please update the editor state to
-        // TODO: busy. Once finished, update it to free.
-
-        if (!mUndoRedoEventSignal.value!!.canRedo) return
-
-        mHistoryWidget.redo()
-    }
 
     fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {
         return mUndoRedoEventSignal

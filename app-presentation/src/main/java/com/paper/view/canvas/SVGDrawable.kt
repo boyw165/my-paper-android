@@ -25,8 +25,11 @@ package com.paper.view.canvas
 import android.graphics.*
 import com.paper.domain.data.Bezier
 import com.paper.model.Point
+import java.util.*
 
-class SVGDrawable(context: IPaperContext,
+class SVGDrawable(val id: UUID,
+                  context: IPaperContext,
+                  points: List<Point> = emptyList(),
                   penColor: Int = 0,
                   penSize: Float = 1f,
                   porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)) {
@@ -65,6 +68,15 @@ class SVGDrawable(context: IPaperContext,
         mMinWidth = 1f * paintSize
         mMaxWidth = 2.5f * paintSize
         mVelocityFilterWeight = 0.9f
+
+        // Initialize the points
+        points.forEachIndexed { i, p ->
+            when (i) {
+                0 -> moveTo(p)
+                points.lastIndex -> close()
+                else -> lineTo(p)
+            }
+        }
     }
 
     private fun getPaintSize(penSize: Float): Float {
@@ -90,7 +102,7 @@ class SVGDrawable(context: IPaperContext,
 //        addPoint(getNewPoint(x, y))
 
         // Try #3
-        addPoint(point)
+        addPoint(point.copy())
     }
 
     fun lineTo(point: Point) {
@@ -102,7 +114,7 @@ class SVGDrawable(context: IPaperContext,
 //        addPoint(getNewPoint(x, y))
 
         // Try #3
-        addPoint(point)
+        addPoint(point.copy())
     }
 
     fun close() {
@@ -122,6 +134,13 @@ class SVGDrawable(context: IPaperContext,
      */
     fun markAllDrew() {
         mConsumedPointCount = mStrokePoint.size
+    }
+
+    /**
+     * Mark the entire drawable is not drew.
+     */
+    fun markUndrew() {
+        mConsumedPointCount = 0
     }
 
     /**

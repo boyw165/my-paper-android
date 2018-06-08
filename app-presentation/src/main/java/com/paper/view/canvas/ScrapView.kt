@@ -174,13 +174,13 @@ open class ScrapView(drawMode: PorterDuffXfermode,
     }
 
     private fun onDrawSVG(event: CanvasEvent) {
-
         when (event) {
             is StartSketchEvent -> {
                 val nx = event.point.x
                 val ny = event.point.y
                 val (x, y) = mContext!!.mapM2V(nx, ny)
                 val d = SVGDrawable(
+                    id = event.strokeID,
                     context = mContext!!,
                     penColor = event.penColor,
                     penSize = event.penSize,
@@ -200,7 +200,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
                 val d = mDrawables.last()
                 d.close()
             }
-            is ClearAllSketchEvent -> {
+            is EraseCanvasEvent -> {
                 val d = mDrawables.last()
                 d.clear()
                 mDrawables.clear()

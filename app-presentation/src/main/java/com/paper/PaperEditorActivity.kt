@@ -152,22 +152,8 @@ class PaperEditorActivity : AppCompatActivity() {
                 })
 
         // Undo & redo buttons
-        mDisposables.add(
-            RxView.clicks(mBtnUndo)
-                .observeOn(mUiScheduler)
-                .subscribe {
-                    // TODO
-                    showWIP()
-//                    mWidget.handleUndo()
-                })
-        mDisposables.add(
-            RxView.clicks(mBtnRedo)
-                .observeOn(mUiScheduler)
-                .subscribe {
-                    // TODO
-                    showWIP()
-//                    mWidget.handleRedo()
-                })
+        mWidget.addUndoSignal(RxView.clicks(mBtnUndo))
+        mWidget.addRedoSignal(RxView.clicks(mBtnRedo))
         mDisposables.add(
             mWidget.onGetUndoRedoEvent()
                 .observeOn(mUiScheduler)
