@@ -22,6 +22,7 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.event.UndoRedoEvent
 import com.paper.model.IPaper
 import com.paper.model.IPaperTransformRepo
 import com.paper.model.transform.AddStrokeTransform
@@ -72,7 +73,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
                     mOperationRepo
                         .putRecord(key, value)
                         .doOnSuccess {
-                            mUndoCapacitySignal.onNext(Pair(mUndoKeys.size, mRedoKeys.size))
+                            mUndoCapacitySignal.onNext(
+                                UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                                              canRedo = mRedoKeys.size > 0))
                         }
                         .toObservable()
                 }
@@ -100,7 +103,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
 
     private val mBusySignal = BehaviorSubject.createDefault(false)
 
-    // TODO: Utilize it
+    /**
+     * A busy state of this widget.
+     */
     fun onBusy(): Observable<Boolean> {
         return mBusySignal
     }
@@ -109,9 +114,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
 
     private val mUndoKeys = Stack<UUID>()
     private val mRedoKeys = Stack<UUID>()
-    private val mUndoCapacitySignal = PublishSubject.create<Pair<Int, Int>>()
+    private val mUndoCapacitySignal = PublishSubject.create<UndoRedoEvent>()
 
-    fun onUpdateUndoRedoCapacity(): Observable<Pair<Int, Int>> {
+    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoEvent> {
         return mUndoCapacitySignal
     }
 
@@ -119,7 +124,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         val key = mUndoKeys.pop()
         mRedoKeys.push(key)
 
-        mUndoCapacitySignal.onNext(Pair(mUndoKeys.size, mRedoKeys.size))
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
 
         return Single
             .just(key)
@@ -141,7 +148,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         val key = mRedoKeys.pop()
         mUndoKeys.push(key)
 
-        mUndoCapacitySignal.onNext(Pair(mUndoKeys.size, mRedoKeys.size))
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
 
         return Single
             .just(key)

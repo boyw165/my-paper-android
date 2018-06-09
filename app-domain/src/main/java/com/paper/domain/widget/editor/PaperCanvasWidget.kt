@@ -128,8 +128,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     mModel?.setThumbnailHeight(bmpHeight)
 
                     // Flag one task is done
-                    val busyFlag = mBusyFlagSignal.value!!
-                    mBusyFlagSignal.onNext(busyFlag.and(BusyFlag.THUMBNAIL.inv()))
+                    markNotBusy(BusyFlag.THUMBNAIL)
                 })
 
         // Busy state
@@ -160,12 +159,23 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     // Number of on-going task ////////////////////////////////////////////////
 
-    object BusyFlag {
-        const val THUMBNAIL = 1
+    enum class BusyFlag(val mask: Int) {
+        DRAWING(1.shl(0)),
+        THUMBNAIL(1.shl(1))
     }
 
     private val mBusyFlagSignal = BehaviorSubject.createDefault(0)
     private val mBusySignal = BehaviorSubject.createDefault(false)
+
+    private fun markBusy(which: BusyFlag) {
+        val busyFlag = mBusyFlagSignal.value!!
+        mBusyFlagSignal.onNext(busyFlag.or(which.mask))
+    }
+
+    private fun markNotBusy(which: BusyFlag) {
+        val busyFlag = mBusyFlagSignal.value!!
+        mBusyFlagSignal.onNext(busyFlag.and(which.mask.inv()))
+    }
 
     fun onBusy(): Observable<Boolean> {
         return mBusySignal
@@ -301,8 +311,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     override fun invalidateThumbnail() {
         // Flag one thing need to be done
-        val busyFlag = mBusyFlagSignal.value!!
-        mBusyFlagSignal.onNext(busyFlag.or(BusyFlag.THUMBNAIL))
+        markBusy(BusyFlag.THUMBNAIL)
     }
 
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()
@@ -319,6 +328,18 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                         mDrawSVGSignal,
                         // For the first time subscription, send events one by one!
                         TranslateSketchToSVG(mModel!!.getSketch()))
+                    // Canvas operation would change the busy flag
+                    .observeOn(mUiScheduler)
+                    .doOnNext { event ->
+                        when (event) {
+                            is StartSketchEvent -> {
+                                markBusy(BusyFlag.DRAWING)
+                            }
+                            is StopSketchEvent -> {
+                                markNotBusy(BusyFlag.DRAWING)
+                            }
+                        }
+                    }
             } else {
                 mDrawSVGSignal
             }
