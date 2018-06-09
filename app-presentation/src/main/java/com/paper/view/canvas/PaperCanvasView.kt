@@ -680,6 +680,9 @@ class PaperCanvasView : View,
                                         c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
                                     }
                                     bmp.recycle()
+
+                                    // Notify Bitmap update
+                                    mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
                                 })
                             } catch (err: Throwable) {
                                 // Redraw
