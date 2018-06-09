@@ -103,6 +103,14 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
 
     private val mBusySignal = BehaviorSubject.createDefault(false)
 
+    private fun markBusy() {
+        mBusySignal.onNext(true)
+    }
+
+    private fun markNotBusy() {
+        mBusySignal.onNext(false)
+    }
+
     /**
      * A busy state of this widget.
      */
@@ -131,12 +139,16 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         return Single
             .just(key)
             .flatMap { k ->
+                markBusy()
+
                 mOperationRepo
                     .getRecord(k)
                     .flatMap { transform ->
                         unbindModel()
                         transform.undo()
                         bindPaperImpl()
+
+                        markNotBusy()
 
                         Single.just(true)
                     }
@@ -155,12 +167,16 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         return Single
             .just(key)
             .flatMap { k ->
+                markBusy()
+
                 mOperationRepo
                     .getRecord(k)
                     .flatMap { transform ->
                         unbindModel()
                         transform.redo()
                         bindPaperImpl()
+
+                        markNotBusy()
 
                         Single.just(true)
                     }

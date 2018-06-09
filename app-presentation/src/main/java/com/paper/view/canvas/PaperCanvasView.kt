@@ -652,6 +652,10 @@ class PaperCanvasView : View,
                         // e.g.
                         // Given  [init begin, _whatever_, ..., init end]
                         // Return [init begin, init doing, ..., init end]
+                        //
+                        // It's important to use the same observable pattern to
+                        // initialize the stroke without slowing down by the
+                        // frequent rendering requests.
                         InitializationDoingEvent()
                     } else {
                         // Given  [..., init end, foo]

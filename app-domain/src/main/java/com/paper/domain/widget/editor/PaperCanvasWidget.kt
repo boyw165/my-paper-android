@@ -159,12 +159,21 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     // Number of on-going task ////////////////////////////////////////////////
 
+    /**
+     * Types of operations making canvas busy.
+     * @see [mBusyFlagSignal]
+     * @see [mBusySignal]
+     */
     enum class BusyFlag(val mask: Int) {
         DRAWING(1.shl(0)),
         THUMBNAIL(1.shl(1))
     }
 
     private val mBusyFlagSignal = BehaviorSubject.createDefault(0)
+    /**
+     * There are multiple operations making the canvas widget busy, any of them
+     * is still running, then this widget is busy.
+     */
     private val mBusySignal = BehaviorSubject.createDefault(false)
 
     private fun markBusy(which: BusyFlag) {
