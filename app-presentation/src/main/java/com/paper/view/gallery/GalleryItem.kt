@@ -32,7 +32,7 @@ sealed class GalleryItem {
     abstract fun getEpoxyModel(): EpoxyModel<View>
 }
 
-data class CreatePaperItem(val clickSignal: Observer<Any>) : GalleryItem() {
+data class CreatePaperItem(private val clickSignal: Observer<Any>) : GalleryItem() {
 
     override fun getEpoxyModel(): EpoxyModel<View> {
         return CreatePaperEpoxyModel()

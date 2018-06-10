@@ -94,6 +94,31 @@ class PaperThumbnailEpoxyModel(
         view?.setOnClickListener(null)
     }
 
+    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyModel {
+        mModifiedAt = modifiedAt
+        return this
+    }
+
+    fun setThumbnail(file: File?,
+                     width: Int,
+                     height: Int): PaperThumbnailEpoxyModel {
+        mThumbFile = file
+        mThumbWidth = width
+        mThumbHeight = height
+        return this
+    }
+
+    // Click //////////////////////////////////////////////////////////////////
+
+    private var mOnClickPaperSignal: Observer<Long>? = null
+
+    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyModel {
+        mOnClickPaperSignal = signal
+        return this
+    }
+
+    // Equality & hash ////////////////////////////////////////////////////////
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -116,28 +141,5 @@ class PaperThumbnailEpoxyModel(
         result = 31 * result + mThumbWidth
         result = 31 * result + mThumbHeight
         return result
-    }
-
-    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyModel {
-        mModifiedAt = modifiedAt
-        return this
-    }
-
-    fun setThumbnail(file: File?,
-                     width: Int,
-                     height: Int): PaperThumbnailEpoxyModel {
-        mThumbFile = file
-        mThumbWidth = width
-        mThumbHeight = height
-        return this
-    }
-
-    // Click //////////////////////////////////////////////////////////////////
-
-    private var mOnClickPaperSignal: Observer<Long>? = null
-
-    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyModel {
-        mOnClickPaperSignal = signal
-        return this
     }
 }

@@ -50,4 +50,14 @@ class CreatePaperEpoxyModel : EpoxyModel<View>() {
         mOnClickSignal = clickSignal
         return this
     }
+
+    // Equality & hash ////////////////////////////////////////////////////////
+
+    override fun equals(other: Any?): Boolean {
+        return other is CreatePaperEpoxyModel
+    }
+
+    override fun hashCode(): Int {
+        return 0
+    }
 }
