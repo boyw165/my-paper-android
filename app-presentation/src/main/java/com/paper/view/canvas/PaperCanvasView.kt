@@ -64,6 +64,9 @@ class PaperCanvasView : View,
                         IPaperContext,
                         IParentView {
 
+    // Dirty flags
+    private var mIsNew = true
+
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapView>()
 
@@ -153,10 +156,7 @@ class PaperCanvasView : View,
                         Observable.never()
                     }
                 }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
-                    widget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
-                })
+                .subscribe())
 
         // Anti-aliasing drawing
         mDisposables.add(
@@ -316,7 +316,7 @@ class PaperCanvasView : View,
     /**
      * A signal of updating the canvas hash and Bitmap.
      */
-    private val mUpdateBitmapSignal = PublishSubject.create<Bitmap>()
+    private val mUpdateBitmapSignal = PublishSubject.create<Pair<Int, Bitmap>>()
 
     /**
      * A signal of requesting the anti-aliasing drawing.
@@ -474,6 +474,24 @@ class PaperCanvasView : View,
         mMergedCanvas = Canvas(mMergedBitmap)
     }
 
+    private fun getPaintMode(penType: PenType): PorterDuffXfermode {
+        return if (penType == PenType.ERASER) mEraserMode else mDrawMode
+    }
+
+    /**
+     * Apply the padding transform to the canvas before processing the given
+     * lambda.
+     */
+    private inline fun<T> Canvas.withPadding(lambda: (canvas: Canvas) -> T):T {
+        return with {
+            // View might have padding, if so we need to shift canvas to show
+            // padding on the screen.
+            translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
+                      paddingTop.toFloat())
+            lambda(this)
+        }
+    }
+
     private fun dispatchDrawScraps(canvas: Canvas,
                                    scrapViews: List<IScrapView>,
                                    ifSharpenDrawing: Boolean) {
@@ -491,20 +509,6 @@ class PaperCanvasView : View,
         // Ensure no scraps modify the canvas matrix.
         if (mTmpMatrix != mCanvasMatrix) {
             throw IllegalStateException("Canvas matrix is changed")
-        }
-    }
-
-    /**
-     * Apply the padding transform to the canvas before processing the given
-     * lambda.
-     */
-    private inline fun<T> Canvas.withPadding(lambda: (canvas: Canvas) -> T):T {
-        return with {
-            // View might have padding, if so we need to shift canvas to show
-            // padding on the screen.
-            translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
-                      paddingTop.toFloat())
-            lambda(this)
         }
     }
 
@@ -628,26 +632,30 @@ class PaperCanvasView : View,
                             }
                             if (i >= 0) {
                                 mStrokeDrawables.removeAt(i)
+
+                                // Invalidate drawables
+                                mStrokeDrawables.forEach { d -> d.markUndrew() }
+
+                                mIsHashDirty = true
+
+                                Observable.just(
+                                    EraseCanvasEvent(),
+                                    InvalidationEvent())
+                            } else {
+                                Observable.just(NullCanvasEvent())
                             }
-
-                            // Invalidate drawables
-                            mStrokeDrawables.forEach { d -> d.markUndrew() }
-
-                            mIsHashDirty = true
-
-                            Observable.just(
-                                EraseCanvasEvent(),
-                                InvalidationEvent())
                         }
                         else -> Observable.just(event)
                     }
                 }
                 .observeOn(mRenderingScheduler)
-                // State
+                // State reducing
                 .scan { prev: CanvasEvent, now: CanvasEvent ->
                     if (prev is InitializationBeginEvent ||
                         (prev is InitializationDoingEvent &&
                          now !is InitializationEndEvent)) {
+                        // Transform any events in between init-begin and init-end
+                        // to init-doing events.
                         // This is only happening in the initialization process
                         // e.g.
                         // Given  [init begin, _whatever_, ..., init end]
@@ -658,6 +666,10 @@ class PaperCanvasView : View,
                         // frequent rendering requests.
                         InitializationDoingEvent()
                     } else {
+                        if (now !is InitializationEndEvent) {
+                            mIsNew = false
+                        }
+
                         // Given  [..., init end, foo]
                         // Return [..., init end, foo]
                         now
@@ -686,7 +698,7 @@ class PaperCanvasView : View,
                                     bmp.recycle()
 
                                     // Notify Bitmap update
-                                    mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+                                    postWriteBitmapFile()
                                 })
                             } catch (err: Throwable) {
                                 // Redraw
@@ -707,9 +719,10 @@ class PaperCanvasView : View,
                                             dirty = dirty || drawable.isSomethingToDraw()
                                             drawable.onDraw(canvas = c)
                                         }
+
                                         // Notify Bitmap update
                                         if (dirty) {
-                                            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+                                            postWriteBitmapFile()
                                         }
                                     }
                                 })
@@ -742,17 +755,18 @@ class PaperCanvasView : View,
                         }
                         is EraseCanvasEvent -> {
                             mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                            // Notify Bitmap update
+                            postWriteBitmapFile()
+
                             mSceneBuffer.getCurrentScene().draw { c ->
                                 c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
                             }
+
+                            postInvalidate()
                         }
                     }
                 }
         }
-    }
-
-    private fun getPaintMode(penType: PenType): PorterDuffXfermode {
-        return if (penType == PenType.ERASER) mEraserMode else mDrawMode
     }
 
     private fun onAntiAliasingDraw(): Observable<Scene> {
@@ -787,12 +801,21 @@ class PaperCanvasView : View,
             }
     }
 
-    private fun onSaveBitmap(): Observable<Triple<File, Int, Int>> {
+    private fun postWriteBitmapFile() {
+        if (mIsNew) return
+
+        mThumbBitmap?.let { bmp ->
+            mUpdateBitmapSignal.onNext(Pair(hashCode(), bmp))
+        }
+    }
+
+    private fun onSaveBitmap(): Observable<Any> {
         return mUpdateBitmapSignal
-            .map { bmp -> Pair(hashCode(), bmp) }
-            .filter { (hashCode, _) -> hashCode != AppConst.EMPTY_HASH }
             // Notify widget the thumbnail need to be update
-            .doOnNext { mWidget.invalidateThumbnail() }
+            .doOnNext {
+                if (mIsNew) return@doOnNext
+                mWidget.invalidateThumbnail()
+            }
             // Debounce Bitmap writes
             .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
 //            // TEST: text recognition
@@ -831,7 +854,11 @@ class PaperCanvasView : View,
                 mBitmapRepo
                     ?.putBitmap(hashCode, bmp)
                     ?.toObservable()
-                    ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
+                    // Feed the saved Bitmap file to the widget
+                    ?.observeOn(AndroidSchedulers.mainThread())
+                    ?.map { bmpFile ->
+                        mWidget.setThumbnail(bmpFile, bmp.width, bmp.height)
+                    }
                 ?: Observable.never<Triple<File, Int, Int>>()
             }
     }
