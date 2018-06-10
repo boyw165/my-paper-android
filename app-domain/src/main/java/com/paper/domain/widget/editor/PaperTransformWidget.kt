@@ -184,6 +184,15 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
             .onErrorReturnItem(false)
     }
 
+    fun eraseAll() {
+        mUndoKeys.clear()
+        mRedoKeys.clear()
+
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
+    }
+
     override fun toString(): String {
         return javaClass.simpleName
     }

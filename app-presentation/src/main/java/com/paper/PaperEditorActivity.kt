@@ -34,6 +34,7 @@ import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.ISharedPreferenceService
 import com.paper.model.ModelConst
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
+import com.paper.observables.BooleanDialogSingle
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
@@ -166,10 +167,27 @@ class PaperEditorActivity : AppCompatActivity() {
         mDisposables.add(
             RxView.clicks(mBtnDelete)
                 .observeOn(mUiScheduler)
-                .subscribe {
-                    // TODO
-                    showWIP()
-                })
+                .switchMap {
+                    val builder = AlertDialog.Builder(this@PaperEditorActivity)
+                        .setTitle(R.string.doodle_clear_title)
+                        .setMessage(R.string.doodle_clear_message)
+                        .setCancelable(true)
+
+                    BooleanDialogSingle(
+                        builder = builder,
+                        positiveButtonString = resources.getString(R.string.doodle_clear_ok),
+                        negativeButtonString = resources.getString(R.string.doodle_clear_cancel))
+                        .toObservable()
+                        .observeOn(mUiScheduler)
+                        .flatMap { doIt ->
+                            if (doIt) {
+                                mWidget.eraseCanvas()
+                            } else {
+                                Observable.never()
+                            }
+                        }
+                }
+                .subscribe())
 
         // Bind sub-view with the sub-widget if the widget is ready!
         mDisposables.add(

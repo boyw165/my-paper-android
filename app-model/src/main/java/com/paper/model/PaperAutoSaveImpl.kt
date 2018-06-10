@@ -187,6 +187,20 @@ class PaperAutoSaveImpl(
         return stroke
     }
 
+    override fun removeAllStrokes() {
+        mLock.lock()
+        val removed = mSketch.toList()
+        mSketch.clear()
+        mLock.unlock()
+
+        removed.forEach { stroke ->
+            mRemoveStrokeSignal.onNext(stroke)
+        }
+
+        // Request to save file
+        requestAutoSave()
+    }
+
     override fun onAddStroke(replayAll: Boolean): Observable<SketchStroke> {
         return if (replayAll) {
             Observable.merge(

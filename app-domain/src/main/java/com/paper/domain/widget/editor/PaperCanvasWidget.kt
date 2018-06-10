@@ -245,6 +245,10 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mPenSize = size
     }
 
+    override fun eraseCanvas() {
+        mModel?.removeAllStrokes()
+    }
+
     private var mCanHandleThisDrag = false
 
     override fun handleDragBegin(x: Float,

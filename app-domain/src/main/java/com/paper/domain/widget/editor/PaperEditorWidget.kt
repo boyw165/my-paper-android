@@ -236,7 +236,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
             }
     }
 
-    // Paper widget ///////////////////////////////////////////////////////////
+    // Canvas widget & functions //////////////////////////////////////////////
 
     private val mCanvasWidget by lazy {
         PaperCanvasWidget(mUiScheduler,
@@ -248,6 +248,12 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     // TODO: The interface is probably redundant
     fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
         return mOnCanvasWidgetReadySignal
+    }
+
+    fun eraseCanvas(): Observable<Boolean> {
+        mHistoryWidget.eraseAll()
+        mCanvasWidget.eraseCanvas()
+        return Observable.just(true)
     }
 
     // Edit panel widget //////////////////////////////////////////////////////
