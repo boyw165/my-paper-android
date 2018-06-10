@@ -52,6 +52,8 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun setThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
 
+    fun eraseCanvas()
+
     /**
      * If the view wants to update the thumbnail but not immediately, call this
      * method to indicate the thumbnail is dirty. The dirty state is reset when
