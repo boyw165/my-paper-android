@@ -335,27 +335,28 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     override fun onDrawSVG(replayAll: Boolean): Observable<CanvasEvent> {
         return if (hasModelBinding()) {
-            if (replayAll) {
+            val source = if(replayAll) {
                 Observable
                     .merge(
                         mDrawSVGSignal,
                         // For the first time subscription, send events one by one!
                         TranslateSketchToSVG(mModel!!.getSketch()))
-                    // Canvas operation would change the busy flag
-                    .observeOn(mUiScheduler)
-                    .doOnNext { event ->
-                        when (event) {
-                            is StartSketchEvent -> {
-                                markBusy(BusyFlag.DRAWING)
-                            }
-                            is StopSketchEvent -> {
-                                markNotBusy(BusyFlag.DRAWING)
-                            }
-                        }
-                    }
             } else {
                 mDrawSVGSignal
             }
+
+            // Canvas operation would change the busy flag
+            source.observeOn(mUiScheduler)
+                .doOnNext { event ->
+                    when (event) {
+                        is StartSketchEvent -> {
+                            markBusy(BusyFlag.DRAWING)
+                        }
+                        is StopSketchEvent -> {
+                            markNotBusy(BusyFlag.DRAWING)
+                        }
+                    }
+                }
         } else {
             Observable.never()
         }
