@@ -277,10 +277,9 @@ class PaperGalleryActivity : AppCompatActivity() {
             .merge(loadPapers(),
                    loadAds())
             .scan(defaultItem, { oldItem, newItem ->
-                if (newItem.isEmpty()) return@scan oldItem
-
                 // Create item
-                val createItems = if (newItem[0] is CreatePaperItem) {
+                val createItems = if (newItem.isNotEmpty() &&
+                                      newItem[0] is CreatePaperItem) {
                     newItem
                 } else {
                     oldItem.filter { item ->
@@ -289,24 +288,17 @@ class PaperGalleryActivity : AppCompatActivity() {
                 }
 
                 // Paper thumbnails
-                val paperThumbItems = if (newItem[0] is PaperThumbItem) {
-                    newItem
-                } else {
-                    oldItem.filter { item ->
-                        item is PaperThumbItem
-                    }
+                val paperThumbItems = newItem.filter { item ->
+                    item is PaperThumbItem
                 }
 
                 // ADs items (if paper exists)
-                val adsItems = if (paperThumbItems.isEmpty()) {
-                    emptyList()
+                val adsItems = if (newItem.isNotEmpty() &&
+                                   newItem[0] is NativeAdsItem) {
+                    newItem
                 } else {
-                    if (newItem[0] is NativeAdsItem) {
-                        newItem
-                    } else {
-                        oldItem.filter { item ->
-                            item is NativeAdsItem
-                        }
+                    oldItem.filter { item ->
+                        item is NativeAdsItem
                     }
                 }
 
