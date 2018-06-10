@@ -47,6 +47,7 @@ import com.paper.model.ModelConst
 import com.paper.view.gallery.PaperSizeDialogFragment
 import com.paper.view.gallery.PaperSizeDialogSingle
 import com.paper.view.gallery.*
+import com.paper.view.gallery.GalleryItemBundle.Type.*
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
 import com.yarolegovich.discretescrollview.transform.Pivot
@@ -116,11 +117,11 @@ class PaperGalleryActivity : AppCompatActivity() {
                 .setPivotX(Pivot.X.CENTER) // CENTER is a default one
                 .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
                 .build())
-        //        mPapersView.setSlideOnFling(true)
-        //        mPapersView.setOverScrollEnabled(true)
-        //        // Determines how much time it takes to change the item on fling, settle
-        //        // or smoothScroll
-        //        mPapersView.setItemTransitionTimeMillis(300)
+//        mPapersView.setSlideOnFling(true)
+//        mPapersView.setOverScrollEnabled(true)
+//        // Determines how much time it takes to change the item on fling, settle
+//        // or smoothScroll
+//        mPapersView.setItemTransitionTimeMillis(300)
         mGalleryView.addScrollStateChangeListener(object : DiscreteScrollView.ScrollStateChangeListener<RecyclerView.ViewHolder> {
 
             override fun onScroll(scrollPosition: Float,
@@ -141,6 +142,19 @@ class PaperGalleryActivity : AppCompatActivity() {
                                        adapterPosition: Int) {
             }
         })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Paper thumbnail list view.
+        // Break the reference to the Epoxy controller's adapter so that the
+        // context reference would be recycled.
+        mGalleryView.adapter = null
+    }
+
+    override fun onResume() {
+        super.onResume()
 
         // Exp menu button.
         mDisposables.add(
@@ -172,7 +186,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                         }
                         .switchMap {
                             PaperSizeDialogSingle(PaperSizeDialogFragment(),
-                                                                         supportFragmentManager)
+                                                  supportFragmentManager)
                                 .flatMap { (w, h) ->
                                     mRepo.setTmpPaperSize(w, h)
                                 }
@@ -260,42 +274,48 @@ class PaperGalleryActivity : AppCompatActivity() {
                 })
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onPause() {
+        super.onPause()
 
         mDisposables.clear()
-
-        // Paper thumbnail list view.
-        // Break the reference to the Epoxy controller's adapter so that the
-        // context reference would be recycled.
-        mGalleryView.adapter = null
     }
 
     private fun getGalleryItems(): Observable<List<GalleryItem>> {
         val defaultItem = listOf<GalleryItem>(CreatePaperItem(mOnClickNewPaperSignal))
         return Observable
-            .merge(loadPapers(),
-                   loadAds())
-            .scan(defaultItem, { oldItem, newItem ->
+            .merge(
+                loadPapers()
+                    // To bundle so that the following reducer knows what packs
+                    // to update.
+                    .map { items ->
+                        GalleryItemBundle(type = Thumbnail,
+                                          items = items)
+                    },
+                loadAds()
+                    // To bundle so that the following reducer knows what packs
+                    // to update.
+                    .map { items ->
+                        GalleryItemBundle(type = NativeAds,
+                                          items = items)
+                    })
+            .scan(defaultItem, { oldItem, newItemBundle ->
                 // Create item
-                val createItems = if (newItem.isNotEmpty() &&
-                                      newItem[0] is CreatePaperItem) {
-                    newItem
-                } else {
-                    oldItem.filter { item ->
-                        item is CreatePaperItem
-                    }
+                val createItems = oldItem.filter { item ->
+                    item is CreatePaperItem
                 }
 
                 // Paper thumbnails
-                val paperThumbItems = newItem.filter { item ->
-                    item is PaperThumbItem
+                val paperThumbItems = if (newItemBundle.type == Thumbnail) {
+                    newItemBundle.items
+                } else {
+                    oldItem.filter { item ->
+                        item is PaperThumbItem
+                    }
                 }
 
                 // ADs items (if paper exists)
-                val adsItems = if (newItem.isNotEmpty() &&
-                                   newItem[0] is NativeAdsItem) {
-                    newItem
+                val adsItems = if (newItemBundle.type == NativeAds) {
+                    newItemBundle.items
                 } else {
                     oldItem.filter { item ->
                         item is NativeAdsItem
