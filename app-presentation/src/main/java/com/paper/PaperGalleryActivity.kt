@@ -136,16 +136,14 @@ class PaperGalleryActivity : AppCompatActivity() {
                 val paperID = mGalleryViewController
                     .getPaperFromAdapterPosition(adapterPosition)
                     ?.getId() ?: ModelConst.INVALID_ID
-                val savedID = mSavedPaperIdSignal.value ?: ModelConst.INVALID_ID
 
                 // Report the paper ID in the database
-                if (paperID != savedID) {
-                    mSavedPaperIdSignal.onNext(paperID)
-                }
+                mSavedPaperIdSignal.onNext(paperID)
             }
 
             override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
                                        adapterPosition: Int) {
+                setDeleteButtonVisibility(false)
             }
         })
     }
