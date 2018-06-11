@@ -38,6 +38,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
@@ -195,16 +196,13 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     /**
      * Request to stop; It is granted to stop when receiving a true; vice versa.
      */
-    fun requestStop(): Observable<Boolean> {
-        return onBusy()
-            .doOnNext { busy ->
-                if (busy) {
-                    mUpdateProgressSignal.onNext(ProgressEvent.start(0))
-                } else {
-                    mUpdateProgressSignal.onNext(ProgressEvent.stop(100))
-                }
-            }
-            .map { !it }
+    fun requestStop(bmpFile: File, bmpWidth: Int, bmpHeight: Int): Observable<Boolean> {
+        return try {
+            mCanvasWidget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
+            Observable.just(true)
+        } catch (err: Throwable) {
+            Observable.just(false)
+        }
     }
 
     private fun ensureNoLeakingSubscription() {

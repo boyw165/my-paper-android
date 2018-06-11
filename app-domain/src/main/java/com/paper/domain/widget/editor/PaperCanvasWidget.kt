@@ -118,19 +118,6 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                     mRemoveWidgetSignal.onNext(widget)
                 })
 
-        // Thumbnail
-        mDisposables.add(
-            mUpdateBitmapSignal
-                .observeOn(mUiScheduler)
-                .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
-                    mModel?.setThumbnail(bmpFile)
-                    mModel?.setThumbnailWidth(bmpWidth)
-                    mModel?.setThumbnailHeight(bmpHeight)
-
-                    // Flag one task is done
-                    markNotBusy(BusyFlag.THUMBNAIL)
-                })
-
         // Busy state
         mDisposables.add(
             mBusyFlagSignal
@@ -314,17 +301,12 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mDrawSVGSignal.onNext(StopSketchEvent())
     }
 
-    private val mUpdateBitmapSignal = PublishSubject.create<Triple<File, Int, Int>>()
-
     override fun setThumbnail(bmpFile: File,
                               bmpWidth: Int,
                               bmpHeight: Int) {
-        mUpdateBitmapSignal.onNext(Triple(bmpFile, bmpWidth, bmpHeight))
-    }
-
-    override fun invalidateThumbnail() {
-        // Flag one thing need to be done
-        markBusy(BusyFlag.THUMBNAIL)
+        mModel?.setThumbnail(bmpFile)
+        mModel?.setThumbnailWidth(bmpWidth)
+        mModel?.setThumbnailHeight(bmpHeight)
     }
 
     private val mSetCanvasSize = BehaviorSubject.create<Rect>()

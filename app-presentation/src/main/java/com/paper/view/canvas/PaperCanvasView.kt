@@ -46,6 +46,7 @@ import com.paper.model.repository.IBitmapRepo
 import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
 import com.paper.view.with
+import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -142,16 +143,6 @@ class PaperCanvasView : View,
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
                             .compose(handleDrawSVGEvent())
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .subscribe())
-        mDisposables.add(
-            mDrawReadySignal
-                .switchMap { ready ->
-                    if (ready) {
-                        onSaveBitmap()
                     } else {
                         Observable.never()
                     }
@@ -312,11 +303,6 @@ class PaperCanvasView : View,
      * [handleDrawSVGEvent].
      */
     private val mInteractionReadySignal = BehaviorSubject.createDefault(false)
-
-    /**
-     * A signal of updating the canvas hash and Bitmap.
-     */
-    private val mUpdateBitmapSignal = PublishSubject.create<Pair<Int, Bitmap>>()
 
     /**
      * A signal of requesting the anti-aliasing drawing.
@@ -696,9 +682,6 @@ class PaperCanvasView : View,
                                         c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
                                     }
                                     bmp.recycle()
-
-                                    // Notify Bitmap update
-                                    postWriteBitmapFile()
                                 })
                             } catch (err: Throwable) {
                                 // Redraw
@@ -718,11 +701,6 @@ class PaperCanvasView : View,
                                         mStrokeDrawables.forEach { drawable ->
                                             dirty = dirty || drawable.isSomethingToDraw()
                                             drawable.onDraw(canvas = c)
-                                        }
-
-                                        // Notify Bitmap update
-                                        if (dirty) {
-                                            postWriteBitmapFile()
                                         }
                                     }
                                 })
@@ -755,8 +733,6 @@ class PaperCanvasView : View,
                         }
                         is EraseCanvasEvent -> {
                             mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
-                            // Notify Bitmap update
-                            postWriteBitmapFile()
 
                             mSceneBuffer.getCurrentScene().draw { c ->
                                 c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
@@ -801,72 +777,28 @@ class PaperCanvasView : View,
             }
     }
 
-    private fun postWriteBitmapFile() {
-        if (mIsNew) return
-
-        mThumbBitmap?.let { bmp ->
-            mUpdateBitmapSignal.onNext(Pair(hashCode(), bmp))
-        }
-    }
-
-    private fun onSaveBitmap(): Observable<Any> {
-        return mUpdateBitmapSignal
-            // Notify widget the thumbnail need to be update
-            .doOnNext {
-                if (mIsNew) return@doOnNext
-                mWidget.invalidateThumbnail()
-            }
-            // Debounce Bitmap writes
-            .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
-//            // TEST: text recognition
-//            .observeOn(Schedulers.computation())
-//            .doOnNext { (_, bmp) ->
-//                val image = FirebaseVisionImage.fromBitmap(bmp)
-//                mTextDetector.detectInImage(image)
-//                    .addOnSuccessListener { visionText ->
-//                        val builder = StringBuilder()
-//                        visionText.blocks.forEach { block ->
-//                            builder.append("[")
-//                            block.lines.forEachIndexed { i, line ->
-//                                line.elements.forEachIndexed { j, element ->
-//                                    builder.append(element.text)
-//
-//                                    if (line.elements.size > 1 &&
-//                                        j < line.elements.lastIndex) {
-//                                        builder.append(" ")
-//                                    }
-//                                }
-//
-//                                if (block.lines.size > 1 &&
-//                                    i < block.lines.lastIndex) {
-//                                    builder.append(",")
-//                                }
-//                            }
-//                            builder.append("]")
-//                        }
-//                        Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
-//                    }
-//                    .addOnFailureListener { err ->
-//                        Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
-//                    }
-//            }
-            .switchMap { (hashCode, bmp) ->
-                mBitmapRepo
-                    ?.putBitmap(hashCode, bmp)
-                    ?.toObservable()
-                    // Feed the saved Bitmap file to the widget
-                    ?.observeOn(AndroidSchedulers.mainThread())
-                    ?.map { bmpFile ->
-                        mWidget.setThumbnail(bmpFile, bmp.width, bmp.height)
-                    }
-                ?: Observable.never<Triple<File, Int, Int>>()
-            }
-    }
-
     private var mBitmapRepo: IBitmapRepo? = null
 
     fun setBitmapRepo(repo: IBitmapRepo) {
         mBitmapRepo = repo
+    }
+
+    /**
+     * Write the thumbnail Bitmap to a file maintained by the Bitmap repository.
+     */
+    fun writeThumbFile(): Maybe<Triple<File, Int, Int>> {
+        return if (mIsNew) {
+            return Maybe.empty()
+        } else {
+            val hash = hashCode()
+            mBitmapRepo
+                ?.putBitmap(hash, mThumbBitmap!!)
+                ?.map { file ->
+                    Triple(file, mThumbBitmap!!.width, mThumbBitmap!!.height)
+                }
+                ?.toMaybe()
+            ?: Maybe.empty<Triple<File, Int, Int>>()
+        }
     }
 
     private fun cancelAntiAliasingDrawing() {

@@ -132,14 +132,20 @@ class PaperEditorActivity : AppCompatActivity() {
         mDisposables.add(
             onClickCloseButton()
                 .switchMap {
-                    mWidget.requestStop()
+                    mCanvasView
+                        .writeThumbFile()
+                        .toObservable()
+                        .doOnSubscribe { mUpdateProgressSignal.onNext(ProgressEvent.start(0)) }
+                        .doOnNext { mUpdateProgressSignal.onNext(ProgressEvent.stop(100)) }
+                        .observeOn(mUiScheduler)
+                        .flatMap { (file, width, height) ->
+                            mWidget.requestStop(file, width, height)
+                        }
+                        .observeOn(mUiScheduler)
+                        .doOnComplete { close() }
                 }
                 .observeOn(mUiScheduler)
-                .subscribe { granted ->
-                    if (granted) {
-                        close()
-                    }
-                })
+                .subscribe())
 
         // View port indicator
         mDisposables.add(

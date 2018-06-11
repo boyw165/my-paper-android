@@ -54,13 +54,6 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun eraseCanvas()
 
-    /**
-     * If the view wants to update the thumbnail but not immediately, call this
-     * method to indicate the thumbnail is dirty. The dirty state is reset when
-     * call [setThumbnail].
-     */
-    fun invalidateThumbnail()
-
     // For output /////////////////////////////////////////////////////////////
 
     fun onSetCanvasSize(): Observable<Rect>
