@@ -69,7 +69,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mModel = model
 
         // Canvas size
-        mSetCanvasSize.onNext(Rect(0f, 0f, model.getWidth(), model.getHeight()))
+        mCanvasSizeSignal.onNext(Rect(0f, 0f, model.getWidth(), model.getHeight()))
 
         // Add or remove stroke
         mDisposables.add(
@@ -309,10 +309,10 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mModel?.setThumbnailHeight(bmpHeight)
     }
 
-    private val mSetCanvasSize = BehaviorSubject.create<Rect>()
+    private val mCanvasSizeSignal = BehaviorSubject.create<Rect>()
 
     override fun onSetCanvasSize(): Observable<Rect> {
-        return mSetCanvasSize
+        return mCanvasSizeSignal
     }
 
     override fun onDrawSVG(replayAll: Boolean): Observable<CanvasEvent> {
