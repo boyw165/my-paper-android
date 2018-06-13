@@ -91,6 +91,8 @@ class SVGDrawable(val id: UUID,
 
         mStrokePoint.clear()
         mStrokeWidth.clear()
+        mConsumedPointCount = 0
+        mIsHashDirty = true
     }
 
     fun moveTo(point: Point) {
@@ -103,6 +105,7 @@ class SVGDrawable(val id: UUID,
 
         // Try #3
         addPoint(point.copy())
+        mIsHashDirty = true
     }
 
     fun lineTo(point: Point) {
@@ -125,8 +128,7 @@ class SVGDrawable(val id: UUID,
      * Check if this Drawable still gets something not drew.
      */
     fun isSomethingToDraw(): Boolean {
-        val newPoints = mStrokePoint.subList(mConsumedPointCount, mStrokePoint.size)
-        return newPoints.size > 0
+        return mConsumedPointCount < mStrokePoint.size
     }
 
     /**

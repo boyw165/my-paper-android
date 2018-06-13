@@ -236,6 +236,59 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mModel?.removeAllStrokes()
     }
 
+    override fun setThumbnail(bmpFile: File,
+                              bmpWidth: Int,
+                              bmpHeight: Int) {
+        mModel?.setThumbnail(bmpFile)
+        mModel?.setThumbnailWidth(bmpWidth)
+        mModel?.setThumbnailHeight(bmpHeight)
+    }
+
+    private val mCanvasSizeSignal = BehaviorSubject.create<Rect>()
+
+    override fun onSetCanvasSize(): Observable<Rect> {
+        return mCanvasSizeSignal
+    }
+
+    override fun onDrawSVG(replayAll: Boolean): Observable<CanvasEvent> {
+        return if (hasModelBinding()) {
+            val source = if(replayAll) {
+                Observable
+                    .merge(
+                        mDrawSVGSignal,
+                        // For the first time subscription, send events one by one!
+                        TranslateSketchToSVG(mModel!!.getSketch()))
+            } else {
+                mDrawSVGSignal
+            }
+
+            // Canvas operation would change the busy flag
+            source.observeOn(mUiScheduler)
+                .doOnNext { event ->
+                    when (event) {
+                        is StartSketchEvent -> {
+                            markBusy(BusyFlag.DRAWING)
+                        }
+                        is StopSketchEvent -> {
+                            markNotBusy(BusyFlag.DRAWING)
+                        }
+                    }
+                }
+        } else {
+            Observable.never()
+        }
+    }
+
+    // Gesture ////////////////////////////////////////////////////////////////
+
+    override fun handleTouchBegin() {
+    }
+
+    override fun handleTouchEnd() {
+        // Brutally stop the drawing filter.
+        mCancelDrawingSignal.onNext(0)
+    }
+
     private var mCanHandleThisDrag = false
 
     override fun handleDragBegin(x: Float,
@@ -301,77 +354,28 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mDrawSVGSignal.onNext(StopSketchEvent())
     }
 
-    override fun setThumbnail(bmpFile: File,
-                              bmpWidth: Int,
-                              bmpHeight: Int) {
-        mModel?.setThumbnail(bmpFile)
-        mModel?.setThumbnailWidth(bmpWidth)
-        mModel?.setThumbnailHeight(bmpHeight)
-    }
-
-    private val mCanvasSizeSignal = BehaviorSubject.create<Rect>()
-
-    override fun onSetCanvasSize(): Observable<Rect> {
-        return mCanvasSizeSignal
-    }
-
-    override fun onDrawSVG(replayAll: Boolean): Observable<CanvasEvent> {
-        return if (hasModelBinding()) {
-            val source = if(replayAll) {
-                Observable
-                    .merge(
-                        mDrawSVGSignal,
-                        // For the first time subscription, send events one by one!
-                        TranslateSketchToSVG(mModel!!.getSketch()))
-            } else {
-                mDrawSVGSignal
-            }
-
-            // Canvas operation would change the busy flag
-            source.observeOn(mUiScheduler)
-                .doOnNext { event ->
-                    when (event) {
-                        is StartSketchEvent -> {
-                            markBusy(BusyFlag.DRAWING)
-                        }
-                        is StopSketchEvent -> {
-                            markNotBusy(BusyFlag.DRAWING)
-                        }
-                    }
-                }
-        } else {
-            Observable.never()
-        }
-    }
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    override fun handleTouchBegin() {
-    }
-
-    override fun handleTouchEnd() {
-        // Brutally stop the drawing filter.
-        mCancelDrawingSignal.onNext(0)
-    }
-
     override fun handleTap(x: Float, y: Float) {
         if (!hasModelBinding()) return
 
         // Draw a DOT!!!
-        val p = Point(x, y, 0)
+        // Create a new stroke and hold it in the temporary pool.
+        val penType = if (mDrawingMode == DrawingMode.ERASER) {
+            PenType.ERASER
+        } else {
+            PenType.PEN
+        }
         mTmpStroke = SketchStroke(
-            penType = PenType.PEN,
-            penColor = 0,
-            penSize = 1f)
-        mTmpStroke.addPath(p)
-
+            penType = penType,
+            penColor = mPenColor,
+            penSize = mPenSize,
+            mPointList = mutableListOf(Point(x, y, 0)))
         // Commit to model
         mModel?.pushStroke(mTmpStroke)
 
         // Notify the observer
         mDrawSVGSignal.onNext(StartSketchEvent(
             strokeID = mTmpStroke.id,
-            point = p,
+            point = Point(x, y, 0),
             penColor = mTmpStroke.penColor,
             penSize = mTmpStroke.penSize,
             penType = mTmpStroke.penType))

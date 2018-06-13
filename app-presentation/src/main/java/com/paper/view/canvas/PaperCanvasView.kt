@@ -682,6 +682,8 @@ class PaperCanvasView : View,
                                         c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
                                     }
                                     bmp.recycle()
+
+                                    println("${AppConst.TAG}: Found thumbnail cache, so skip drawing")
                                 })
                             } catch (err: Throwable) {
                                 // Redraw
@@ -703,6 +705,8 @@ class PaperCanvasView : View,
                                             drawable.onDraw(canvas = c)
                                         }
                                     }
+
+                                    println("${AppConst.TAG}: Not found thumbnail cache, so draw it again!")
                                 })
                             }
 
