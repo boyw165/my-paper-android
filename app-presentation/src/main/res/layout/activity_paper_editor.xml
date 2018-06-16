@@ -28,6 +28,7 @@
 
     <!-- Top bar -->
     <FrameLayout
+        android:id="@+id/btn_toolbar"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@color/bg_editor_top_bar"
@@ -88,4 +89,10 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/paper_canvas"/>
+
+    <!-- For debug menu -->
+    <FrameLayout
+        android:id="@+id/fullscreen_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 </android.support.constraint.ConstraintLayout>

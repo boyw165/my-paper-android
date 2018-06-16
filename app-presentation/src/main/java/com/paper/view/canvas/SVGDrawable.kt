@@ -185,7 +185,7 @@ class SVGDrawable(val id: UUID,
             }
 
             // End point for debugging
-            if (BuildConfig.DEBUG) {
+            if (mContext.ifShowPathJoints) {
                 mPointList.forEach { p ->
                     canvas.drawPoint(p.x, p.y, mDebugStrokePaint)
                 }

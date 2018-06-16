@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="root_title">
+
+    <PreferenceCategory
+        android:title="Drawing">
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/prefs_show_path_joints"
+            android:summary="Path is formed by a set of joints, say points. Enable this option to show them."
+            android:title="Show Path Joints"/>
+    </PreferenceCategory>
+</PreferenceScreen>
+

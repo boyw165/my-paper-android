@@ -18,11 +18,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.model
 
-import io.reactivex.Scheduler
+interface IPaperTransformRepoProvider {
 
-interface IDatabaseIOSchedulerProvider {
-
-    fun getScheduler(): Scheduler
+    fun getPaperTransformRepo(): IPaperTransformRepo
 }

@@ -53,7 +53,7 @@ import kotlin.collections.HashMap
 class PaperRepoSqliteImpl(authority: String,
                           resolver: ContentResolver,
                           fileDir: File,
-                          prefs: ISharedPreferenceService,
+                          prefs: IPreferenceService,
                           dbIoScheduler: Scheduler) : IPaperRepo,
                                                       IBitmapRepo {
     private val mAuthority = authority
@@ -351,7 +351,7 @@ class PaperRepoSqliteImpl(authority: String,
                         if (newURI != null) {
                             // Remember the ID
                             val newID = newURI.lastPathSegment.toLong()
-                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID)
+                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID).blockingGet()
 
                             paper.lock()
                             if (paper is PaperAutoSaveImpl) {

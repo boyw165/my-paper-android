@@ -38,12 +38,9 @@ import com.facebook.ads.AdListener
 import com.facebook.ads.NativeAd
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.domain.IPaperRepoProvider
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
-import com.paper.model.IPaper
-import com.paper.model.ISharedPreferenceService
-import com.paper.model.ModelConst
+import com.paper.model.*
 import com.paper.view.gallery.*
 import com.paper.view.gallery.GalleryItemBundle.Type.NativeAds
 import com.paper.view.gallery.GalleryItemBundle.Type.Thumbnail
@@ -92,7 +89,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     private val mPaperSnapshots = mutableListOf<IPaper>()
 
     private val mRepo by lazy { (application as IPaperRepoProvider).getPaperRepo() }
-    private val mPrefs by lazy { application as ISharedPreferenceService }
+    private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mPermissions by lazy { RxPermissions(this) }
 
     // Progress signal.
@@ -231,19 +228,21 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Browse papers.
         mDisposables.add(
-            getSavedBrowsingPaperID()
-                .toObservable()
+            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
                 .switchMap { savedID ->
                     mSavedPaperIdSignal.onNext(savedID)
-
                     mSavedPaperIdSignal
-                        .observeOn(Schedulers.io())
-                        .doOnNext { id ->
-                            val readID = mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-
-                            if (readID != id) {
-                                mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, id)
-                            }
+                        .switchMap { id ->
+                            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                                .flatMap { readID ->
+                                    if (readID != id) {
+                                        mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, readID)
+                                            .map { readID }
+                                            .toObservable()
+                                    } else {
+                                        Observable.just(readID)
+                                    }
+                                }
                         }
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnNext { id ->
@@ -390,14 +389,6 @@ class PaperGalleryActivity : AppCompatActivity() {
                     mGalleryView.smoothScrollToPosition(actualPosition)
                 }
             }, 500)
-    }
-
-    private fun getSavedBrowsingPaperID(): Single<Long> {
-        return Single
-            .fromCallable {
-                mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-            }
-            .subscribeOn(Schedulers.io())
     }
 
     private fun setDeleteButtonVisibility(visible: Boolean) {

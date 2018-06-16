@@ -26,19 +26,17 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.domain.IBitmapRepoProvider
-import com.paper.domain.IPaperRepoProvider
-import com.paper.domain.IPaperTransformRepoProvider
 import com.paper.domain.event.ProgressEvent
 import com.paper.domain.widget.editor.PaperEditorWidget
-import com.paper.model.ISharedPreferenceService
-import com.paper.model.ModelConst
+import com.paper.model.*
+import com.paper.model.event.TimedCounterEvent
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.observables.BooleanDialogSingle
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -46,6 +44,7 @@ import io.reactivex.subjects.PublishSubject
 
 class PaperEditorActivity : AppCompatActivity() {
 
+    private val mFullscreenFrameView by lazy { findViewById<View>(R.id.fullscreen_frame) }
     private val mCanvasView by lazy {
         val field = findViewById<PaperCanvasView>(R.id.paper_canvas)
         field.setBitmapRepo((application as IBitmapRepoProvider).getBitmapRepo())
@@ -67,6 +66,9 @@ class PaperEditorActivity : AppCompatActivity() {
             .create()
     }
 
+    // Toolbar as a button for opening the DEBUG menu.
+    private val mBtnToolbar by lazy { findViewById<View>(R.id.btn_toolbar) }
+
     // Back button and signal.
     private val mBtnClose by lazy { findViewById<View>(R.id.btn_close) }
     private val mClickSysBackSignal = PublishSubject.create<Any>()
@@ -86,7 +88,7 @@ class PaperEditorActivity : AppCompatActivity() {
     // Error signal
     private val mErrorSignal = PublishSubject.create<Throwable>()
 
-    private val mSharedPrefs by lazy { application as ISharedPreferenceService }
+    private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mWidget by lazy {
         PaperEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
@@ -195,6 +197,43 @@ class PaperEditorActivity : AppCompatActivity() {
                 }
                 .subscribe())
 
+        // Debug menu (triggered by tapping on tool-bar quickly for several times)
+        mDisposables.add(
+            RxView.clicks(mBtnToolbar)
+                .filter { BuildConfig.DEBUG }
+                .map { TimedCounterEvent(timeInMs = System.currentTimeMillis(),
+                                         count = 0) }
+                .scan { last, event ->
+                    if (event.timeInMs - last.timeInMs < 1000L) {
+                        val accumulation = last.count + 1
+                        val remaining = 5 - accumulation
+
+                        if (remaining in 0..3) {
+                            Toast.makeText(this@PaperEditorActivity,
+                                           "$remaining ${getString(R.string.tap_to_show_debug_prefs)}",
+                                           Toast.LENGTH_SHORT).show()
+                        }
+
+                        event.copy(count = accumulation)
+                    } else {
+                        event.copy(count = 0)
+                    }
+                }
+                .filter { event -> event.count > 5 }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    try {
+                        supportFragmentManager
+                            .beginTransaction()
+                            .replace(R.id.fullscreen_frame,
+                                     DebugPreferenceFragment())
+                            .addToBackStack(null)
+                            .commit()
+                    } catch (ignored: Throwable) {
+                        finish()
+                    }
+                })
+
         // Bind sub-view with the sub-widget if the widget is ready!
         mDisposables.add(
             mWidget.onCanvasWidgetReady()
@@ -215,12 +254,19 @@ class PaperEditorActivity : AppCompatActivity() {
                 }
                 .subscribe())
 
-        val paperID = if (savedState == null) {
-            intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID)
+        // Start
+        val paperIdSrc = if (savedState == null) {
+            Single.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))
         } else {
-            mSharedPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+            mPrefs
+                .getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+                .first(ModelConst.TEMP_ID)
         }
-        mWidget.start(paperID)
+        mDisposables.add(
+            paperIdSrc
+                .subscribe { paperID ->
+                    mWidget.start(paperID)
+                })
     }
 
     override fun onDestroy() {
@@ -237,7 +283,11 @@ class PaperEditorActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        mClickSysBackSignal.onNext(0)
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+        } else {
+            mClickSysBackSignal.onNext(0)
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

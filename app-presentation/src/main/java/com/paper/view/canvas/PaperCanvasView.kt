@@ -22,6 +22,7 @@ package com.paper.view.canvas
 
 import android.content.Context
 import android.graphics.*
+import android.os.Build
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
@@ -32,6 +33,7 @@ import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.rx.*
 import com.paper.AppConst
+import com.paper.BuildConfig
 import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
@@ -40,6 +42,7 @@ import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepo
@@ -75,6 +78,9 @@ class PaperCanvasView : View,
     private lateinit var mWidget: IPaperCanvasWidget
     private val mDisposables = CompositeDisposable()
 
+    // Preferences
+    private val mPrefs by lazy { (context.applicationContext as IPreferenceServiceProvider).preference }
+
     /**
      * A signal indicating the layout change.
      */
@@ -91,8 +97,6 @@ class PaperCanvasView : View,
      * rotationInDegrees from a [Matrix]
      */
     private val mTransformHelper = TransformUtils()
-
-//    private val mTextDetector by lazy { FirebaseVision.getInstance().visionTextDetector }
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -236,6 +240,21 @@ class PaperCanvasView : View,
                 .subscribe { interactionReady ->
                     println("${AppConst.TAG}: Interaction ready=$interactionReady")
                 })
+        mDisposables.add(
+            mInteractionReadySignal
+                .switchMap { ready ->
+                    if (ready && BuildConfig.DEBUG) {
+                        mPrefs.getBoolean(context.resources.getString(R.string.prefs_show_path_joints), false)
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .doOnNext { enabled ->
+                                mIfShowPathJoints = enabled
+                                invalidate()
+                            }
+                    } else {
+                        Observable.never()
+                    }
+                }
+                .subscribe())
     }
 
     override fun unbindWidget() {
@@ -675,7 +694,7 @@ class PaperCanvasView : View,
                             try {
                                 // Load file
                                 val hash = hashCode()
-                                ProfilerUtils.with("load thumbnail", {
+                                ProfilerUtils.with("load thumbnail") {
                                     val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
                                               ?: throw NullPointerException()
                                     mThumbCanvas.with { c ->
@@ -684,10 +703,10 @@ class PaperCanvasView : View,
                                     bmp.recycle()
 
                                     println("${AppConst.TAG}: Found thumbnail cache, so skip drawing")
-                                })
+                                }
                             } catch (err: Throwable) {
                                 // Redraw
-                                ProfilerUtils.with("draw thumbnail", {
+                                ProfilerUtils.with("draw thumbnail") {
                                     // Draw sketch and scraps on thumbnail Bitmap
                                     // TODO: Both scraps and sketch need to explicitly define the z-order
                                     // TODO: so that the paper knows how to render them in the correct
@@ -707,11 +726,11 @@ class PaperCanvasView : View,
                                     }
 
                                     println("${AppConst.TAG}: Not found thumbnail cache, so draw it again!")
-                                })
+                                }
                             }
 
                             // Draw sketch on view-port Bitmap
-                            ProfilerUtils.with("draw view-port", {
+                            ProfilerUtils.with("draw view-port") {
                                 mSceneBuffer.getCurrentScene().draw { c ->
                                     computeCanvasMatrix(mScaleM2V)
                                     c.concat(mCanvasMatrix)
@@ -720,7 +739,7 @@ class PaperCanvasView : View,
                                         d.draw(canvas = c)
                                     }
                                 }
-                            })
+                            }
 
                             // By marking drawables not dirty, the drawable's
                             // cache is renewed.
@@ -761,7 +780,7 @@ class PaperCanvasView : View,
                             // View-port drawing
                             val scene = mSceneBuffer.getEmptyScene()
 
-                            ProfilerUtils.with("draw view-port", {
+                            ProfilerUtils.with("draw view-port") {
                                 scene.resetTransform()
                                 scene.eraseDraw { c ->
                                     c.concat(mCanvasMatrix)
@@ -770,7 +789,7 @@ class PaperCanvasView : View,
                                         d.draw(canvas = c, startOver = true)
                                     }
                                 }
-                            })
+                            }
 
                             return@fromCallable scene
                         }
@@ -1260,6 +1279,10 @@ class PaperCanvasView : View,
     }
 
     // Context ////////////////////////////////////////////////////////////////
+
+    private var mIfShowPathJoints = false
+    override val ifShowPathJoints: Boolean
+        get() = mIfShowPathJoints
 
     override fun getOneDp(): Float {
         return mOneDp

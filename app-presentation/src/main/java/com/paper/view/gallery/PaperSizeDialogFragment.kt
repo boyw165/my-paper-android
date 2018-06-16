@@ -29,7 +29,7 @@ import android.support.v7.app.AlertDialog
 import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
-import com.paper.model.ISharedPreferenceService
+import com.paper.model.IPreferenceService
 import com.paper.model.ModelConst
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -59,7 +59,7 @@ class PaperSizeDialogFragment : DialogFragment() {
     }
     private var mSizeOptionSelectionIndex = 0
 
-    private val mPrefs by lazy { activity!!.application as ISharedPreferenceService }
+    private val mPrefs by lazy { activity!!.application as IPreferenceService }
     private val mPrefsKeyOfPaperSizeOption = "saved_paper_size_option_index"
 
     private val mDisposables = CompositeDisposable()
@@ -67,10 +67,7 @@ class PaperSizeDialogFragment : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         // Load saved preference
         mDisposables.add(
-            Single
-                .fromCallable {
-                    mPrefs.getInt(mPrefsKeyOfPaperSizeOption, 0)
-                }
+            mPrefs.getInt(mPrefsKeyOfPaperSizeOption, 0)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { i ->
@@ -101,15 +98,15 @@ class PaperSizeDialogFragment : DialogFragment() {
             .setTitle(R.string.title_of_choose_paper_size)
             .setView(mDialogView)
 //            .setView(R.layout.dialog_choose_paper_size)
-            .setPositiveButton(getString(R.string.yes), { dialogInterface, _ ->
+            .setPositiveButton(getString(R.string.yes)) { dialogInterface, _ ->
                 val (_, w, h) = mSizeOption[mSizeOptionSelectionIndex]
                 mOnClickOkListener?.onClickOk(w, h)
 
                 dialogInterface.dismiss()
-            })
-            .setNegativeButton(getString(R.string.no), { dialogInterface, _ ->
+            }
+            .setNegativeButton(getString(R.string.no)) { dialogInterface, _ ->
                 dialogInterface.dismiss()
-            })
+            }
             .setCancelable(true)
 
         return dialogBuilder.create()
