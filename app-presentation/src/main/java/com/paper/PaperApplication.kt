@@ -22,6 +22,7 @@ package com.paper
 
 import android.content.Context
 import android.os.StrictMode
+import android.preference.PreferenceManager
 import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
@@ -53,8 +54,10 @@ class PaperApplication : MultiDexApplication(),
         Fresco.initialize(this)
 
         // RxJava global exception
-        RxJavaPlugins.setErrorHandler { err ->
-            err.printStackTrace()
+        if (!BuildConfig.DEBUG) {
+            RxJavaPlugins.setErrorHandler { err ->
+                err.printStackTrace()
+            }
         }
 
         // Enable the strict mode for DEBUG
@@ -113,7 +116,7 @@ class PaperApplication : MultiDexApplication(),
     // Shared preference //////////////////////////////////////////////////////
 
     // Shared preference.
-    private val mPreferences by lazy { getSharedPreferences(packageName, Context.MODE_PRIVATE) }
+    private val mPreferences by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
     override fun putString(key: String, value: String) {
         mPreferences

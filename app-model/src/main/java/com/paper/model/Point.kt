@@ -46,6 +46,14 @@ data class Point(var x: Float = 0f,
         return Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
     }
 
+    fun slopeTo(other: Point): Float {
+        return (other.y - this.y) / (other.x - this.x)
+    }
+
+    fun slopeFrom(other: Point): Float {
+        return (this.y - other.y) / (this.x - other.x)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

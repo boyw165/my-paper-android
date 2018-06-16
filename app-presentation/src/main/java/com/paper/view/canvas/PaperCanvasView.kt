@@ -702,7 +702,7 @@ class PaperCanvasView : View,
                                         // Draw the strokes on the thumbnail canvas
                                         mStrokeDrawables.forEach { drawable ->
                                             dirty = dirty || drawable.isSomethingToDraw()
-                                            drawable.onDraw(canvas = c)
+                                            drawable.draw(canvas = c)
                                         }
                                     }
 
@@ -717,7 +717,7 @@ class PaperCanvasView : View,
                                     c.concat(mCanvasMatrix)
 
                                     mStrokeDrawables.forEach { d ->
-                                        d.onDraw(canvas = c)
+                                        d.draw(canvas = c)
                                     }
                                 }
                             })
@@ -767,7 +767,7 @@ class PaperCanvasView : View,
                                     c.concat(mCanvasMatrix)
 
                                     mStrokeDrawables.forEach { d ->
-                                        d.onDraw(canvas = c, startOver = true)
+                                        d.draw(canvas = c, startOver = true)
                                     }
                                 }
                             })

@@ -65,6 +65,7 @@ ext {
             kotlinStdlibJre7          : "org.jetbrains.kotlin:kotlin-stdlib-jre7:$KOTLIN_VER",
             kotlinStdlibJre8          : "org.jetbrains.kotlin:kotlin-stdlib-jre8:$KOTLIN_VER",
             kotlinUnitTest            : "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN_VER",
+            kotlinCoroutinesCore      : 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21',
             // Facebook.
             facebookShare             : 'com.facebook.android:facebook-share:4.27.0',
             facebookLogin             : 'com.facebook.android:facebook-login:4.27.0',

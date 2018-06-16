@@ -158,7 +158,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         // Draw itself
         canvas.concat(mMatrix)
         mDrawables.forEach { d ->
-            d.onDraw(canvas = canvas)
+            d.draw(canvas = canvas)
         }
 
         // Then children
