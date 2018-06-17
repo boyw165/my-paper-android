@@ -200,14 +200,6 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     private lateinit var mTmpStroke: SketchStroke
     /**
-     * Internal drawing signal for throttling touch event.
-     */
-    private val mLineToSignal = BehaviorSubject.create<Point>()
-    /**
-     * Internal signal for cancelling any kinds of drawing stream.
-     */
-    private val mCancelDrawingSignal = PublishSubject.create<Any>()
-    /**
      * The signal for the external world to know this widget wants to draw SVG.
      */
     private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>()
@@ -285,10 +277,9 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     }
 
     override fun handleTouchEnd() {
-        // Brutally stop the drawing filter.
-        mCancelDrawingSignal.onNext(0)
     }
 
+    private var mCacheTime = 0L
     private var mCanHandleThisDrag = false
 
     override fun handleDragBegin(x: Float,
@@ -310,7 +301,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
             penColor = mPenColor,
             penSize = mPenSize)
 
-        val p = Point(x, y)
+        mCacheTime = System.currentTimeMillis()
+        val p = Point(x, y, time = 0)
 
         mTmpStroke.addPath(p)
 
@@ -327,8 +319,11 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                             y: Float) {
         if (!mCanHandleThisDrag) return
 
-        val p = Point(x, y)
+        val time = System.currentTimeMillis()
+        val diff = System.currentTimeMillis() - mCacheTime
+        mCacheTime = time
 
+        val p = Point(x, y, time = diff)
         mTmpStroke.addPath(p)
 
         // Notify the observer the LINE_TO action
@@ -340,10 +335,11 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                                y: Float) {
         if (!mCanHandleThisDrag) return
 
-        // Brutally stop the drawing filter.
-        mCancelDrawingSignal.onNext(0)
+        val time = System.currentTimeMillis()
+        val diff = System.currentTimeMillis() - mCacheTime
+        mCacheTime = time
 
-        val p = Point(x, y)
+        val p = Point(x, y, time = diff)
 
         // Add last point
         mTmpStroke.addPath(p)

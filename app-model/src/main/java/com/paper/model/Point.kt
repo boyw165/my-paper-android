@@ -22,7 +22,7 @@ package com.paper.model
 
 data class Point(var x: Float = 0f,
                  var y: Float = 0f,
-                 var time: Long = System.currentTimeMillis()) {
+                 var time: Long = 0L) {
 
     private var mIsHashDirty = true
     private var mHashCode = 0
@@ -77,6 +77,6 @@ data class Point(var x: Float = 0f,
     }
 
     override fun toString(): String {
-        return "Point(%.3f, %.3f)".format(this.x, this.y)
+        return "Point(x=%.3f, y=%.3f, t=$time)".format(this.x, this.y)
     }
 }
