@@ -24,7 +24,6 @@ package com.paper.view.canvas
 
 import android.graphics.*
 import com.paper.AppConst
-import com.paper.BuildConfig
 import com.paper.domain.interpolator.HermiteCubicSplineInterpolator
 import com.paper.domain.interpolator.ISplineInterpolator
 import com.paper.model.DirtyFlag
@@ -71,7 +70,7 @@ class SVGDrawable(val id: UUID,
 
         mStrokePaint.strokeWidth = mBasedWidth
         mStrokePaint.color = mPenColor
-        mStrokePaint.style = Paint.Style.FILL_AND_STROKE
+        mStrokePaint.style = Paint.Style.STROKE
         mStrokePaint.strokeCap = Paint.Cap.ROUND
         mStrokePaint.xfermode = porterDuffMode
 
@@ -163,9 +162,7 @@ class SVGDrawable(val id: UUID,
     fun draw(canvas: Canvas,
              startOver: Boolean = false) {
         synchronized(this) {
-            println("${AppConst.TAG}: point size=${mPointList.size}, spline size=${mSplineList.size}, consumed count=$mConsumedCount")
             val startIndex = if (startOver) 0 else mConsumedCount
-
 
             // Only draw those points not consumed
             for (i in startIndex..mPointList.lastIndex) {
@@ -176,11 +173,18 @@ class SVGDrawable(val id: UUID,
                     val spline = mSplineList[i - 1]
 
                     // Interpolation
+                    mPath.reset()
                     for (progress in 0..100) {
-                        val percentage = progress.toFloat() / 100.0
-                        val x = (1.0 - percentage) * spline.start.x + percentage * spline.end.x
-                        canvas.drawPoint(x.toFloat(), spline.f(x).toFloat(), mStrokePaint)
+                        val t = progress.toFloat() / 100.0
+                        val x = (1.0 - t) * spline.start.x + t * spline.end.x
+                        val y = spline.f(x)
+
+                        when (progress) {
+                            0 -> mPath.moveTo(x.toFloat(), y.toFloat())
+                            else -> mPath.lineTo(x.toFloat(), y.toFloat())
+                        }
                     }
+                    canvas.drawPath(mPath, mStrokePaint)
                 }
             }
 
