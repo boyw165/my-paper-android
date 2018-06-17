@@ -27,7 +27,5 @@ import com.paper.model.Point
 interface ISplineInterpolator : IMathFunctionOf {
 
     val start: Point
-    val startSlope: Double
     val end: Point
-    val endSlope: Double
 }

@@ -209,7 +209,8 @@ class SVGDrawable(val id: UUID,
                     end = current,
                     endSlope = slope)
             } else {
-                val startSlope = mSplineList[i - 2].endSlope
+                val beforePrevious = mPointList[i - 2]
+                val startSlope = beforePrevious.slopeTo(previous).toDouble()
                 val endSlope = previous.slopeTo(current).toDouble()
 
                 HermiteCubicSplineInterpolator(

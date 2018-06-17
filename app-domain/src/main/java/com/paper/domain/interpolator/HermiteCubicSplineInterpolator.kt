@@ -34,9 +34,9 @@ import com.paper.model.Point
  * or try this interactive website, http://demofox.org/cubichermite2d.html.
  */
 class HermiteCubicSplineInterpolator(override val start: Point,
-                                     override val startSlope: Double,
+                                     private val startSlope: Double,
                                      override val end: Point,
-                                     override val endSlope: Double)
+                                     private val endSlope: Double)
     : ISplineInterpolator {
 
     private var mDx = end.x - start.x
