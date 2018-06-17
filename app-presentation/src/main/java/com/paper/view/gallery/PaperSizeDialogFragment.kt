@@ -30,6 +30,7 @@ import android.view.View
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
 import com.paper.model.IPreferenceService
+import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.ModelConst
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -59,7 +60,7 @@ class PaperSizeDialogFragment : DialogFragment() {
     }
     private var mSizeOptionSelectionIndex = 0
 
-    private val mPrefs by lazy { activity!!.application as IPreferenceService }
+    private val mPrefs by lazy { (activity!!.application as IPreferenceServiceProvider).preference }
     private val mPrefsKeyOfPaperSizeOption = "saved_paper_size_option_index"
 
     private val mDisposables = CompositeDisposable()
