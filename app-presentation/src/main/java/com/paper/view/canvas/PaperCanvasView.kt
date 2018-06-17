@@ -36,7 +36,6 @@ import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.*
-import com.paper.domain.interpolator.LinearInterpolator
 import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
@@ -1287,7 +1286,7 @@ class PaperCanvasView : View,
     override val ifShowPathJoints: Boolean
         get() = mIfShowPathJoints
 
-    private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_bezier_cubic)
+    private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_hermite_cubic)
     private fun createSvgDrawable(event: CanvasEvent): SvgDrawable {
         return when (event) {
             is StartSketchEvent -> {
