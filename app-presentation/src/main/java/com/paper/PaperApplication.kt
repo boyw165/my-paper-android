@@ -102,8 +102,9 @@ class PaperApplication : MultiDexApplication(),
 
     // Shared preference //////////////////////////////////////////////////////
 
+    private val mPrefsScheduler = SingleScheduler()
     override val preference by lazy {
         PreferenceAndroidImpl(context = this@PaperApplication,
-                              workerScheduler = mDbScheduler)
+                              workerScheduler = mPrefsScheduler)
     }
 }
