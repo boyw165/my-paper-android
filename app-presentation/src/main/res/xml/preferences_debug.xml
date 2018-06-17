@@ -4,6 +4,10 @@
     android:title="root_title">
 
     <PreferenceCategory
+        android:title="Settings">
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:title="Drawing">
 
         <SwitchPreference
@@ -11,6 +15,14 @@
             android:key="@string/prefs_show_path_joints"
             android:summary="Path is formed by a set of joints, say points. Enable this option to show them."
             android:title="Show Path Joints"/>
+
+        <ListPreference
+            android:defaultValue="@string/prefs_path_interpolator_linear"
+            android:entries="@array/prefs_path_interpolator"
+            android:entryValues="@array/prefs_path_interpolator"
+            android:key="@string/prefs_path_interpolator"
+            android:summary="Interpolator is like a f(x), where it returns a Y given a X."
+            android:title="Choose the path interpolator"/>
     </PreferenceCategory>
 </PreferenceScreen>
 

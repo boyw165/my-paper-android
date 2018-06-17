@@ -22,7 +22,6 @@ package com.paper.view.canvas
 
 import android.content.Context
 import android.graphics.*
-import android.os.Build
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
@@ -38,6 +37,10 @@ import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.*
+import com.paper.domain.interpolator.HermiteCubicSplineInterpolator
+import com.paper.domain.interpolator.ISplineInterpolator
+import com.paper.domain.interpolator.ISplineInterpolatorFactory
+import com.paper.domain.interpolator.LinearInterpolator
 import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
@@ -240,6 +243,7 @@ class PaperCanvasView : View,
                 .subscribe { interactionReady ->
                     println("${AppConst.TAG}: Interaction ready=$interactionReady")
                 })
+        // Debug: Preference
         mDisposables.add(
             mInteractionReadySignal
                 .switchMap { ready ->
@@ -248,7 +252,21 @@ class PaperCanvasView : View,
                             .observeOn(AndroidSchedulers.mainThread())
                             .doOnNext { enabled ->
                                 mIfShowPathJoints = enabled
-                                invalidate()
+                            }
+                    } else {
+                        Observable.never()
+                    }
+                }
+                .subscribe())
+        mDisposables.add(
+            mInteractionReadySignal
+                .switchMap { ready ->
+                    if (ready && BuildConfig.DEBUG) {
+                        mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
+                                         mPathInterpolatorID)
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .doOnNext { interpolator ->
+                                mPathInterpolatorID = interpolator
                             }
                     } else {
                         Observable.never()
@@ -1283,6 +1301,30 @@ class PaperCanvasView : View,
     private var mIfShowPathJoints = false
     override val ifShowPathJoints: Boolean
         get() = mIfShowPathJoints
+
+    private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_bezier_cubic)
+    override val pathInterpolatorFactory: ISplineInterpolatorFactory
+        get() {
+            return object : ISplineInterpolatorFactory {
+                override fun create(start: Point,
+                                    startSlope: Double,
+                                    end: Point,
+                                    endSlope: Double): ISplineInterpolator {
+                    return when (mPathInterpolatorID) {
+                        resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                            HermiteCubicSplineInterpolator(start = start,
+                                                           startSlope = startSlope,
+                                                           end = end,
+                                                           endSlope = endSlope)
+                        }
+                        else -> {
+                            LinearInterpolator(start = start,
+                                               end = end)
+                        }
+                    }
+                }
+            }
+        }
 
     override fun getOneDp(): Float {
         return mOneDp

@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Jun 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,43 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view.canvas
+package com.paper.domain.interpolator
 
-import android.view.ViewConfiguration
-import com.paper.domain.interpolator.ISplineInterpolatorFactory
+import com.paper.model.Point
 
-/**
- * The context gives the global editor settings and the ability to map point
- * from one coordinate to other coordinate.
- */
-interface IPaperContext {
+interface ISplineInterpolatorFactory {
 
-    // Rendering //////////////////////////////////////////////////////////////
-
-    val ifShowPathJoints: Boolean
-
-    val pathInterpolatorFactory: ISplineInterpolatorFactory
-
-    fun getOneDp(): Float
-
-    fun getMinStrokeWidth(): Float
-
-    fun getMaxStrokeWidth(): Float
-
-    /**
-     * Map the point observed in the Model world to the View world.
-     */
-    fun mapM2V(x: Float, y: Float): FloatArray
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    fun getViewConfiguration(): ViewConfiguration
-
-    fun getTouchSlop(): Float
-
-    fun getTapSlop(): Float
-
-    fun getMinFlingVec(): Float
-
-    fun getMaxFlingVec(): Float
+    fun create(start: Point,
+               startSlope: Double,
+               end: Point,
+               endSlope: Double): ISplineInterpolator
 }

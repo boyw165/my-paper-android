@@ -23,8 +23,6 @@
 package com.paper.view.canvas
 
 import android.graphics.*
-import com.paper.AppConst
-import com.paper.domain.interpolator.HermiteCubicSplineInterpolator
 import com.paper.domain.interpolator.ISplineInterpolator
 import com.paper.model.DirtyFlag
 import com.paper.model.DirtyType
@@ -204,24 +202,27 @@ class SVGDrawable(val id: UUID,
             val i = mPointList.lastIndex
             val previous = mPointList[i - 1]
             val current = mPointList[i]
+
             val spline = if (mPointList.size == 2) {
                 val slope = previous.slopeTo(current).toDouble()
 
-                HermiteCubicSplineInterpolator(
-                    start = previous,
-                    startSlope = slope,
-                    end = current,
-                    endSlope = slope)
+                mContext
+                    .pathInterpolatorFactory
+                    .create(start = previous,
+                            startSlope = slope,
+                            end = current,
+                            endSlope = slope)
             } else {
                 val beforePrevious = mPointList[i - 2]
                 val startSlope = beforePrevious.slopeTo(previous).toDouble()
                 val endSlope = previous.slopeTo(current).toDouble()
 
-                HermiteCubicSplineInterpolator(
-                    start = previous,
-                    startSlope = startSlope,
-                    end = current,
-                    endSlope = endSlope)
+                mContext
+                    .pathInterpolatorFactory
+                    .create(start = previous,
+                            startSlope = startSlope,
+                            end = current,
+                            endSlope = endSlope)
             }
 
             mSplineList.add(spline)
