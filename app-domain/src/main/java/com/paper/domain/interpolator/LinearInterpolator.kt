@@ -30,23 +30,22 @@ import com.paper.model.Point
  *
  * See wiki page, https://en.wikipedia.org/wiki/Linear_function_(calculus)
  */
-class LinearInterpolator(override val start: Point,
-                         override val end: Point)
+class LinearInterpolator(private val start: Point,
+                         private val end: Point)
     : ISplineInterpolator {
 
-    private var mCacheIn = Double.NaN
-    private var mCacheOut = Double.NaN
-
-    override fun f(x: Double): Double {
-        if (mCacheIn != x) {
-            //                             (y1 - y0)
-            // f(x) = m * (x - x0) + y0 = ----------- * (x - x0) + y0
-            //                             (x1 - x0)
-            val m = (end.y - start.y) / (end.x - start.x)
-            mCacheOut = m * (x - start.x) + start.y
-            mCacheIn = x
+    /**
+     * f(x) with linear interpolation.
+     *
+     * @param t [0.0 .. 1.0]
+     */
+    override fun f(t: Double): Point {
+        if (t < 0.0 || t > 1.0) {
+            throw IllegalArgumentException("Given t is out of boundary")
         }
 
-        return mCacheOut
+        return Point(x = ((1.0 - t) * start.x + t * end.x).toFloat(),
+                     y = ((1.0 - t) * start.y + t * end.y).toFloat(),
+                     time = 0)
     }
 }

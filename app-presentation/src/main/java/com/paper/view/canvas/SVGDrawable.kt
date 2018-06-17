@@ -29,29 +29,29 @@ import com.paper.model.DirtyType
 import com.paper.model.Point
 import java.util.*
 
-class SVGDrawable(val id: UUID,
-                  context: IPaperContext,
-                  points: List<Point> = emptyList(),
-                  penColor: Int = 0,
-                  penSize: Float = 1f,
-                  porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)) {
+abstract class SvgDrawable(val id: UUID,
+                           context: IPaperContext,
+                           points: List<Point> = emptyList(),
+                           penColor: Int = 0,
+                           penSize: Float = 1f,
+                           porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)) {
 
-    private val mContext = context
+    protected val mContext = context
     private val mPenColor = penColor
     private val mPenSize = penSize
 
     private var mConsumedCount = 0
-    private val mPointList = mutableListOf<Point>()
+    protected val mPointList = mutableListOf<Point>()
     /**
      * The spline interpolation list, where the size is equal to
      * [mPointList]'s size - 1.
      */
-    private val mSplineList = mutableListOf<ISplineInterpolator>()
+    protected val mSplineList = mutableListOf<ISplineInterpolator>()
     private val mStrokePaint = Paint()
     private val mDebugStrokePaint = Paint()
 
     // Dirty flag
-    private val mDirtyFlag = DirtyFlag()
+    protected val mDirtyFlag = DirtyFlag()
 
     // Bezier
     private var mBasedWidth: Float = 0f
@@ -84,14 +84,6 @@ class SVGDrawable(val id: UUID,
                 points.lastIndex -> close()
                 else -> lineTo(p)
             }
-        }
-    }
-
-    private fun getPaintSize(penSize: Float): Float {
-        synchronized(this) {
-            // See convex-set, https://en.wikipedia.org/wiki/Convex_set
-            return (1 - penSize) * mContext.getMinStrokeWidth() +
-                   penSize * mContext.getMaxStrokeWidth()
         }
     }
 
@@ -172,14 +164,13 @@ class SVGDrawable(val id: UUID,
 
                     // Interpolation
                     mPath.reset()
-                    for (progress in 0..100) {
-                        val t = progress.toFloat() / 100.0
-                        val x = (1.0 - t) * spline.start.x + t * spline.end.x
-                        val y = spline.f(x)
+                    for (progress in 0..10) {
+                        val t = progress.toDouble() / 10.0
+                        val p = spline.f(t)
 
                         when (progress) {
-                            0 -> mPath.moveTo(x.toFloat(), y.toFloat())
-                            else -> mPath.lineTo(x.toFloat(), y.toFloat())
+                            0 -> mPath.moveTo(p.x, p.y)
+                            else -> mPath.lineTo(p.x, p.y)
                         }
                     }
                     canvas.drawPath(mPath, mStrokePaint)
@@ -198,37 +189,19 @@ class SVGDrawable(val id: UUID,
     private fun addSpline(point: Point) {
         mPointList.add(point)
 
-        if (mPointList.size > 1) {
-            val i = mPointList.lastIndex
-            val previous = mPointList[i - 1]
-            val current = mPointList[i]
-
-            val spline = if (mPointList.size == 2) {
-                val slope = previous.slopeTo(current).toDouble()
-
-                mContext
-                    .pathInterpolatorFactory
-                    .create(start = previous,
-                            startSlope = slope,
-                            end = current,
-                            endSlope = slope)
-            } else {
-                val beforePrevious = mPointList[i - 2]
-                val startSlope = beforePrevious.slopeTo(previous).toDouble()
-                val endSlope = previous.slopeTo(current).toDouble()
-
-                mContext
-                    .pathInterpolatorFactory
-                    .create(start = previous,
-                            startSlope = startSlope,
-                            end = current,
-                            endSlope = endSlope)
-            }
-
-            mSplineList.add(spline)
-        }
+        addSplineImpl(point)
 
         mDirtyFlag.markDirty(DirtyType.HASH)
+    }
+
+    protected abstract fun addSplineImpl(point: Point)
+
+    private fun getPaintSize(penSize: Float): Float {
+        synchronized(this) {
+            // See convex-set, https://en.wikipedia.org/wiki/Convex_set
+            return (1 - penSize) * mContext.getMinStrokeWidth() +
+                   penSize * mContext.getMaxStrokeWidth()
+        }
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
@@ -238,7 +211,7 @@ class SVGDrawable(val id: UUID,
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
 
-            other as SVGDrawable
+            other as SvgDrawable
 
             if (mPenColor != other.mPenColor) return false
             if (mPenSize != other.mPenSize) return false

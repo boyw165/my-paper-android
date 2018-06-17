@@ -33,53 +33,65 @@ import com.paper.model.Point
  * See wiki page, https://en.wikipedia.org/wiki/Cubic_Hermite_spline;
  * or try this interactive website, http://demofox.org/cubichermite2d.html.
  */
-class HermiteCubicSplineInterpolator(override val start: Point,
-                                     private val startSlope: Double,
-                                     override val end: Point,
-                                     private val endSlope: Double)
+class HermiteCubicSplineInterpolator(private val start: Point,
+                                     private val startSlope: Point,
+                                     private val end: Point,
+                                     private val endSlope: Point)
     : ISplineInterpolator {
 
-    private var mDx = end.x - start.x
-    private var mCacheIn = Double.NaN
-    private var mCacheOut = Double.NaN
-
-    private val mFunAffine = HermiteAffineFunction(startX = start.x.toDouble(),
-                                                   endX = end.x.toDouble())
-    private val mFunH00 = Hermite00Function(mFunAffine)
-    private val mFunH10 = Hermite10Function(mFunAffine)
-    private val mFunH01 = Hermite01Function(mFunAffine)
-    private val mFunH11 = Hermite11Function(mFunAffine)
-
-    override fun f(x: Double): Double {
-        if (mCacheIn != x) {
-            mCacheOut = mFunH00.f(x) * start.y +
-                mFunH10.f(x) * mDx * startSlope +
-                mFunH01.f(x) * end.y +
-                mFunH11.f(x) * mDx * endSlope
-            mCacheIn = x
+    /**
+     * f(x) with Hermite cubic interpolation.
+     *
+     * @param t [0.0 .. 1.0]
+     */
+    override fun f(t: Double): Point {
+        if (t < 0.0 || t > 1.0) {
+            throw IllegalArgumentException("Given t is out of boundary")
         }
 
-        return mCacheOut
+        val h00 = funcHermite00(t)
+        val h10 = funcHermite10(t)
+        val h01 = funcHermite01(t)
+        val h11 = funcHermite11(t)
+
+        return Point(x = (h00 * start.x + h10 * startSlope.x + h01 * end.x + h11 * endSlope.x).toFloat(),
+                     y = (h00 * start.y + h10 * startSlope.y + h01 * end.y + h11 * endSlope.y).toFloat(),
+                     time = 0)
     }
 
     /**
-     * The Hermite affine function, f(x) = (x - start) / (end - start).
-     * See wiki page, https://en.wikipedia.org/wiki/Cubic_Hermite_spline, for
-     * more details.
+     * The first of the four Hermite basis functions, which is
+     * f(x) = (1 + 2t)(1 - t)^2. Check wiki page,
+     * https://en.wikipedia.org/wiki/Cubic_Hermite_spline, for more details.
      */
-    private class HermiteAffineFunction(val startX: Double,
-                                        val endX: Double) : IMathFunctionOf {
+    private fun funcHermite00(t: Double): Double {
+        return (1.0 + 2.0 * t) * Math.pow(1.0 - t, 2.0)
+    }
 
-        var cacheIn = Double.NaN
-        var cacheOut = Double.NaN
+    /**
+     * The third of the four Hermite basis functions, which is
+     * f(x) = t^2(3 - 2t)^2. Check wiki page,
+     * https://en.wikipedia.org/wiki/Cubic_Hermite_spline, for more details.
+     */
+    private fun funcHermite01(t: Double): Double {
+        return Math.pow(t, 2.0) * (3.0 - 2.0 * t)
+    }
 
-        override fun f(x: Double): Double {
-            if (cacheIn != x) {
-                cacheOut = (x - startX) / (endX - startX)
-                cacheIn = x
-            }
+    /**
+     * The second of the four Hermite basis functions, which is
+     * f(x) = t(1 - t)^2. Check wiki page,
+     * https://en.wikipedia.org/wiki/Cubic_Hermite_spline, for more details.
+     */
+    private fun funcHermite10(t: Double): Double {
+        return t * Math.pow(1.0 - t, 2.0)
+    }
 
-            return cacheOut
-        }
+    /**
+     * The fourth of the four Hermite basis functions, which is
+     * f(x) = t^2(t - 1). Check wiki page,
+     * https://en.wikipedia.org/wiki/Cubic_Hermite_spline, for more details.
+     */
+    private fun funcHermite11(t: Double): Double {
+        return Math.pow(t, 2.0) * (t - 1.0)
     }
 }

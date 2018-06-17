@@ -35,6 +35,12 @@ data class Point(var x: Float = 0f,
         mIsHashDirty = false
     }
 
+    fun vectorTo(other: Point): Point {
+        return Point(x = other.x - this.x,
+                     y = other.y - this.y,
+                     time = 0)
+    }
+
     fun velocityFrom(start: Point): Float {
         val vec = distanceTo(start) / (this.time - start.time)
         return if (vec.isNaN()) 0f else vec

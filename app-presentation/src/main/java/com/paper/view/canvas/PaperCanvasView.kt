@@ -32,14 +32,10 @@ import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.rx.*
 import com.paper.AppConst
-import com.paper.BuildConfig
 import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.*
-import com.paper.domain.interpolator.HermiteCubicSplineInterpolator
-import com.paper.domain.interpolator.ISplineInterpolator
-import com.paper.domain.interpolator.ISplineInterpolatorFactory
 import com.paper.domain.interpolator.LinearInterpolator
 import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
@@ -122,6 +118,26 @@ class PaperCanvasView : View,
 
         mWidget = widget
 
+        // Preference
+        mDisposables.add(
+            Observables
+                .combineLatest(
+                    mPrefs.getBoolean(context.resources.getString(R.string.prefs_show_path_joints), false)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext { enabled ->
+                            mIfShowPathJoints = enabled
+                        },
+                    mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
+                                     mPathInterpolatorID)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext { interpolator ->
+                            mPathInterpolatorID = interpolator
+                        })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    mPreferenceReadySignal.onNext(true)
+                })
+
         // Canvas size change
         mDisposables.add(
             Observables.combineLatest(
@@ -145,7 +161,7 @@ class PaperCanvasView : View,
 
         // Drawing
         mDisposables.add(
-            mDrawReadySignal
+            onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
@@ -175,7 +191,7 @@ class PaperCanvasView : View,
 
         // Add or remove scraps
         mDisposables.add(
-            mDrawReadySignal
+            onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
                         widget.onAddScrapWidget()
@@ -189,7 +205,7 @@ class PaperCanvasView : View,
                     addScrap(scrapWidget)
                 })
         mDisposables.add(
-            mDrawReadySignal
+            onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
                         widget.onRemoveScrapWidget()
@@ -207,7 +223,7 @@ class PaperCanvasView : View,
         mDisposables.add(
             Observables
                 .combineLatest(
-                    mDrawReadySignal,
+                    onReadyToDraw(),
                     mInteractionReadySignal)
                 .observeOn(AndroidSchedulers.mainThread())
                 .switchMap { (drawReady, interactionReady) ->
@@ -243,36 +259,6 @@ class PaperCanvasView : View,
                 .subscribe { interactionReady ->
                     println("${AppConst.TAG}: Interaction ready=$interactionReady")
                 })
-        // Debug: Preference
-        mDisposables.add(
-            mInteractionReadySignal
-                .switchMap { ready ->
-                    if (ready && BuildConfig.DEBUG) {
-                        mPrefs.getBoolean(context.resources.getString(R.string.prefs_show_path_joints), false)
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .doOnNext { enabled ->
-                                mIfShowPathJoints = enabled
-                            }
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .subscribe())
-        mDisposables.add(
-            mInteractionReadySignal
-                .switchMap { ready ->
-                    if (ready && BuildConfig.DEBUG) {
-                        mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
-                                         mPathInterpolatorID)
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .doOnNext { interpolator ->
-                                mPathInterpolatorID = interpolator
-                            }
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .subscribe())
     }
 
     override fun unbindWidget() {
@@ -300,6 +286,17 @@ class PaperCanvasView : View,
         if (changed) {
             mOnLayoutChangeSignal.onNext(changed)
         }
+    }
+
+    // Preference //////////////////////////////////////////////////////////////
+
+    private val mPreferenceReadySignal = BehaviorSubject.create<Boolean>()
+
+    private fun onReadyToDraw(): Observable<Boolean> {
+        return Observables.combineLatest(
+            mDrawReadySignal,
+            mPreferenceReadySignal)
+            .map { (a, b) -> a && b }
     }
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
@@ -425,7 +422,7 @@ class PaperCanvasView : View,
     private val mGridPaint = Paint()
 
     // Temporary strokes
-    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
+    private val mStrokeDrawables = mutableListOf<SvgDrawable>()
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -598,11 +595,7 @@ class PaperCanvasView : View,
                             val ny = event.point.y
                             val (x, y) = toViewWorld(nx, ny)
 
-                            val drawable = SVGDrawable(id = event.strokeID,
-                                                       context = this@PaperCanvasView,
-                                                       penColor = event.penColor,
-                                                       penSize = event.penSize,
-                                                       porterDuffMode = getPaintMode(event.penType))
+                            val drawable = createSvgDrawable(event)
                             drawable.moveTo(Point(x, y, event.point.time))
 
                             mStrokeDrawables.add(drawable)
@@ -631,15 +624,7 @@ class PaperCanvasView : View,
                         }
                         is AddSketchStrokeEvent -> {
                             if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.strokeID }) {
-                                val drawable = SVGDrawable(id = event.strokeID,
-                                                           points = event.points.map { p ->
-                                                               val (x, y) = toViewWorld(p.x, p.y)
-                                                               Point(x, y)
-                                                           },
-                                                           context = this@PaperCanvasView,
-                                                           penColor = event.penColor,
-                                                           penSize = event.penSize,
-                                                           porterDuffMode = getPaintMode(event.penType))
+                                val drawable = createSvgDrawable(event)
                                 mStrokeDrawables.add(drawable)
 
                                 mIsHashDirty = true
@@ -1260,8 +1245,8 @@ class PaperCanvasView : View,
                 is OnDragEvent -> {
                     ViewPortOnUpdateEvent(
                         calculateViewPortBound(
-                            startPointers = Array(2, { _ -> event.startPointer }),
-                            stopPointers = Array(2, { _ -> event.stopPointer })))
+                            startPointers = Array(2) { _ -> event.startPointer },
+                            stopPointers = Array(2) { _ -> event.stopPointer }))
                 }
                 is DragEndEvent -> {
                     ViewPortStopUpdateEvent()
@@ -1303,28 +1288,56 @@ class PaperCanvasView : View,
         get() = mIfShowPathJoints
 
     private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_bezier_cubic)
-    override val pathInterpolatorFactory: ISplineInterpolatorFactory
-        get() {
-            return object : ISplineInterpolatorFactory {
-                override fun create(start: Point,
-                                    startSlope: Double,
-                                    end: Point,
-                                    endSlope: Double): ISplineInterpolator {
-                    return when (mPathInterpolatorID) {
-                        resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
-                            HermiteCubicSplineInterpolator(start = start,
-                                                           startSlope = startSlope,
-                                                           end = end,
-                                                           endSlope = endSlope)
-                        }
-                        else -> {
-                            LinearInterpolator(start = start,
-                                               end = end)
-                        }
+    private fun createSvgDrawable(event: CanvasEvent): SvgDrawable {
+        return when (event) {
+            is StartSketchEvent -> {
+                when (mPathInterpolatorID) {
+                    resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                        SvgHermiteCubicDrawable(id = event.strokeID,
+                                                context = this@PaperCanvasView,
+                                                penColor = event.penColor,
+                                                penSize = event.penSize,
+                                                porterDuffMode = getPaintMode(event.penType))
+                    }
+                    else -> {
+                        SvgLinearDrawable(id = event.strokeID,
+                                          context = this@PaperCanvasView,
+                                          penColor = event.penColor,
+                                          penSize = event.penSize,
+                                          porterDuffMode = getPaintMode(event.penType))
                     }
                 }
             }
+            // TODO: Remove this ugly thing, and replace it with drawing event!
+            is AddSketchStrokeEvent -> {
+                when (mPathInterpolatorID) {
+                    resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                        SvgHermiteCubicDrawable(id = event.strokeID,
+                                                context = this@PaperCanvasView,
+                                                points = event.points.map { p ->
+                                                    val (x, y) = toViewWorld(p.x, p.y)
+                                                    Point(x, y)
+                                                },
+                                                penColor = event.penColor,
+                                                penSize = event.penSize,
+                                                porterDuffMode = getPaintMode(event.penType))
+                    }
+                    else -> {
+                        SvgLinearDrawable(id = event.strokeID,
+                                          context = this@PaperCanvasView,
+                                          points = event.points.map { p ->
+                                              val (x, y) = toViewWorld(p.x, p.y)
+                                              Point(x, y)
+                                          },
+                                          penColor = event.penColor,
+                                          penSize = event.penSize,
+                                          porterDuffMode = getPaintMode(event.penType))
+                    }
+                }
+            }
+            else -> throw IllegalArgumentException("Invalid event")
         }
+    }
 
     override fun getOneDp(): Float {
         return mOneDp

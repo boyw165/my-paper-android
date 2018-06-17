@@ -335,19 +335,11 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                                y: Float) {
         if (!mCanHandleThisDrag) return
 
-        val time = System.currentTimeMillis()
-        val diff = System.currentTimeMillis() - mCacheTime
-        mCacheTime = time
-
-        val p = Point(x, y, time = diff)
-
-        // Add last point
-        mTmpStroke.addPath(p)
-        // Commit to model
-        mModel?.pushStroke(mTmpStroke)
-
         // Notify the observer
         mDrawSVGSignal.onNext(StopSketchEvent())
+
+        // Commit to model
+        mModel?.pushStroke(mTmpStroke)
     }
 
     override fun handleTap(x: Float, y: Float) {

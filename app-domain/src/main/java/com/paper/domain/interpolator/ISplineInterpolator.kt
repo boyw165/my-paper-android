@@ -24,8 +24,7 @@ package com.paper.domain.interpolator
 
 import com.paper.model.Point
 
-interface ISplineInterpolator : IMathFunctionOf {
+interface ISplineInterpolator {
 
-    val start: Point
-    val end: Point
+    fun f(t: Double): Point
 }

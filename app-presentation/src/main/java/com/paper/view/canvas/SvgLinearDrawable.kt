@@ -1,4 +1,4 @@
-// Copyright Jun 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,17 +20,38 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.interpolator
+package com.paper.view.canvas
 
-/**
- * The fourth of the four Hermite basis functions, which is
- * f(x) = t^2(t - 1). Check wiki page,
- * https://en.wikipedia.org/wiki/Cubic_Hermite_spline, for more details.
- */
-class Hermite11Function(private val concatF: IMathFunctionOf?) : IMathFunctionOf {
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import com.paper.domain.interpolator.LinearInterpolator
+import com.paper.model.Point
+import java.util.*
 
-    override fun f(x: Double): Double {
-        val operand = concatF?.f(x) ?: x
-        return Math.pow(operand, 2.0) * (operand - 1.0)
+class SvgLinearDrawable(
+    id: UUID,
+    context: IPaperContext,
+    points: List<Point> = emptyList(),
+    penColor: Int = 0,
+    penSize: Float = 1f,
+    porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
+    : SvgDrawable(id = id,
+                  context = context,
+                  points = points,
+                  penColor = penColor,
+                  penSize = penSize,
+                  porterDuffMode = porterDuffMode) {
+
+    override fun addSplineImpl(point: Point) {
+        if (mPointList.size > 1) {
+            val i = mPointList.lastIndex
+            val previous = mPointList[i - 1]
+            val current = mPointList[i]
+
+            val spline = LinearInterpolator(start = previous,
+                                            end = current)
+
+            mSplineList.add(spline)
+        }
     }
 }

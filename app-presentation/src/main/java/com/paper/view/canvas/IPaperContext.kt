@@ -21,7 +21,6 @@
 package com.paper.view.canvas
 
 import android.view.ViewConfiguration
-import com.paper.domain.interpolator.ISplineInterpolatorFactory
 
 /**
  * The context gives the global editor settings and the ability to map point
@@ -32,8 +31,6 @@ interface IPaperContext {
     // Rendering //////////////////////////////////////////////////////////////
 
     val ifShowPathJoints: Boolean
-
-    val pathInterpolatorFactory: ISplineInterpolatorFactory
 
     fun getOneDp(): Float
 
