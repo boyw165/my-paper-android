@@ -166,8 +166,8 @@ class PaperEditPanelWidget(
         return mColorTicketsSignal
     }
 
-    fun changePenSize(src: Observable<UpdatePenSizeEvent>): Disposable {
-        return src
+    fun changePenSize(penSizeSrc: Observable<UpdatePenSizeEvent>): Disposable {
+        return penSizeSrc
             .flatMap { event ->
                 println("${DomainConst.TAG}: change pen size=${event.size}")
 
@@ -188,6 +188,11 @@ class PaperEditPanelWidget(
 
     private val mPenSizeSignal = BehaviorSubject.create<Float>()
 
+    /**
+     * Update of pen size ranging from 0.0 to 1.0
+     *
+     * @return An observable of pen size ranging from 0.0 to 1.0
+     */
     fun onUpdatePenSize(): Observable<Float> {
         return mPenSizeSignal
     }

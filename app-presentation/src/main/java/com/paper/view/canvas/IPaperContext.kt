@@ -43,6 +43,11 @@ interface IPaperContext {
      */
     fun mapM2V(x: Float, y: Float): FloatArray
 
+    /**
+     * Map the value observed in the Model world to the View world.
+     */
+    fun mapM2V(v: Float): Float
+
     // Gesture ////////////////////////////////////////////////////////////////
 
     fun getViewConfiguration(): ViewConfiguration

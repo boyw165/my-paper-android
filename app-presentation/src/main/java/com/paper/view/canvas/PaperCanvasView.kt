@@ -886,6 +886,13 @@ class PaperCanvasView : View,
         return mDrawViewPortSignal
     }
 
+    fun onUpdateViewPortScale(): Observable<Float> {
+        return mDrawViewPortSignal
+            .map { event ->
+                event.viewPort.width / mViewPortBase.width
+            }
+    }
+
     private fun resetViewPort() {
         val defaultW = mViewPortMax.width
         val defaultH = mViewPortMax.height
@@ -1379,6 +1386,11 @@ class PaperCanvasView : View,
 
     override fun mapM2V(x: Float, y: Float): FloatArray {
         return toViewWorld(x, y)
+    }
+
+    override fun mapM2V(v: Float): Float {
+        val (z, _) = toViewWorld(v, 0f)
+        return z
     }
 
     // Protected / Private Methods ////////////////////////////////////////////

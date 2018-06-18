@@ -165,8 +165,8 @@ class PaperEditorActivity : AppCompatActivity() {
         // Pen size preview
         mDisposables.add(
             mMenuPenSizeView
-                .updatePenSize(mMenuView.onUpdatePenSize(),
-                               mMenuView.onUpdatePenColor()))
+                .updatePenSize(sizeSrc = mMenuView.onUpdatePenSize(),
+                               colorSrc = mMenuView.onUpdatePenColor()))
 
         // Undo & redo buttons
         mWidget.addUndoSignal(RxView.clicks(mBtnUndo))

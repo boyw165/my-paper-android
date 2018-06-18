@@ -47,7 +47,7 @@ import io.reactivex.subjects.PublishSubject
 class PaperEditPanelView : ConstraintLayout,
                            IWidgetView<PaperEditPanelWidget> {
 
-    private var mOneDp = 0f
+    private val mOneDp = resources.getDimension(R.dimen.one_dp)
 
     private val mDisposables = CompositeDisposable()
 
@@ -59,8 +59,6 @@ class PaperEditPanelView : ConstraintLayout,
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         inflate(context, R.layout.view_paper_edit_panel, this)
-
-        mOneDp = context.resources.getDimension(R.dimen.one_dp)
 
         mToolListView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         mToolListView.adapter = mToolListViewController.adapter
@@ -130,9 +128,10 @@ class PaperEditPanelView : ConstraintLayout,
                         UpdatePenSizeEvent(lifecycle = it.lifecycle,
                                            size = it.progress.toFloat() / 100f)
                     }
-                    .doOnNext { event ->
-                        // Bypass event to external component
-                        mPenSizeSignal.onNext(event)
+                    .doOnNext {
+                        // Bypass event to external component, e.g. another
+                        // size previewer
+                        mPenSizeSignal.onNext(it)
                     }))
         mDisposables.add(
             widget.onUpdatePenSize()
@@ -157,7 +156,7 @@ class PaperEditPanelView : ConstraintLayout,
             "Already bind to a widget")
     }
 
-    // View port indicator ////////////////////////////////////////////////////
+    // View port //////////////////////////////////////////////////////////////
 
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
 

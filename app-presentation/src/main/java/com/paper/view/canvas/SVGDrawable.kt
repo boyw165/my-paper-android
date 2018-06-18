@@ -51,7 +51,7 @@ abstract class SvgDrawable(val id: UUID,
     private val mDebugStrokePaint = Paint()
 
     // Dirty flag
-    protected val mDirtyFlag = DirtyFlag()
+    private val mDirtyFlag = DirtyFlag()
 
     // Bezier
     private var mBasedWidth: Float = 0f
