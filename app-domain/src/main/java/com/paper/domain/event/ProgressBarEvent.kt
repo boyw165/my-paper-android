@@ -28,9 +28,10 @@ data class ProgressBarEvent(val lifecycle: EventLifecycle,
     companion object {
 
         @JvmStatic
-        fun start(fromUser: Boolean): ProgressBarEvent {
+        fun start(progress: Int,
+                  fromUser: Boolean): ProgressBarEvent {
             return ProgressBarEvent(lifecycle = EventLifecycle.START,
-                                    progress = 0,
+                                    progress = progress,
                                     fromUser = fromUser)
         }
 
@@ -43,8 +44,10 @@ data class ProgressBarEvent(val lifecycle: EventLifecycle,
         }
 
         @JvmStatic
-        fun stop(fromUser: Boolean): ProgressBarEvent {
+        fun stop(progress: Int,
+                 fromUser: Boolean): ProgressBarEvent {
             return ProgressBarEvent(lifecycle = EventLifecycle.STOP,
+                                    progress = progress,
                                     fromUser = fromUser)
         }
     }

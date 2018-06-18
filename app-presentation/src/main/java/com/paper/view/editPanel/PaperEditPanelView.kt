@@ -33,13 +33,13 @@ import com.paper.domain.event.CanvasEvent
 import com.paper.domain.event.UpdatePenSizeEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 import com.paper.model.Rect
-import com.paper.model.event.EventLifecycle
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
 import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.subjects.PublishSubject
 
 /**
  * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
@@ -67,6 +67,17 @@ class PaperEditPanelView : ConstraintLayout,
 
         mColorTicketsView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         mColorTicketsView.adapter = mColorTicketsViewController.adapter
+    }
+
+    override fun onMeasure(widthSpec: Int, heightSpec: Int) {
+        if (isInEditMode) {
+            val oneDp = resources.getDimension(R.dimen.one_dp)
+            val height = (200f * oneDp).toInt()
+            val heightMode = MeasureSpec.getMode(heightSpec)
+            super.onMeasure(widthSpec, MeasureSpec.makeMeasureSpec(height, heightMode))
+        } else {
+            super.onMeasure(widthSpec, heightSpec)
+        }
     }
 
     private lateinit var mWidget: PaperEditPanelWidget
@@ -103,6 +114,8 @@ class PaperEditPanelView : ConstraintLayout,
                 .subscribe { event ->
                     val color = event.colorTickets[event.usingIndex]
                     mPenSizeView.showPenColor(color)
+                    // Bypass color to external component
+                    mPenColorSignal.onNext(color)
 
                     // Update view
                     mColorTicketsViewController.setData(event)
@@ -113,18 +126,13 @@ class PaperEditPanelView : ConstraintLayout,
             widget.changePenSize(
                 SeekBarChangeObservable(mPenSizeView)
                     .filter { it.fromUser }
-                    .doOnNext { event ->
-//                        if (event.lifecycle == EventLifecycle.START) {
-//
-//                        } else if(event.lifecycle == EventLifecycle.STOP) {
-//                            mPenSizeView.hidePenSizePreview()
-//                        } else {
-//                            mPenSizeView.showPenSizePreview()
-//                        }
-                    }
                     .map {
                         UpdatePenSizeEvent(lifecycle = it.lifecycle,
                                            size = it.progress.toFloat() / 100f)
+                    }
+                    .doOnNext { event ->
+                        // Bypass event to external component
+                        mPenSizeSignal.onNext(event)
                     }))
         mDisposables.add(
             widget.onUpdatePenSize()
@@ -178,7 +186,17 @@ class PaperEditPanelView : ConstraintLayout,
         ColorTicketListEpoxyController(imageLoader = Glide.with(context))
     }
 
+    private val mPenColorSignal = PublishSubject.create<Int>()
+    fun onUpdatePenColor(): Observable<Int> {
+        return mPenColorSignal
+    }
+
     private val mPenSizeView by lazy { findViewById<PenSizeSeekBar>(R.id.slider_stroke_size) }
+
+    private val mPenSizeSignal = PublishSubject.create<UpdatePenSizeEvent>()
+    fun onUpdatePenSize(): Observable<UpdatePenSizeEvent> {
+        return mPenSizeSignal
+    }
 
     // Other //////////////////////////////////////////////////////////////////
 

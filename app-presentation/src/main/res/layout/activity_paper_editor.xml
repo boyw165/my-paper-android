@@ -2,6 +2,7 @@
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -21,7 +22,6 @@
         android:paddingTop="@dimen/toolbar_height"
         app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toTopOf="@+id/edit_panel"
-        app:layout_constraintHeight_default="spread"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
@@ -84,11 +84,25 @@
         android:id="@+id/edit_panel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/paper_canvas"/>
+        tools:background="@drawable/img_editor_panel_background"
+        tools:layout_height="200dp"/>
+
+    <!-- Editor panel : size preview -->
+    <com.paper.view.editPanel.PenSizePreview
+        android:id="@+id/edit_panel_pen_size_preview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:paddingBottom="12dp"
+        android:paddingEnd="36dp"
+        android:paddingStart="36dp"
+        android:paddingTop="12dp"
+        app:layout_constraintBottom_toTopOf="@+id/edit_panel"
+        app:layout_constraintEnd_toEndOf="@+id/edit_panel"
+        app:layout_constraintStart_toStartOf="@+id/edit_panel"
+        app:layout_constraintTop_toTopOf="@+id/guide_top_bar_bottom"/>
 
     <!-- For debug menu -->
     <FrameLayout

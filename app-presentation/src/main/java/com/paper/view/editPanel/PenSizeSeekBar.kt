@@ -35,16 +35,13 @@ import com.paper.view.with
 class PenSizeSeekBar : AppCompatSeekBar {
 
     // Preview.
+    private val mPreviewBorderWidth = resources.getDimension(R.dimen.pen_seek_bar_preview_border)
     private var mPreviewFillColor: Int = 0
-    private val mPreviewBorderColor: Int
-    private val mPreviewBorderWidth: Float
-    private var mPreviewAlpha: Int = 0
     private var mPreviewPaint: Paint
 
     // Thumb.
-    private var mThumbRadius: Float = 0.toFloat()
-    private var mThumbBorderWidth: Float = 0.toFloat()
-    private var mThumbDrawable: Drawable? = null
+    private val mThumbRadius = context.resources.getDimension(R.dimen.pen_seek_bar_thumb_size) / 2
+    private val mThumbDrawable = ContextCompat.getDrawable(context, R.drawable.bg_seek_bar_thumb)
     // Track.
     private val mTrackDrawable: TrackDrawable
 
@@ -56,29 +53,17 @@ class PenSizeSeekBar : AppCompatSeekBar {
                 attrs: AttributeSet?,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         // Init thumb resource.
-        mThumbRadius = context.resources.getDimension(
-            R.dimen.pen_seek_bar_thumb_size) / 2
-        mThumbBorderWidth = context.resources.getDimension(
-            R.dimen.pen_seek_bar_thumb_border)
-        mThumbDrawable = ContextCompat.getDrawable(
-            context, R.drawable.bg_seek_bar_thumb)
         thumb = mThumbDrawable
 
         // Init track drawable.
         val color = ContextCompat.getColor(context, R.color.black_30)
-        val startHeight = resources.getDimension(
-            R.dimen.pen_seek_bar_track_start_height)
-        val stopHeight = resources.getDimension(
-            R.dimen.pen_seek_bar_track_stop_height)
+        val startHeight = resources.getDimension(R.dimen.pen_seek_bar_track_start_height)
+        val stopHeight = resources.getDimension(R.dimen.pen_seek_bar_track_stop_height)
         mTrackDrawable = TrackDrawable(color, startHeight, stopHeight)
         mTrackDrawable.alpha = 255 / 2
         progressDrawable = mTrackDrawable
 
         // Init preview resource.
-        mPreviewBorderColor = ContextCompat.getColor(
-            getContext(), R.color.white)
-        mPreviewBorderWidth = resources.getDimension(
-            R.dimen.pen_seek_bar_preview_border)
         mPreviewPaint = Paint()
         mPreviewPaint.isAntiAlias = true
     }

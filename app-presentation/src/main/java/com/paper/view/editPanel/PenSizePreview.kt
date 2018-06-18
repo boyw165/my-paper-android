@@ -29,30 +29,31 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.support.v4.content.ContextCompat
+import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.view.View
 import com.paper.R
+import com.paper.domain.event.UpdatePenSizeEvent
+import com.paper.model.event.EventLifecycle
 import com.paper.view.with
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.rxkotlin.withLatestFrom
 
 class PenSizePreview : View {
 
-    private val mPreviewBorderColor = ContextCompat.getColor(
-        getContext(), R.color.white)
-    private val mMinPreviewRadius = resources.getDimension(
-        R.dimen.min_pen_size) / 2f
-    private val mMaxPreviewRadius = resources.getDimension(
-        R.dimen.max_pen_size) / 2f
-    private val mPreviewBorderWidth = resources.getDimension(
-        R.dimen.pen_seek_bar_preview_border)
-    private var mPreviewX: Float = 0f
+    private val mMinPreviewRadius = resources.getDimension(R.dimen.min_pen_size) / 2f
+    private val mMaxPreviewRadius = resources.getDimension(R.dimen.max_pen_size) / 2f
+    private val mPreviewBorderColor = ContextCompat.getColor(context, R.color.black_30)
+    private val mPreviewBorderWidth = resources.getDimension(R.dimen.pen_seek_bar_preview_border)
     private var mPreviewSize: Float = 0f
     private var mPreviewFillColor: Int = 0
     private var mPreviewAlpha: Int = 0
     private var mPreviewPaint = Paint()
 
     // Animation for preview.
-    private val mAnimInSet = AnimatorSet()
-    private val mAnimOutSet = AnimatorSet()
+    private var mAnimSet: AnimatorSet? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context,
@@ -74,14 +75,13 @@ class PenSizePreview : View {
                 val radius = mMinPreviewRadius + mPreviewSize * (mMaxPreviewRadius - mMinPreviewRadius)
                 // Translate the padding. For the x, we need to allow the thumb to
                 // draw in its extra space
-                canvas.translate(paddingLeft + mPreviewX,
-                                 paddingTop - 2f * radius)
+                val spaceWidth = width - ViewCompat.getPaddingStart(this) - ViewCompat.getPaddingEnd(this)
+                canvas.translate(ViewCompat.getPaddingStart(this) + mPreviewSize * spaceWidth,
+                                 height.toFloat() - paddingBottom - radius - mPreviewBorderWidth)
 
                 // Draw fill.
                 mPreviewPaint.style = Paint.Style.FILL
                 mPreviewPaint.color = mPreviewFillColor
-                //            mPreviewPaint.setShadowLayer(radius, 0, 0, Color.BLACK);
-                //            setLayerType(View.LAYER_TYPE_SOFTWARE, mPreviewPaint);
                 // The paint implementation merges the RGB and Alpha channels
                 // together, so changing alpha of Color.TRANSPARENT is actually
                 // equal to changing the alpha of Color.BLACK.
@@ -102,43 +102,69 @@ class PenSizePreview : View {
         }
     }
 
-    fun setPenColor(color: Int) {
+    fun updatePenSize(sizeSrc: Observable<UpdatePenSizeEvent>,
+                      colorSrc: Observable<Int>): Disposable {
+        return sizeSrc
+            .withLatestFrom(colorSrc)
+            .observeOn(AndroidSchedulers.mainThread())
+            .flatMap { (event, color) ->
+                when (event.lifecycle) {
+                    EventLifecycle.START -> {
+                        setPenColor(color)
+                        showPenSizePreview(event.size)
+                    }
+                    EventLifecycle.DOING -> {
+                        updatePenSizePreviewSize(event.size)
+                    }
+                    EventLifecycle.STOP -> {
+                        hidePenSizePreview()
+                    }
+                }
+                Observable.never<Unit>()
+            }
+            .subscribe()
+    }
+
+    private fun setPenColor(color: Int) {
         mPreviewFillColor = color
-        postInvalidate()
+        invalidate()
     }
 
-    fun showPenSizePreview(x: Float, size: Float) {
-        updatePenSizePreviewSize(x, size)
+    private fun showPenSizePreview(size: Float) {
+        updatePenSizePreviewSize(size)
 
-        // Run the fade-in animation if there's no animation running.
-        if (!mAnimInSet.isRunning) {
-            val toOpaque = ValueAnimator.ofInt(mPreviewAlpha, 255)
-            toOpaque.duration = 150
-            toOpaque.addUpdateListener(mPreviewAnimUpdater)
-            mAnimInSet.cancel()
-            mAnimInSet.play(toOpaque)
-            mAnimInSet.start()
-        }
+        // Run the fade-in animation
+        val toOpaque = ValueAnimator.ofInt(mPreviewAlpha, 255)
+        toOpaque.duration = 150
+        toOpaque.addUpdateListener(mPreviewAnimUpdater)
+        mAnimSet?.cancel()
+        mAnimSet = AnimatorSet()
+        mAnimSet?.play(toOpaque)
+        mAnimSet?.start()
     }
 
-    fun updatePenSizePreviewSize(x: Float, size: Float) {
-        mPreviewX = x
+    private fun updatePenSizePreviewSize(size: Float) {
         mPreviewSize = size
+        invalidate()
     }
 
-    fun hidePenSizePreview() {
+    private fun hidePenSizePreview() {
         // Always setup a new fade-out animation.
-        val toTransparent = ValueAnimator.ofInt(255, 0)
+        val toTransparent = ValueAnimator.ofInt(mPreviewAlpha, 0)
         toTransparent.duration = 250
         toTransparent.addUpdateListener(mPreviewAnimUpdater)
-        mAnimOutSet.cancel()
-        mAnimOutSet.play(toTransparent)
-        mAnimOutSet.startDelay = 700
-        mAnimOutSet.start()
+        mAnimSet?.cancel()
+        mAnimSet = AnimatorSet()
+        mAnimSet?.play(toTransparent)
+        mAnimSet?.startDelay = 700
+        mAnimSet?.start()
     }
 
     private val mPreviewAnimUpdater = ValueAnimator.AnimatorUpdateListener { anim ->
-        mPreviewAlpha = anim.animatedValue as Int
-        postInvalidate()
+        val alpha = anim.animatedValue as Int
+        post {
+            mPreviewAlpha = alpha
+            invalidate()
+        }
     }
 }

@@ -26,15 +26,16 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.model.event.ProgressEvent
 import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.*
+import com.paper.model.event.ProgressEvent
 import com.paper.model.event.TimedCounterEvent
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.observables.BooleanDialogSingle
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
+import com.paper.view.editPanel.PenSizePreview
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -44,13 +45,13 @@ import io.reactivex.subjects.PublishSubject
 
 class PaperEditorActivity : AppCompatActivity() {
 
-    private val mFullscreenFrameView by lazy { findViewById<View>(R.id.fullscreen_frame) }
     private val mCanvasView by lazy {
         val field = findViewById<PaperCanvasView>(R.id.paper_canvas)
         field.setBitmapRepo((application as IBitmapRepoProvider).getBitmapRepo())
         field
     }
-    private val mEditPanelView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
+    private val mMenuView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
+    private val mMenuPenSizeView by lazy { findViewById<PenSizePreview>(R.id.edit_panel_pen_size_preview) }
 
     private val mProgressBar by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
@@ -107,7 +108,8 @@ class PaperEditorActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_paper_editor)
 
-        mCanvasView.addCanvasEventSource(mEditPanelView.onUpdateViewPortPosition())
+        // TODO: Use subject and flatMap
+        mCanvasView.addCanvasEventSource(mMenuView.onUpdateViewPortPosition())
 
         // Progress
         mDisposables.add(
@@ -155,10 +157,16 @@ class PaperEditorActivity : AppCompatActivity() {
                 .onDrawViewPort()
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
-                    mEditPanelView.setCanvasAndViewPort(
+                    mMenuView.setCanvasAndViewPort(
                         event.canvas,
                         event.viewPort)
                 })
+
+        // Pen size preview
+        mDisposables.add(
+            mMenuPenSizeView
+                .updatePenSize(mMenuView.onUpdatePenSize(),
+                               mMenuView.onUpdatePenColor()))
 
         // Undo & redo buttons
         mWidget.addUndoSignal(RxView.clicks(mBtnUndo))
@@ -248,7 +256,7 @@ class PaperEditorActivity : AppCompatActivity() {
             mWidget.onEditPanelWidgetReady()
                 .observeOn(mUiScheduler)
                 .switchMap { widget ->
-                    BindViewWithWidget(view = mEditPanelView,
+                    BindViewWithWidget(view = mMenuView,
                                        widget = widget,
                                        caughtErrorSignal = mErrorSignal)
                 }

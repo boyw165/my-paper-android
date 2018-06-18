@@ -68,19 +68,21 @@ class SeekBarChangeObservable(view: SeekBar)
 
             if (!isDisposed) {
                 observer.onNext(ProgressBarEvent.doing(progress = progress,
-                                                                              fromUser = fromUser))
+                                                       fromUser = fromUser))
             }
         }
 
         override fun onStartTrackingTouch(seekBar: SeekBar) {
             if (!isDisposed) {
-                observer.onNext(ProgressBarEvent.start(fromUser = true))
+                observer.onNext(ProgressBarEvent.start(progress = mView.progress,
+                                                       fromUser = true))
             }
         }
 
         override fun onStopTrackingTouch(seekBar: SeekBar) {
             if (!isDisposed) {
-                observer.onNext(ProgressBarEvent.stop(fromUser = true))
+                observer.onNext(ProgressBarEvent.stop(progress = mView.progress,
+                                                      fromUser = true))
             }
         }
 
