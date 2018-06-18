@@ -14,8 +14,14 @@
     <dimen name="default_thumb_height">200dp</dimen>
 
     <!-- Paper editor -->
-    <dimen name="sketch_min_stroke_width">1dp</dimen>
-    <dimen name="sketch_max_stroke_width">100dp</dimen>
+    <dimen name="min_pen_size">1dp</dimen>
+    <dimen name="max_pen_size">100dp</dimen>
+    <!-- Paper editor : bush size seek-bar -->
+    <dimen name="pen_seek_bar_thumb_size">24dp</dimen>
+    <dimen name="pen_seek_bar_thumb_border">2dp</dimen>
+    <dimen name="pen_seek_bar_preview_border">2dp</dimen>
+    <dimen name="pen_seek_bar_track_start_height">0dp</dimen>
+    <dimen name="pen_seek_bar_track_stop_height">10dp</dimen>
 
     <!-- DEBUG -->
     <dimen name="debug_padding">16dp</dimen>

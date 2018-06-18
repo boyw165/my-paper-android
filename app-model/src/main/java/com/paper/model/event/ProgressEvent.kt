@@ -18,34 +18,33 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.model.event
 
-import com.paper.model.event.EventLifecycle
-
-data class ProgressBarEvent(val lifecycle: EventLifecycle,
-                            val progress: Int = 0,
-                            val fromUser: Boolean = false) {
+data class ProgressEvent(val justStart: Boolean = false,
+                         val doing: Boolean = false,
+                         val justStop: Boolean = false,
+                         val progress: Int = 0) {
     companion object {
 
-        @JvmStatic
-        fun start(fromUser: Boolean): ProgressBarEvent {
-            return ProgressBarEvent(lifecycle = EventLifecycle.START,
-                                    progress = 0,
-                                    fromUser = fromUser)
+        fun start(progress: Int = 0): ProgressEvent {
+            return ProgressEvent(justStart = true,
+                                 doing = false,
+                                 justStop = false,
+                                 progress = progress)
         }
 
-        @JvmStatic
-        fun doing(progress: Int,
-                  fromUser: Boolean): ProgressBarEvent {
-            return ProgressBarEvent(lifecycle = EventLifecycle.DOING,
-                                    progress = progress,
-                                    fromUser = fromUser)
+        fun doing(progress: Int): ProgressEvent {
+            return ProgressEvent(justStart = false,
+                                 doing = true,
+                                 justStop = false,
+                                 progress = progress)
         }
 
-        @JvmStatic
-        fun stop(fromUser: Boolean): ProgressBarEvent {
-            return ProgressBarEvent(lifecycle = EventLifecycle.STOP,
-                                    fromUser = fromUser)
+        fun stop(progress: Int = 100): ProgressEvent {
+            return ProgressEvent(justStart = false,
+                                 doing = false,
+                                 justStop = true,
+                                 progress = progress)
         }
     }
 }

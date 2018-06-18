@@ -26,7 +26,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.*
 import com.paper.model.event.TimedCounterEvent

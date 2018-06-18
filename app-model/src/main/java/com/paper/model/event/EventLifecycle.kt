@@ -1,4 +1,4 @@
-// Copyright Paper-present Paper
+// Copyright Jun 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,19 +20,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.view
+package com.paper.model.event
 
-import android.graphics.Canvas
-
-/**
- * Process the given lambda in a session environment so that this operation
- * won't contribute permanent change.
- */
-inline fun<T> Canvas.with(lambda: (canvas: Canvas) -> T):T {
-    val count = save()
-
-    val ret = lambda(this)
-
-    restoreToCount(count)
-    return ret
+enum class EventLifecycle {
+    START,
+    DOING,
+    STOP,
 }

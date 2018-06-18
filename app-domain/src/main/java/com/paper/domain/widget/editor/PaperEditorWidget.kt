@@ -25,7 +25,7 @@ package com.paper.domain.widget.editor
 import com.paper.domain.DomainConst
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.data.ToolType
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.model.IPaperTransformRepo

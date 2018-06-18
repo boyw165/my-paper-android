@@ -22,7 +22,7 @@
 
 package com.paper.domain.useCase
 
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.*

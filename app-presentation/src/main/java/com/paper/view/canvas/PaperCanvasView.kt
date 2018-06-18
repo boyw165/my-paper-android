@@ -381,8 +381,8 @@ class PaperCanvasView : View,
 
     // Rendering resource.
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
-    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
-    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
+    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.min_pen_size) }
+    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.max_pen_size) }
     private val mMatrixStack = Stack<Matrix>()
 
     /**
@@ -549,6 +549,8 @@ class PaperCanvasView : View,
 
         // Background layer
         canvas.withPadding { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+
             // Extract the transform from the canvas matrix.
             mTransformHelper.getValues(mCanvasMatrix)
             val tx = mTransformHelper.translationX
@@ -566,6 +568,7 @@ class PaperCanvasView : View,
 
         // Print the thumbnail Bitmap to the merged layer
         mMergedCanvas.withPadding { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             c.concat(mCanvasMatrix)
             c.scale(mScaleThumb, mScaleThumb)
             c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
@@ -573,11 +576,13 @@ class PaperCanvasView : View,
 
         // Print the anti-aliasing Bitmap to the merged layer
         mMergedCanvas.withPadding { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             mSceneBuffer.getCurrentScene().print(c)
         }
 
         // Print the merged layer to view canvas
         canvas.with { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             c.drawBitmap(mMergedBitmap, 0f, 0f, mBitmapPaint)
         }
     }
@@ -700,6 +705,7 @@ class PaperCanvasView : View,
                                     val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
                                               ?: throw NullPointerException()
                                     mThumbCanvas.with { c ->
+                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
                                         c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
                                     }
                                     bmp.recycle()
@@ -714,6 +720,7 @@ class PaperCanvasView : View,
                                     // TODO: so that the paper knows how to render them in the correct
                                     // TODO: order.
                                     mThumbCanvas.with { c ->
+                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
                                         c.scale(1f / mScaleThumb, 1f / mScaleThumb)
 
                                         var dirty = false

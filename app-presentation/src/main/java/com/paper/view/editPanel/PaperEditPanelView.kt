@@ -26,14 +26,14 @@ import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
-import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.domain.event.CanvasEvent
-import com.paper.domain.event.ViewPortEvent
+import com.paper.domain.event.UpdatePenSizeEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
 import com.paper.model.Rect
+import com.paper.model.event.EventLifecycle
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
 import com.paper.view.canvas.ViewPortIndicatorView
@@ -101,26 +101,35 @@ class PaperEditPanelView : ConstraintLayout,
             widget.onUpdatePenColorList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
+                    val color = event.colorTickets[event.usingIndex]
+                    mPenSizeView.showPenColor(color)
+
                     // Update view
                     mColorTicketsViewController.setData(event)
                 })
 
         // Pen size
         mDisposables.add(
-            SeekBarChangeObservable(mPenSizeView)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { event ->
-                    if (event.fromUser) {
-                        val penSize = event.progress.toFloat() / 100f
-
-                        widget.handleChangePenSize(penSize)
+            widget.changePenSize(
+                SeekBarChangeObservable(mPenSizeView)
+                    .filter { it.fromUser }
+                    .doOnNext { event ->
+//                        if (event.lifecycle == EventLifecycle.START) {
+//
+//                        } else if(event.lifecycle == EventLifecycle.STOP) {
+//                            mPenSizeView.hidePenSizePreview()
+//                        } else {
+//                            mPenSizeView.showPenSizePreview()
+//                        }
                     }
-                })
+                    .map {
+                        UpdatePenSizeEvent(lifecycle = it.lifecycle,
+                                           size = it.progress.toFloat() / 100f)
+                    }))
         mDisposables.add(
             widget.onUpdatePenSize()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { penSize ->
-                    // Update view
                     mPenSizeView.progress = (penSize * 100f).toInt()
                 })
     }
@@ -169,7 +178,7 @@ class PaperEditPanelView : ConstraintLayout,
         ColorTicketListEpoxyController(imageLoader = Glide.with(context))
     }
 
-    private val mPenSizeView by lazy { findViewById<SeekBar>(R.id.slider_stroke_size) }
+    private val mPenSizeView by lazy { findViewById<PenSizeSeekBar>(R.id.slider_stroke_size) }
 
     // Other //////////////////////////////////////////////////////////////////
 

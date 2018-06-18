@@ -28,7 +28,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.observables.BooleanDialogSingle
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
@@ -314,7 +314,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
                 25, TimeUnit.MILLISECONDS)
             .map { value ->
                 ProgressEvent(doing = true,
-                              progress = value.toInt())
+                                                    progress = value.toInt())
             }
             .compose(handleProgress())
             .compose(goUntilPreviousTaskStops())
