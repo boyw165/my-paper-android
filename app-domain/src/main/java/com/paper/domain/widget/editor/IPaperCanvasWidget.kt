@@ -48,6 +48,8 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun setChosenPenColor(color: Int)
 
+    fun setViewPortScale(scale: Float)
+
     fun setPenSize(size: Float)
 
     fun setThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)

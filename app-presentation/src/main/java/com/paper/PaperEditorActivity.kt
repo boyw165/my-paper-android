@@ -151,7 +151,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 .observeOn(mUiScheduler)
                 .subscribe())
 
-        // View port indicator
+        // View port : boundary
         mDisposables.add(
             mCanvasView
                 .onDrawViewPort()

@@ -211,6 +211,15 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
      * The current stroke width, where the value is from 0.0 to 1.0.
      */
     private var mPenSize = 0.2f
+    /**
+     * The current view-port scale.
+     */
+    private var mViewPortScale = Float.NaN
+    /**
+     * The scaled pen size, which is view-port-scale * pen-size.
+     */
+    private val mScaledPenSize: Float
+        get() = mViewPortScale * mPenSize
 
     override fun setDrawingMode(mode: DrawingMode) {
         mDrawingMode = mode
@@ -218,6 +227,10 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
 
     override fun setChosenPenColor(color: Int) {
         mPenColor = color
+    }
+
+    override fun setViewPortScale(scale: Float) {
+        mViewPortScale = scale
     }
 
     override fun setPenSize(size: Float) {
@@ -299,7 +312,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mTmpStroke = SketchStroke(
             penType = penType,
             penColor = mPenColor,
-            penSize = mPenSize)
+            penSize = mScaledPenSize)
 
         mCacheTime = System.currentTimeMillis()
         val p = Point(x, y, time = 0)
@@ -355,7 +368,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mTmpStroke = SketchStroke(
             penType = penType,
             penColor = mPenColor,
-            penSize = mPenSize,
+            penSize = mScaledPenSize,
             mPointList = mutableListOf(Point(x, y, 0)))
         // Commit to model
         mModel?.pushStroke(mTmpStroke)

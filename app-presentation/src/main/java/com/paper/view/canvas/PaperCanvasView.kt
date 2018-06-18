@@ -159,6 +159,14 @@ class PaperCanvasView : View,
                     }
                 })
 
+        // View-port
+        mDisposables.add(
+            onUpdateViewPortScale()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scale ->
+                    widget.setViewPortScale(scale)
+                })
+
         // Drawing
         mDisposables.add(
             onReadyToDraw()
@@ -840,6 +848,18 @@ class PaperCanvasView : View,
         mAntiAliasingSignal.onNext(true)
     }
 
+    private fun getScaledPenSize(event: CanvasEvent): Float {
+        return when (event) {
+            is StartSketchEvent -> {
+                mapM2V(event.penSize)
+            }
+            is AddSketchStrokeEvent -> {
+                mapM2V(event.penSize)
+            }
+            else -> throw IllegalArgumentException("Invalid event")
+        }
+    }
+
     // View port //////////////////////////////////////////////////////////////
 
     /**
@@ -1308,14 +1328,14 @@ class PaperCanvasView : View,
                         SvgHermiteCubicDrawable(id = event.strokeID,
                                                 context = this@PaperCanvasView,
                                                 penColor = event.penColor,
-                                                penSize = mapM2V(event.penSize),
+                                                penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     else -> {
                         SvgLinearDrawable(id = event.strokeID,
                                           context = this@PaperCanvasView,
                                           penColor = event.penColor,
-                                          penSize = mapM2V(event.penSize),
+                                          penSize = getScaledPenSize(event),
                                           porterDuffMode = getPaintMode(event.penType))
                     }
                 }
@@ -1331,7 +1351,7 @@ class PaperCanvasView : View,
                                                     Point(x, y)
                                                 },
                                                 penColor = event.penColor,
-                                                penSize = mapM2V(event.penSize),
+                                                penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     else -> {
@@ -1342,7 +1362,7 @@ class PaperCanvasView : View,
                                               Point(x, y)
                                           },
                                           penColor = event.penColor,
-                                          penSize = mapM2V(event.penSize),
+                                          penSize = getScaledPenSize(event),
                                           porterDuffMode = getPaintMode(event.penType))
                     }
                 }
