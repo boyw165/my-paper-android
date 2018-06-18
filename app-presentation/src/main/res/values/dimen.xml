@@ -14,8 +14,6 @@
     <dimen name="default_thumb_height">200dp</dimen>
 
     <!-- Paper editor -->
-    <dimen name="min_pen_size">1dp</dimen>
-    <dimen name="max_pen_size">100dp</dimen>
     <!-- Paper editor : bush size seek-bar -->
     <dimen name="pen_seek_bar_thumb_size">24dp</dimen>
     <dimen name="pen_seek_bar_thumb_border">2dp</dimen>

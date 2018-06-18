@@ -162,6 +162,11 @@ class PaperEditorActivity : AppCompatActivity() {
                         event.viewPort)
                 })
 
+        // Pen size: the menu view needs to know the view-port scale so that it
+        // gets the right pen size observed in
+        mMenuView.setCanvasContext(mCanvasView)
+        mMenuPenSizeView.setCanvasContext(mCanvasView)
+
         // Pen size preview
         mDisposables.add(
             mMenuPenSizeView

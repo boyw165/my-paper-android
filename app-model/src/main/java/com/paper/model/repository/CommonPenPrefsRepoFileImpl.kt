@@ -22,6 +22,7 @@ package com.paper.model.repository
 
 import com.google.gson.*
 import com.paper.model.Color
+import com.paper.model.ModelConst
 import com.paper.model.observables.WriteStringToFileObservable
 import io.reactivex.Maybe
 import io.reactivex.Observable
@@ -47,18 +48,18 @@ class CommonPenPrefsRepoFileImpl(dir: File,
         .create()
     private val mIoScheduler = ioScheduler ?: SingleScheduler()
 
-    private val mPenColors = BehaviorSubject.create<List<Int>>()
-    private val mChosenPenColor = BehaviorSubject.create<Int>()
-    private val mPenSize = BehaviorSubject.create<Float>()
+    private val mPenColorsSignal = BehaviorSubject.create<List<Int>>()
+    private val mChosenPenColorSignal = BehaviorSubject.create<Int>()
+    private val mPenSizeSignal = BehaviorSubject.create<Float>()
 
     override fun getPenColors(): Observable<List<Int>> {
         return Observables.combineLatest(
-            mPenColors,
+            mPenColorsSignal,
             // You want the result of reading file sent to the subject also want
             // to be able to cancel the reading operation.
             readFromFile()
                 .map { (colors, _, _) ->
-                    mPenColors.onNext(colors)
+                    mPenColorsSignal.onNext(colors)
                     true
                 })
             .map { it.first }
@@ -66,45 +67,45 @@ class CommonPenPrefsRepoFileImpl(dir: File,
 
     override fun putPenColors(colors: List<Int>): Single<Boolean> {
         val clone = colors.toList()
-        mPenColors.onNext(clone)
+        mPenColorsSignal.onNext(clone)
 
         return writeToDisk()
     }
 
     override fun getChosenPenColor(): Observable<Int> {
         return Observables.combineLatest(
-            mChosenPenColor,
+            mChosenPenColorSignal,
             // You want the result of reading file sent to the subject also want
             // to be able to cancel the reading operation.
             readFromFile()
                 .map { (_, chosenColor, _) ->
-                    mChosenPenColor.onNext(chosenColor)
+                    mChosenPenColorSignal.onNext(chosenColor)
                     true
                 })
             .map { it.first }
     }
 
     override fun putChosenPenColor(color: Int): Single<Boolean> {
-        mChosenPenColor.onNext(color)
+        mChosenPenColorSignal.onNext(color)
 
         return writeToDisk()
     }
 
     override fun getPenSize(): Observable<Float> {
         return Observables.combineLatest(
-            mPenSize,
+            mPenSizeSignal,
             // You want the result of reading file sent to the subject also want
             // to be able to cancel the reading operation.
             readFromFile()
                 .map { (_, _, penSize) ->
-                    mPenSize.onNext(penSize)
+                    mPenSizeSignal.onNext(penSize)
                     true
                 })
             .map { it.first }
     }
 
     override fun putPenSize(size: Float): Single<Boolean> {
-        mPenSize.onNext(size)
+        mPenSizeSignal.onNext(size)
 
         return writeToDisk()
     }
@@ -113,6 +114,8 @@ class CommonPenPrefsRepoFileImpl(dir: File,
         return Maybe
             .fromCallable {
                 if (mFile.exists()) {
+                    println("${ModelConst.TAG} read pen preferences from $mFile")
+
                     FileReader(mFile).use { reader ->
                         return@fromCallable mGson.fromJson(
                             reader,
@@ -132,9 +135,9 @@ class CommonPenPrefsRepoFileImpl(dir: File,
     private fun writeToDisk(): Single<Boolean> {
         return Observables
             .combineLatest(
-                mPenColors,
-                mChosenPenColor,
-                mPenSize)
+                mPenColorsSignal,
+                mChosenPenColorSignal,
+                mPenSizeSignal)
             .observeOn(mIoScheduler)
             .debounce(1000, TimeUnit.MILLISECONDS, mIoScheduler)
             .switchMap { (colors, chosenColor, penSize) ->

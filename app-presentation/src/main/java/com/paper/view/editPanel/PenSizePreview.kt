@@ -35,6 +35,7 @@ import android.view.View
 import com.paper.R
 import com.paper.domain.event.UpdatePenSizeEvent
 import com.paper.model.event.EventLifecycle
+import com.paper.view.canvas.IPaperContext
 import com.paper.view.with
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -43,8 +44,11 @@ import io.reactivex.rxkotlin.withLatestFrom
 
 class PenSizePreview : View {
 
-    private val mMinPreviewRadius = resources.getDimension(R.dimen.min_pen_size) / 2f
-    private val mMaxPreviewRadius = resources.getDimension(R.dimen.max_pen_size) / 2f
+    private val mMinPenSize: Float
+        get() = mPaperContext!!.getMinPenSize()
+    private val mMaxPenSize: Float
+        get() = mPaperContext!!.getMaxPenSize()
+
     private val mPreviewBorderColor = ContextCompat.getColor(context, R.color.black_30)
     private val mPreviewBorderWidth = resources.getDimension(R.dimen.pen_seek_bar_preview_border)
     private var mPreviewSize: Float = 0f
@@ -72,11 +76,13 @@ class PenSizePreview : View {
         // Draw preview thumb.
         if (mPreviewAlpha > 0f) {
             canvas.with {
-                val radius = mMinPreviewRadius + mPreviewSize * (mMaxPreviewRadius - mMinPreviewRadius)
+                val diameter = mPaperContext!!.mapM2V(mPreviewSize)
+                val radius = diameter / 2f
+                val progress = (diameter - mMinPenSize) / (mMaxPenSize - mMinPenSize)
                 // Translate the padding. For the x, we need to allow the thumb to
                 // draw in its extra space
                 val spaceWidth = width - ViewCompat.getPaddingStart(this) - ViewCompat.getPaddingEnd(this)
-                canvas.translate(ViewCompat.getPaddingStart(this) + mPreviewSize * spaceWidth,
+                canvas.translate(ViewCompat.getPaddingStart(this) + progress * spaceWidth,
                                  height.toFloat() - paddingBottom - radius - mPreviewBorderWidth)
 
                 // Draw fill.
@@ -97,7 +103,7 @@ class PenSizePreview : View {
                 mPreviewPaint.strokeWidth = mPreviewBorderWidth
                 mPreviewPaint.color = mPreviewBorderColor
                 mPreviewPaint.alpha = mPreviewAlpha
-                canvas.drawCircle(0f, 0f, radius + mPreviewBorderWidth / 2f, mPreviewPaint)
+                canvas.drawCircle(0f, 0f, (diameter + mPreviewBorderWidth) / 2f, mPreviewPaint)
             }
         }
     }
@@ -105,6 +111,7 @@ class PenSizePreview : View {
     fun updatePenSize(sizeSrc: Observable<UpdatePenSizeEvent>,
                       colorSrc: Observable<Int>): Disposable {
         return sizeSrc
+            // FIXME: Changing color isn't responsive
             .withLatestFrom(colorSrc)
             .observeOn(AndroidSchedulers.mainThread())
             .flatMap { (event, color) ->
@@ -166,5 +173,13 @@ class PenSizePreview : View {
             mPreviewAlpha = alpha
             invalidate()
         }
+    }
+
+    // Canvas context /////////////////////////////////////////////////////////
+
+    private var mPaperContext: IPaperContext? = null
+
+    fun setCanvasContext(paperContext: IPaperContext) {
+        mPaperContext = paperContext
     }
 }

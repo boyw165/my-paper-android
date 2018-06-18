@@ -32,9 +32,11 @@ import com.paper.R
 import com.paper.domain.event.CanvasEvent
 import com.paper.domain.event.UpdatePenSizeEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.model.ModelConst
 import com.paper.model.Rect
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
+import com.paper.view.canvas.IPaperContext
 import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -46,8 +48,6 @@ import io.reactivex.subjects.PublishSubject
  */
 class PaperEditPanelView : ConstraintLayout,
                            IWidgetView<PaperEditPanelWidget> {
-
-    private val mOneDp = resources.getDimension(R.dimen.one_dp)
 
     private val mDisposables = CompositeDisposable()
 
@@ -124,20 +124,28 @@ class PaperEditPanelView : ConstraintLayout,
             widget.changePenSize(
                 SeekBarChangeObservable(mPenSizeView)
                     .filter { it.fromUser }
-                    .map {
-                        UpdatePenSizeEvent(lifecycle = it.lifecycle,
-                                           size = it.progress.toFloat() / 100f)
+                    .map { event ->
+                        val t = event.progress.toFloat() / 100f
+                        val penSize = (1f - t) * ModelConst.MIN_PEN_SIZE + t * ModelConst.MAX_PEN_SIZE
+
+                        UpdatePenSizeEvent(lifecycle = event.lifecycle,
+                                           size = penSize)
                     }
                     .doOnNext {
                         // Bypass event to external component, e.g. another
                         // size previewer
                         mPenSizeSignal.onNext(it)
                     }))
+        // Pen size initialization
         mDisposables.add(
             widget.onUpdatePenSize()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { penSize ->
-                    mPenSizeView.progress = (penSize * 100f).toInt()
+                    // t = (x - x0) / (x1 - x0)
+                    val t = (penSize - ModelConst.MIN_PEN_SIZE) / (ModelConst.MAX_PEN_SIZE - ModelConst.MIN_PEN_SIZE)
+                    val progress = (100f * t).toInt()
+
+                    mPenSizeView.progress = progress
                 })
     }
 
@@ -154,6 +162,14 @@ class PaperEditPanelView : ConstraintLayout,
     private fun ensureNoLeakingSubscription() {
         if (mDisposables.size() > 0) throw IllegalStateException(
             "Already bind to a widget")
+    }
+
+    // Canvas context /////////////////////////////////////////////////////////
+
+    private var mPaperContext: IPaperContext? = null
+
+    fun setCanvasContext(paperContext: IPaperContext) {
+        mPaperContext = paperContext
     }
 
     // View port //////////////////////////////////////////////////////////////

@@ -137,7 +137,8 @@ open class ScrapView(drawMode: PorterDuffXfermode,
 
         mStrokePaint.style = Paint.Style.STROKE
         mStrokePaint.color = Color.RED
-        mStrokePaint.strokeWidth = 3f * mContext!!.getMinStrokeWidth()
+        // FIXME
+//        mStrokePaint.strokeWidth = 3f * mContext!!.getMinPenSize()
 
         mDebugPaint.style = Paint.Style.STROKE
         mDebugPaint.color = Color.RED

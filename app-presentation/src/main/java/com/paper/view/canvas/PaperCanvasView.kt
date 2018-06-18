@@ -41,6 +41,7 @@ import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
 import com.paper.model.IPreferenceServiceProvider
+import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepo
@@ -381,8 +382,6 @@ class PaperCanvasView : View,
 
     // Rendering resource.
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
-    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.min_pen_size) }
-    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.max_pen_size) }
     private val mMatrixStack = Stack<Matrix>()
 
     /**
@@ -1309,14 +1308,14 @@ class PaperCanvasView : View,
                         SvgHermiteCubicDrawable(id = event.strokeID,
                                                 context = this@PaperCanvasView,
                                                 penColor = event.penColor,
-                                                penSize = event.penSize,
+                                                penSize = mapM2V(event.penSize),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     else -> {
                         SvgLinearDrawable(id = event.strokeID,
                                           context = this@PaperCanvasView,
                                           penColor = event.penColor,
-                                          penSize = event.penSize,
+                                          penSize = mapM2V(event.penSize),
                                           porterDuffMode = getPaintMode(event.penType))
                     }
                 }
@@ -1332,7 +1331,7 @@ class PaperCanvasView : View,
                                                     Point(x, y)
                                                 },
                                                 penColor = event.penColor,
-                                                penSize = event.penSize,
+                                                penSize = mapM2V(event.penSize),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     else -> {
@@ -1343,7 +1342,7 @@ class PaperCanvasView : View,
                                               Point(x, y)
                                           },
                                           penColor = event.penColor,
-                                          penSize = event.penSize,
+                                          penSize = mapM2V(event.penSize),
                                           porterDuffMode = getPaintMode(event.penType))
                     }
                 }
@@ -1360,12 +1359,12 @@ class PaperCanvasView : View,
         return ViewConfiguration.get(context)
     }
 
-    override fun getMinStrokeWidth(): Float {
-        return mMinStrokeWidth
+    override fun getMinPenSize(): Float {
+        return mScaleM2V * ModelConst.MIN_PEN_SIZE
     }
 
-    override fun getMaxStrokeWidth(): Float {
-        return mMaxStrokeWidth
+    override fun getMaxPenSize(): Float {
+        return mScaleM2V * ModelConst.MAX_PEN_SIZE
     }
 
     override fun getTouchSlop(): Float {
@@ -1389,8 +1388,7 @@ class PaperCanvasView : View,
     }
 
     override fun mapM2V(v: Float): Float {
-        val (z, _) = toViewWorld(v, 0f)
-        return z
+        return mScaleM2V * v
     }
 
     // Protected / Private Methods ////////////////////////////////////////////

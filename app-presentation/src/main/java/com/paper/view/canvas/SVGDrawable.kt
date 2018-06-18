@@ -61,7 +61,7 @@ abstract class SvgDrawable(val id: UUID,
     private val mPath = Path()
 
     init {
-        mBasedWidth = getPaintSize(mPenSize)
+        mBasedWidth = mPenSize
         mMinWidth = 1f * mBasedWidth
         mMaxWidth = 2.5f * mBasedWidth
         mVelocityFilterWeight = 0.9f
@@ -195,14 +195,6 @@ abstract class SvgDrawable(val id: UUID,
     }
 
     protected abstract fun addSplineImpl(point: Point)
-
-    private fun getPaintSize(penSize: Float): Float {
-        synchronized(this) {
-            // See convex-set, https://en.wikipedia.org/wiki/Convex_set
-            return (1 - penSize) * mContext.getMinStrokeWidth() +
-                   penSize * mContext.getMaxStrokeWidth()
-        }
-    }
 
     // Equality & hash ////////////////////////////////////////////////////////
 
