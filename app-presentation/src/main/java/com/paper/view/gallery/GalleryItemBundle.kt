@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright May 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +20,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.view.gallery
 
-import com.paper.model.repository.IBitmapRepo
+data class GalleryItemBundle(val type: Type,
+                             val items: List<GalleryItem>) {
 
-interface IBitmapRepoProvider {
-
-    fun getBitmapRepo(): IBitmapRepo
+    enum class Type {
+        Thumbnail,
+        NativeAds
+    }
 }

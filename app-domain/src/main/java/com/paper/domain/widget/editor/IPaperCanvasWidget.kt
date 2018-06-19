@@ -48,16 +48,13 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun setChosenPenColor(color: Int)
 
+    fun setViewPortScale(scale: Float)
+
     fun setPenSize(size: Float)
 
     fun setThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
 
-    /**
-     * If the view wants to update the thumbnail but not immediately, call this
-     * method to indicate the thumbnail is dirty. The dirty state is reset when
-     * call [setThumbnail].
-     */
-    fun invalidateThumbnail()
+    fun eraseCanvas()
 
     // For output /////////////////////////////////////////////////////////////
 

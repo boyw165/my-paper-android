@@ -38,25 +38,22 @@ import com.facebook.ads.AdListener
 import com.facebook.ads.NativeAd
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.domain.IPaperRepoProvider
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
-import com.paper.model.IPaper
-import com.paper.model.ISharedPreferenceService
-import com.paper.model.ModelConst
-import com.paper.view.gallery.PaperSizeDialogFragment
-import com.paper.view.gallery.PaperSizeDialogSingle
+import com.paper.model.*
 import com.paper.view.gallery.*
+import com.paper.view.gallery.GalleryItemBundle.Type.NativeAds
+import com.paper.view.gallery.GalleryItemBundle.Type.Thumbnail
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
 import com.yarolegovich.discretescrollview.transform.Pivot
 import com.yarolegovich.discretescrollview.transform.ScaleTransformer
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
@@ -74,7 +71,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
-    private val mBrowsePaperSignal = PublishSubject.create<Long>()
+    private val mSavedPaperIdSignal = BehaviorSubject.create<Long>()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -91,7 +88,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     private val mPaperSnapshots = mutableListOf<IPaper>()
 
     private val mRepo by lazy { (application as IPaperRepoProvider).getPaperRepo() }
-    private val mPrefs by lazy { application as ISharedPreferenceService }
+    private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mPermissions by lazy { RxPermissions(this) }
 
     // Progress signal.
@@ -116,11 +113,11 @@ class PaperGalleryActivity : AppCompatActivity() {
                 .setPivotX(Pivot.X.CENTER) // CENTER is a default one
                 .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
                 .build())
-        //        mPapersView.setSlideOnFling(true)
-        //        mPapersView.setOverScrollEnabled(true)
-        //        // Determines how much time it takes to change the item on fling, settle
-        //        // or smoothScroll
-        //        mPapersView.setItemTransitionTimeMillis(300)
+//        mPapersView.setSlideOnFling(true)
+//        mPapersView.setOverScrollEnabled(true)
+//        // Determines how much time it takes to change the item on fling, settle
+//        // or smoothScroll
+//        mPapersView.setItemTransitionTimeMillis(300)
         mGalleryView.addScrollStateChangeListener(object : DiscreteScrollView.ScrollStateChangeListener<RecyclerView.ViewHolder> {
 
             override fun onScroll(scrollPosition: Float,
@@ -132,15 +129,32 @@ class PaperGalleryActivity : AppCompatActivity() {
 
             override fun onScrollEnd(currentItemHolder: RecyclerView.ViewHolder,
                                      adapterPosition: Int) {
-                val paper = mGalleryViewController.getPaperFromAdapterPosition(adapterPosition)
+                val paperID = mGalleryViewController
+                    .getPaperFromAdapterPosition(adapterPosition)
+                    ?.getId() ?: ModelConst.INVALID_ID
+
                 // Report the paper ID in the database
-                mBrowsePaperSignal.onNext(paper?.getId() ?: ModelConst.INVALID_ID)
+                mSavedPaperIdSignal.onNext(paperID)
             }
 
             override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
                                        adapterPosition: Int) {
+                setDeleteButtonVisibility(false)
             }
         })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Paper thumbnail list view.
+        // Break the reference to the Epoxy controller's adapter so that the
+        // context reference would be recycled.
+        mGalleryView.adapter = null
+    }
+
+    override fun onResume() {
+        super.onResume()
 
         // Exp menu button.
         mDisposables.add(
@@ -167,12 +181,9 @@ class PaperGalleryActivity : AppCompatActivity() {
                 .switchMap {
                     requestPermissions()
                         .observeOn(Schedulers.io())
-                        .doOnNext {
-                            mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
-                        }
                         .switchMap {
                             PaperSizeDialogSingle(PaperSizeDialogFragment(),
-                                                                         supportFragmentManager)
+                                                  supportFragmentManager)
                                 .flatMap { (w, h) ->
                                     mRepo.setTmpPaperSize(w, h)
                                 }
@@ -195,64 +206,60 @@ class PaperGalleryActivity : AppCompatActivity() {
         // Button of delete paper.
         mDisposables.add(
             onClickDeletePaper()
-                .observeOn(Schedulers.io())
-                .map {
-                    val toDeletePaperID = mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID,
-                                                         ModelConst.INVALID_ID)
-                    val toDeletePaperPosition = mPaperSnapshots.indexOfFirst { it.getId() == toDeletePaperID }
-                    val newPaperPosition = if (toDeletePaperPosition + 1 < mPaperSnapshots.size) {
-                        toDeletePaperPosition + 1
-                    } else {
-                        toDeletePaperPosition - 1
-                    }
-                    val newPaperID = if (newPaperPosition >= 0) {
-                        mPaperSnapshots[newPaperPosition].getId()
-                    } else {
-                        ModelConst.INVALID_ID
-                    }
-
-                    // Save new paper ID.
-                    mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newPaperID)
-
-                    return@map toDeletePaperID
-                }
                 .observeOn(AndroidSchedulers.mainThread())
-                .switchMap { toDeletePaperID ->
-                    requestPermissions()
-                        .observeOn(Schedulers.io())
-                        .switchMap {
-                            DeletePaper(paperID = toDeletePaperID,
-                                        paperRepo = mRepo,
-                                        errorSignal = mErrorSignal)
-                                .toObservable()
-                        }
+                .switchMap {
+                    val toDeletePaperID = mSavedPaperIdSignal.value ?: ModelConst.INVALID_ID
+                    if (toDeletePaperID != ModelConst.TEMP_ID &&
+                        toDeletePaperID != ModelConst.INVALID_ID) {
+                        requestPermissions()
+                            .observeOn(Schedulers.io())
+                            .switchMap {
+                                DeletePaper(paperID = toDeletePaperID,
+                                            paperRepo = mRepo,
+                                            errorSignal = mErrorSignal)
+                                    .toObservable()
+                            }
+                    } else {
+                        Observable.never()
+                    }
                 }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    hideProgressBar()
-                })
+                .subscribe())
+
         // Browse papers.
         mDisposables.add(
-            onBrowsePaper()
-                .observeOn(Schedulers.io())
-                .doOnNext { id ->
-                    mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, id)
+            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                .switchMap { savedID ->
+                    mSavedPaperIdSignal.onNext(savedID)
+                    mSavedPaperIdSignal
+                        .switchMap { id ->
+                            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+                                .flatMap { readID ->
+                                    if (readID != id) {
+                                        mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, readID)
+                                            .map { readID }
+                                            .toObservable()
+                                    } else {
+                                        Observable.just(readID)
+                                    }
+                                }
+                        }
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext { id ->
+                            if (id == ModelConst.INVALID_ID) {
+                                setDeleteButtonVisibility(false)
+                            } else {
+                                setDeleteButtonVisibility(true)
+                            }
+                        }
                 }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { id ->
-                    if (id == ModelConst.INVALID_ID) {
-                        setDeleteButtonVisibility(false)
-                    } else {
-                        setDeleteButtonVisibility(true)
-                    }
-                })
+                .subscribe())
 
         // Load papers, create buttons, and ADs
         mDisposables.add(
             Observables
                 .combineLatest(
                     getGalleryItems(),
-                    getSavedBrowsingPaperID().toObservable())
+                    mSavedPaperIdSignal)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (items, savedID) ->
                     showGalleryItems(items)
@@ -260,37 +267,39 @@ class PaperGalleryActivity : AppCompatActivity() {
                 })
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onPause() {
+        super.onPause()
 
         mDisposables.clear()
-
-        // Paper thumbnail list view.
-        // Break the reference to the Epoxy controller's adapter so that the
-        // context reference would be recycled.
-        mGalleryView.adapter = null
     }
 
     private fun getGalleryItems(): Observable<List<GalleryItem>> {
         val defaultItem = listOf<GalleryItem>(CreatePaperItem(mOnClickNewPaperSignal))
         return Observable
-            .merge(loadPapers(),
-                   loadAds())
-            .scan(defaultItem, { oldItem, newItem ->
-                if (newItem.isEmpty()) return@scan oldItem
-
+            .merge(
+                loadPapers()
+                    // To bundle so that the following reducer knows what packs
+                    // to update.
+                    .map { items ->
+                        GalleryItemBundle(type = Thumbnail,
+                                          items = items)
+                    },
+                loadAds()
+                    // To bundle so that the following reducer knows what packs
+                    // to update.
+                    .map { items ->
+                        GalleryItemBundle(type = NativeAds,
+                                          items = items)
+                    })
+            .scan(defaultItem, { oldItem, newItemBundle ->
                 // Create item
-                val createItems = if (newItem[0] is CreatePaperItem) {
-                    newItem
-                } else {
-                    oldItem.filter { item ->
-                        item is CreatePaperItem
-                    }
+                val createItems = oldItem.filter { item ->
+                    item is CreatePaperItem
                 }
 
                 // Paper thumbnails
-                val paperThumbItems = if (newItem[0] is PaperThumbItem) {
-                    newItem
+                val paperThumbItems = if (newItemBundle.type == Thumbnail) {
+                    newItemBundle.items
                 } else {
                     oldItem.filter { item ->
                         item is PaperThumbItem
@@ -298,15 +307,11 @@ class PaperGalleryActivity : AppCompatActivity() {
                 }
 
                 // ADs items (if paper exists)
-                val adsItems = if (paperThumbItems.isEmpty()) {
-                    emptyList()
+                val adsItems = if (newItemBundle.type == NativeAds) {
+                    newItemBundle.items
                 } else {
-                    if (newItem[0] is NativeAdsItem) {
-                        newItem
-                    } else {
-                        oldItem.filter { item ->
-                            item is NativeAdsItem
-                        }
+                    oldItem.filter { item ->
+                        item is NativeAdsItem
                     }
                 }
 
@@ -380,22 +385,9 @@ class PaperGalleryActivity : AppCompatActivity() {
             {
                 val actualPosition = mGalleryViewController.getAdapterPositionByPaperID(savedID)
                 if (actualPosition >= 0) {
-                    val offset = Math.abs(mGalleryView.currentItem - actualPosition)
-                    if (offset in 1..2) {
-                        mGalleryView.smoothScrollToPosition(actualPosition)
-                    } else {
-                        mGalleryView.scrollToPosition(actualPosition)
-                    }
+                    mGalleryView.smoothScrollToPosition(actualPosition)
                 }
             }, 500)
-    }
-
-    private fun getSavedBrowsingPaperID(): Single<Long> {
-        return Single
-            .fromCallable {
-                mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-            }
-            .subscribeOn(Schedulers.io())
     }
 
     private fun setDeleteButtonVisibility(visible: Boolean) {
@@ -435,10 +427,6 @@ class PaperGalleryActivity : AppCompatActivity() {
                    mOnClickNewPaperSignal)
             .debounce(150, TimeUnit.MILLISECONDS)
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
-    }
-
-    private fun onBrowsePaper(): Observable<Long> {
-        return mBrowsePaperSignal
     }
 
     private fun onClickDeletePaper(): Observable<Any> {

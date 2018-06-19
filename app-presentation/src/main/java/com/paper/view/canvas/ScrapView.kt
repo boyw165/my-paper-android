@@ -26,10 +26,8 @@ import android.view.MotionEvent
 import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.AppConst
-import com.paper.domain.event.*
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IScrapWidget
-import com.paper.model.Point
 import com.paper.model.Transform
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -47,7 +45,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
     private val mChildren = mutableListOf<ScrapView>()
 
     // Sketch
-    private val mDrawables = mutableListOf<SVGDrawable>()
+    private val mDrawables = mutableListOf<SvgDrawable>()
 
     // Rendering properties.
     private var mX = Float.NaN
@@ -97,7 +95,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
             mWidget.onDrawSVG()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
-                    onDrawSVG(event)
+                    TODO()
                 })
 
         mDisposables.add(
@@ -139,7 +137,8 @@ open class ScrapView(drawMode: PorterDuffXfermode,
 
         mStrokePaint.style = Paint.Style.STROKE
         mStrokePaint.color = Color.RED
-        mStrokePaint.strokeWidth = 3f * mContext!!.getMinStrokeWidth()
+        // FIXME
+//        mStrokePaint.strokeWidth = 3f * mContext!!.getMinPenSize()
 
         mDebugPaint.style = Paint.Style.STROKE
         mDebugPaint.color = Color.RED
@@ -158,7 +157,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         // Draw itself
         canvas.concat(mMatrix)
         mDrawables.forEach { d ->
-            d.onDraw(canvas = canvas)
+            d.draw(canvas = canvas)
         }
 
         // Then children
@@ -171,46 +170,6 @@ open class ScrapView(drawMode: PorterDuffXfermode,
         previousXforms.pop()
 
         canvas.restoreToCount(count)
-    }
-
-    private fun onDrawSVG(event: CanvasEvent) {
-
-        when (event) {
-            is StartSketchEvent -> {
-                val nx = event.point.x
-                val ny = event.point.y
-                val (x, y) = mContext!!.mapM2V(nx, ny)
-                val d = SVGDrawable(
-                    context = mContext!!,
-                    penColor = event.penColor,
-                    penSize = event.penSize,
-                    porterDuffMode = mDrawMode)
-                d.moveTo(Point(x, y, event.point.time))
-
-                mDrawables.add(d)
-            }
-            is OnSketchEvent -> {
-                val nx = event.point.x
-                val ny = event.point.y
-                val (x, y) = mContext!!.mapM2V(nx, ny)
-                val d = mDrawables.last()
-                d.lineTo(Point(x, y, event.point.time))
-            }
-            is StopSketchEvent -> {
-                val d = mDrawables.last()
-                d.close()
-            }
-            is ClearAllSketchEvent -> {
-                val d = mDrawables.last()
-                d.clear()
-                mDrawables.clear()
-            }
-            else -> {
-                // NOT SUPPORT
-            }
-        }
-
-        mParent?.invalidate()
     }
 
     private fun onUpdateTransform(xform: Transform) {

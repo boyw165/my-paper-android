@@ -67,6 +67,8 @@ interface IPaper : Lock {
 
     fun popStroke(): SketchStroke
 
+    fun removeAllStrokes()
+
     fun onAddStroke(replayAll: Boolean = true): Observable<SketchStroke>
 
     fun onRemoveStroke(): Observable<SketchStroke>

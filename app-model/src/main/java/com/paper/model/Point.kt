@@ -22,7 +22,7 @@ package com.paper.model
 
 data class Point(var x: Float = 0f,
                  var y: Float = 0f,
-                 var time: Long = System.currentTimeMillis()) {
+                 var time: Long = 0L) {
 
     private var mIsHashDirty = true
     private var mHashCode = 0
@@ -35,6 +35,12 @@ data class Point(var x: Float = 0f,
         mIsHashDirty = false
     }
 
+    fun vectorTo(other: Point): Point {
+        return Point(x = other.x - this.x,
+                     y = other.y - this.y,
+                     time = 0)
+    }
+
     fun velocityFrom(start: Point): Float {
         val vec = distanceTo(start) / (this.time - start.time)
         return if (vec.isNaN()) 0f else vec
@@ -44,6 +50,14 @@ data class Point(var x: Float = 0f,
         val dx = other.x - this.x
         val dy = other.y - this.y
         return Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
+    }
+
+    fun slopeTo(other: Point): Float {
+        return (other.y - this.y) / (other.x - this.x)
+    }
+
+    fun slopeFrom(other: Point): Float {
+        return (this.y - other.y) / (this.x - other.x)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -69,6 +83,6 @@ data class Point(var x: Float = 0f,
     }
 
     override fun toString(): String {
-        return "Point(%.3f, %.3f)".format(this.x, this.y)
+        return "Point(x=%.3f, y=%.3f, t=$time)".format(this.x, this.y)
     }
 }

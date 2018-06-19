@@ -23,6 +23,7 @@ package com.paper.domain.event
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.sketch.PenType
+import java.util.*
 
 /**
  * Any operation relevant to the canvas.
@@ -62,22 +63,40 @@ class InvalidationEvent : CanvasEvent()
  * A starting sketch event, where it may provide the pen color, pen size, and
  * pen type information.
  */
-data class StartSketchEvent(val point: Point,
+data class StartSketchEvent(val strokeID: UUID,
+                            val point: Point,
                             val penColor: Int = 0,
                             val penSize: Float = 0f,
                             val penType: PenType) : CanvasEvent()
 /**
  * An on-drawing sketch event.
  */
-data class OnSketchEvent(val point: Point) : CanvasEvent()
+data class OnSketchEvent(val strokeID: UUID,
+                         val point: Point) : CanvasEvent()
+
 /**
  * A stopping sketch event.
  */
 class StopSketchEvent : CanvasEvent()
+
+/**
+ * To add a stroke.
+ */
+data class AddSketchStrokeEvent(val strokeID: UUID,
+                                val points: List<Point>,
+                                val penColor: Int = 0,
+                                val penSize: Float = 0f,
+                                val penType: PenType) : CanvasEvent()
+
+/**
+ * To remove a stroke.
+ */
+data class RemoveSketchStrokeEvent(val strokeID: UUID) : CanvasEvent()
+
 /**
  * A event to clear all the cached sketch.
  */
-class ClearAllSketchEvent : CanvasEvent()
+class EraseCanvasEvent : CanvasEvent()
 
 // View-port //////////////////////////////////////////////////////////////////
 

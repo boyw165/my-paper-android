@@ -24,10 +24,13 @@ import com.paper.domain.DomainConst
 import com.paper.domain.data.ToolType
 import com.paper.domain.event.UpdateColorTicketsEvent
 import com.paper.domain.event.UpdateEditToolsEvent
+import com.paper.domain.event.UpdatePenSizeEvent
+import com.paper.model.event.EventLifecycle
 import com.paper.model.repository.ICommonPenPrefsRepo
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -163,20 +166,33 @@ class PaperEditPanelWidget(
         return mColorTicketsSignal
     }
 
-    private val mPenSizeSignal = BehaviorSubject.create<Float>()
+    fun changePenSize(penSizeSrc: Observable<UpdatePenSizeEvent>): Disposable {
+        return penSizeSrc
+            .flatMap { event ->
+                println("${DomainConst.TAG}: change pen size=${event.size}")
 
-    fun handleChangePenSize(size: Float) {
-        println("${DomainConst.TAG}: change pen size=$size")
-        mCancelSignal.onNext(0)
-
-        mDisposables.add(
-            mModel
-                .putPenSize(size)
-                .toObservable()
-                .takeUntil(mCancelSignal)
-                .subscribe())
+                when (event.lifecycle) {
+                    EventLifecycle.START,
+                    EventLifecycle.STOP -> {
+                        Observable.never<Boolean>()
+                    }
+                    EventLifecycle.DOING -> {
+                        mModel
+                            .putPenSize(event.size)
+                            .toObservable()
+                    }
+                }
+            }
+            .subscribe()
     }
 
+    private val mPenSizeSignal = BehaviorSubject.create<Float>()
+
+    /**
+     * Update of pen size ranging from 0.0 to 1.0
+     *
+     * @return An observable of pen size ranging from 0.0 to 1.0
+     */
     fun onUpdatePenSize(): Observable<Float> {
         return mPenSizeSignal
     }

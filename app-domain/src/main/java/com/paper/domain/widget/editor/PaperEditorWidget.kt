@@ -23,10 +23,9 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.DomainConst
-import com.paper.model.ISharedPreferenceService
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.data.ToolType
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.model.IPaperTransformRepo
@@ -39,6 +38,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
@@ -62,19 +62,6 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     fun start(paperID: Long) {
         ensureNoLeakingSubscription()
-
-        // Busy state
-        mDisposables.add(
-            Observables
-                .combineLatest(
-                    onBusy(),
-                    mCanvasWidget.onBusy(),
-                    mHistoryWidget.onBusy(),
-                    mEditPanelWidget.onBusy()) { a, b, c, d -> a || b || c || d }
-                .observeOn(mUiScheduler)
-                .subscribe { busy ->
-                    mReadyToStopSignal.onNext(!busy)
-                })
 
         // Load paper and establish the paper (canvas) and transform bindings.
         val paperSrc = mPaperRepo
@@ -162,13 +149,39 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     mCanvasWidget.setPenSize(penSize)
                 })
 
-        // Following are about undo and redo:
+        // Undo and redo
+        // TODO: Before really undo, check editor state. If it's free, do it
+        // TODO: immediately. While doing, please update the editor state to
+        // TODO: busy. Once finished, update it to free.
         mDisposables.add(
-            mHistoryWidget
-                .onUpdateUndoRedoCapacity()
-                .map { (undo, redo) ->
-                    UndoRedoEvent(canUndo = undo > 0,
-                                  canRedo = redo > 0)
+            Observable
+                .merge(mUndoSignals)
+                .flatMap {
+                    mHistoryWidget
+                        .undo()
+                        .toObservable()
+                }
+                .subscribe())
+        mDisposables.add(
+            Observable
+                .merge(mRedoSignals)
+                .flatMap {
+                    mHistoryWidget
+                        .redo()
+                        .toObservable()
+                }
+                .subscribe())
+        mDisposables.add(
+            Observables.combineLatest(
+                onBusy(),
+                mHistoryWidget.onUpdateUndoRedoCapacity())
+                .map { (busy, event) ->
+                    if (busy) {
+                        UndoRedoEvent(canUndo = false,
+                                      canRedo = false)
+                    } else {
+                        event
+                    }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
@@ -180,20 +193,16 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         mDisposables.clear()
     }
 
-    private val mReadyToStopSignal = BehaviorSubject.create<Boolean>()
-
-    fun requestStop(): Observable<Boolean> {
-        println("${DomainConst.TAG}: request editor widget to stop")
-        return mReadyToStopSignal
-            .doOnNext { ready ->
-                if (ready) {
-                    println("${DomainConst.TAG}: editor widget is ready to stop")
-                    mUpdateProgressSignal.onNext(ProgressEvent.stop(100))
-                } else {
-                    println("${DomainConst.TAG}: editor widget is NOT ready to stop")
-                    mUpdateProgressSignal.onNext(ProgressEvent.start(0))
-                }
-            }
+    /**
+     * Request to stop; It is granted to stop when receiving a true; vice versa.
+     */
+    fun requestStop(bmpFile: File, bmpWidth: Int, bmpHeight: Int): Observable<Boolean> {
+        return try {
+            mCanvasWidget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
+            Observable.just(true)
+        } catch (err: Throwable) {
+            Observable.just(false)
+        }
     }
 
     private fun ensureNoLeakingSubscription() {
@@ -205,12 +214,27 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     private val mBusySignal = BehaviorSubject.createDefault(false)
 
-    // TODO: Utilize it
+    /**
+     * A overall busy state of the editor. The state is contributed by its sub-
+     * components, e.g. canvas widget or history widget.
+     */
     private fun onBusy(): Observable<Boolean> {
-        return mBusySignal
+        return Observables
+            .combineLatest(
+                mBusySignal,
+                mCanvasWidget.onBusy(),
+                mHistoryWidget.onBusy(),
+                mEditPanelWidget.onBusy()) { editorBusy, canvasBusy, historyBusy, panelBusy ->
+                println("${DomainConst.TAG}: " +
+                        "editor busy=$editorBusy, " +
+                        "canvas busy=$canvasBusy, " +
+                        "history busy=$historyBusy, " +
+                        "panel busy=$panelBusy")
+                editorBusy || canvasBusy || historyBusy || panelBusy
+            }
     }
 
-    // Paper widget ///////////////////////////////////////////////////////////
+    // Canvas widget & functions //////////////////////////////////////////////
 
     private val mCanvasWidget by lazy {
         PaperCanvasWidget(mUiScheduler,
@@ -222,6 +246,12 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     // TODO: The interface is probably redundant
     fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
         return mOnCanvasWidgetReadySignal
+    }
+
+    fun eraseCanvas(): Observable<Boolean> {
+        mHistoryWidget.eraseAll()
+        mCanvasWidget.eraseCanvas()
+        return Observable.just(true)
     }
 
     // Edit panel widget //////////////////////////////////////////////////////
@@ -246,29 +276,21 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                              ioScheduler = mIoScheduler)
     }
 
+    private val mUndoSignals = mutableListOf<Observable<Any>>()
+
+    fun addUndoSignal(source: Observable<Any>) {
+        mUndoSignals.add(source)
+    }
+
+    private val mRedoSignals = mutableListOf<Observable<Any>>()
+
+    fun addRedoSignal(source: Observable<Any>) {
+        mRedoSignals.add(source)
+    }
+
     private val mUndoRedoEventSignal = BehaviorSubject.createDefault(
         UndoRedoEvent(canUndo = false,
                       canRedo = false))
-
-    fun handleUndo() {
-        // TODO: Before really undo, check editor state. If it's free, do it
-        // TODO: immediately. While doing, please update the editor state to
-        // TODO: busy. Once finished, update it to free.
-
-        if (!mUndoRedoEventSignal.value!!.canUndo) return
-
-        mHistoryWidget.undo()
-    }
-
-    fun handleRedo() {
-        // TODO: Before really undo, check editor state. If it's free, do it
-        // TODO: immediately. While doing, please update the editor state to
-        // TODO: busy. Once finished, update it to free.
-
-        if (!mUndoRedoEventSignal.value!!.canRedo) return
-
-        mHistoryWidget.redo()
-    }
 
     fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {
         return mUndoRedoEventSignal

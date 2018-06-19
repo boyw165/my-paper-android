@@ -21,6 +21,7 @@ ext {
             supportV4CoreUtils        : "com.android.support:support-core-utils:$SUPPORT_LIB_VER",
             supportV13                : "com.android.support:support-v13:$SUPPORT_LIB_VER",
             supportCompat             : "com.android.support:support-compat:$SUPPORT_LIB_VER",
+            supportPreference         : "com.android.support:preference-v7:$SUPPORT_LIB_VER",
             supportAppcompatV7        : "com.android.support:appcompat-v7:$SUPPORT_LIB_VER",
             supportExif               : "com.android.support:exifinterface:$SUPPORT_LIB_VER",
             supportRecyclerViewV7     : "com.android.support:recyclerview-v7:${SUPPORT_LIB_VER}",
@@ -65,6 +66,7 @@ ext {
             kotlinStdlibJre7          : "org.jetbrains.kotlin:kotlin-stdlib-jre7:$KOTLIN_VER",
             kotlinStdlibJre8          : "org.jetbrains.kotlin:kotlin-stdlib-jre8:$KOTLIN_VER",
             kotlinUnitTest            : "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN_VER",
+            kotlinCoroutinesCore      : 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21',
             // Facebook.
             facebookShare             : 'com.facebook.android:facebook-share:4.27.0',
             facebookLogin             : 'com.facebook.android:facebook-login:4.27.0',

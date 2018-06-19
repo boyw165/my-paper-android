@@ -22,21 +22,28 @@
 
 package com.paper.model
 
-interface ISharedPreferenceService {
+import io.reactivex.Observable
+import io.reactivex.Single
 
-    fun putString(key: String, value: String)
+interface IPreferenceService {
 
-    fun getString(key: String, defaultValue: String): String
+    fun putBoolean(key: String, value: Boolean): Single<Boolean>
 
-    fun putInt(key: String, value: Int)
+    fun getBoolean(key: String, defaultValue: Boolean): Observable<Boolean>
 
-    fun getInt(key: String, defaultValue: Int): Int
+    fun putString(key: String, value: String): Single<Boolean>
 
-    fun putLong(key: String, value: Long)
+    fun getString(key: String, defaultValue: String): Observable<String>
 
-    fun getLong(key: String, defaultValue: Long): Long
+    fun putInt(key: String, value: Int): Single<Boolean>
 
-    fun putFloat(key: String, value: Float)
+    fun getInt(key: String, defaultValue: Int): Observable<Int>
 
-    fun getFloat(key: String, defaultValue: Float): Float
+    fun putLong(key: String, value: Long): Single<Boolean>
+
+    fun getLong(key: String, defaultValue: Long): Observable<Long>
+
+    fun putFloat(key: String, value: Float): Single<Boolean>
+
+    fun getFloat(key: String, defaultValue: Float): Observable<Float>
 }

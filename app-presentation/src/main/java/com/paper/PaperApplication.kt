@@ -20,31 +20,23 @@
 
 package com.paper
 
-import android.content.Context
 import android.os.StrictMode
 import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
-import com.paper.domain.IBitmapRepoProvider
-import com.paper.domain.IDatabaseIOSchedulerProvider
-import com.paper.domain.IPaperRepoProvider
-import com.paper.domain.IPaperTransformRepoProvider
-import com.paper.model.IPaperTransformRepo
-import com.paper.model.ISharedPreferenceService
+import com.paper.model.*
 import com.paper.model.repository.IBitmapRepo
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.PaperTransformRepoFileImpl
-import io.reactivex.Scheduler
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
 
 class PaperApplication : MultiDexApplication(),
-                         IDatabaseIOSchedulerProvider,
                          IPaperRepoProvider,
                          IPaperTransformRepoProvider,
                          IBitmapRepoProvider,
-                         ISharedPreferenceService {
+                         IPreferenceServiceProvider {
 
     override fun onCreate() {
         super.onCreate()
@@ -53,8 +45,10 @@ class PaperApplication : MultiDexApplication(),
         Fresco.initialize(this)
 
         // RxJava global exception
-        RxJavaPlugins.setErrorHandler { err ->
-            err.printStackTrace()
+        if (!BuildConfig.DEBUG) {
+            RxJavaPlugins.setErrorHandler { err ->
+                err.printStackTrace()
+            }
         }
 
         // Enable the strict mode for DEBUG
@@ -80,12 +74,13 @@ class PaperApplication : MultiDexApplication(),
 
     // Repository and scheduler ///////////////////////////////////////////////
 
+    private val mDbScheduler = SingleScheduler()
     private val mPaperRepo by lazy {
         PaperRepoSqliteImpl(authority = packageName,
                             resolver = contentResolver,
                             fileDir = getExternalFilesDir("media"),
-                            prefs = this@PaperApplication,
-                            dbIoScheduler = getScheduler())
+                            prefs = preference,
+                            dbIoScheduler = mDbScheduler)
     }
 
     override fun getPaperRepo(): IPaperRepo {
@@ -104,58 +99,12 @@ class PaperApplication : MultiDexApplication(),
         return mPaperTransformRepo
     }
 
-    private val mDbScheduler = SingleScheduler()
-
-    override fun getScheduler(): Scheduler {
-        return mDbScheduler
-    }
 
     // Shared preference //////////////////////////////////////////////////////
 
-    // Shared preference.
-    private val mPreferences by lazy { getSharedPreferences(packageName, Context.MODE_PRIVATE) }
-
-    override fun putString(key: String, value: String) {
-        mPreferences
-            .edit()
-            .putString(key, value)
-            .apply()
-    }
-
-    override fun getString(key: String, defaultValue: String): String {
-        return mPreferences.getString(key, defaultValue)
-    }
-
-    override fun putInt(key: String, value: Int) {
-        mPreferences
-            .edit()
-            .putInt(key, value)
-            .apply()
-    }
-
-    override fun getInt(key: String, defaultValue: Int): Int {
-        return mPreferences.getInt(key, defaultValue)
-    }
-
-    override fun putLong(key: String, value: Long) {
-        mPreferences
-            .edit()
-            .putLong(key, value)
-            .apply()
-    }
-
-    override fun getLong(key: String, defaultValue: Long): Long {
-        return mPreferences.getLong(key, defaultValue)
-    }
-
-    override fun putFloat(key: String, value: Float) {
-        mPreferences
-            .edit()
-            .putFloat(key, value)
-            .apply()
-    }
-
-    override fun getFloat(key: String, defaultValue: Float): Float {
-        return mPreferences.getFloat(key, defaultValue)
+    private val mPrefsScheduler = SingleScheduler()
+    override val preference by lazy {
+        PreferenceAndroidImpl(context = this@PaperApplication,
+                              workerScheduler = mPrefsScheduler)
     }
 }

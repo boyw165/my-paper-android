@@ -35,5 +35,8 @@ object ModelConst {
     val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
     val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
 
-    const val PREFS_BROWSE_PAPER_ID = "browse_paper_id"
+    const val MIN_PEN_SIZE = 1f
+    const val MAX_PEN_SIZE = 60f
+
+    const val PREFS_BROWSE_PAPER_ID = "prefs_browse_paper_id"
 }

@@ -31,7 +31,6 @@ import android.graphics.Canvas
 inline fun<T> Canvas.with(lambda: (canvas: Canvas) -> T):T {
     val count = save()
 
-    clipRect(0f, 0f, width.toFloat(), height.toFloat())
     val ret = lambda(this)
 
     restoreToCount(count)

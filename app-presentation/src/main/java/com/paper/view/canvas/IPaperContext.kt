@@ -30,16 +30,23 @@ interface IPaperContext {
 
     // Rendering //////////////////////////////////////////////////////////////
 
+    val ifShowPathJoints: Boolean
+
     fun getOneDp(): Float
 
-    fun getMinStrokeWidth(): Float
+    fun getMinPenSize(): Float
 
-    fun getMaxStrokeWidth(): Float
+    fun getMaxPenSize(): Float
 
     /**
      * Map the point observed in the Model world to the View world.
      */
     fun mapM2V(x: Float, y: Float): FloatArray
+
+    /**
+     * Map a value observed in the Model world to the View world.
+     */
+    fun mapM2V(v: Float): Float
 
     // Gesture ////////////////////////////////////////////////////////////////
 

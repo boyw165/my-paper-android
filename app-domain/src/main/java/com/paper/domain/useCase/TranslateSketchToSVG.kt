@@ -41,7 +41,7 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
         observer.onSubscribe(d)
 
         observer.onNext(InitializationBeginEvent())
-        observer.onNext(ClearAllSketchEvent())
+        observer.onNext(EraseCanvasEvent())
 
         for (stroke in mStrokes) {
             if (d.isDisposed) break
@@ -51,16 +51,21 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
                 if (d.isDisposed) break
 
                 when (i) {
-                    0 -> observer.onNext(StartSketchEvent(
-                        point = pt,
-                        penColor = stroke.penColor,
-                        penSize = stroke.penSize,
-                        penType = stroke.penType))
+                    0 -> observer.onNext(
+                        StartSketchEvent(
+                            strokeID = stroke.id,
+                            point = pt,
+                            penColor = stroke.penColor,
+                            penSize = stroke.penSize,
+                            penType = stroke.penType))
                     stroke.pointList.lastIndex -> {
-                        observer.onNext(OnSketchEvent(point = pt))
+                        observer.onNext(OnSketchEvent(strokeID = stroke.id,
+                                                      point = pt))
                         observer.onNext(StopSketchEvent())
                     }
-                    else -> observer.onNext(OnSketchEvent(point = pt))
+                    else -> observer.onNext(
+                        OnSketchEvent(strokeID = stroke.id,
+                                      point = pt))
                 }
             }
         }

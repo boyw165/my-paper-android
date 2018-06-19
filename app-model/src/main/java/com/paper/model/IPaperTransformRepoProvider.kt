@@ -18,11 +18,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.model
 
-import com.paper.model.repository.IPaperRepo
+interface IPaperTransformRepoProvider {
 
-interface IPaperRepoProvider {
-
-    fun getPaperRepo(): IPaperRepo
+    fun getPaperTransformRepo(): IPaperTransformRepo
 }

@@ -163,22 +163,42 @@ class PaperAutoSaveImpl(
 
     override fun pushStroke(stroke: SketchStroke) {
         mLock.lock()
-        mSketch.add(stroke)
-        mAddStrokeSignal.onNext(stroke)
+        if (stroke.pointList.isNotEmpty()) {
+            mSketch.add(stroke)
+        }
         mLock.unlock()
+
+        mAddStrokeSignal.onNext(stroke)
 
         // Request to save file
         requestAutoSave()
     }
 
     override fun popStroke(): SketchStroke {
+        mLock.lock()
         val stroke = mSketch.removeAt(mSketch.lastIndex)
+        mLock.unlock()
+
         mRemoveStrokeSignal.onNext(stroke)
 
         // Request to save file
         requestAutoSave()
 
         return stroke
+    }
+
+    override fun removeAllStrokes() {
+        mLock.lock()
+        val removed = mSketch.toList()
+        mSketch.clear()
+        mLock.unlock()
+
+        removed.forEach { stroke ->
+            mRemoveStrokeSignal.onNext(stroke)
+        }
+
+        // Request to save file
+        requestAutoSave()
     }
 
     override fun onAddStroke(replayAll: Boolean): Observable<SketchStroke> {
@@ -285,5 +305,43 @@ class PaperAutoSaveImpl(
 
     override fun newCondition(): Condition {
         return mLock.newCondition()
+    }
+
+    // Equality & hash ////////////////////////////////////////////////////////
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PaperAutoSaveImpl
+
+        if (mID != other.mID) return false
+        if (mUUID != other.mUUID) return false
+        if (mCreatedAt != other.mCreatedAt) return false
+        if (mModifiedAt != other.mModifiedAt) return false
+        if (mWidth != other.mWidth) return false
+        if (mHeight != other.mHeight) return false
+        if (mThumbnail != other.mThumbnail) return false
+        if (mThumbnailWidth != other.mThumbnailWidth) return false
+        if (mThumbnailHeight != other.mThumbnailHeight) return false
+        if (mSketch != other.mSketch) return false
+        if (mScraps != other.mScraps) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = mID.hashCode()
+        result = 31 * result + mUUID.hashCode()
+        result = 31 * result + mCreatedAt.hashCode()
+        result = 31 * result + mModifiedAt.hashCode()
+        result = 31 * result + mWidth.hashCode()
+        result = 31 * result + mHeight.hashCode()
+        result = 31 * result + (mThumbnail?.hashCode() ?: 0)
+        result = 31 * result + mThumbnailWidth
+        result = 31 * result + mThumbnailHeight
+        result = 31 * result + mSketch.hashCode()
+        result = 31 * result + mScraps.hashCode()
+        return result
     }
 }

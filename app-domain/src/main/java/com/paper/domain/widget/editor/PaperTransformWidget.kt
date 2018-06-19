@@ -22,6 +22,7 @@
 
 package com.paper.domain.widget.editor
 
+import com.paper.domain.event.UndoRedoEvent
 import com.paper.model.IPaper
 import com.paper.model.IPaperTransformRepo
 import com.paper.model.transform.AddStrokeTransform
@@ -62,7 +63,7 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         mDisposables.add(
             mPaper.onAddStroke(replayAll = false)
                 .observeOn(mUiScheduler)
-                .switchMap {
+                .flatMap {
                     val key = UUID.randomUUID()
                     val value = AddStrokeTransform(
                         paper = mPaper)
@@ -72,19 +73,21 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
                     mOperationRepo
                         .putRecord(key, value)
                         .doOnSuccess {
-                            mUndoCapacitySignal.onNext(Pair(mUndoKeys.size, mRedoKeys.size))
+                            mUndoCapacitySignal.onNext(
+                                UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                                              canRedo = mRedoKeys.size > 0))
                         }
                         .toObservable()
                 }
                 .subscribe())
-        mDisposables.add(
-            mPaper.onRemoveStroke()
-                .observeOn(mUiScheduler)
-                .switchMap {
-                    // TODO
-                    Observable.never<Any>()
-                }
-                .subscribe())
+        // TODO
+        //mDisposables.add(
+        //    mPaper.onRemoveStroke()
+        //      .observeOn(mUiScheduler)
+        //      .flatMap {
+        //          Observable.never<Any>()
+        //      }
+        //      .subscribe())
     }
 
     private fun unbindPaperImpl() {
@@ -100,7 +103,17 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
 
     private val mBusySignal = BehaviorSubject.createDefault(false)
 
-    // TODO: Utilize it
+    private fun markBusy() {
+        mBusySignal.onNext(true)
+    }
+
+    private fun markNotBusy() {
+        mBusySignal.onNext(false)
+    }
+
+    /**
+     * A busy state of this widget.
+     */
     fun onBusy(): Observable<Boolean> {
         return mBusySignal
     }
@@ -109,9 +122,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
 
     private val mUndoKeys = Stack<UUID>()
     private val mRedoKeys = Stack<UUID>()
-    private val mUndoCapacitySignal = PublishSubject.create<Pair<Int, Int>>()
+    private val mUndoCapacitySignal = PublishSubject.create<UndoRedoEvent>()
 
-    fun onUpdateUndoRedoCapacity(): Observable<Pair<Int, Int>> {
+    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoEvent> {
         return mUndoCapacitySignal
     }
 
@@ -119,17 +132,23 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         val key = mUndoKeys.pop()
         mRedoKeys.push(key)
 
-        mUndoCapacitySignal.onNext(Pair(mUndoKeys.size, mRedoKeys.size))
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
 
         return Single
             .just(key)
             .flatMap { k ->
+                markBusy()
+
                 mOperationRepo
                     .getRecord(k)
                     .flatMap { transform ->
                         unbindModel()
                         transform.undo()
                         bindPaperImpl()
+
+                        markNotBusy()
 
                         Single.just(true)
                     }
@@ -141,11 +160,15 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         val key = mRedoKeys.pop()
         mUndoKeys.push(key)
 
-        mUndoCapacitySignal.onNext(Pair(mUndoKeys.size, mRedoKeys.size))
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
 
         return Single
             .just(key)
             .flatMap { k ->
+                markBusy()
+
                 mOperationRepo
                     .getRecord(k)
                     .flatMap { transform ->
@@ -153,10 +176,21 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
                         transform.redo()
                         bindPaperImpl()
 
+                        markNotBusy()
+
                         Single.just(true)
                     }
             }
             .onErrorReturnItem(false)
+    }
+
+    fun eraseAll() {
+        mUndoKeys.clear()
+        mRedoKeys.clear()
+
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
     }
 
     override fun toString(): String {

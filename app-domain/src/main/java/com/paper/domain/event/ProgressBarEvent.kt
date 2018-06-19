@@ -20,18 +20,35 @@
 
 package com.paper.domain.event
 
-data class ProgressBarEvent(val progress: Int = 0,
+import com.paper.model.event.EventLifecycle
+
+data class ProgressBarEvent(val lifecycle: EventLifecycle,
+                            val progress: Int = 0,
                             val fromUser: Boolean = false) {
     companion object {
 
-        fun fromUser(progress: Int = 0): ProgressBarEvent {
-            return ProgressBarEvent(progress = progress,
-                                    fromUser = true)
+        @JvmStatic
+        fun start(progress: Int,
+                  fromUser: Boolean): ProgressBarEvent {
+            return ProgressBarEvent(lifecycle = EventLifecycle.START,
+                                    progress = progress,
+                                    fromUser = fromUser)
         }
 
-        fun fromProgram(progress: Int): ProgressBarEvent {
-            return ProgressBarEvent(progress = progress,
-                                    fromUser = false)
+        @JvmStatic
+        fun doing(progress: Int,
+                  fromUser: Boolean): ProgressBarEvent {
+            return ProgressBarEvent(lifecycle = EventLifecycle.DOING,
+                                    progress = progress,
+                                    fromUser = fromUser)
+        }
+
+        @JvmStatic
+        fun stop(progress: Int,
+                 fromUser: Boolean): ProgressBarEvent {
+            return ProgressBarEvent(lifecycle = EventLifecycle.STOP,
+                                    progress = progress,
+                                    fromUser = fromUser)
         }
     }
 }

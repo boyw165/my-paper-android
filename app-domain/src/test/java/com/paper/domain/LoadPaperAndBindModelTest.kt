@@ -20,7 +20,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.event.ProgressEvent
+import com.paper.model.event.ProgressEvent
 import com.paper.domain.useCase.LoadPaperAndCreateBinding
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.model.PaperAutoSaveImpl

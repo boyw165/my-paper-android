@@ -95,6 +95,7 @@ class Scene internal constructor(canvasWidth: Int,
      */
     fun print(targetCanvas: Canvas) {
         targetCanvas.with { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             c.concat(mMatrixTmp)
             c.concat(mMatrix)
 

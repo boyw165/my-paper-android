@@ -26,28 +26,28 @@ import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
-import android.widget.SeekBar
 import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.paper.R
 import com.paper.domain.event.CanvasEvent
-import com.paper.domain.event.ViewPortEvent
+import com.paper.domain.event.UpdatePenSizeEvent
 import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.model.ModelConst
 import com.paper.model.Rect
 import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
+import com.paper.view.canvas.IPaperContext
 import com.paper.view.canvas.ViewPortIndicatorView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.subjects.PublishSubject
 
 /**
  * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
  */
 class PaperEditPanelView : ConstraintLayout,
                            IWidgetView<PaperEditPanelWidget> {
-
-    private var mOneDp = 0f
 
     private val mDisposables = CompositeDisposable()
 
@@ -60,13 +60,22 @@ class PaperEditPanelView : ConstraintLayout,
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         inflate(context, R.layout.view_paper_edit_panel, this)
 
-        mOneDp = context.resources.getDimension(R.dimen.one_dp)
-
         mToolListView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         mToolListView.adapter = mToolListViewController.adapter
 
         mColorTicketsView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         mColorTicketsView.adapter = mColorTicketsViewController.adapter
+    }
+
+    override fun onMeasure(widthSpec: Int, heightSpec: Int) {
+        if (isInEditMode) {
+            val oneDp = resources.getDimension(R.dimen.one_dp)
+            val height = (200f * oneDp).toInt()
+            val heightMode = MeasureSpec.getMode(heightSpec)
+            super.onMeasure(widthSpec, MeasureSpec.makeMeasureSpec(height, heightMode))
+        } else {
+            super.onMeasure(widthSpec, heightSpec)
+        }
     }
 
     private lateinit var mWidget: PaperEditPanelWidget
@@ -101,27 +110,42 @@ class PaperEditPanelView : ConstraintLayout,
             widget.onUpdatePenColorList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { event ->
+                    val color = event.colorTickets[event.usingIndex]
+                    mPenSizeView.showPenColor(color)
+                    // Bypass color to external component
+                    mPenColorSignal.onNext(color)
+
                     // Update view
                     mColorTicketsViewController.setData(event)
                 })
 
         // Pen size
         mDisposables.add(
-            SeekBarChangeObservable(mPenSizeView)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { event ->
-                    if (event.fromUser) {
-                        val penSize = event.progress.toFloat() / 100f
+            widget.changePenSize(
+                SeekBarChangeObservable(mPenSizeView)
+                    .filter { it.fromUser }
+                    .map { event ->
+                        val t = event.progress.toFloat() / 100f
+                        val penSize = (1f - t) * ModelConst.MIN_PEN_SIZE + t * ModelConst.MAX_PEN_SIZE
 
-                        widget.handleChangePenSize(penSize)
+                        UpdatePenSizeEvent(lifecycle = event.lifecycle,
+                                           size = penSize)
                     }
-                })
+                    .doOnNext {
+                        // Bypass event to external component, e.g. another
+                        // size previewer
+                        mPenSizeSignal.onNext(it)
+                    }))
+        // Pen size initialization
         mDisposables.add(
             widget.onUpdatePenSize()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { penSize ->
-                    // Update view
-                    mPenSizeView.progress = (penSize * 100f).toInt()
+                    // t = (x - x0) / (x1 - x0)
+                    val t = (penSize - ModelConst.MIN_PEN_SIZE) / (ModelConst.MAX_PEN_SIZE - ModelConst.MIN_PEN_SIZE)
+                    val progress = (100f * t).toInt()
+
+                    mPenSizeView.progress = progress
                 })
     }
 
@@ -140,7 +164,15 @@ class PaperEditPanelView : ConstraintLayout,
             "Already bind to a widget")
     }
 
-    // View port indicator ////////////////////////////////////////////////////
+    // Canvas context /////////////////////////////////////////////////////////
+
+    private var mPaperContext: IPaperContext? = null
+
+    fun setCanvasContext(paperContext: IPaperContext) {
+        mPaperContext = paperContext
+    }
+
+    // View port //////////////////////////////////////////////////////////////
 
     private val mViewPortIndicatorView by lazy { findViewById<ViewPortIndicatorView>(R.id.view_port_indicator) }
 
@@ -169,7 +201,17 @@ class PaperEditPanelView : ConstraintLayout,
         ColorTicketListEpoxyController(imageLoader = Glide.with(context))
     }
 
-    private val mPenSizeView by lazy { findViewById<SeekBar>(R.id.slider_stroke_size) }
+    private val mPenColorSignal = PublishSubject.create<Int>()
+    fun onUpdatePenColor(): Observable<Int> {
+        return mPenColorSignal
+    }
+
+    private val mPenSizeView by lazy { findViewById<PenSizeSeekBar>(R.id.slider_stroke_size) }
+
+    private val mPenSizeSignal = PublishSubject.create<UpdatePenSizeEvent>()
+    fun onUpdatePenSize(): Observable<UpdatePenSizeEvent> {
+        return mPenSizeSignal
+    }
 
     // Other //////////////////////////////////////////////////////////////////
 

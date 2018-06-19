@@ -32,19 +32,19 @@ import io.reactivex.android.MainThreadDisposable
  * An observable encapsulate [AlertDialog] and emit a boolean to downstream.
  */
 class BooleanDialogSingle(
-    private val mSource: AlertDialog.Builder,
-    private val mPositiveButtonString: String,
-    private val mNegativeButtonString: String)
+    private val builder: AlertDialog.Builder,
+    private val positiveButtonString: String,
+    private val negativeButtonString: String)
     : Single<Boolean>() {
 
     override fun subscribeActual(observer: SingleObserver<in Boolean>) {
         val disposable = Disposable(observer)
 
-        mSource.setPositiveButton(mPositiveButtonString, disposable)
-        mSource.setNegativeButton(mNegativeButtonString, disposable)
-        mSource.setOnCancelListener(disposable)
+        builder.setPositiveButton(positiveButtonString, disposable)
+        builder.setNegativeButton(negativeButtonString, disposable)
+        builder.setOnCancelListener(disposable)
 
-        disposable.actual = mSource.create()
+        disposable.actual = builder.create()
         disposable.actual.show()
 
         observer.onSubscribe(disposable)

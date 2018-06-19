@@ -30,8 +30,6 @@ object Color {
             if (colorString.length == 7) {
                 // Set the alpha value
                 color = color or -0x1000000
-            } else if (colorString.length != 9) {
-                throw IllegalArgumentException("Unknown color")
             }
             return color.toInt()
         } else {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="prefs_path_interpolator">
+        <item>@string/prefs_path_interpolator_linear</item>
+        <item>@string/prefs_path_interpolator_hermite_cubic</item>
+        <item>@string/prefs_path_interpolator_bezier_cubic</item>
+    </string-array>
+</resources>

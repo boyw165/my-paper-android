@@ -40,12 +40,15 @@ import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IPaperCanvasWidget
 import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.model.IPreferenceServiceProvider
+import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepo
 import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
 import com.paper.view.with
+import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -64,12 +67,18 @@ class PaperCanvasView : View,
                         IPaperContext,
                         IParentView {
 
+    // Dirty flags
+    private var mIsNew = true
+
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapView>()
 
     // Widget.
     private lateinit var mWidget: IPaperCanvasWidget
     private val mDisposables = CompositeDisposable()
+
+    // Preferences
+    private val mPrefs by lazy { (context.applicationContext as IPreferenceServiceProvider).preference }
 
     /**
      * A signal indicating the layout change.
@@ -87,8 +96,6 @@ class PaperCanvasView : View,
      * rotationInDegrees from a [Matrix]
      */
     private val mTransformHelper = TransformUtils()
-
-//    private val mTextDetector by lazy { FirebaseVision.getInstance().visionTextDetector }
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -111,6 +118,26 @@ class PaperCanvasView : View,
 
         mWidget = widget
 
+        // Preference
+        mDisposables.add(
+            Observables
+                .combineLatest(
+                    mPrefs.getBoolean(context.resources.getString(R.string.prefs_show_path_joints), false)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext { enabled ->
+                            mIfShowPathJoints = enabled
+                        },
+                    mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
+                                     mPathInterpolatorID)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnNext { interpolator ->
+                            mPathInterpolatorID = interpolator
+                        })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    mPreferenceReadySignal.onNext(true)
+                })
+
         // Canvas size change
         mDisposables.add(
             Observables.combineLatest(
@@ -132,9 +159,17 @@ class PaperCanvasView : View,
                     }
                 })
 
+        // View-port
+        mDisposables.add(
+            onUpdateViewPortScale()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scale ->
+                    widget.setViewPortScale(scale)
+                })
+
         // Drawing
         mDisposables.add(
-            mDrawReadySignal
+            onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
                         widget.onDrawSVG(replayAll = true)
@@ -144,19 +179,6 @@ class PaperCanvasView : View,
                     }
                 }
                 .subscribe())
-        mDisposables.add(
-            mDrawReadySignal
-                .switchMap { ready ->
-                    if (ready) {
-                        onSaveBitmap()
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { (bmpFile, bmpWidth, bmpHeight) ->
-                    widget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
-                })
 
         // Anti-aliasing drawing
         mDisposables.add(
@@ -177,7 +199,7 @@ class PaperCanvasView : View,
 
         // Add or remove scraps
         mDisposables.add(
-            mDrawReadySignal
+            onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
                         widget.onAddScrapWidget()
@@ -191,7 +213,7 @@ class PaperCanvasView : View,
                     addScrap(scrapWidget)
                 })
         mDisposables.add(
-            mDrawReadySignal
+            onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
                         widget.onRemoveScrapWidget()
@@ -209,7 +231,7 @@ class PaperCanvasView : View,
         mDisposables.add(
             Observables
                 .combineLatest(
-                    mDrawReadySignal,
+                    onReadyToDraw(),
                     mInteractionReadySignal)
                 .observeOn(AndroidSchedulers.mainThread())
                 .switchMap { (drawReady, interactionReady) ->
@@ -274,6 +296,17 @@ class PaperCanvasView : View,
         }
     }
 
+    // Preference //////////////////////////////////////////////////////////////
+
+    private val mPreferenceReadySignal = BehaviorSubject.create<Boolean>()
+
+    private fun onReadyToDraw(): Observable<Boolean> {
+        return Observables.combineLatest(
+            mDrawReadySignal,
+            mPreferenceReadySignal)
+            .map { (a, b) -> a && b }
+    }
+
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
     private fun addScrap(widget: IScrapWidget) {
@@ -312,11 +345,6 @@ class PaperCanvasView : View,
      * [handleDrawSVGEvent].
      */
     private val mInteractionReadySignal = BehaviorSubject.createDefault(false)
-
-    /**
-     * A signal of updating the canvas hash and Bitmap.
-     */
-    private val mUpdateBitmapSignal = PublishSubject.create<Bitmap>()
 
     /**
      * A signal of requesting the anti-aliasing drawing.
@@ -362,8 +390,6 @@ class PaperCanvasView : View,
 
     // Rendering resource.
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
-    private val mMinStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_min_stroke_width) }
-    private val mMaxStrokeWidth: Float by lazy { resources.getDimension(R.dimen.sketch_max_stroke_width) }
     private val mMatrixStack = Stack<Matrix>()
 
     /**
@@ -402,7 +428,7 @@ class PaperCanvasView : View,
     private val mGridPaint = Paint()
 
     // Temporary strokes
-    private val mStrokeDrawables = mutableListOf<SVGDrawable>()
+    private val mStrokeDrawables = mutableListOf<SvgDrawable>()
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -474,6 +500,24 @@ class PaperCanvasView : View,
         mMergedCanvas = Canvas(mMergedBitmap)
     }
 
+    private fun getPaintMode(penType: PenType): PorterDuffXfermode {
+        return if (penType == PenType.ERASER) mEraserMode else mDrawMode
+    }
+
+    /**
+     * Apply the padding transform to the canvas before processing the given
+     * lambda.
+     */
+    private inline fun<T> Canvas.withPadding(lambda: (canvas: Canvas) -> T):T {
+        return with {
+            // View might have padding, if so we need to shift canvas to show
+            // padding on the screen.
+            translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
+                      paddingTop.toFloat())
+            lambda(this)
+        }
+    }
+
     private fun dispatchDrawScraps(canvas: Canvas,
                                    scrapViews: List<IScrapView>,
                                    ifSharpenDrawing: Boolean) {
@@ -491,20 +535,6 @@ class PaperCanvasView : View,
         // Ensure no scraps modify the canvas matrix.
         if (mTmpMatrix != mCanvasMatrix) {
             throw IllegalStateException("Canvas matrix is changed")
-        }
-    }
-
-    /**
-     * Apply the padding transform to the canvas before processing the given
-     * lambda.
-     */
-    private inline fun<T> Canvas.withPadding(lambda: (canvas: Canvas) -> T):T {
-        return with {
-            // View might have padding, if so we need to shift canvas to show
-            // padding on the screen.
-            translate(ViewCompat.getPaddingStart(this@PaperCanvasView).toFloat(),
-                      paddingTop.toFloat())
-            lambda(this)
         }
     }
 
@@ -526,6 +556,8 @@ class PaperCanvasView : View,
 
         // Background layer
         canvas.withPadding { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+
             // Extract the transform from the canvas matrix.
             mTransformHelper.getValues(mCanvasMatrix)
             val tx = mTransformHelper.translationX
@@ -543,6 +575,7 @@ class PaperCanvasView : View,
 
         // Print the thumbnail Bitmap to the merged layer
         mMergedCanvas.withPadding { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             c.concat(mCanvasMatrix)
             c.scale(mScaleThumb, mScaleThumb)
             c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
@@ -550,11 +583,13 @@ class PaperCanvasView : View,
 
         // Print the anti-aliasing Bitmap to the merged layer
         mMergedCanvas.withPadding { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             mSceneBuffer.getCurrentScene().print(c)
         }
 
         // Print the merged layer to view canvas
         canvas.with { c ->
+            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
             c.drawBitmap(mMergedBitmap, 0f, 0f, mBitmapPaint)
         }
     }
@@ -564,25 +599,21 @@ class PaperCanvasView : View,
             upstream
                 .observeOn(mRenderingScheduler)
                 // To drawable (must do) and invalidation event
-                .map { event ->
+                .flatMap { event ->
                     when (event) {
                         is StartSketchEvent -> {
                             val nx = event.point.x
                             val ny = event.point.y
                             val (x, y) = toViewWorld(nx, ny)
 
-                            val drawable = SVGDrawable(
-                                context = this@PaperCanvasView,
-                                penColor = event.penColor,
-                                penSize = event.penSize,
-                                porterDuffMode = if (event.penType == PenType.ERASER) mEraserMode else mDrawMode)
+                            val drawable = createSvgDrawable(event)
                             drawable.moveTo(Point(x, y, event.point.time))
 
                             mStrokeDrawables.add(drawable)
 
                             mIsHashDirty = true
 
-                            InvalidationEvent()
+                            Observable.just(InvalidationEvent())
                         }
                         is OnSketchEvent -> {
                             val nx = event.point.x
@@ -594,36 +625,70 @@ class PaperCanvasView : View,
 
                             mIsHashDirty = true
 
-                            InvalidationEvent()
+                            Observable.just(InvalidationEvent())
                         }
                         is StopSketchEvent -> {
                             val drawable = mStrokeDrawables.last()
                             drawable.close()
 
-                            InvalidationEvent()
+                            Observable.just(InvalidationEvent())
                         }
-                        is ClearAllSketchEvent -> {
-                            mStrokeDrawables.clear()
+                        is AddSketchStrokeEvent -> {
+                            if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.strokeID }) {
+                                val drawable = createSvgDrawable(event)
+                                mStrokeDrawables.add(drawable)
 
-                            mIsHashDirty = true
+                                mIsHashDirty = true
 
-                            InvalidationEvent()
+                                Observable.just(InvalidationEvent())
+                            } else {
+                                Observable.just(NullCanvasEvent())
+                            }
                         }
-                        else -> event
+                        is RemoveSketchStrokeEvent -> {
+                            val i = mStrokeDrawables.indexOfFirst { d ->
+                                d.id == event.strokeID
+                            }
+                            if (i >= 0) {
+                                mStrokeDrawables.removeAt(i)
+
+                                // Invalidate drawables
+                                mStrokeDrawables.forEach { d -> d.markUndrew() }
+
+                                mIsHashDirty = true
+
+                                Observable.just(
+                                    EraseCanvasEvent(),
+                                    InvalidationEvent())
+                            } else {
+                                Observable.just(NullCanvasEvent())
+                            }
+                        }
+                        else -> Observable.just(event)
                     }
                 }
                 .observeOn(mRenderingScheduler)
-                // State
+                // State reducing
                 .scan { prev: CanvasEvent, now: CanvasEvent ->
                     if (prev is InitializationBeginEvent ||
                         (prev is InitializationDoingEvent &&
                          now !is InitializationEndEvent)) {
+                        // Transform any events in between init-begin and init-end
+                        // to init-doing events.
                         // This is only happening in the initialization process
                         // e.g.
                         // Given  [init begin, _whatever_, ..., init end]
                         // Return [init begin, init doing, ..., init end]
+                        //
+                        // It's important to use the same observable pattern to
+                        // initialize the stroke without slowing down by the
+                        // frequent rendering requests.
                         InitializationDoingEvent()
                     } else {
+                        if (now !is InitializationEndEvent) {
+                            mIsNew = false
+                        }
+
                         // Given  [..., init end, foo]
                         // Return [..., init end, foo]
                         now
@@ -643,22 +708,26 @@ class PaperCanvasView : View,
                             try {
                                 // Load file
                                 val hash = hashCode()
-                                ProfilerUtils.with("load thumbnail", {
+                                ProfilerUtils.with("load thumbnail") {
                                     val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
                                               ?: throw NullPointerException()
                                     mThumbCanvas.with { c ->
+                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
                                         c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
                                     }
                                     bmp.recycle()
-                                })
+
+                                    println("${AppConst.TAG}: Found thumbnail cache, so skip drawing")
+                                }
                             } catch (err: Throwable) {
                                 // Redraw
-                                ProfilerUtils.with("draw thumbnail", {
+                                ProfilerUtils.with("draw thumbnail") {
                                     // Draw sketch and scraps on thumbnail Bitmap
                                     // TODO: Both scraps and sketch need to explicitly define the z-order
                                     // TODO: so that the paper knows how to render them in the correct
                                     // TODO: order.
                                     mThumbCanvas.with { c ->
+                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
                                         c.scale(1f / mScaleThumb, 1f / mScaleThumb)
 
                                         var dirty = false
@@ -668,27 +737,25 @@ class PaperCanvasView : View,
                                         // Draw the strokes on the thumbnail canvas
                                         mStrokeDrawables.forEach { drawable ->
                                             dirty = dirty || drawable.isSomethingToDraw()
-                                            drawable.onDraw(canvas = c)
-                                        }
-                                        // Notify Bitmap update
-                                        if (dirty) {
-                                            mThumbBitmap?.let { mUpdateBitmapSignal.onNext(it) }
+                                            drawable.draw(canvas = c)
                                         }
                                     }
-                                })
+
+                                    println("${AppConst.TAG}: Not found thumbnail cache, so draw it again!")
+                                }
                             }
 
                             // Draw sketch on view-port Bitmap
-                            ProfilerUtils.with("draw view-port", {
+                            ProfilerUtils.with("draw view-port") {
                                 mSceneBuffer.getCurrentScene().draw { c ->
                                     computeCanvasMatrix(mScaleM2V)
                                     c.concat(mCanvasMatrix)
 
                                     mStrokeDrawables.forEach { d ->
-                                        d.onDraw(canvas = c)
+                                        d.draw(canvas = c)
                                     }
                                 }
-                            })
+                            }
 
                             // By marking drawables not dirty, the drawable's
                             // cache is renewed.
@@ -702,6 +769,15 @@ class PaperCanvasView : View,
                             if (event is InitializationEndEvent) {
                                 mInteractionReadySignal.onNext(true)
                             }
+                        }
+                        is EraseCanvasEvent -> {
+                            mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+
+                            mSceneBuffer.getCurrentScene().draw { c ->
+                                c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                            }
+
+                            postInvalidate()
                         }
                     }
                 }
@@ -720,16 +796,16 @@ class PaperCanvasView : View,
                             // View-port drawing
                             val scene = mSceneBuffer.getEmptyScene()
 
-                            ProfilerUtils.with("draw view-port", {
+                            ProfilerUtils.with("draw view-port") {
                                 scene.resetTransform()
                                 scene.eraseDraw { c ->
                                     c.concat(mCanvasMatrix)
 
                                     mStrokeDrawables.forEach { d ->
-                                        d.onDraw(canvas = c, startOver = true)
+                                        d.draw(canvas = c, startOver = true)
                                     }
                                 }
-                            })
+                            }
 
                             return@fromCallable scene
                         }
@@ -740,59 +816,28 @@ class PaperCanvasView : View,
             }
     }
 
-    private fun onSaveBitmap(): Observable<Triple<File, Int, Int>> {
-        return mUpdateBitmapSignal
-            .map { bmp -> Pair(hashCode(), bmp) }
-            .filter { (hashCode, _) -> hashCode != AppConst.EMPTY_HASH }
-            // Notify widget the thumbnail need to be update
-            .doOnNext { mWidget.invalidateThumbnail() }
-            // Debounce Bitmap writes
-            .debounce(1000, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
-//            // TEST: text recognition
-//            .observeOn(Schedulers.computation())
-//            .doOnNext { (_, bmp) ->
-//                val image = FirebaseVisionImage.fromBitmap(bmp)
-//                mTextDetector.detectInImage(image)
-//                    .addOnSuccessListener { visionText ->
-//                        val builder = StringBuilder()
-//                        visionText.blocks.forEach { block ->
-//                            builder.append("[")
-//                            block.lines.forEachIndexed { i, line ->
-//                                line.elements.forEachIndexed { j, element ->
-//                                    builder.append(element.text)
-//
-//                                    if (line.elements.size > 1 &&
-//                                        j < line.elements.lastIndex) {
-//                                        builder.append(" ")
-//                                    }
-//                                }
-//
-//                                if (block.lines.size > 1 &&
-//                                    i < block.lines.lastIndex) {
-//                                    builder.append(",")
-//                                }
-//                            }
-//                            builder.append("]")
-//                        }
-//                        Toast.makeText(context, builder.toString(), Toast.LENGTH_SHORT).show()
-//                    }
-//                    .addOnFailureListener { err ->
-//                        Toast.makeText(context, err.toString(), Toast.LENGTH_SHORT).show()
-//                    }
-//            }
-            .switchMap { (hashCode, bmp) ->
-                mBitmapRepo
-                    ?.putBitmap(hashCode, bmp)
-                    ?.toObservable()
-                    ?.map { bmpFile -> Triple(bmpFile, bmp.width, bmp.height) }
-                ?: Observable.never<Triple<File, Int, Int>>()
-            }
-    }
-
     private var mBitmapRepo: IBitmapRepo? = null
 
     fun setBitmapRepo(repo: IBitmapRepo) {
         mBitmapRepo = repo
+    }
+
+    /**
+     * Write the thumbnail Bitmap to a file maintained by the Bitmap repository.
+     */
+    fun writeThumbFile(): Maybe<Triple<File, Int, Int>> {
+        return if (mIsNew) {
+            return Maybe.empty()
+        } else {
+            val hash = hashCode()
+            mBitmapRepo
+                ?.putBitmap(hash, mThumbBitmap!!)
+                ?.map { file ->
+                    Triple(file, mThumbBitmap!!.width, mThumbBitmap!!.height)
+                }
+                ?.toMaybe()
+            ?: Maybe.empty<Triple<File, Int, Int>>()
+        }
     }
 
     private fun cancelAntiAliasingDrawing() {
@@ -801,6 +846,18 @@ class PaperCanvasView : View,
 
     private fun requestAntiAliasingDrawing() {
         mAntiAliasingSignal.onNext(true)
+    }
+
+    private fun getScaledPenSize(event: CanvasEvent): Float {
+        return when (event) {
+            is StartSketchEvent -> {
+                mapM2V(event.penSize)
+            }
+            is AddSketchStrokeEvent -> {
+                mapM2V(event.penSize)
+            }
+            else -> throw IllegalArgumentException("Invalid event")
+        }
     }
 
     // View port //////////////////////////////////////////////////////////////
@@ -846,6 +903,13 @@ class PaperCanvasView : View,
 
     fun onDrawViewPort(): Observable<DrawViewPortEvent> {
         return mDrawViewPortSignal
+    }
+
+    fun onUpdateViewPortScale(): Observable<Float> {
+        return mDrawViewPortSignal
+            .map { event ->
+                event.viewPort.width / mViewPortBase.width
+            }
     }
 
     private fun resetViewPort() {
@@ -1213,8 +1277,8 @@ class PaperCanvasView : View,
                 is OnDragEvent -> {
                     ViewPortOnUpdateEvent(
                         calculateViewPortBound(
-                            startPointers = Array(2, { _ -> event.startPointer }),
-                            stopPointers = Array(2, { _ -> event.stopPointer })))
+                            startPointers = Array(2) { _ -> event.startPointer },
+                            stopPointers = Array(2) { _ -> event.stopPointer }))
                 }
                 is DragEndEvent -> {
                     ViewPortStopUpdateEvent()
@@ -1251,6 +1315,62 @@ class PaperCanvasView : View,
 
     // Context ////////////////////////////////////////////////////////////////
 
+    private var mIfShowPathJoints = false
+    override val ifShowPathJoints: Boolean
+        get() = mIfShowPathJoints
+
+    private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_hermite_cubic)
+    private fun createSvgDrawable(event: CanvasEvent): SvgDrawable {
+        return when (event) {
+            is StartSketchEvent -> {
+                when (mPathInterpolatorID) {
+                    resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                        SvgHermiteCubicDrawable(id = event.strokeID,
+                                                context = this@PaperCanvasView,
+                                                penColor = event.penColor,
+                                                penSize = getScaledPenSize(event),
+                                                porterDuffMode = getPaintMode(event.penType))
+                    }
+                    else -> {
+                        SvgLinearDrawable(id = event.strokeID,
+                                          context = this@PaperCanvasView,
+                                          penColor = event.penColor,
+                                          penSize = getScaledPenSize(event),
+                                          porterDuffMode = getPaintMode(event.penType))
+                    }
+                }
+            }
+            // TODO: Remove this ugly thing, and replace it with drawing event!
+            is AddSketchStrokeEvent -> {
+                when (mPathInterpolatorID) {
+                    resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                        SvgHermiteCubicDrawable(id = event.strokeID,
+                                                context = this@PaperCanvasView,
+                                                points = event.points.map { p ->
+                                                    val (x, y) = toViewWorld(p.x, p.y)
+                                                    Point(x, y)
+                                                },
+                                                penColor = event.penColor,
+                                                penSize = getScaledPenSize(event),
+                                                porterDuffMode = getPaintMode(event.penType))
+                    }
+                    else -> {
+                        SvgLinearDrawable(id = event.strokeID,
+                                          context = this@PaperCanvasView,
+                                          points = event.points.map { p ->
+                                              val (x, y) = toViewWorld(p.x, p.y)
+                                              Point(x, y)
+                                          },
+                                          penColor = event.penColor,
+                                          penSize = getScaledPenSize(event),
+                                          porterDuffMode = getPaintMode(event.penType))
+                    }
+                }
+            }
+            else -> throw IllegalArgumentException("Invalid event")
+        }
+    }
+
     override fun getOneDp(): Float {
         return mOneDp
     }
@@ -1259,12 +1379,12 @@ class PaperCanvasView : View,
         return ViewConfiguration.get(context)
     }
 
-    override fun getMinStrokeWidth(): Float {
-        return mMinStrokeWidth
+    override fun getMinPenSize(): Float {
+        return mScaleM2V * ModelConst.MIN_PEN_SIZE
     }
 
-    override fun getMaxStrokeWidth(): Float {
-        return mMaxStrokeWidth
+    override fun getMaxPenSize(): Float {
+        return mScaleM2V * ModelConst.MAX_PEN_SIZE
     }
 
     override fun getTouchSlop(): Float {
@@ -1285,6 +1405,10 @@ class PaperCanvasView : View,
 
     override fun mapM2V(x: Float, y: Float): FloatArray {
         return toViewWorld(x, y)
+    }
+
+    override fun mapM2V(v: Float): Float {
+        return mScaleM2V * v
     }
 
     // Protected / Private Methods ////////////////////////////////////////////

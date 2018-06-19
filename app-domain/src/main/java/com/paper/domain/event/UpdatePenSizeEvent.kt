@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Jun 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,31 +22,7 @@
 
 package com.paper.domain.event
 
-data class ProgressEvent(val justStart: Boolean = false,
-                         val doing: Boolean = false,
-                         val justStop: Boolean = false,
-                         val progress: Int = 0) {
-    companion object {
+import com.paper.model.event.EventLifecycle
 
-        fun start(progress: Int = 0): ProgressEvent {
-            return ProgressEvent(justStart = true,
-                                 doing = false,
-                                 justStop = false,
-                                 progress = progress)
-        }
-
-        fun doing(progress: Int): ProgressEvent {
-            return ProgressEvent(justStart = false,
-                                 doing = true,
-                                 justStop = false,
-                                 progress = progress)
-        }
-
-        fun stop(progress: Int = 100): ProgressEvent {
-            return ProgressEvent(justStart = false,
-                                 doing = false,
-                                 justStop = true,
-                                 progress = progress)
-        }
-    }
-}
+data class UpdatePenSizeEvent(val lifecycle: EventLifecycle,
+                              val size: Float = 0f)

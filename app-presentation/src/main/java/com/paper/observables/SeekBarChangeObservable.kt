@@ -53,7 +53,6 @@ class SeekBarChangeObservable(view: SeekBar)
         observer.onSubscribe(listener)
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
     internal class Listener(view: SeekBar,
@@ -68,23 +67,22 @@ class SeekBarChangeObservable(view: SeekBar)
                                        fromUser: Boolean) {
 
             if (!isDisposed) {
-                if (fromUser) {
-                    observer.onNext(ProgressBarEvent.fromUser(progress))
-                } else {
-                    observer.onNext(ProgressBarEvent.fromProgram(progress))
-                }
+                observer.onNext(ProgressBarEvent.doing(progress = progress,
+                                                       fromUser = fromUser))
             }
         }
 
         override fun onStartTrackingTouch(seekBar: SeekBar) {
             if (!isDisposed) {
-                observer.onNext(ProgressBarEvent.fromUser(mView.progress))
+                observer.onNext(ProgressBarEvent.start(progress = mView.progress,
+                                                       fromUser = true))
             }
         }
 
         override fun onStopTrackingTouch(seekBar: SeekBar) {
             if (!isDisposed) {
-                observer.onNext(ProgressBarEvent.fromUser(mView.progress))
+                observer.onNext(ProgressBarEvent.stop(progress = mView.progress,
+                                                      fromUser = true))
             }
         }
 
