@@ -156,7 +156,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // Exp menu button.
+        // Click settings button
         mDisposables.add(
             onClickSettings()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -164,15 +164,6 @@ class PaperGalleryActivity : AppCompatActivity() {
                     Toast.makeText(this@PaperGalleryActivity,
                                    R.string.msg_under_construction,
                                    Toast.LENGTH_SHORT).show()
-                    //showExpMenu()
-                })
-
-        // Exp menu.
-        mDisposables.add(
-            onClickExpMenu()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { id ->
-                    navigateToExpById(id)
                 })
 
         // Button of new paper.
@@ -201,7 +192,6 @@ class PaperGalleryActivity : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
                     openPaperInEditor(id)
-                    hideProgressBar()
                 })
         // Button of delete paper.
         mDisposables.add(
@@ -394,10 +384,6 @@ class PaperGalleryActivity : AppCompatActivity() {
         mBtnDelPaper.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
-    private fun showExpMenu() {
-        mBtnExpMenu.show()
-    }
-
     private fun showProgressBar() {
         mProgressBar.setMessage(getString(R.string.processing))
         mProgressBar.show()
@@ -443,47 +429,12 @@ class PaperGalleryActivity : AppCompatActivity() {
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    private fun onClickExpMenu(): Observable<Int> {
-        return RxPopupMenu.itemClicks(mBtnExpMenu)
-            .map {
-                return@map when (it.itemId) {
-                    R.id.exp_rx_cancel -> 0
-                    R.id.exp_convex_hull -> 1
-                    R.id.exp_event_driven_simulation -> 2
-                    else -> -1
-                }
-            }
-    }
-
-    private fun navigateToExpById(id: Int) {
-        when (id) {
-            0 -> {
-                startActivity(Intent(
-                    this@PaperGalleryActivity,
-                    ExampleOfRxCancelActivity::class.java))
-            }
-            1 -> {
-                startActivity(Intent(
-                    this@PaperGalleryActivity,
-                    ExampleOfConvexHullActivity::class.java))
-            }
-            2 -> {
-                startActivity(Intent(
-                    this@PaperGalleryActivity,
-                    ExampleOfEventDrivenSimulationActivity::class.java))
-            }
-        }
-    }
-
     private fun openPaperInEditor(id: Long) {
         startActivity(Intent(this@PaperGalleryActivity,
                              PaperEditorActivity::class.java)
                           .putExtra(AppConst.PARAMS_PAPER_ID, id)
                           .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
 
     private fun showError(err: Throwable) {
         if (BuildConfig.DEBUG) {
