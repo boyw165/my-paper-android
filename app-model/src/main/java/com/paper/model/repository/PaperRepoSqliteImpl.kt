@@ -91,15 +91,15 @@ class PaperRepoSqliteImpl(authority: String,
                     CHANGE_ADD,
                     CHANGE_REMOVE,
                     CHANGE_UPDATE -> {
-                        if (!mPaperListSignal.hasObservers()) return
+                        if (!mPaperListRefreshSignal.hasObservers()) return
 
                         getPapersSingleImpl(true)
                             .subscribe(
                                 { papers ->
-                                    mPaperListSignal.onNext(papers)
+                                    mPaperListRefreshSignal.onNext(papers)
                                 },
                                 { err ->
-                                    mPaperListSignal.onError(err)
+                                    mPaperListRefreshSignal.onError(err)
                                 })
                     }
                 }
@@ -149,7 +149,7 @@ class PaperRepoSqliteImpl(authority: String,
         return Single.just(true)
     }
 
-    private val mPaperListSignal = PublishSubject.create<List<IPaper>>()
+    private val mPaperListRefreshSignal = PublishSubject.create<List<IPaper>>().toSerialized()
 
     /**
      * Get paper list.
@@ -161,7 +161,7 @@ class PaperRepoSqliteImpl(authority: String,
     override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
         return Observable.merge(
             getPapersSingleImpl(isSnapshot).toObservable(),
-            mPaperListSignal)
+            mPaperListRefreshSignal)
     }
 
     private fun getPapersSingleImpl(isSnapshot: Boolean): Single<List<IPaper>> {
