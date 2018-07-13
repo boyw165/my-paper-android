@@ -273,59 +273,59 @@ class PaperGalleryActivity : AppCompatActivity() {
         mDisposables.clear()
     }
 
-    private fun getGalleryItems(): Observable<List<GalleryItem>> {
-        val defaultItem = listOf<GalleryItem>(CreatePaperItem(mOnClickNewPaperSignal))
+    private fun getGalleryItems(): Observable<List<GalleryViewModel>> {
+        val defaultItem = listOf<GalleryViewModel>(CreatePaperViewModel(mOnClickNewPaperSignal))
         return Observable
             .merge(
                 loadPapers()
                     // To bundle so that the following reducer knows what packs
                     // to update.
                     .map { items ->
-                        GalleryItemBundle(type = Thumbnail,
-                                          items = items)
+                        GalleryViewModelBundle(type = Thumbnail,
+                                               items = items)
                     },
                 loadAds()
                     // To bundle so that the following reducer knows what packs
                     // to update.
                     .map { items ->
-                        GalleryItemBundle(type = NativeAds,
-                                          items = items)
+                        GalleryViewModelBundle(type = NativeAds,
+                                               items = items)
                     })
-            .scan(defaultItem, { oldItem, newItemBundle ->
+            .scan(defaultItem) { old, newViewModelBundle ->
                 // Create item
-                val createItems = oldItem.filter { item ->
-                    item is CreatePaperItem
+                val createItems = old.filter { item ->
+                    item is CreatePaperViewModel
                 }
 
                 // Paper thumbnails
-                val paperThumbItems = if (newItemBundle.type == Thumbnail) {
-                    newItemBundle.items
+                val paperThumbItems = if (newViewModelBundle.type == Thumbnail) {
+                    newViewModelBundle.items
                 } else {
-                    oldItem.filter { item ->
-                        item is PaperThumbItem
+                    old.filter { item ->
+                        item is PaperThumbViewModel
                     }
                 }
 
                 // ADs items (if paper exists)
-                val adsItems = if (newItemBundle.type == NativeAds) {
-                    newItemBundle.items
+                val adsItems = if (newViewModelBundle.type == NativeAds) {
+                    newViewModelBundle.items
                 } else {
-                    oldItem.filter { item ->
-                        item is NativeAdsItem
+                    old.filter { item ->
+                        item is NativeAdsViewModel
                     }
                 }
 
                 // Recompose the item list
-                val combined = mutableListOf<GalleryItem>()
+                val combined = mutableListOf<GalleryViewModel>()
                 combined.addAll(createItems)
                 combined.addAll(paperThumbItems)
                 combined.addAll(adsItems)
 
                 return@scan combined
-            })
+            }
     }
 
-    private fun loadPapers(): Observable<List<GalleryItem>> {
+    private fun loadPapers(): Observable<List<GalleryViewModel>> {
         return requestPermissions()
             .observeOn(Schedulers.io())
             .switchMap {
@@ -336,19 +336,19 @@ class PaperGalleryActivity : AppCompatActivity() {
                         mPaperSnapshots.clear()
                         mPaperSnapshots.addAll(papers)
                     }
+                    // Transform model to view-model
                     .map { papers ->
                         papers.map { paper ->
-                            PaperThumbItem(paper = paper,
-                                           clickSignal = mOnClickPaperSignal)
-                        } as List<GalleryItem>
+                            PaperThumbViewModel(paper = paper,
+                                                clickSignal = mOnClickPaperSignal)
+                        } as List<GalleryViewModel>
                     }
             }
-            .subscribeOn(Schedulers.io())
     }
 
-    private val mFbNativeAdsSignal = PublishSubject.create<List<GalleryItem>>()
+    private val mFbNativeAdsSignal = PublishSubject.create<List<GalleryViewModel>>()
 
-    private fun loadAds(): Observable<out List<GalleryItem>> {
+    private fun loadAds(): Observable<out List<GalleryViewModel>> {
         val ads = NativeAd(this, getString(R.string.facebook_native_ads_placement_id))
         ads.setAdListener(object : AdListener {
 
@@ -362,8 +362,8 @@ class PaperGalleryActivity : AppCompatActivity() {
 
             override fun onAdLoaded(ad: Ad) {
                 mFbNativeAdsSignal.onNext(listOf(
-                    NativeAdsItem(ads = ads,
-                                  clickSignal = mOnClickNativeAdsSignal)))
+                    NativeAdsViewModel(ads = ads,
+                                       clickSignal = mOnClickNativeAdsSignal)))
             }
 
             override fun onLoggingImpression(ad: Ad) {
@@ -375,7 +375,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         return mFbNativeAdsSignal
     }
 
-    private fun showGalleryItems(items: List<GalleryItem>) {
+    private fun showGalleryItems(items: List<GalleryViewModel>) {
         mGalleryViewController.setData(items)
     }
 

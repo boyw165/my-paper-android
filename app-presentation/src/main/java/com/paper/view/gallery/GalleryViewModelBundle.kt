@@ -22,8 +22,8 @@
 
 package com.paper.view.gallery
 
-data class GalleryItemBundle(val type: Type,
-                             val items: List<GalleryItem>) {
+data class GalleryViewModelBundle(val type: Type,
+                                  val items: List<GalleryViewModel>) {
 
     enum class Type {
         Thumbnail,
