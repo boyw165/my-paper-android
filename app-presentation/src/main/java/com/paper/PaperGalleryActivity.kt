@@ -37,13 +37,12 @@ import com.facebook.ads.AdError
 import com.facebook.ads.AdListener
 import com.facebook.ads.NativeAd
 import com.jakewharton.rxbinding2.view.RxView
-import com.jakewharton.rxbinding2.widget.RxPopupMenu
 import com.paper.model.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
 import com.paper.model.*
 import com.paper.view.gallery.*
-import com.paper.view.gallery.GalleryItemBundle.Type.NativeAds
-import com.paper.view.gallery.GalleryItemBundle.Type.Thumbnail
+import com.paper.view.gallery.GalleryViewModelBundle.Type.NativeAds
+import com.paper.view.gallery.GalleryViewModelBundle.Type.Thumbnail
 import com.tbruyelle.rxpermissions2.RxPermissions
 import com.yarolegovich.discretescrollview.DiscreteScrollView
 import com.yarolegovich.discretescrollview.transform.Pivot
