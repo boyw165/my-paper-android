@@ -27,11 +27,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
+import com.dant.centersnapreyclerview.SnappingRecyclerView
 import com.facebook.ads.Ad
 import com.facebook.ads.AdError
 import com.facebook.ads.AdListener
@@ -40,13 +40,11 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.model.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
 import com.paper.model.*
+import com.paper.view.HorizontalCentricItemDecoration
 import com.paper.view.gallery.*
 import com.paper.view.gallery.GalleryViewModelBundle.Type.NativeAds
 import com.paper.view.gallery.GalleryViewModelBundle.Type.Thumbnail
 import com.tbruyelle.rxpermissions2.RxPermissions
-import com.yarolegovich.discretescrollview.DiscreteScrollView
-import com.yarolegovich.discretescrollview.transform.Pivot
-import com.yarolegovich.discretescrollview.transform.ScaleTransformer
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -79,7 +77,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     }
 
     // Paper thumbnail list view and controller.
-    private val mGalleryView by lazy { findViewById<DiscreteScrollView>(R.id.gallery_item_list) }
+    private val mGalleryView by lazy { findViewById<SnappingRecyclerView>(R.id.gallery_item_list) }
     private val mGalleryViewController by lazy {
         GalleryItemEpoxyController()
     }
@@ -105,42 +103,43 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Paper thumbnail list view.
         mGalleryView.adapter = mGalleryViewController.adapter
-        mGalleryView.setItemTransformer(
-            ScaleTransformer.Builder()
-                .setMaxScale(1.0f)
-                .setMinScale(1.0f)
-                .setPivotX(Pivot.X.CENTER) // CENTER is a default one
-                .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
-                .build())
+        mGalleryView.addItemDecoration(HorizontalCentricItemDecoration())
+//        mGalleryView.setItemTransformer(
+//            ScaleTransformer.Builder()
+//                .setMaxScale(1.0f)
+//                .setMinScale(1.0f)
+//                .setPivotX(Pivot.X.CENTER) // CENTER is a default one
+//                .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
+//                .build())
 //        mPapersView.setSlideOnFling(true)
 //        mPapersView.setOverScrollEnabled(true)
 //        // Determines how much time it takes to change the item on fling, settle
 //        // or smoothScroll
 //        mPapersView.setItemTransitionTimeMillis(300)
-        mGalleryView.addScrollStateChangeListener(object : DiscreteScrollView.ScrollStateChangeListener<RecyclerView.ViewHolder> {
-
-            override fun onScroll(scrollPosition: Float,
-                                  currentPosition: Int,
-                                  newPosition: Int,
-                                  currentHolder: RecyclerView.ViewHolder?,
-                                  newCurrent: RecyclerView.ViewHolder?) {
-            }
-
-            override fun onScrollEnd(currentItemHolder: RecyclerView.ViewHolder,
-                                     adapterPosition: Int) {
-                val paperID = mGalleryViewController
-                    .getPaperFromAdapterPosition(adapterPosition)
-                    ?.getId() ?: ModelConst.INVALID_ID
-
-                // Report the paper ID in the database
-                mSavedPaperIdSignal.onNext(paperID)
-            }
-
-            override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
-                                       adapterPosition: Int) {
-                setDeleteButtonVisibility(false)
-            }
-        })
+//        mGalleryView.addScrollStateChangeListener(object : DiscreteScrollView.ScrollStateChangeListener<RecyclerView.ViewHolder> {
+//
+//            override fun onScroll(scrollPosition: Float,
+//                                  currentPosition: Int,
+//                                  newPosition: Int,
+//                                  currentHolder: RecyclerView.ViewHolder?,
+//                                  newCurrent: RecyclerView.ViewHolder?) {
+//            }
+//
+//            override fun onScrollEnd(currentItemHolder: RecyclerView.ViewHolder,
+//                                     adapterPosition: Int) {
+//                val paperID = mGalleryViewController
+//                                  .getPaperFromAdapterPosition(adapterPosition)
+//                                  ?.getId() ?: ModelConst.INVALID_ID
+//
+//                // Report the paper ID in the database
+//                mSavedPaperIdSignal.onNext(paperID)
+//            }
+//
+//            override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
+//                                       adapterPosition: Int) {
+//                setDeleteButtonVisibility(false)
+//            }
+//        })
     }
 
     override fun onDestroy() {
