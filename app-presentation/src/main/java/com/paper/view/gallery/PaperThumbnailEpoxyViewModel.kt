@@ -30,7 +30,7 @@ import com.paper.R
 import io.reactivex.Observer
 import java.io.File
 
-class PaperThumbnailEpoxyModel(private var mPaperId: Long) : EpoxyModelWithHolder<EpoxyHolder>() {
+class PaperThumbnailEpoxyViewModel(private var mPaperId: Long) : EpoxyModelWithHolder<EpoxyHolder>() {
 
     private var mThumbFile: File? = null
     private var mThumbWidth = 0
@@ -42,24 +42,24 @@ class PaperThumbnailEpoxyModel(private var mPaperId: Long) : EpoxyModelWithHolde
     }
 
     override fun createNewHolder(): EpoxyHolder {
-        return PaperThumbnailEpoxyModel.Holder()
+        return PaperThumbnailEpoxyViewModel.Holder()
     }
 
     override fun bind(holder: EpoxyHolder) {
         super.bind(holder)
 
         // Smart casting
-        holder as PaperThumbnailEpoxyModel.Holder
+        holder as PaperThumbnailEpoxyViewModel.Holder
 
-        // Update thumbnail size by fixing width and changing the height.
-        if (mThumbWidth > 0 && mThumbHeight > 0) {
-            val scale = Math.min(holder.defaultThumbWidth / mThumbWidth,
-                                 holder.defaultThumbHeight / mThumbHeight)
-            val layoutParams = holder.thumbViewContainer.layoutParams
-            layoutParams.width = (mThumbWidth * scale).toInt()
-            layoutParams.height = (mThumbHeight * scale).toInt()
-            holder.thumbViewContainer.layoutParams = layoutParams
-        }
+//        // Update thumbnail size by fixing width and changing the height.
+//        if (mThumbWidth > 0 && mThumbHeight > 0) {
+//            val scale = Math.min(holder.defaultThumbWidth / mThumbWidth,
+//                                 holder.defaultThumbHeight / mThumbHeight)
+//            val layoutParams = holder.thumbViewContainer.layoutParams
+//            layoutParams.width = (mThumbWidth * scale).toInt()
+//            layoutParams.height = (mThumbHeight * scale).toInt()
+//            holder.thumbViewContainer.layoutParams = layoutParams
+//        }
 
         // Click
         holder.itemView.setOnClickListener {
@@ -76,20 +76,20 @@ class PaperThumbnailEpoxyModel(private var mPaperId: Long) : EpoxyModelWithHolde
         super.unbind(holder)
 
         // Smart casting
-        holder as PaperThumbnailEpoxyModel.Holder
+        holder as PaperThumbnailEpoxyViewModel.Holder
 
         // Click
         holder.itemView.setOnClickListener(null)
     }
 
-    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyModel {
+    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyViewModel {
         mModifiedAt = modifiedAt
         return this
     }
 
     fun setThumbnail(file: File?,
                      width: Int,
-                     height: Int): PaperThumbnailEpoxyModel {
+                     height: Int): PaperThumbnailEpoxyViewModel {
         mThumbFile = file
         mThumbWidth = width
         mThumbHeight = height
@@ -100,7 +100,7 @@ class PaperThumbnailEpoxyModel(private var mPaperId: Long) : EpoxyModelWithHolde
 
     private var mOnClickPaperSignal: Observer<Long>? = null
 
-    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyModel {
+    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyViewModel {
         mOnClickPaperSignal = signal
         return this
     }
@@ -112,7 +112,7 @@ class PaperThumbnailEpoxyModel(private var mPaperId: Long) : EpoxyModelWithHolde
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as PaperThumbnailEpoxyModel
+        other as PaperThumbnailEpoxyViewModel
 
         if (mPaperId != other.mPaperId) return false
         if (mThumbFile != other.mThumbFile) return false

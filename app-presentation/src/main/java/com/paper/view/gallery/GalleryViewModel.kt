@@ -35,7 +35,7 @@ sealed class GalleryViewModel {
 data class CreatePaperViewModel(private val clickSignal: Observer<Any>) : GalleryViewModel() {
 
     override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
-        return CreatePaperEpoxyModel()
+        return CreatePaperEpoxyViewModel()
             .onClick(clickSignal)
             .id("cta") as EpoxyModelWithHolder<EpoxyHolder>
     }
@@ -45,7 +45,7 @@ data class PaperThumbViewModel(val paper: IPaper,
                                val clickSignal: Observer<Long>) : GalleryViewModel() {
 
     override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
-        return PaperThumbnailEpoxyModel(mPaperId = paper.getId())
+        return PaperThumbnailEpoxyViewModel(mPaperId = paper.getId())
             .onClick(clickSignal)
             .setModifiedTime(paper.getModifiedAt())
             .setThumbnail(paper.getThumbnail(),
@@ -60,7 +60,7 @@ data class NativeAdsViewModel(val ads: NativeAd,
                               val clickSignal: Observer<Any>) : GalleryViewModel() {
 
     override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
-        return NativeAdsEpoxyModel(ads = ads)
+        return NativeAdsEpoxyViewModel(ads = ads)
             .onClick(clickSignal)
             .id("native ads") as EpoxyModelWithHolder<EpoxyHolder>
     }

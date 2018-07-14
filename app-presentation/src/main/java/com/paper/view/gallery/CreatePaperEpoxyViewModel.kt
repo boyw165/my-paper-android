@@ -21,27 +21,26 @@
 package com.paper.view.gallery
 
 import android.view.View
-import android.view.ViewGroup
 import com.airbnb.epoxy.EpoxyHolder
 import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.paper.R
 import io.reactivex.Observer
 
-class CreatePaperEpoxyModel : EpoxyModelWithHolder<EpoxyHolder>() {
+class CreatePaperEpoxyViewModel : EpoxyModelWithHolder<EpoxyHolder>() {
 
     override fun getDefaultLayout(): Int {
         return R.layout.gallery_item_of_create_paper
     }
 
     override fun createNewHolder(): EpoxyHolder {
-        return CreatePaperEpoxyModel.Holder()
+        return CreatePaperEpoxyViewModel.Holder()
     }
 
     override fun bind(holder: EpoxyHolder) {
         super.bind(holder)
 
         // Smart casting
-        holder as CreatePaperEpoxyModel.Holder
+        holder as CreatePaperEpoxyViewModel.Holder
 
         holder.itemView.setOnClickListener {
             mOnClickSignal?.onNext(0)
@@ -52,7 +51,7 @@ class CreatePaperEpoxyModel : EpoxyModelWithHolder<EpoxyHolder>() {
         super.unbind(holder)
 
         // Smart casting
-        holder as CreatePaperEpoxyModel.Holder
+        holder as CreatePaperEpoxyViewModel.Holder
 
         holder.itemView.setOnClickListener(null)
     }
@@ -61,7 +60,7 @@ class CreatePaperEpoxyModel : EpoxyModelWithHolder<EpoxyHolder>() {
 
     private var mOnClickSignal: Observer<Any>? = null
 
-    fun onClick(clickSignal: Observer<Any>): CreatePaperEpoxyModel {
+    fun onClick(clickSignal: Observer<Any>): CreatePaperEpoxyViewModel {
         mOnClickSignal = clickSignal
         return this
     }
@@ -69,7 +68,7 @@ class CreatePaperEpoxyModel : EpoxyModelWithHolder<EpoxyHolder>() {
     // Equality & hash ////////////////////////////////////////////////////////
 
     override fun equals(other: Any?): Boolean {
-        return other is CreatePaperEpoxyModel
+        return other is CreatePaperEpoxyViewModel
     }
 
     override fun hashCode(): Int {

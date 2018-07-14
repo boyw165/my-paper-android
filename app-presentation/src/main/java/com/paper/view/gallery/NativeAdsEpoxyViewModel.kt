@@ -32,8 +32,7 @@ import com.airbnb.epoxy.EpoxyHolder
 import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.facebook.ads.MediaView
 
-
-class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
+class NativeAdsEpoxyViewModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
 
     private val mAds = ads
 
@@ -42,14 +41,14 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
     }
 
     override fun createNewHolder(): EpoxyHolder {
-        return NativeAdsEpoxyModel.Holder()
+        return NativeAdsEpoxyViewModel.Holder()
     }
 
     override fun bind(holder: EpoxyHolder) {
         super.bind(holder)
 
         // Smart casting
-        holder as NativeAdsEpoxyModel.Holder
+        holder as NativeAdsEpoxyViewModel.Holder
 
         // Click listener
         holder.itemView.setOnClickListener {
@@ -88,7 +87,7 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
         super.unbind(holder)
 
         // Smart casting
-        holder as NativeAdsEpoxyModel.Holder
+        holder as NativeAdsEpoxyViewModel.Holder
 
         mAds.unregisterView()
 
@@ -100,7 +99,7 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
 
     private var mOnClickSignal: Observer<Any>? = null
 
-    fun onClick(clickSignal: Observer<Any>): NativeAdsEpoxyModel {
+    fun onClick(clickSignal: Observer<Any>): NativeAdsEpoxyViewModel {
         mOnClickSignal = clickSignal
         return this
     }
@@ -112,7 +111,7 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as NativeAdsEpoxyModel
+        other as NativeAdsEpoxyViewModel
 
         if (mAds != other.mAds) return false
 
