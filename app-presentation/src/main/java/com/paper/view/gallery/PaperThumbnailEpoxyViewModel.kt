@@ -23,85 +23,73 @@ package com.paper.view.gallery
 import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
-import com.airbnb.epoxy.EpoxyModel
+import com.airbnb.epoxy.EpoxyHolder
+import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.facebook.drawee.view.SimpleDraweeView
 import com.paper.R
 import io.reactivex.Observer
 import java.io.File
 
-class PaperThumbnailEpoxyModel(
-    private var mPaperId: Long)
-    : EpoxyModel<View>() {
+class PaperThumbnailEpoxyViewModel(private var mPaperId: Long) : EpoxyModelWithHolder<EpoxyHolder>() {
 
     private var mThumbFile: File? = null
     private var mThumbWidth = 0
     private var mThumbHeight = 0
     private var mModifiedAt = 0L
 
-    // View
-    private var mThumbView: SimpleDraweeView? = null
-    private var mThumbViewContainer: ViewGroup? = null
-    private var mDefaultThumbWidth = 0f
-    private var mDefaultThumbHeight = 0f
-
     override fun getDefaultLayout(): Int {
         return R.layout.gallery_item_of_paper_thumbnail
     }
 
-    override fun bind(view: View) {
-        super.bind(view)
+    override fun createNewHolder(): EpoxyHolder {
+        return PaperThumbnailEpoxyViewModel.Holder()
+    }
 
-        if (mDefaultThumbWidth == 0f) {
-            mDefaultThumbWidth = view.layoutParams.width.toFloat() -
-                view.paddingStart - view.paddingEnd
-        }
-        if (mDefaultThumbHeight == 0f) {
-            mDefaultThumbHeight = view.layoutParams.height.toFloat() -
-                view.paddingTop - view.paddingBottom
-        }
-        if (mThumbView == null) {
-            mThumbView = view.findViewById(R.id.image_view)
-        }
-        if (mThumbViewContainer == null) {
-            mThumbViewContainer = view.findViewById(R.id.image_view_container)
-        }
+    override fun bind(holder: EpoxyHolder) {
+        super.bind(holder)
 
-        // Update thumbnail size by fixing width and changing the height.
-        if (mThumbWidth > 0 && mThumbHeight > 0) {
-            val scale = Math.min(mDefaultThumbWidth / mThumbWidth,
-                                 mDefaultThumbHeight / mThumbHeight)
-            val layoutParams = mThumbViewContainer!!.layoutParams
-            layoutParams.width = (mThumbWidth * scale).toInt()
-            layoutParams.height = (mThumbHeight * scale).toInt()
-            mThumbViewContainer!!.layoutParams = layoutParams
-        }
+        // Smart casting
+        holder as PaperThumbnailEpoxyViewModel.Holder
+
+//        // Update thumbnail size by fixing width and changing the height.
+//        if (mThumbWidth > 0 && mThumbHeight > 0) {
+//            val scale = Math.min(holder.defaultThumbWidth / mThumbWidth,
+//                                 holder.defaultThumbHeight / mThumbHeight)
+//            val layoutParams = holder.thumbViewContainer.layoutParams
+//            layoutParams.width = (mThumbWidth * scale).toInt()
+//            layoutParams.height = (mThumbHeight * scale).toInt()
+//            holder.thumbViewContainer.layoutParams = layoutParams
+//        }
 
         // Click
-        view.setOnClickListener {
+        holder.itemView.setOnClickListener {
             mOnClickPaperSignal?.onNext(mPaperId)
         }
 
         // Thumb
         mThumbFile?.let { file ->
-            mThumbView?.setImageURI(Uri.fromFile(file).toString())
+            holder.thumbView.setImageURI(Uri.fromFile(file).toString())
         }
     }
 
-    override fun unbind(view: View?) {
-        super.unbind(view)
+    override fun unbind(holder: EpoxyHolder) {
+        super.unbind(holder)
+
+        // Smart casting
+        holder as PaperThumbnailEpoxyViewModel.Holder
 
         // Click
-        view?.setOnClickListener(null)
+        holder.itemView.setOnClickListener(null)
     }
 
-    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyModel {
+    fun setModifiedTime(modifiedAt: Long): PaperThumbnailEpoxyViewModel {
         mModifiedAt = modifiedAt
         return this
     }
 
     fun setThumbnail(file: File?,
                      width: Int,
-                     height: Int): PaperThumbnailEpoxyModel {
+                     height: Int): PaperThumbnailEpoxyViewModel {
         mThumbFile = file
         mThumbWidth = width
         mThumbHeight = height
@@ -112,7 +100,7 @@ class PaperThumbnailEpoxyModel(
 
     private var mOnClickPaperSignal: Observer<Long>? = null
 
-    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyModel {
+    fun onClick(signal: Observer<Long>): PaperThumbnailEpoxyViewModel {
         mOnClickPaperSignal = signal
         return this
     }
@@ -124,7 +112,7 @@ class PaperThumbnailEpoxyModel(
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as PaperThumbnailEpoxyModel
+        other as PaperThumbnailEpoxyViewModel
 
         if (mPaperId != other.mPaperId) return false
         if (mThumbFile != other.mThumbFile) return false
@@ -141,5 +129,33 @@ class PaperThumbnailEpoxyModel(
         result = 31 * result + mThumbWidth
         result = 31 * result + mThumbHeight
         return result
+    }
+
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    class Holder : EpoxyHolder() {
+
+        lateinit var itemView: View
+
+        lateinit var thumbView: SimpleDraweeView
+        lateinit var thumbViewContainer: ViewGroup
+        var defaultThumbWidth = 0f
+        var defaultThumbHeight = 0f
+
+        override fun bindView(itemView: View) {
+            this.itemView = itemView
+
+            if (defaultThumbWidth == 0f) {
+                defaultThumbWidth = itemView.layoutParams.width.toFloat() -
+                    itemView.paddingStart - itemView.paddingEnd
+            }
+            if (defaultThumbHeight == 0f) {
+                defaultThumbHeight = itemView.layoutParams.height.toFloat() -
+                    itemView.paddingTop - itemView.paddingBottom
+            }
+
+            thumbView = itemView.findViewById(R.id.image_view)
+            thumbViewContainer = itemView.findViewById(R.id.image_view_container)
+        }
     }
 }

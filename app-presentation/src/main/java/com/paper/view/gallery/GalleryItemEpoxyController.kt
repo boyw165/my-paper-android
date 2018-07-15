@@ -23,9 +23,9 @@ package com.paper.view.gallery
 import com.airbnb.epoxy.TypedEpoxyController
 import com.paper.model.IPaper
 
-class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryItem>>() {
+class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryViewModel>>() {
 
-    override fun buildModels(data: List<GalleryItem>) {
+    override fun buildModels(data: List<GalleryViewModel>) {
         data.forEach { item ->
             item.getEpoxyModel()
                 .addTo(this)
@@ -36,7 +36,7 @@ class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryItem>>() {
         val actualData = currentData ?: return null
         val actualItem = actualData[position]
 
-        return if (actualItem is PaperThumbItem) {
+        return if (actualItem is PaperThumbViewModel) {
             actualItem.paper
         } else {
             null
@@ -46,7 +46,7 @@ class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryItem>>() {
     fun getAdapterPositionByPaperID(paperID: Long): Int {
         val actualData = currentData ?: return -1
         return actualData.indexOfFirst { item ->
-            if (item is PaperThumbItem) {
+            if (item is PaperThumbViewModel) {
                 item.paper.getId() == paperID
             } else {
                 false

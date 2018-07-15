@@ -20,9 +20,9 @@
 
 package com.paper.model
 
-import com.paper.model.repository.IBitmapRepo
+import com.paper.model.repository.IBitmapRepository
 
 interface IBitmapRepoProvider {
 
-    fun getBitmapRepo(): IBitmapRepo
+    fun getBitmapRepo(): IBitmapRepository
 }

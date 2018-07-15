@@ -18,7 +18,7 @@ import android.graphics.Bitmap
 import io.reactivex.Single
 import java.io.File
 
-interface IBitmapRepo {
+interface IBitmapRepository {
 
     fun putBitmap(key: Int, bmp: Bitmap): Single<File>
 

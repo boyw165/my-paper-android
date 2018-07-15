@@ -68,6 +68,11 @@ class PenSizePreview : View {
                 defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         // Init preview resource.
         mPreviewPaint.isAntiAlias = true
+
+        if (isInEditMode) {
+            mPreviewFillColor = Color.MAGENTA
+            mPreviewAlpha = 255
+        }
     }
 
     override fun onDraw(canvas: Canvas) {

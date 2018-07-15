@@ -27,33 +27,34 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
+import com.dant.centersnapreyclerview.SnappingRecyclerView
 import com.facebook.ads.Ad
 import com.facebook.ads.AdError
 import com.facebook.ads.AdListener
 import com.facebook.ads.NativeAd
 import com.jakewharton.rxbinding2.view.RxView
-import com.jakewharton.rxbinding2.widget.RxPopupMenu
-import com.paper.model.event.ProgressEvent
 import com.paper.domain.useCase.DeletePaper
-import com.paper.model.*
+import com.paper.model.IPaper
+import com.paper.model.IPaperRepoProvider
+import com.paper.model.IPreferenceServiceProvider
+import com.paper.model.ModelConst
+import com.paper.model.event.ProgressEvent
+import com.paper.view.HorizontalCentricItemDecoration
 import com.paper.view.gallery.*
-import com.paper.view.gallery.GalleryItemBundle.Type.NativeAds
-import com.paper.view.gallery.GalleryItemBundle.Type.Thumbnail
+import com.paper.view.gallery.GalleryViewModelBundle.Type.NativeAds
+import com.paper.view.gallery.GalleryViewModelBundle.Type.Thumbnail
 import com.tbruyelle.rxpermissions2.RxPermissions
-import com.yarolegovich.discretescrollview.DiscreteScrollView
-import com.yarolegovich.discretescrollview.transform.Pivot
-import com.yarolegovich.discretescrollview.transform.ScaleTransformer
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 
@@ -71,7 +72,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     // Paper views and signals.
     private val mBtnNewPaper by lazy { findViewById<ImageView>(R.id.btn_new) }
     private val mBtnDelPaper by lazy { findViewById<ImageView>(R.id.btn_delete) }
-    private val mSavedPaperIdSignal = BehaviorSubject.create<Long>()
+    private val mSavedPaperIdSignal = PublishSubject.create<Long>().toSerialized()
 
     private val mProgressBar: AlertDialog by lazy {
         AlertDialog.Builder(this@PaperGalleryActivity)
@@ -80,7 +81,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     }
 
     // Paper thumbnail list view and controller.
-    private val mGalleryView by lazy { findViewById<DiscreteScrollView>(R.id.gallery_item_list) }
+    private val mGalleryView by lazy { findViewById<SnappingRecyclerView>(R.id.gallery_item_list) }
     private val mGalleryViewController by lazy {
         GalleryItemEpoxyController()
     }
@@ -106,40 +107,25 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Paper thumbnail list view.
         mGalleryView.adapter = mGalleryViewController.adapter
-        mGalleryView.setItemTransformer(
-            ScaleTransformer.Builder()
-                .setMaxScale(1.0f)
-                .setMinScale(1.0f)
-                .setPivotX(Pivot.X.CENTER) // CENTER is a default one
-                .setPivotY(Pivot.Y.CENTER) // CENTER is a default one
-                .build())
-//        mPapersView.setSlideOnFling(true)
-//        mPapersView.setOverScrollEnabled(true)
-//        // Determines how much time it takes to change the item on fling, settle
-//        // or smoothScroll
-//        mPapersView.setItemTransitionTimeMillis(300)
-        mGalleryView.addScrollStateChangeListener(object : DiscreteScrollView.ScrollStateChangeListener<RecyclerView.ViewHolder> {
+        mGalleryView.addItemDecoration(HorizontalCentricItemDecoration())
+        mGalleryView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(view: RecyclerView,
+                                              newState: Int) {
+                super.onScrollStateChanged(view, newState)
 
-            override fun onScroll(scrollPosition: Float,
-                                  currentPosition: Int,
-                                  newPosition: Int,
-                                  currentHolder: RecyclerView.ViewHolder?,
-                                  newCurrent: RecyclerView.ViewHolder?) {
-            }
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val layoutManager = view.layoutManager as LinearLayoutManager
+                    val first = layoutManager.findFirstCompletelyVisibleItemPosition()
+                    val last = layoutManager.findLastCompletelyVisibleItemPosition()
+                    val position = (first + last) / 2
+                    val id = mGalleryViewController
+                                 .getPaperFromAdapterPosition(position)
+                                 ?.getId() ?: ModelConst.INVALID_ID
 
-            override fun onScrollEnd(currentItemHolder: RecyclerView.ViewHolder,
-                                     adapterPosition: Int) {
-                val paperID = mGalleryViewController
-                    .getPaperFromAdapterPosition(adapterPosition)
-                    ?.getId() ?: ModelConst.INVALID_ID
-
-                // Report the paper ID in the database
-                mSavedPaperIdSignal.onNext(paperID)
-            }
-
-            override fun onScrollStart(currentItemHolder: RecyclerView.ViewHolder,
-                                       adapterPosition: Int) {
-                setDeleteButtonVisibility(false)
+                    if (id != ModelConst.INVALID_ID) {
+                        mSavedPaperIdSignal.onNext(id)
+                    }
+                }
             }
         })
     }
@@ -156,7 +142,11 @@ class PaperGalleryActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        // Exp menu button.
+        val savedIDSrc = mPrefs
+            .getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+            .publish()
+
+        // Click settings button
         mDisposables.add(
             onClickSettings()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -164,15 +154,6 @@ class PaperGalleryActivity : AppCompatActivity() {
                     Toast.makeText(this@PaperGalleryActivity,
                                    R.string.msg_under_construction,
                                    Toast.LENGTH_SHORT).show()
-                    //showExpMenu()
-                })
-
-        // Exp menu.
-        mDisposables.add(
-            onClickExpMenu()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { id ->
-                    navigateToExpById(id)
                 })
 
         // Button of new paper.
@@ -200,15 +181,15 @@ class PaperGalleryActivity : AppCompatActivity() {
             onClickPaper()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { id ->
+                    mSavedPaperIdSignal.onNext(id)
                     openPaperInEditor(id)
-                    hideProgressBar()
                 })
         // Button of delete paper.
         mDisposables.add(
             onClickDeletePaper()
+                .flatMap { savedIDSrc }
                 .observeOn(AndroidSchedulers.mainThread())
-                .switchMap {
-                    val toDeletePaperID = mSavedPaperIdSignal.value ?: ModelConst.INVALID_ID
+                .switchMap { toDeletePaperID ->
                     if (toDeletePaperID != ModelConst.TEMP_ID &&
                         toDeletePaperID != ModelConst.INVALID_ID) {
                         requestPermissions()
@@ -227,30 +208,11 @@ class PaperGalleryActivity : AppCompatActivity() {
 
         // Browse papers.
         mDisposables.add(
-            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-                .switchMap { savedID ->
-                    mSavedPaperIdSignal.onNext(savedID)
-                    mSavedPaperIdSignal
-                        .switchMap { id ->
-                            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
-                                .flatMap { readID ->
-                                    if (readID != id) {
-                                        mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, readID)
-                                            .map { readID }
-                                            .toObservable()
-                                    } else {
-                                        Observable.just(readID)
-                                    }
-                                }
-                        }
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext { id ->
-                            if (id == ModelConst.INVALID_ID) {
-                                setDeleteButtonVisibility(false)
-                            } else {
-                                setDeleteButtonVisibility(true)
-                            }
-                        }
+            mSavedPaperIdSignal
+                .debounce(350, TimeUnit.MILLISECONDS)
+                .flatMap { savedID ->
+                    mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, savedID)
+                        .toObservable()
                 }
                 .subscribe())
 
@@ -259,12 +221,15 @@ class PaperGalleryActivity : AppCompatActivity() {
             Observables
                 .combineLatest(
                     getGalleryItems(),
-                    mSavedPaperIdSignal)
+                    savedIDSrc)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { (items, savedID) ->
                     showGalleryItems(items)
                     scrollToPaper(savedID)
                 })
+
+        // Activate saved ID source
+        mDisposables.add(savedIDSrc.connect())
     }
 
     override fun onPause() {
@@ -273,59 +238,59 @@ class PaperGalleryActivity : AppCompatActivity() {
         mDisposables.clear()
     }
 
-    private fun getGalleryItems(): Observable<List<GalleryItem>> {
-        val defaultItem = listOf<GalleryItem>(CreatePaperItem(mOnClickNewPaperSignal))
+    private fun getGalleryItems(): Observable<List<GalleryViewModel>> {
+        val defaultItem = listOf<GalleryViewModel>(CreatePaperViewModel(mOnClickNewPaperSignal))
         return Observable
             .merge(
                 loadPapers()
                     // To bundle so that the following reducer knows what packs
                     // to update.
                     .map { items ->
-                        GalleryItemBundle(type = Thumbnail,
-                                          items = items)
+                        GalleryViewModelBundle(type = Thumbnail,
+                                               items = items)
                     },
                 loadAds()
                     // To bundle so that the following reducer knows what packs
                     // to update.
                     .map { items ->
-                        GalleryItemBundle(type = NativeAds,
-                                          items = items)
+                        GalleryViewModelBundle(type = NativeAds,
+                                               items = items)
                     })
-            .scan(defaultItem, { oldItem, newItemBundle ->
+            .scan(defaultItem) { old, newViewModelBundle ->
                 // Create item
-                val createItems = oldItem.filter { item ->
-                    item is CreatePaperItem
+                val createItems = old.filter { item ->
+                    item is CreatePaperViewModel
                 }
 
                 // Paper thumbnails
-                val paperThumbItems = if (newItemBundle.type == Thumbnail) {
-                    newItemBundle.items
+                val paperThumbItems = if (newViewModelBundle.type == Thumbnail) {
+                    newViewModelBundle.items
                 } else {
-                    oldItem.filter { item ->
-                        item is PaperThumbItem
+                    old.filter { item ->
+                        item is PaperThumbViewModel
                     }
                 }
 
                 // ADs items (if paper exists)
-                val adsItems = if (newItemBundle.type == NativeAds) {
-                    newItemBundle.items
+                val adsItems = if (newViewModelBundle.type == NativeAds) {
+                    newViewModelBundle.items
                 } else {
-                    oldItem.filter { item ->
-                        item is NativeAdsItem
+                    old.filter { item ->
+                        item is NativeAdsViewModel
                     }
                 }
 
                 // Recompose the item list
-                val combined = mutableListOf<GalleryItem>()
+                val combined = mutableListOf<GalleryViewModel>()
                 combined.addAll(createItems)
                 combined.addAll(paperThumbItems)
                 combined.addAll(adsItems)
 
                 return@scan combined
-            })
+            }
     }
 
-    private fun loadPapers(): Observable<List<GalleryItem>> {
+    private fun loadPapers(): Observable<List<GalleryViewModel>> {
         return requestPermissions()
             .observeOn(Schedulers.io())
             .switchMap {
@@ -336,19 +301,19 @@ class PaperGalleryActivity : AppCompatActivity() {
                         mPaperSnapshots.clear()
                         mPaperSnapshots.addAll(papers)
                     }
+                    // Transform model to view-model
                     .map { papers ->
                         papers.map { paper ->
-                            PaperThumbItem(paper = paper,
-                                           clickSignal = mOnClickPaperSignal)
-                        } as List<GalleryItem>
+                            PaperThumbViewModel(paper = paper,
+                                                clickSignal = mOnClickPaperSignal)
+                        } as List<GalleryViewModel>
                     }
             }
-            .subscribeOn(Schedulers.io())
     }
 
-    private val mFbNativeAdsSignal = PublishSubject.create<List<GalleryItem>>()
+    private val mFbNativeAdsSignal = PublishSubject.create<List<GalleryViewModel>>()
 
-    private fun loadAds(): Observable<out List<GalleryItem>> {
+    private fun loadAds(): Observable<out List<GalleryViewModel>> {
         val ads = NativeAd(this, getString(R.string.facebook_native_ads_placement_id))
         ads.setAdListener(object : AdListener {
 
@@ -362,8 +327,8 @@ class PaperGalleryActivity : AppCompatActivity() {
 
             override fun onAdLoaded(ad: Ad) {
                 mFbNativeAdsSignal.onNext(listOf(
-                    NativeAdsItem(ads = ads,
-                                  clickSignal = mOnClickNativeAdsSignal)))
+                    NativeAdsViewModel(ads = ads,
+                                       clickSignal = mOnClickNativeAdsSignal)))
             }
 
             override fun onLoggingImpression(ad: Ad) {
@@ -375,27 +340,22 @@ class PaperGalleryActivity : AppCompatActivity() {
         return mFbNativeAdsSignal
     }
 
-    private fun showGalleryItems(items: List<GalleryItem>) {
+    private fun showGalleryItems(items: List<GalleryViewModel>) {
         mGalleryViewController.setData(items)
     }
 
     private fun scrollToPaper(savedID: Long) {
         // FIXME: without the delay the behavior would be strange
-        mGalleryView.postDelayed(
-            {
-                val actualPosition = mGalleryViewController.getAdapterPositionByPaperID(savedID)
-                if (actualPosition >= 0) {
-                    mGalleryView.smoothScrollToPosition(actualPosition)
-                }
-            }, 500)
+        mGalleryView.post {
+            val actualPosition = mGalleryViewController.getAdapterPositionByPaperID(savedID)
+            if (actualPosition >= 0) {
+                mGalleryView.smoothScrollToPosition(actualPosition)
+            }
+        }
     }
 
     private fun setDeleteButtonVisibility(visible: Boolean) {
         mBtnDelPaper.visibility = if (visible) View.VISIBLE else View.GONE
-    }
-
-    private fun showExpMenu() {
-        mBtnExpMenu.show()
     }
 
     private fun showProgressBar() {
@@ -443,47 +403,12 @@ class PaperGalleryActivity : AppCompatActivity() {
             .throttleFirst(1000, TimeUnit.MILLISECONDS)
     }
 
-    private fun onClickExpMenu(): Observable<Int> {
-        return RxPopupMenu.itemClicks(mBtnExpMenu)
-            .map {
-                return@map when (it.itemId) {
-                    R.id.exp_rx_cancel -> 0
-                    R.id.exp_convex_hull -> 1
-                    R.id.exp_event_driven_simulation -> 2
-                    else -> -1
-                }
-            }
-    }
-
-    private fun navigateToExpById(id: Int) {
-        when (id) {
-            0 -> {
-                startActivity(Intent(
-                    this@PaperGalleryActivity,
-                    ExampleOfRxCancelActivity::class.java))
-            }
-            1 -> {
-                startActivity(Intent(
-                    this@PaperGalleryActivity,
-                    ExampleOfConvexHullActivity::class.java))
-            }
-            2 -> {
-                startActivity(Intent(
-                    this@PaperGalleryActivity,
-                    ExampleOfEventDrivenSimulationActivity::class.java))
-            }
-        }
-    }
-
     private fun openPaperInEditor(id: Long) {
         startActivity(Intent(this@PaperGalleryActivity,
                              PaperEditorActivity::class.java)
                           .putExtra(AppConst.PARAMS_PAPER_ID, id)
                           .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
 
     private fun showError(err: Throwable) {
         if (BuildConfig.DEBUG) {

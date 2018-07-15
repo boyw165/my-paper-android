@@ -3,6 +3,7 @@
 
     <!-- Common -->
     <string name="processing">Processing, please wait</string>
+    <string name="saving">Saving…</string>
     <string name="yes">OK</string>
     <string name="no">Cancel</string>
     <string name="close">Close</string>
@@ -27,6 +28,7 @@
     <string name="doodle_clear_ok">OK</string>
     <string name="doodle_clear_cancel">CANCEL</string>
     <string name="msg_create_cta">Tap to create</string>
+    <string name="msg_export_successfully">File saved!</string>
     <string name="msg_under_construction">Sorry, we\'re still working on this feature</string>
 
     <!-- Editor: Preference -->

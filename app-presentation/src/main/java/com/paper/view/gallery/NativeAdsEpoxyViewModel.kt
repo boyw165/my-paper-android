@@ -23,49 +23,38 @@
 package com.paper.view.gallery
 
 import android.view.View
-import com.airbnb.epoxy.EpoxyModel
 import com.facebook.ads.AdChoicesView
 import com.facebook.ads.NativeAd
 import com.paper.R
 import io.reactivex.Observer
 import android.widget.*
+import com.airbnb.epoxy.EpoxyHolder
+import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.facebook.ads.MediaView
 
-
-class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModel<View>() {
+class NativeAdsEpoxyViewModel(ads: NativeAd) : EpoxyModelWithHolder<EpoxyHolder>() {
 
     private val mAds = ads
-
-    // View
-    private var mNativeAdTitle: TextView? = null
-    private var mNativeAdCallToAction: Button? = null
-    private var mMediaView: MediaView? = null
-    private var mAdChoicesParentView: FrameLayout? = null
 
     override fun getDefaultLayout(): Int {
         return R.layout.gallery_item_of_facebook_native_ads
     }
 
-    override fun bind(view: View) {
-        super.bind(view)
+    override fun createNewHolder(): EpoxyHolder {
+        return NativeAdsEpoxyViewModel.Holder()
+    }
+
+    override fun bind(holder: EpoxyHolder) {
+        super.bind(holder)
+
+        // Smart casting
+        holder as NativeAdsEpoxyViewModel.Holder
 
         // Click listener
-        view.setOnClickListener {
+        holder.itemView.setOnClickListener {
             mOnClickSignal?.onNext(0)
         }
 
-        if (mNativeAdTitle == null) {
-            mNativeAdTitle = view.findViewById(R.id.native_ad_title)
-        }
-        if (mNativeAdCallToAction == null) {
-            mNativeAdCallToAction = view.findViewById(R.id.native_ad_call_to_action)
-        }
-        if (mMediaView == null) {
-            mMediaView = view.findViewById(R.id.native_ad_media)
-        }
-        if (mAdChoicesParentView == null) {
-            mAdChoicesParentView = view.findViewById(R.id.native_ad_choice)
-        }
         // The eplise style depends on devices, so we manually apply a fixed
         // style here.
         val maxLength = 20
@@ -74,37 +63,43 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModel<View>() {
         } else {
             mAds.adTitle.substring(0, maxLength) + "..."
         }
-        mNativeAdTitle?.text = title
-        mNativeAdCallToAction?.text = mAds.adCallToAction
+        holder.nativeAdTitle.text = title
+        holder.nativeAdCallToAction.text = mAds.adCallToAction
 
         // Download and display the cover image.
-        mMediaView?.setNativeAd(mAds)
+        holder.mediaView.setNativeAd(mAds)
 
         // Add the AdChoices icon
-        if (mAdChoicesParentView?.findViewWithTag<View>("ad_choices_view") == null) {
-            val adChoicesView = AdChoicesView(view.context, mAds, true)
+        if (holder.adChoicesParentView.findViewWithTag<View>("ad_choices_view") == null) {
+            val adChoicesView = AdChoicesView(holder.itemView.context, mAds, true)
             adChoicesView.tag = "ad_choices_view"
-            mAdChoicesParentView?.addView(adChoicesView)
+            holder.adChoicesParentView.addView(adChoicesView)
         }
 
         // Register the Title and CTA button to listen for clicks.
-        val clickableViews = listOf(mNativeAdTitle!!,
-                                    mNativeAdCallToAction!!,
-                                    mMediaView!!)
-        mAds.registerViewForInteraction(view, clickableViews)
+        val clickableViews = listOf(holder.nativeAdTitle,
+                                    holder.nativeAdCallToAction,
+                                    holder.mediaView)
+        mAds.registerViewForInteraction(holder.itemView, clickableViews)
     }
 
-    override fun unbind(view: View) {
-        super.unbind(view)
+    override fun unbind(holder: EpoxyHolder) {
+        super.unbind(holder)
+
+        // Smart casting
+        holder as NativeAdsEpoxyViewModel.Holder
 
         mAds.unregisterView()
+
+        // Click listener
+        holder.itemView.setOnClickListener(null)
     }
 
     // Click //////////////////////////////////////////////////////////////////
 
     private var mOnClickSignal: Observer<Any>? = null
 
-    fun onClick(clickSignal: Observer<Any>): NativeAdsEpoxyModel {
+    fun onClick(clickSignal: Observer<Any>): NativeAdsEpoxyViewModel {
         mOnClickSignal = clickSignal
         return this
     }
@@ -116,7 +111,7 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModel<View>() {
         if (javaClass != other?.javaClass) return false
         if (!super.equals(other)) return false
 
-        other as NativeAdsEpoxyModel
+        other as NativeAdsEpoxyViewModel
 
         if (mAds != other.mAds) return false
 
@@ -127,5 +122,27 @@ class NativeAdsEpoxyModel(ads: NativeAd) : EpoxyModel<View>() {
         var result = super.hashCode()
         result = 31 * result + mAds.hashCode()
         return result
+    }
+
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    class Holder : EpoxyHolder() {
+
+        lateinit var itemView: View
+
+        // View
+        lateinit var nativeAdTitle: TextView
+        lateinit var nativeAdCallToAction: Button
+        lateinit var mediaView: MediaView
+        lateinit var adChoicesParentView: FrameLayout
+
+        override fun bindView(itemView: View) {
+            this.itemView = itemView
+
+            nativeAdTitle = itemView.findViewById(R.id.native_ad_title)
+            nativeAdCallToAction = itemView.findViewById(R.id.native_ad_call_to_action)
+            mediaView = itemView.findViewById(R.id.native_ad_media)
+            adChoicesParentView = itemView.findViewById(R.id.native_ad_choice)
+        }
     }
 }

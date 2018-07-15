@@ -114,6 +114,9 @@ class PaperEditPanelWidget(
 
     private val mUnsupportedToolMsg = PublishSubject.create<Any>()
 
+    // TODO: Since the tool list (data) and UI click both lead to the
+    // TODO: UI view-model change, merge this two upstream in the new
+    // TODO: design!
     fun handleClickTool(toolID: ToolType) {
         val toolIDs = getEditToolIDs()
         val usingIndex = when (toolID) {

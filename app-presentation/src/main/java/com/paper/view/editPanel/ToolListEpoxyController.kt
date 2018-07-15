@@ -56,6 +56,9 @@ class ToolListEpoxyController(imageLoader: RequestManager)
 
     private var mWidget: PaperEditPanelWidget? = null
 
+    // TODO: Since the tool list (data) and UI click both lead to the
+    // TODO: UI view-model change, merge this two upstream in the new
+    // TODO: design!
     fun setWidget(widget: PaperEditPanelWidget?) {
         mWidget = widget
     }

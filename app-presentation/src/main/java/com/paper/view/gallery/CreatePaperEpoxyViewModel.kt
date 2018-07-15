@@ -21,32 +21,46 @@
 package com.paper.view.gallery
 
 import android.view.View
-import android.view.ViewGroup
-import com.airbnb.epoxy.EpoxyModel
+import com.airbnb.epoxy.EpoxyHolder
+import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.paper.R
 import io.reactivex.Observer
 
-class CreatePaperEpoxyModel : EpoxyModel<View>() {
+class CreatePaperEpoxyViewModel : EpoxyModelWithHolder<EpoxyHolder>() {
 
     override fun getDefaultLayout(): Int {
         return R.layout.gallery_item_of_create_paper
     }
 
-    override fun buildView(parent: ViewGroup): View {
-        val layout = super.buildView(parent)
+    override fun createNewHolder(): EpoxyHolder {
+        return CreatePaperEpoxyViewModel.Holder()
+    }
 
-        layout.setOnClickListener {
+    override fun bind(holder: EpoxyHolder) {
+        super.bind(holder)
+
+        // Smart casting
+        holder as CreatePaperEpoxyViewModel.Holder
+
+        holder.itemView.setOnClickListener {
             mOnClickSignal?.onNext(0)
         }
+    }
 
-        return layout
+    override fun unbind(holder: EpoxyHolder?) {
+        super.unbind(holder)
+
+        // Smart casting
+        holder as CreatePaperEpoxyViewModel.Holder
+
+        holder.itemView.setOnClickListener(null)
     }
 
     // Click //////////////////////////////////////////////////////////////////
 
     private var mOnClickSignal: Observer<Any>? = null
 
-    fun onClick(clickSignal: Observer<Any>): CreatePaperEpoxyModel {
+    fun onClick(clickSignal: Observer<Any>): CreatePaperEpoxyViewModel {
         mOnClickSignal = clickSignal
         return this
     }
@@ -54,10 +68,21 @@ class CreatePaperEpoxyModel : EpoxyModel<View>() {
     // Equality & hash ////////////////////////////////////////////////////////
 
     override fun equals(other: Any?): Boolean {
-        return other is CreatePaperEpoxyModel
+        return other is CreatePaperEpoxyViewModel
     }
 
     override fun hashCode(): Int {
         return 0
+    }
+
+    // Clazz //////////////////////////////////////////////////////////////////
+
+    class Holder : EpoxyHolder() {
+
+        lateinit var itemView: View
+
+        override fun bindView(itemView: View) {
+            this.itemView = itemView
+        }
     }
 }

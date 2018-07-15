@@ -22,46 +22,46 @@
 
 package com.paper.view.gallery
 
-import android.view.View
-import com.airbnb.epoxy.EpoxyModel
+import com.airbnb.epoxy.EpoxyHolder
+import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.facebook.ads.NativeAd
 import com.paper.model.IPaper
 import io.reactivex.Observer
 
-sealed class GalleryItem {
-    abstract fun getEpoxyModel(): EpoxyModel<View>
+sealed class GalleryViewModel {
+    abstract fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder>
 }
 
-data class CreatePaperItem(private val clickSignal: Observer<Any>) : GalleryItem() {
+data class CreatePaperViewModel(private val clickSignal: Observer<Any>) : GalleryViewModel() {
 
-    override fun getEpoxyModel(): EpoxyModel<View> {
-        return CreatePaperEpoxyModel()
+    override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
+        return CreatePaperEpoxyViewModel()
             .onClick(clickSignal)
-            .id("cta")
+            .id("cta") as EpoxyModelWithHolder<EpoxyHolder>
     }
 }
 
-data class PaperThumbItem(val paper: IPaper,
-                          val clickSignal: Observer<Long>) : GalleryItem() {
+data class PaperThumbViewModel(val paper: IPaper,
+                               val clickSignal: Observer<Long>) : GalleryViewModel() {
 
-    override fun getEpoxyModel(): EpoxyModel<View> {
-        return PaperThumbnailEpoxyModel(mPaperId = paper.getId())
+    override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
+        return PaperThumbnailEpoxyViewModel(mPaperId = paper.getId())
             .onClick(clickSignal)
             .setModifiedTime(paper.getModifiedAt())
             .setThumbnail(paper.getThumbnail(),
                           paper.getThumbnailWidth(),
                           paper.getThumbnailHeight())
             // Epoxy view-model ID.
-            .id(paper.getId())
+            .id(paper.getId()) as EpoxyModelWithHolder<EpoxyHolder>
     }
 }
 
-data class NativeAdsItem(val ads: NativeAd,
-                         val clickSignal: Observer<Any>) : GalleryItem() {
+data class NativeAdsViewModel(val ads: NativeAd,
+                              val clickSignal: Observer<Any>) : GalleryViewModel() {
 
-    override fun getEpoxyModel(): EpoxyModel<View> {
-        return NativeAdsEpoxyModel(ads = ads)
+    override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
+        return NativeAdsEpoxyViewModel(ads = ads)
             .onClick(clickSignal)
-            .id("native ads")
+            .id("native ads") as EpoxyModelWithHolder<EpoxyHolder>
     }
 }

@@ -78,7 +78,7 @@ ext {
             fresco                    : "com.facebook.fresco:fresco:1.8.1",
             glide                     : 'com.github.bumptech.glide:glide:4.3.1',
             glideAnnotation           : 'com.github.bumptech.glide:compiler:4.3.1',
-            lottie                    : 'com.airbnb.android:lottie:2.1.0',
+            lottie                    : 'com.airbnb.android:lottie:2.5.5',
             adobeFoundation           : 'com.adobe.creativesdk.foundation:auth:0.9.1251',
             adobeImage                : 'com.adobe.creativesdk:image:4.8.3',
             // RxJava.
@@ -112,6 +112,7 @@ ext {
             airbnbEpoxy               : 'com.airbnb.android:epoxy:2.7.3',
             airbnbEpoxyAnnotation     : 'com.airbnb.android:epoxy-processor:2.7.3',
             discreteScrollView        : 'com.yarolegovich:discrete-scrollview:1.4.4',
+            snappyRecyclerView        : 'com.github.dan-td:snappy-recyclerview:1.0.2',
             // ASYNC.
             bolts                     : "com.parse.bolts:bolts-tasks:$BOLTS_VER",
             // BUS.

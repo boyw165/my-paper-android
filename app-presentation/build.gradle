@@ -118,6 +118,7 @@ dependencies {
     implementation rootProject.ext.dep.glide
     kapt rootProject.ext.dep.glideAnnotation
     implementation rootProject.ext.dep.fresco
+    implementation rootProject.ext.dep.lottie
 
     // IO, Cache
     implementation rootProject.ext.dep.diskLruCache
@@ -125,6 +126,7 @@ dependencies {
     // RecyclerView.
     implementation rootProject.ext.dep.airbnbEpoxy
     implementation rootProject.ext.dep.discreteScrollView
+    implementation rootProject.ext.dep.snappyRecyclerView
 
     // RxKotlin.
     implementation rootProject.ext.dep.rxKotlin

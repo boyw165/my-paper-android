@@ -22,6 +22,8 @@ package com.paper.view.canvas
 
 import android.content.Context
 import android.graphics.*
+import android.media.MediaScannerConnection
+import android.os.Environment
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
@@ -44,8 +46,11 @@ import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
-import com.paper.model.repository.IBitmapRepo
+import com.paper.model.repository.IBitmapRepository
 import com.paper.model.sketch.PenType
+import com.paper.observables.AddFileToMediaStoreMaybe
+import com.paper.observables.WriteBitmapToFileMaybe
+import com.paper.services.IContextProvider
 import com.paper.view.IWidgetView
 import com.paper.view.with
 import io.reactivex.Maybe
@@ -55,17 +60,23 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.rxkotlin.Observables
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.io.FileOutputStream
 import java.lang.NullPointerException
+import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 class PaperCanvasView : View,
                         IWidgetView<IPaperCanvasWidget>,
                         IPaperContext,
-                        IParentView {
+                        IParentView,
+                        IWriteThumbnailFileCanvasView,
+                        IWriteHDResolutionFileCanvasView {
 
     // Dirty flags
     private var mIsNew = true
@@ -428,7 +439,7 @@ class PaperCanvasView : View,
     private val mGridPaint = Paint()
 
     // Temporary strokes
-    private val mStrokeDrawables = mutableListOf<SvgDrawable>()
+    private val mStrokeDrawables = CopyOnWriteArrayList<SvgDrawable>()
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -816,18 +827,18 @@ class PaperCanvasView : View,
             }
     }
 
-    private var mBitmapRepo: IBitmapRepo? = null
+    private var mBitmapRepo: IBitmapRepository? = null
 
-    fun setBitmapRepo(repo: IBitmapRepo) {
+    override fun injectBitmapRepository(repo: IBitmapRepository) {
         mBitmapRepo = repo
     }
 
     /**
      * Write the thumbnail Bitmap to a file maintained by the Bitmap repository.
      */
-    fun writeThumbFile(): Maybe<Triple<File, Int, Int>> {
+    override fun writeThumbFileToBitmapRepository(): Maybe<Triple<File, Int, Int>> {
         return if (mIsNew) {
-            return Maybe.empty()
+            Maybe.empty()
         } else {
             val hash = hashCode()
             mBitmapRepo
@@ -838,6 +849,67 @@ class PaperCanvasView : View,
                 ?.toMaybe()
             ?: Maybe.empty<Triple<File, Int, Int>>()
         }
+    }
+
+    override fun writeFileToSystemMediaStore(): Maybe<String> {
+        // Create the file snapshot
+        val pictureDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val bmpFile = File(pictureDir, "paper-${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.US).format(Date())}.png")
+
+        // TODO: Check if the canvas is pixel wisely empty
+        return Maybe
+            .fromCallable {
+                val vw = mScaleM2V * mMSize.width
+                val vh = mScaleM2V * mMSize.height
+                val scale = Math.max(DomainConst.BASE_HD_WIDTH / vw,
+                                     DomainConst.BASE_HD_HEIGHT / vh)
+
+                // FIXME: Update the rendering when there is no canvas boundary
+                // Draw the canvas on HD Bitmap
+                val bmp = Bitmap.createBitmap((scale * vw).toInt(),
+                                              (scale * vh).toInt(),
+                                              Bitmap.Config.ARGB_8888)
+                // Set white as default background color
+                bmp.eraseColor(Color.WHITE)
+                val bmpCanvasMatrix = Matrix()
+                bmpCanvasMatrix.postScale(scale, scale)
+                val bmpCanvas = Canvas(bmp)
+                bmpCanvas.with { c ->
+                    c.concat(bmpCanvasMatrix)
+                    mStrokeDrawables.forEach { d ->
+                        d.markUndrew()
+                        d.draw(c)
+                        d.markAllDrew()
+                    }
+                }
+
+                bmp
+            }
+            .subscribeOn(Schedulers.io())
+            .flatMap { bmp ->
+                // Write Bitmap to a file
+                WriteBitmapToFileMaybe(inputBitmap = bmp,
+                                       outputFile = bmpFile,
+                                       recycleBitmap = true)
+                    .subscribeOn(Schedulers.io())
+                    .flatMap {
+                        val viewContext = context
+                        // Add the file to system media store
+                        AddFileToMediaStoreMaybe(
+                            contextProvider = object: IContextProvider {
+                                override val context: Context?
+                                    get() = if (isAttachedToWindow) viewContext else null
+                            },
+                            file = bmpFile)
+                            .subscribeOn(Schedulers.io())
+                            .map { uri -> uri.toString() }
+                    }
+
+            }
+    }
+
+    private fun verifyViewState() {
+        if (!isAttachedToWindow) throw IllegalStateException()
     }
 
     private fun cancelAntiAliasingDrawing() {
