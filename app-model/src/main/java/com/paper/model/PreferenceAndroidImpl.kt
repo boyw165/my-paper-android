@@ -39,7 +39,7 @@ class PreferenceAndroidImpl(context: Context,
     private val mWorkerScheduler = workerScheduler
 
     // Shared preference.
-    private val mPreferencesSignal = PublishSubject.create<String>()
+    private val mPreferencesSignal = PublishSubject.create<String>().toSerialized()
     private val mPreferences by lazy {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             throw IllegalThreadStateException("Shared preference initializes " +
