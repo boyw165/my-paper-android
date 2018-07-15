@@ -113,7 +113,9 @@ class PaperEditorActivity : AppCompatActivity() {
 
         // Progress
         mDisposables.add(
-            mWidget.onUpdateProgress()
+            Observable.merge(
+                mUpdateProgressSignal,
+                mWidget.onUpdateProgress())
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
                     when {

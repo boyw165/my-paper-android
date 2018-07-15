@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Jul 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,24 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.services
 
-object DomainConst {
+import android.content.Context
 
-    // Common /////////////////////////////////////////////////////////////////
+interface IContextProvider {
 
-    const val TAG = "paper domain"
-
-    // Paper editor ///////////////////////////////////////////////////////////
-
-    const val BASE_THUMBNAIL_WIDTH = 640f
-    const val BASE_THUMBNAIL_HEIGHT = 480f
-
-    const val BASE_HD_WIDTH = 1920f
-    const val BASE_HD_HEIGHT = 1080f
-
-    const val VIEW_PORT_MIN_SCALE = 32f
-
-    const val COLLECT_PATH_WINDOW_MS = 66L
-    const val COLLECT_STROKES_TIMEOUT_MS = 850L
+    val context: Context?
 }

@@ -22,6 +22,8 @@ package com.paper.view.canvas
 
 import android.content.Context
 import android.graphics.*
+import android.media.MediaScannerConnection
+import android.os.Environment
 import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
@@ -46,6 +48,8 @@ import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.sketch.PenType
+import com.paper.observables.AddFileToMediaStoreMaybe
+import com.paper.services.IContextProvider
 import com.paper.view.IWidgetView
 import com.paper.view.with
 import io.reactivex.Maybe
@@ -59,8 +63,11 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.io.FileOutputStream
 import java.lang.NullPointerException
+import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 class PaperCanvasView : View,
@@ -431,7 +438,7 @@ class PaperCanvasView : View,
     private val mGridPaint = Paint()
 
     // Temporary strokes
-    private val mStrokeDrawables = mutableListOf<SvgDrawable>()
+    private val mStrokeDrawables = CopyOnWriteArrayList<SvgDrawable>()
 
     private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
                                        canvasHeight: Float) {
@@ -844,18 +851,77 @@ class PaperCanvasView : View,
     }
 
     override fun writeFileToSystemMediaStore(): Maybe<String> {
+        // Create the file snapshot
+        val pictureDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val bmpFile = File(pictureDir, "paper-${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.US).format(Date())}.png")
+
         // TODO: Check if the canvas is pixel wisely empty
         return Maybe
             .fromCallable {
-                // Draw the canvas on HD Bitmap
+                try {
+                    val vw = mScaleM2V * mMSize.width
+                    val vh = mScaleM2V * mMSize.height
+                    val scale = Math.max(DomainConst.BASE_HD_WIDTH / vw,
+                                         DomainConst.BASE_HD_HEIGHT / vh)
 
-                // Write Bitmap to system public folder
+                    // FIXME: Update the rendering when there is no canvas boundary
+                    // Draw the canvas on HD Bitmap
+                    val bmp = Bitmap.createBitmap((scale * vw).toInt(),
+                                                  (scale * vh).toInt(),
+                                                  Bitmap.Config.ARGB_8888)
+                    // Set white as default background color
+                    bmp.eraseColor(Color.WHITE)
+                    val bmpCanvasMatrix = Matrix()
+                    bmpCanvasMatrix.postScale(scale, scale)
+                    val bmpCanvas = Canvas(bmp)
+                    bmpCanvas.with { c ->
+                        c.concat(bmpCanvasMatrix)
+                        mStrokeDrawables.forEach { d ->
+                            d.markUndrew()
+                            d.draw(c)
+                            d.markAllDrew()
+                        }
+                    }
 
-                // Export to system media store
+                    // State check
+                    verifyViewState()
 
-                null as String
+                    // Write Bitmap to system public folder
+                    if (!pictureDir.exists()) pictureDir.mkdirs()
+                    FileOutputStream(bmpFile).use { out ->
+                        bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+
+                    // Recycle memory
+                    bmp.recycle()
+
+                    bmpFile
+                } catch (err: Throwable) {
+                    // Remove file
+                    if (bmpFile.exists()) {
+                        bmpFile.delete()
+                    }
+
+                    null
+                }
             }
             .subscribeOn(Schedulers.io())
+            // Export to system media store
+            .flatMap {
+                val viewContext = context
+                AddFileToMediaStoreMaybe(
+                    contextProvider = object: IContextProvider {
+                        override val context: Context?
+                            get() = if (isAttachedToWindow) viewContext else null
+                    },
+                    file = bmpFile)
+                    .subscribeOn(Schedulers.io())
+                    .map { uri -> uri.toString() }
+            }
+    }
+
+    private fun verifyViewState() {
+        if (!isAttachedToWindow) throw IllegalStateException()
     }
 
     private fun cancelAntiAliasingDrawing() {
