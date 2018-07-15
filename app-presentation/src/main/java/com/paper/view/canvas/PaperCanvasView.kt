@@ -44,7 +44,7 @@ import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
-import com.paper.model.repository.IBitmapRepo
+import com.paper.model.repository.IBitmapRepository
 import com.paper.model.sketch.PenType
 import com.paper.view.IWidgetView
 import com.paper.view.with
@@ -55,6 +55,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.rxkotlin.Observables
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
@@ -65,7 +66,9 @@ import java.util.concurrent.TimeUnit
 class PaperCanvasView : View,
                         IWidgetView<IPaperCanvasWidget>,
                         IPaperContext,
-                        IParentView {
+                        IParentView,
+                        IWriteThumbnailFileCanvasView,
+                        IWriteHDResolutionFileCanvasView {
 
     // Dirty flags
     private var mIsNew = true
@@ -816,18 +819,18 @@ class PaperCanvasView : View,
             }
     }
 
-    private var mBitmapRepo: IBitmapRepo? = null
+    private var mBitmapRepo: IBitmapRepository? = null
 
-    fun setBitmapRepo(repo: IBitmapRepo) {
+    override fun injectBitmapRepository(repo: IBitmapRepository) {
         mBitmapRepo = repo
     }
 
     /**
      * Write the thumbnail Bitmap to a file maintained by the Bitmap repository.
      */
-    fun writeThumbFile(): Maybe<Triple<File, Int, Int>> {
+    override fun writeThumbFileToBitmapRepository(): Maybe<Triple<File, Int, Int>> {
         return if (mIsNew) {
-            return Maybe.empty()
+            Maybe.empty()
         } else {
             val hash = hashCode()
             mBitmapRepo
@@ -838,6 +841,21 @@ class PaperCanvasView : View,
                 ?.toMaybe()
             ?: Maybe.empty<Triple<File, Int, Int>>()
         }
+    }
+
+    override fun writeFileToSystemMediaStore(): Maybe<String> {
+        // TODO: Check if the canvas is pixel wisely empty
+        return Maybe
+            .fromCallable {
+                // Draw the canvas on HD Bitmap
+
+                // Write Bitmap to system public folder
+
+                // Export to system media store
+
+                null as String
+            }
+            .subscribeOn(Schedulers.io())
     }
 
     private fun cancelAntiAliasingDrawing() {

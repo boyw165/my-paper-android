@@ -47,7 +47,7 @@ class PaperEditorActivity : AppCompatActivity() {
 
     private val mCanvasView by lazy {
         val field = findViewById<PaperCanvasView>(R.id.paper_canvas)
-        field.setBitmapRepo((application as IBitmapRepoProvider).getBitmapRepo())
+        field.injectBitmapRepository((application as IBitmapRepoProvider).getBitmapRepo())
         field
     }
     private val mMenuView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
@@ -137,7 +137,7 @@ class PaperEditorActivity : AppCompatActivity() {
             onClickCloseButton()
                 .switchMap {
                     mCanvasView
-                        .writeThumbFile()
+                        .writeThumbFileToBitmapRepository()
                         .toObservable()
                         .doOnSubscribe { mUpdateProgressSignal.onNext(ProgressEvent.start(0)) }
                         .doOnNext { mUpdateProgressSignal.onNext(ProgressEvent.stop(100)) }
@@ -150,6 +150,31 @@ class PaperEditorActivity : AppCompatActivity() {
                 }
                 .observeOn(mUiScheduler)
                 .subscribe())
+
+        // Export button
+        mDisposables.add(
+            mMenuView.onClickExport()
+                .switchMap {
+                    mCanvasView
+                        .writeFileToSystemMediaStore()
+                        .toObservable()
+                        .doOnSubscribe {
+                            mUpdateProgressSignal.onNext(ProgressEvent.start())
+                        }
+                        .doOnComplete {
+                            mUpdateProgressSignal.onNext(ProgressEvent.stop())
+                        }
+                        .doOnError {
+                            mUpdateProgressSignal.onNext(ProgressEvent.stop())
+                        }
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    Toast.makeText(this@PaperEditorActivity,
+                                   resources.getString(R.string.msg_export_successfully),
+                                   Toast.LENGTH_SHORT)
+                        .show()
+                })
 
         // View port : boundary
         mDisposables.add(

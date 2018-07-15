@@ -28,6 +28,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.AttributeSet
 import android.widget.Toast
 import com.bumptech.glide.Glide
+import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
 import com.paper.domain.event.CanvasEvent
 import com.paper.domain.event.UpdatePenSizeEvent
@@ -211,6 +212,16 @@ class PaperEditPanelView : ConstraintLayout,
     private val mPenSizeSignal = PublishSubject.create<UpdatePenSizeEvent>()
     fun onUpdatePenSize(): Observable<UpdatePenSizeEvent> {
         return mPenSizeSignal
+    }
+
+    // Import & export ////////////////////////////////////////////////////////
+
+    fun onClickImport(): Observable<Any> {
+        return RxView.clicks(findViewById(R.id.btn_add_from_library))
+    }
+
+    fun onClickExport(): Observable<Any> {
+        return RxView.clicks(findViewById(R.id.btn_save_as_photo))
     }
 
     // Other //////////////////////////////////////////////////////////////////

@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.view.canvas
 
 import com.paper.model.repository.IBitmapRepository
+import io.reactivex.Maybe
+import java.io.File
 
-interface IBitmapRepoProvider {
+/**
+ * A behavior that enables the view to write the thumbnail to a file storing in
+ * the repository. See [IBitmapRepository]
+ */
+interface IWriteThumbnailFileCanvasView {
 
-    fun getBitmapRepo(): IBitmapRepository
+    /**
+     * Inject the Bitmap repository so that this component is able to
+     */
+    fun injectBitmapRepository(repo: IBitmapRepository)
+
+    /**
+     * Write the thumbnail Bitmap to a file maintained by the Bitmap repository,
+     * see [injectBitmapRepository] method.
+     *
+     * @return A triple represents the [File], thumbnail width and height.
+     */
+    fun writeThumbFileToBitmapRepository(): Maybe<Triple<File, Int, Int>>
 }

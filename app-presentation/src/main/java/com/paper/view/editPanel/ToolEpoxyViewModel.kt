@@ -55,6 +55,9 @@ class ToolEpoxyViewModel(
         }
 
         view.setOnClickListener {
+            // TODO: Since the tool list (data) and UI click both lead to the
+            // TODO: UI view-model change, merge this two upstream in the new
+            // TODO: design!
             mWidget?.handleClickTool(mToolID)
         }
 

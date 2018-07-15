@@ -25,7 +25,7 @@ import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
 import com.paper.model.*
-import com.paper.model.repository.IBitmapRepo
+import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.PaperTransformRepoFileImpl
@@ -87,7 +87,7 @@ class PaperApplication : MultiDexApplication(),
         return mPaperRepo
     }
 
-    override fun getBitmapRepo(): IBitmapRepo {
+    override fun getBitmapRepo(): IBitmapRepository {
         return mPaperRepo
     }
 

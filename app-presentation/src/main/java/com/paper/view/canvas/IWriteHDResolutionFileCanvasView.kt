@@ -1,4 +1,4 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,11 +18,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.view.canvas
 
-import com.paper.model.repository.IBitmapRepository
+import io.reactivex.Maybe
 
-interface IBitmapRepoProvider {
+/**
+ * A behavior that enables the view to write the HD canvas to a file storing and
+ * export to the system media store.
+ */
+interface IWriteHDResolutionFileCanvasView {
 
-    fun getBitmapRepo(): IBitmapRepository
+    /**
+     * Write the HD canvas to a file and export to the system media store.
+     */
+    fun writeFileToSystemMediaStore(): Maybe<String>
 }

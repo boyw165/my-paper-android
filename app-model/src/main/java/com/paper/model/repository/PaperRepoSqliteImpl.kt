@@ -55,7 +55,7 @@ class PaperRepoSqliteImpl(authority: String,
                           fileDir: File,
                           prefs: IPreferenceService,
                           dbIoScheduler: Scheduler) : IPaperRepo,
-                                                      IBitmapRepo {
+                                                      IBitmapRepository {
     private val mAuthority = authority
     private val mResolver = resolver
     private val mFileDir = fileDir
@@ -454,13 +454,14 @@ class PaperRepoSqliteImpl(authority: String,
                     mFileDir.mkdir()
                 }
 
+                // TODO: Use LruCache?
                 val bmpFile = File(mFileDir, "$key.png")
 
                 FileOutputStream(bmpFile).use { out ->
                     bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
                 }
 
-                // TODO: Use LruCache?
+                // TODO: Save the journal file somewhere
                 mBitmapMap[key] = bmpFile
 
                 println("${ModelConst.TAG}: put Bitmap to cache (key=$key, file=$bmpFile")
