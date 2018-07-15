@@ -1,3 +1,8 @@
+1.0.4-beta
+---
+- Smoother scroll in the gallery list.
+- HD canvas export to your pictures directory
+
 1.0.3-beta
 ---
 
