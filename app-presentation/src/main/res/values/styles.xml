@@ -70,4 +70,10 @@
 
     <style name="ThemeOverlay.ToolBarPopup" parent="ThemeOverlay.AppCompat.Light">
     </style>
+
+    <!-- Alert Dialog -->
+    <style name="AppTheme.Dialog.Alert.NoMinWidth" parent="">
+        <item name="android:windowMinWidthMinor">0dp</item>
+        <item name="android:windowMinWidthMajor">0dp</item>
+    </style>
 </resources>

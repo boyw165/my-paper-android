@@ -118,6 +118,7 @@ dependencies {
     implementation rootProject.ext.dep.glide
     kapt rootProject.ext.dep.glideAnnotation
     implementation rootProject.ext.dep.fresco
+    implementation rootProject.ext.dep.lottie
 
     // IO, Cache
     implementation rootProject.ext.dep.diskLruCache

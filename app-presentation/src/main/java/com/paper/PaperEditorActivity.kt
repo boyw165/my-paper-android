@@ -53,8 +53,9 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mMenuView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
     private val mMenuPenSizeView by lazy { findViewById<PenSizePreview>(R.id.edit_panel_pen_size_preview) }
 
-    private val mProgressBar by lazy {
+    private val mProgressDialog by lazy {
         AlertDialog.Builder(this@PaperEditorActivity)
+            .setView(R.layout.dialog_saving_progress)
             .setCancelable(false)
             .create()
     }
@@ -108,6 +109,10 @@ class PaperEditorActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_paper_editor)
 
+        // The window for showing the custom view has the minimum width
+        // Ref: http://developerarea.tumblr.com/post/139280308210/how-to-set-dialogfragments-width-and-height
+        mProgressDialog.context.theme.applyStyle(R.style.AppTheme_Dialog_Alert_NoMinWidth, true)
+
         // TODO: Use subject and flatMap
         mCanvasView.addCanvasEventSource(mMenuView.onUpdateViewPortPosition())
 
@@ -119,8 +124,8 @@ class PaperEditorActivity : AppCompatActivity() {
                 .observeOn(mUiScheduler)
                 .subscribe { event ->
                     when {
-                        event.justStart -> showProgressBar(0)
-                        event.justStop -> hideProgressBar()
+                        event.justStart -> showIndeterminateProgressDialog()
+                        event.justStop -> hideIndeterminateProgressDialog()
                     }
                 })
 
@@ -317,7 +322,7 @@ class PaperEditorActivity : AppCompatActivity() {
         mDisposables.clear()
 
         // Force to hide the progress-bar.
-        hideProgressBar()
+        hideIndeterminateProgressDialog()
         // Force to hide the error dialog.
         mErrorThenFinishDialog.dismiss()
     }
@@ -342,16 +347,14 @@ class PaperEditorActivity : AppCompatActivity() {
                                 RxView.clicks(mBtnClose))
     }
 
-    private fun showProgressBar(progress: Int) {
-        mProgressBar.setMessage("${getString(R.string.processing)}...")
-
-        if (!mProgressBar.isShowing) {
-            mProgressBar.show()
+    private fun showIndeterminateProgressDialog() {
+        if (!mProgressDialog.isShowing) {
+            mProgressDialog.show()
         }
     }
 
-    private fun hideProgressBar() {
-        mProgressBar.dismiss()
+    private fun hideIndeterminateProgressDialog() {
+        mProgressDialog.dismiss()
     }
 
     private fun showWIP() {

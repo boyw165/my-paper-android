@@ -882,6 +882,7 @@ class PaperCanvasView : View,
                             d.markAllDrew()
                         }
                     }
+                    Thread.sleep(10000)
 
                     // State check
                     verifyViewState()
