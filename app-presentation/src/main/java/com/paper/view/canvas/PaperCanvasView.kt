@@ -49,6 +49,7 @@ import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.sketch.PenType
 import com.paper.observables.AddFileToMediaStoreMaybe
+import com.paper.observables.WriteBitmapToFileMaybe
 import com.paper.services.IContextProvider
 import com.paper.view.IWidgetView
 import com.paper.view.with
@@ -858,66 +859,52 @@ class PaperCanvasView : View,
         // TODO: Check if the canvas is pixel wisely empty
         return Maybe
             .fromCallable {
-                try {
-                    val vw = mScaleM2V * mMSize.width
-                    val vh = mScaleM2V * mMSize.height
-                    val scale = Math.max(DomainConst.BASE_HD_WIDTH / vw,
-                                         DomainConst.BASE_HD_HEIGHT / vh)
+                val vw = mScaleM2V * mMSize.width
+                val vh = mScaleM2V * mMSize.height
+                val scale = Math.max(DomainConst.BASE_HD_WIDTH / vw,
+                                     DomainConst.BASE_HD_HEIGHT / vh)
 
-                    // FIXME: Update the rendering when there is no canvas boundary
-                    // Draw the canvas on HD Bitmap
-                    val bmp = Bitmap.createBitmap((scale * vw).toInt(),
-                                                  (scale * vh).toInt(),
-                                                  Bitmap.Config.ARGB_8888)
-                    // Set white as default background color
-                    bmp.eraseColor(Color.WHITE)
-                    val bmpCanvasMatrix = Matrix()
-                    bmpCanvasMatrix.postScale(scale, scale)
-                    val bmpCanvas = Canvas(bmp)
-                    bmpCanvas.with { c ->
-                        c.concat(bmpCanvasMatrix)
-                        mStrokeDrawables.forEach { d ->
-                            d.markUndrew()
-                            d.draw(c)
-                            d.markAllDrew()
-                        }
+                // FIXME: Update the rendering when there is no canvas boundary
+                // Draw the canvas on HD Bitmap
+                val bmp = Bitmap.createBitmap((scale * vw).toInt(),
+                                              (scale * vh).toInt(),
+                                              Bitmap.Config.ARGB_8888)
+                // Set white as default background color
+                bmp.eraseColor(Color.WHITE)
+                val bmpCanvasMatrix = Matrix()
+                bmpCanvasMatrix.postScale(scale, scale)
+                val bmpCanvas = Canvas(bmp)
+                bmpCanvas.with { c ->
+                    c.concat(bmpCanvasMatrix)
+                    mStrokeDrawables.forEach { d ->
+                        d.markUndrew()
+                        d.draw(c)
+                        d.markAllDrew()
                     }
-                    Thread.sleep(10000)
-
-                    // State check
-                    verifyViewState()
-
-                    // Write Bitmap to system public folder
-                    if (!pictureDir.exists()) pictureDir.mkdirs()
-                    FileOutputStream(bmpFile).use { out ->
-                        bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
-                    }
-
-                    // Recycle memory
-                    bmp.recycle()
-
-                    bmpFile
-                } catch (err: Throwable) {
-                    // Remove file
-                    if (bmpFile.exists()) {
-                        bmpFile.delete()
-                    }
-
-                    null
                 }
+
+                bmp
             }
             .subscribeOn(Schedulers.io())
-            // Export to system media store
-            .flatMap {
-                val viewContext = context
-                AddFileToMediaStoreMaybe(
-                    contextProvider = object: IContextProvider {
-                        override val context: Context?
-                            get() = if (isAttachedToWindow) viewContext else null
-                    },
-                    file = bmpFile)
+            .flatMap { bmp ->
+                // Write Bitmap to a file
+                WriteBitmapToFileMaybe(inputBitmap = bmp,
+                                       outputFile = bmpFile,
+                                       recycleBitmap = true)
                     .subscribeOn(Schedulers.io())
-                    .map { uri -> uri.toString() }
+                    .flatMap {
+                        val viewContext = context
+                        // Add the file to system media store
+                        AddFileToMediaStoreMaybe(
+                            contextProvider = object: IContextProvider {
+                                override val context: Context?
+                                    get() = if (isAttachedToWindow) viewContext else null
+                            },
+                            file = bmpFile)
+                            .subscribeOn(Schedulers.io())
+                            .map { uri -> uri.toString() }
+                    }
+
             }
     }
 

@@ -22,50 +22,58 @@
 
 package com.paper.observables
 
-import android.media.MediaScannerConnection
-import android.net.Uri
-import com.paper.services.IContextProvider
+import android.graphics.Bitmap
 import io.reactivex.Maybe
 import io.reactivex.MaybeObserver
 import io.reactivex.android.MainThreadDisposable
 import java.io.File
+import java.io.FileOutputStream
 
 /**
- * Maybe of adding a file to system media store.
+ * Maybe of writing a Bitmap to a file.
  */
-class AddFileToMediaStoreMaybe(private val contextProvider: IContextProvider,
-                               private val file: File)
-    : Maybe<Uri>() {
+class WriteBitmapToFileMaybe(private val inputBitmap: Bitmap,
+                             private val outputFile: File,
+                             private val recycleBitmap: Boolean)
+    : Maybe<File>() {
 
-    override fun subscribeActual(observer: MaybeObserver<in Uri>) {
-        val listenerDisposable = Disposable(observer)
+    override fun subscribeActual(observer: MaybeObserver<in File>) {
+        val disposable = Disposable()
 
-        observer.onSubscribe(listenerDisposable)
+        observer.onSubscribe(disposable)
 
-        contextProvider.context?.let { context ->
-            MediaScannerConnection.scanFile(
-                context,
-                arrayOf(file.absolutePath),
-                null, listenerDisposable)
-        } ?: observer.onComplete()
+        try {
+            val parentDir = File(outputFile.parent)
+            if (!parentDir.exists()) parentDir.mkdirs()
+
+            // Write Bitmap to system public folder
+            FileOutputStream(outputFile).use { out ->
+                inputBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+
+            // Recycle memory
+            if (recycleBitmap) {
+                inputBitmap.recycle()
+            }
+
+            if (!disposable.isDisposed) {
+                observer.onSuccess(outputFile)
+            }
+        } catch (err: Throwable) {
+            // Delete incomplete file
+            if (outputFile.exists()) outputFile.delete()
+
+            observer.onComplete()
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    private class Disposable internal constructor(
-        internal val observer: MaybeObserver<in Uri>)
-        : MainThreadDisposable(),
-          MediaScannerConnection.OnScanCompletedListener {
+    private class Disposable : MainThreadDisposable() {
 
         override fun onDispose() {
             // DO NOTHING
-        }
-
-        override fun onScanCompleted(path: String, uri: Uri) {
-            if (isDisposed) return
-
-            observer.onSuccess(uri)
         }
     }
 }
