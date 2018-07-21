@@ -60,6 +60,10 @@ dependencies {
     // Rx-Java.
     api rootProject.ext.dep.rxJava
 
+	// Touch Gesture
+	api rootProject.ext.dep.collageGestureDetector
+	api rootProject.ext.dep.collageGestureDetectorRx
+
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit
     testImplementation rootProject.ext.dep.testMockito

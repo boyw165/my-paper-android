@@ -117,7 +117,12 @@ class PaperEditorActivity : AppCompatActivity() {
 
         // unity view
         mUnityPlayer = UnityPlayer(this)
-        mCanvasUnityView.inject(mUnityPlayer)
+        mCanvasUnityView.inject(
+            player = mUnityPlayer,
+            touchSlop = resources.getDimension(R.dimen.touch_slop),
+            tapSlop = resources.getDimension(R.dimen.tap_slop),
+            minFlingVec = resources.getDimension(R.dimen.fling_min_vec),
+            maxFlingVec = resources.getDimension(R.dimen.fling_max_vec))
         // After injection (add view), request focus
         mUnityPlayer.requestFocus()
 

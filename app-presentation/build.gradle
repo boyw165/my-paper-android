@@ -139,9 +139,11 @@ dependencies {
     // Rx-Permissions.
     implementation rootProject.ext.dep.rxPermissions
 
-    // My Libraries.
+    // Touch Gesture
     implementation rootProject.ext.dep.collageGestureDetector
     implementation rootProject.ext.dep.collageGestureDetectorRx
+
+    // My Libraries.
     implementation project(path: ':app-domain')
     implementation project(path: ':app-presentation-unity')
 
