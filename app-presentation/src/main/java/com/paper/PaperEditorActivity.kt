@@ -20,6 +20,7 @@
 
 package com.paper
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
@@ -32,10 +33,12 @@ import com.paper.model.event.ProgressEvent
 import com.paper.model.event.TimedCounterEvent
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.observables.BooleanDialogSingle
+import com.paper.unity.PaperCanvasUnityView
 import com.paper.useCase.BindViewWithWidget
 import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
 import com.paper.view.editPanel.PenSizePreview
+import com.unity3d.player.UnityPlayer
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -45,11 +48,14 @@ import io.reactivex.subjects.PublishSubject
 
 class PaperEditorActivity : AppCompatActivity() {
 
+    private lateinit var mUnityPlayer: UnityPlayer
+
     private val mCanvasView by lazy {
         val field = findViewById<PaperCanvasView>(R.id.paper_canvas)
         field.injectBitmapRepository((application as IBitmapRepoProvider).getBitmapRepo())
         field
     }
+    private val mCanvasUnityView by lazy { findViewById<PaperCanvasUnityView>(R.id.paper_canvas_unity) }
     private val mMenuView by lazy { findViewById<PaperEditPanelView>(R.id.edit_panel) }
     private val mMenuPenSizeView by lazy { findViewById<PenSizePreview>(R.id.edit_panel_pen_size_preview) }
 
@@ -108,6 +114,11 @@ class PaperEditorActivity : AppCompatActivity() {
         super.onCreate(savedState)
 
         setContentView(R.layout.activity_paper_editor)
+
+        // unity view
+        mUnityPlayer = UnityPlayer(this)
+        mCanvasUnityView.inject(mUnityPlayer)
+        mUnityPlayer.requestFocus()
 
         // The window for showing the custom view has the minimum width
         // Ref: http://developerarea.tumblr.com/post/139280308210/how-to-set-dialogfragments-width-and-height
@@ -321,10 +332,41 @@ class PaperEditorActivity : AppCompatActivity() {
 
         mDisposables.clear()
 
+        // unity view
+        mUnityPlayer.quit()
+
         // Force to hide the progress-bar.
         hideIndeterminateProgressDialog()
         // Force to hide the error dialog.
         mErrorThenFinishDialog.dismiss()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        // unity view
+        mUnityPlayer.start()
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        // unity view
+        mUnityPlayer.stop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // unity view
+        mUnityPlayer.resume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        // unity view
+        mUnityPlayer.pause()
     }
 
     override fun onBackPressed() {
@@ -332,6 +374,28 @@ class PaperEditorActivity : AppCompatActivity() {
             supportFragmentManager.popBackStack()
         } else {
             mClickSysBackSignal.onNext(0)
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // unity view
+        mUnityPlayer.configurationChanged(newConfig)
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+
+        // unity view
+        mUnityPlayer.lowMemory()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+
+        if (level == TRIM_MEMORY_RUNNING_CRITICAL) {
+            mUnityPlayer.lowMemory()
         }
     }
 
