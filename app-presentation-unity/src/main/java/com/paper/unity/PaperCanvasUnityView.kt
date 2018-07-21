@@ -29,7 +29,7 @@ import com.unity3d.player.UnityPlayer
 
 class PaperCanvasUnityView : FrameLayout {
 
-    private lateinit var mUnityPlayer: UnityPlayer
+    private var mUnityPlayer: UnityPlayer? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -41,7 +41,6 @@ class PaperCanvasUnityView : FrameLayout {
         removeAllViews()
 
         mUnityPlayer = player
-
-        addView(mUnityPlayer)
+        mUnityPlayer?.let { addView(it) }
     }
 }

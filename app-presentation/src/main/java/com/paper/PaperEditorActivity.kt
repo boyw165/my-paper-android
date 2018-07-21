@@ -118,6 +118,7 @@ class PaperEditorActivity : AppCompatActivity() {
         // unity view
         mUnityPlayer = UnityPlayer(this)
         mCanvasUnityView.inject(mUnityPlayer)
+        // After injection (add view), request focus
         mUnityPlayer.requestFocus()
 
         // The window for showing the custom view has the minimum width
@@ -326,8 +327,6 @@ class PaperEditorActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-
         mWidget.stop()
 
         mDisposables.clear()
@@ -339,6 +338,8 @@ class PaperEditorActivity : AppCompatActivity() {
         hideIndeterminateProgressDialog()
         // Force to hide the error dialog.
         mErrorThenFinishDialog.dismiss()
+
+        super.onDestroy()
     }
 
     override fun onStart() {
@@ -382,6 +383,13 @@ class PaperEditorActivity : AppCompatActivity() {
 
         // unity view
         mUnityPlayer.configurationChanged(newConfig)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+
+        // unity view
+        mUnityPlayer.windowFocusChanged(hasFocus)
     }
 
     override fun onLowMemory() {
