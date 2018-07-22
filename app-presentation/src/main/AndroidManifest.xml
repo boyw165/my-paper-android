@@ -49,7 +49,11 @@
 
         <!-- Paper Editor -->
         <activity
-            android:name=".PaperEditorActivity">
+            android:name=".PaperEditorActivity"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTask"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+            android:hardwareAccelerated="false">
             <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
         </activity>
 
