@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest package="com.paper"
           xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools">
+          xmlns:tools="http://schemas.android.com/tools"
+          android:installLocation="preferExternal">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <uses-feature android:glEsVersion="0x00020000"/>
+    <uses-feature android:name="android.hardware.vulkan" android:required="false"/>
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+    <uses-feature android:name="android.hardware.touchscreen.multitouch" android:required="false"/>
+    <uses-feature android:name="android.hardware.touchscreen.multitouch.distinct" android:required="false"/>
 
     <meta-data
         android:name="com.google.firebase.ml.vision.DEPENDENCIES"
@@ -42,7 +49,12 @@
 
         <!-- Paper Editor -->
         <activity
-            android:name=".PaperEditorActivity">
+            android:name=".PaperEditorActivity"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTask"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+            android:hardwareAccelerated="false">
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
         </activity>
 
         <!-- Experiments -->
@@ -57,5 +69,11 @@
             android:name="com.paper.model.repository.sqlite.PaperContentProvider"
             android:authorities="${packageName}"
             android:exported="false"/>
+
+        <!-- Metadata for Unity ////////////////////////////////////////////-->
+
+        <meta-data android:name="unity.build-id" android:value="cd1f1f40-6f8f-41e7-b8ff-8630745a3d30" />
+        <meta-data android:name="unity.splash-mode" android:value="0" />
+        <meta-data android:name="unity.splash-enable" android:value="True" />
     </application>
 </manifest>
