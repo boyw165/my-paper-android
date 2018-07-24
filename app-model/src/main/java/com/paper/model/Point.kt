@@ -22,7 +22,8 @@ package com.paper.model
 
 data class Point(var x: Float = 0f,
                  var y: Float = 0f,
-                 var time: Long = 0L) {
+                 var time: Long = 0L)
+    : NoObfuscation {
 
     private var mIsHashDirty = true
     private var mHashCode = 0

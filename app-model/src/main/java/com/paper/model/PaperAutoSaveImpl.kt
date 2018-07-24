@@ -36,7 +36,8 @@ class PaperAutoSaveImpl(
     // The global ID.
     uuid: UUID = UUID.randomUUID(),
     createdAt: Long = 0L)
-    : IPaper {
+    : IPaper,
+      NoObfuscation {
 
     // General ////////////////////////////////////////////////////////////////
 

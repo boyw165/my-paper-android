@@ -23,7 +23,8 @@ package com.paper.model
 data class Rect(var left: Float = 0f,
                 var top: Float = 0f,
                 var right: Float = 0f,
-                var bottom: Float = 0f) {
+                var bottom: Float = 0f)
+    : NoObfuscation {
 
     val width: Float get() = right - left
     val height: Float get() = bottom - top

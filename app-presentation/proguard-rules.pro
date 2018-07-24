@@ -30,6 +30,8 @@
 # included files and replaced variables.
 -printconfiguration merged_proguard.pro
 
+-keep public class * implements com.paper.model.NoObfuscation { *; }
+
 # Glide ---------------------------------------------------------------------->
 
 -keep public class * implements com.bumptech.glide.module.GlideModule

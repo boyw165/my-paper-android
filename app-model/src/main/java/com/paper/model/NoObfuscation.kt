@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Jul 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,9 +22,8 @@
 
 package com.paper.model
 
-data class Transform(var translationX: Float = 0f,
-                     var translationY: Float = 0f,
-                     var scaleX: Float = 1f,
-                     var scaleY: Float = 1f,
-                     var rotationInRadians: Float = 0f)
-    : NoObfuscation
+/**
+ * Just a signature indicating any class deriving from this interface would
+ * not be obfuscated in the release process.
+ */
+interface NoObfuscation

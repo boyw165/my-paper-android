@@ -26,7 +26,8 @@ import io.reactivex.subjects.BehaviorSubject
 import java.util.*
 
 open class Scrap(
-    val uuid: UUID = UUID.randomUUID()) {
+    val uuid: UUID = UUID.randomUUID())
+    : NoObfuscation {
 
     private var mIsHashDirty = true
     private var mHashCode = 0

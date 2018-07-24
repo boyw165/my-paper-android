@@ -27,7 +27,11 @@
 # This module ---------------------------------------------------------------->
 
 # Application classes that will be serialized/deserialized over Gson
--keep class com.paper.model.** { *; }
+-keep class * implements com.paper.model.NoObfuscation { *; }
+-keep class * {
+    public <methods>;
+    native <methods>;
+}
 
 # GSON ----------------------------------------------------------------------->
 # Gson uses generic type information stored in a class file when working with

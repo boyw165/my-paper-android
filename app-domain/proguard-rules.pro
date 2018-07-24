@@ -23,3 +23,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# This module ---------------------------------------------------------------->
+
+-keep class * implements com.paper.model.NoObfuscation { *; }
+-keep class * {
+    public <methods>;
+    native <methods>;
+}
