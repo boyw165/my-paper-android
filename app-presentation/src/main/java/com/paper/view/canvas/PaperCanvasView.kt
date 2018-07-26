@@ -1432,6 +1432,17 @@ class PaperCanvasView : View,
                                                 penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
+                    resources.getString(R.string.prefs_path_interpolator_cubic_bezier) -> {
+                        SvgCubicBezierDrawable(id = event.strokeID,
+                                               context = this@PaperCanvasView,
+                                               points = event.points.map { p ->
+                                                   val (x, y) = toViewWorld(p.x, p.y)
+                                                   Point(x, y)
+                                               },
+                                               penColor = event.penColor,
+                                               penSize = getScaledPenSize(event),
+                                               porterDuffMode = getPaintMode(event.penType))
+                    }
                     else -> {
                         SvgLinearDrawable(id = event.strokeID,
                                           context = this@PaperCanvasView,
