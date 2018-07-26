@@ -43,6 +43,8 @@ class SvgHermiteCubicDrawable(
                   penSize = penSize,
                   porterDuffMode = porterDuffMode) {
 
+    private val threshold = 3.0 * mContext.getOneDp()
+
     override fun addSplineImpl(point: Point) {
         if (mPointList.size > 1) {
             val i = mPointList.lastIndex
@@ -52,7 +54,7 @@ class SvgHermiteCubicDrawable(
 
             // FIXME: The Hermite cubic draws weirdly if the path segment is
             // FIXME: too short.
-            val spline = if (distance > 3.0 * mContext.getOneDp()) {
+            val spline = if (distance > threshold) {
                 if (mPointList.size == 2) {
                     HermiteCubicSplineInterpolator(start = previous,
                                                    startSlope = previous.vectorTo(current),

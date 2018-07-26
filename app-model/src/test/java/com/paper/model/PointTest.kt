@@ -39,5 +39,17 @@ class PointTest {
     fun sameValue() {
         Assert.assertEquals(Point(1f, 2f), Point(1f, 2f))
     }
+
+    @Test
+    fun norm() {
+        Assert.assertEquals(1f, Point(0f, 1f).norm().toFloat())
+        Assert.assertEquals(1f, Point(1f, 0f).norm().toFloat())
+    }
+
+    @Test
+    fun dotProduct() {
+        Assert.assertEquals(0f, Point(0f, 1f).doProduct(Point(1f, 0f)).toFloat())
+        Assert.assertEquals(2f, Point(1f, 1f).doProduct(Point(1f, 1f)).toFloat())
+    }
 }
 

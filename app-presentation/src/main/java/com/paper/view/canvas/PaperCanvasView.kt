@@ -1403,13 +1403,21 @@ class PaperCanvasView : View,
                                                 penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
-                    else -> {
+                    resources.getString(R.string.prefs_path_interpolator_bezier_cubic) -> {
+                        SvgCubicBezierDrawable(id = event.strokeID,
+                                               context = this@PaperCanvasView,
+                                               penColor = event.penColor,
+                                               penSize = getScaledPenSize(event),
+                                               porterDuffMode = getPaintMode(event.penType))
+                    }
+                    resources.getString(R.string.prefs_path_interpolator_linear) -> {
                         SvgLinearDrawable(id = event.strokeID,
                                           context = this@PaperCanvasView,
                                           penColor = event.penColor,
                                           penSize = getScaledPenSize(event),
                                           porterDuffMode = getPaintMode(event.penType))
                     }
+                    else -> throw IllegalArgumentException("Invalid path interpolator ID")
                 }
             }
             // TODO: Remove this ugly thing, and replace it with drawing event!

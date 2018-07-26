@@ -36,6 +36,15 @@ data class Point(var x: Float = 0f,
         mIsHashDirty = false
     }
 
+    fun norm(): Double {
+        return Math.hypot(this.x.toDouble(), this.y.toDouble())
+    }
+
+    fun doProduct(other: Point): Double {
+        return this.x.toDouble() * other.x +
+               this.y.toDouble() * other.y
+    }
+
     fun vectorTo(other: Point): Point {
         return Point(x = other.x - this.x,
                      y = other.y - this.y,
