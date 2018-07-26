@@ -2,7 +2,7 @@
 <resources>
     <string-array name="prefs_path_interpolator">
         <item>@string/prefs_path_interpolator_linear</item>
-        <item>@string/prefs_path_interpolator_hermite_cubic</item>
-        <item>@string/prefs_path_interpolator_bezier_cubic</item>
+        <item>@string/prefs_path_interpolator_cubic_hermite</item>
+        <item>@string/prefs_path_interpolator_cubic_bezier</item>
     </string-array>
 </resources>

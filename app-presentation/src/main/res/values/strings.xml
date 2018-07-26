@@ -35,8 +35,8 @@
     <string name="prefs_show_path_joints">prefs_show_path_joints</string>
     <string name="prefs_path_interpolator">Path Interpolator</string>
     <string name="prefs_path_interpolator_linear">Linear Interpolator</string>
-    <string name="prefs_path_interpolator_hermite_cubic">Hermite Cubic Interpolator</string>
-    <string name="prefs_path_interpolator_bezier_cubic">Bezier Cubic Interpolator</string>
+    <string name="prefs_path_interpolator_cubic_hermite">Hermite Cubic Interpolator</string>
+    <string name="prefs_path_interpolator_cubic_bezier">Bezier Cubic Interpolator</string>
 
     <string name="tap_anywhere_to_start">Tap anywhere to start</string>
     <string name="tap_to_show_debug_prefs">taps to show debug preference</string>

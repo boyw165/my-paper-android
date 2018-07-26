@@ -22,7 +22,6 @@ package com.paper.view.canvas
 
 import android.content.Context
 import android.graphics.*
-import android.media.MediaScannerConnection
 import android.os.Environment
 import android.os.Looper
 import android.support.v4.view.ViewCompat
@@ -64,7 +63,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
-import java.io.FileOutputStream
 import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -1391,19 +1389,19 @@ class PaperCanvasView : View,
     override val ifShowPathJoints: Boolean
         get() = mIfShowPathJoints
 
-    private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_hermite_cubic)
+    private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_cubic_bezier)
     private fun createSvgDrawable(event: CanvasEvent): SvgDrawable {
         return when (event) {
             is StartSketchEvent -> {
                 when (mPathInterpolatorID) {
-                    resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                    resources.getString(R.string.prefs_path_interpolator_cubic_hermite) -> {
                         SvgHermiteCubicDrawable(id = event.strokeID,
                                                 context = this@PaperCanvasView,
                                                 penColor = event.penColor,
                                                 penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
-                    resources.getString(R.string.prefs_path_interpolator_bezier_cubic) -> {
+                    resources.getString(R.string.prefs_path_interpolator_cubic_bezier) -> {
                         SvgCubicBezierDrawable(id = event.strokeID,
                                                context = this@PaperCanvasView,
                                                penColor = event.penColor,
@@ -1423,7 +1421,7 @@ class PaperCanvasView : View,
             // TODO: Remove this ugly thing, and replace it with drawing event!
             is AddSketchStrokeEvent -> {
                 when (mPathInterpolatorID) {
-                    resources.getString(R.string.prefs_path_interpolator_hermite_cubic) -> {
+                    resources.getString(R.string.prefs_path_interpolator_cubic_hermite) -> {
                         SvgHermiteCubicDrawable(id = event.strokeID,
                                                 context = this@PaperCanvasView,
                                                 points = event.points.map { p ->
