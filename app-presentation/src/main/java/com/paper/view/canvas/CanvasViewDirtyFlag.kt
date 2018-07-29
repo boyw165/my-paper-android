@@ -20,12 +20,39 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.event
+package com.paper.view.canvas
 
-import com.paper.model.DirtyType
+import androidx.annotation.IntDef
+import com.paper.model.DirtyFlag
 
 /**
- * Event representing some [DirtyType] is changed.
+ * Dirty flag for canvas view.
  */
-data class DirtyEvent(val type: Int,
-                      val dirty: Boolean)
+data class CanvasViewDirtyFlag(override var flag: Int = 0)
+    : DirtyFlag(flag) {
+
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(VIEW_MEASURING, VIEW_PREPARING_SURFACE, VIEW_DRAWING)
+    annotation class Type
+
+    companion object {
+
+        const val VIEW_MEASURING = 1.shl(0)
+        const val VIEW_PREPARING_SURFACE = 1.shl(1)
+        const val VIEW_DRAWING = 1.shl(2)
+    }
+
+    private val mLock = Any()
+
+    override fun markDirty(@Type vararg types: Int) {
+        super.markDirty(*types)
+    }
+
+    override fun markNotDirty(@Type vararg types: Int) {
+        super.markNotDirty(*types)
+    }
+
+    override fun isDirty(@Type vararg types: Int): Boolean {
+        return super.isDirty(*types)
+    }
+}

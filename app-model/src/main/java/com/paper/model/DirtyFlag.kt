@@ -24,48 +24,48 @@ package com.paper.model
 
 import com.paper.model.event.DirtyEvent
 import io.reactivex.Observable
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 
 /**
  * An observable dirty flag.
  */
-data class DirtyFlag(var flag: Int = 0) {
+open class DirtyFlag(open var flag: Int = 0) {
 
-    fun markDirty(vararg types: DirtyType) {
-        synchronized(this, {
+    private val mLock = Any()
+
+    open fun markDirty(vararg types: Int) {
+        synchronized(mLock) {
             types.forEach { type ->
-                flag = flag.or(type.mask)
-                mFlagSignal.onNext(type)
+                flag = flag.or(type)
+                mFlagSignal.onNext(DirtyEvent(type = type,
+                                              dirty = true))
             }
-        })
+        }
     }
 
-    fun markNotDirty(vararg types: DirtyType) {
-        synchronized(this, {
+    open fun markNotDirty(vararg types: Int) {
+        synchronized(mLock) {
             types.forEach { type ->
-                flag = flag.and(type.mask.inv())
-                mFlagSignal.onNext(type)
+                flag = flag.and(type.inv())
+                mFlagSignal.onNext(DirtyEvent(type = type,
+                                              dirty = false))
             }
-        })
+        }
     }
 
-    fun isDirty(vararg types: DirtyType): Boolean {
+    open fun isDirty(vararg types: Int): Boolean {
         var dirty = false
-        synchronized(this, {
+        synchronized(mLock) {
             types.forEach { type ->
-                dirty = dirty.or(flag.and(type.mask) != 0)
+                dirty = dirty.or(flag.and(type) != 0)
             }
-        })
+        }
         return dirty
     }
 
-    private val mFlagSignal = BehaviorSubject.create<DirtyType>()
+    private val mFlagSignal = PublishSubject.create<DirtyEvent>().toSerialized()
 
     fun onUpdate(): Observable<DirtyEvent> {
         return mFlagSignal
-            .map { type ->
-                DirtyEvent(type = type,
-                           dirty = isDirty(type))
-            }
     }
 }

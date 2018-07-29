@@ -26,8 +26,8 @@ package com.paper.model
  * General types representing something is dirty.
  * @see [DirtyFlag]
  */
-enum class DirtyType(val mask: Int) {
-    HASH(1.shl(0)),
-    PATH(1.shl(1)),
-    TRANSFORM(1.shl(2))
+object DirtyType {
+    const val HASH = 1.shl(0)
+    const val PATH = 1.shl(1)
+    const val TRANSFORM = 1.shl(2)
 }
