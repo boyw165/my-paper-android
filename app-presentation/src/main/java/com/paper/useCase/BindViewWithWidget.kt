@@ -47,9 +47,9 @@ class BindViewWithWidget<T>(view: IWidgetView<T>,
         observer.onSubscribe(d)
 
         try {
-            mView.bindWidget(mWidget)
-
             println("${AppConst.TAG}: Bind view [$mView] with the widget [$mWidget]")
+
+            mView.bindWidget(mWidget)
 
             observer.onNext(true)
         } catch (err: Throwable) {
