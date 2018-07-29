@@ -34,14 +34,10 @@ class DirtyFlagTest {
 
     @Test
     fun equality() {
-        Assert.assertEquals(DirtyEvent(type = DirtyType.HASH,
-                                       dirty = true),
-                            DirtyEvent(type = DirtyType.HASH,
-                                       dirty = true))
-        Assert.assertNotEquals(DirtyEvent(type = DirtyType.HASH,
-                                          dirty = true),
-                               DirtyEvent(type = DirtyType.HASH,
-                                          dirty = false))
+        Assert.assertEquals(DirtyEvent(flag = 0),
+                            DirtyEvent(flag = 0))
+        Assert.assertNotEquals(DirtyEvent(flag = DirtyType.HASH),
+                               DirtyEvent(flag = 0))
     }
 
     @Test
@@ -72,10 +68,8 @@ class DirtyFlagTest {
         tester.markDirty(DirtyType.HASH)
         tester.markNotDirty(DirtyType.HASH)
 
-        testObserver.assertValues(DirtyEvent(type = DirtyType.HASH,
-                                             dirty = true),
-                                  DirtyEvent(type = DirtyType.HASH,
-                                             dirty = false))
+        testObserver.assertValues(DirtyEvent(flag = DirtyType.HASH),
+                                  DirtyEvent(flag = 0))
     }
 
     @Test
@@ -91,10 +85,8 @@ class DirtyFlagTest {
         tester.markNotDirty(DirtyType.HASH)
         testScheduler.triggerActions()
 
-        testObserver.assertValues(DirtyEvent(type = DirtyType.HASH,
-                                             dirty = true),
-                                  DirtyEvent(type = DirtyType.HASH,
-                                             dirty = false))
+        testObserver.assertValues(DirtyEvent(flag = DirtyType.HASH),
+                                  DirtyEvent(flag = 0))
     }
 }
 

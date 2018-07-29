@@ -32,17 +32,18 @@ data class CanvasViewDirtyFlag(override var flag: Int = 0)
     : DirtyFlag(flag) {
 
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(VIEW_MEASURING, VIEW_PREPARING_SURFACE, VIEW_DRAWING)
+    @IntDef(VIEW_MEASURING,
+            VIEW_PREPARING_SURFACE,
+            VIEW_PREPARING_CONFIG,
+            VIEW_DRAWING)
     annotation class Type
 
     companion object {
-
         const val VIEW_MEASURING = 1.shl(0)
         const val VIEW_PREPARING_SURFACE = 1.shl(1)
-        const val VIEW_DRAWING = 1.shl(2)
+        const val VIEW_PREPARING_CONFIG = 1.shl(2)
+        const val VIEW_DRAWING = 1.shl(3)
     }
-
-    private val mLock = Any()
 
     override fun markDirty(@Type vararg types: Int) {
         super.markDirty(*types)
@@ -50,9 +51,5 @@ data class CanvasViewDirtyFlag(override var flag: Int = 0)
 
     override fun markNotDirty(@Type vararg types: Int) {
         super.markNotDirty(*types)
-    }
-
-    override fun isDirty(@Type vararg types: Int): Boolean {
-        return super.isDirty(*types)
     }
 }

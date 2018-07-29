@@ -37,8 +37,7 @@ open class DirtyFlag(open var flag: Int = 0) {
         synchronized(mLock) {
             types.forEach { type ->
                 flag = flag.or(type)
-                mFlagSignal.onNext(DirtyEvent(type = type,
-                                              dirty = true))
+                mFlagSignal.onNext(DirtyEvent(flag = flag))
             }
         }
     }
@@ -47,25 +46,33 @@ open class DirtyFlag(open var flag: Int = 0) {
         synchronized(mLock) {
             types.forEach { type ->
                 flag = flag.and(type.inv())
-                mFlagSignal.onNext(DirtyEvent(type = type,
-                                              dirty = false))
+                mFlagSignal.onNext(DirtyEvent(flag = flag))
             }
         }
     }
 
-    open fun isDirty(vararg types: Int): Boolean {
-        var dirty = false
+    fun isDirty(vararg types: Int): Boolean {
         synchronized(mLock) {
-            types.forEach { type ->
-                dirty = dirty.or(flag.and(type) != 0)
-            }
+            return DirtyFlag.isDirty(flag = this.flag,
+                                     types = *types)
         }
-        return dirty
     }
 
     private val mFlagSignal = PublishSubject.create<DirtyEvent>().toSerialized()
 
     fun onUpdate(): Observable<DirtyEvent> {
         return mFlagSignal
+    }
+
+    companion object {
+
+        @JvmStatic
+        fun isDirty(flag: Int, vararg types: Int): Boolean {
+            var dirty = false
+            types.forEach { type ->
+                dirty = dirty.or(flag.and(type) != 0)
+            }
+            return dirty
+        }
     }
 }

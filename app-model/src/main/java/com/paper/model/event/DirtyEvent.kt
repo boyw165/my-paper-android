@@ -27,5 +27,4 @@ import com.paper.model.DirtyType
 /**
  * Event representing some [DirtyType] is changed.
  */
-data class DirtyEvent(val type: Int,
-                      val dirty: Boolean)
+data class DirtyEvent(val flag: Int)
