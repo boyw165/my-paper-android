@@ -71,6 +71,7 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
         }
 
         observer.onNext(InitializationEndEvent())
+        observer.onComplete()
     }
 
     ///////////////////////////////////////////////////////////////////////////
