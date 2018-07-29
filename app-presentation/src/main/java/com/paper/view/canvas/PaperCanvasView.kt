@@ -27,7 +27,8 @@ import android.os.Looper
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.view.View
+import android.view.Surface
+import android.view.TextureView
 import android.view.ViewConfiguration
 import android.widget.Toast
 import com.cardinalblue.gesture.GestureDetector
@@ -63,21 +64,18 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
-import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
-class PaperCanvasView : View,
+class PaperCanvasView : TextureView,
+                        TextureView.SurfaceTextureListener,
                         IWidgetView<IPaperCanvasWidget>,
                         IPaperContext,
                         IParentView,
                         IWriteThumbnailFileCanvasView,
                         IWriteHDResolutionFileCanvasView {
-
-    // Dirty flags
-    private var mIsNew = true
 
     // Scraps.
     private val mScrapViews = mutableListOf<IScrapView>()
@@ -86,15 +84,17 @@ class PaperCanvasView : View,
     private lateinit var mWidget: IPaperCanvasWidget
     private val mDisposables = CompositeDisposable()
 
+    // Dirty flags
+    private var mIsNew = true
+    private val mDirtyFlag = CanvasViewDirtyFlag(
+        flag = CanvasViewDirtyFlag.VIEW_MEASURING.or(
+            CanvasViewDirtyFlag.VIEW_PREPARING_SURFACE).or(
+            CanvasViewDirtyFlag.VIEW_PREPARING_CONFIG))
+
     // Preferences
     private val mPrefs by lazy { (context.applicationContext as IPreferenceServiceProvider).preference }
 
-    /**
-     * A signal indicating the layout change.
-     */
-    private val mOnLayoutChangeSignal = BehaviorSubject.createDefault(false)
-
-    // Temporary utils.
+    // Temporary utils
     private val mTmpPoint = FloatArray(2)
     private val mTmpMatrix = Matrix()
     private val mTmpMatrixInverse = Matrix()
@@ -119,6 +119,8 @@ class PaperCanvasView : View,
         mEraserPaint.style = Paint.Style.FILL
         mEraserPaint.color = Color.WHITE
         mEraserPaint.xfermode = mEraserMode
+
+        surfaceTextureListener = this
     }
 
     override fun bindWidget(widget: IPaperCanvasWidget) {
@@ -127,124 +129,92 @@ class PaperCanvasView : View,
 
         mWidget = widget
 
-        // Preference
+        // Debug
         mDisposables.add(
-            Observables
-                .combineLatest(
-                    mPrefs.getBoolean(context.resources.getString(R.string.prefs_show_path_joints), false)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext { enabled ->
-                            mIfShowPathJoints = enabled
-                        },
-                    mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
-                                     mPathInterpolatorID)
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnNext { interpolator ->
-                            mPathInterpolatorID = interpolator
-                        })
+            widget.onPrintDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    mPreferenceReadySignal.onNext(true)
+                .subscribe { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                })
+        mDisposables.add(
+            onReadyToDraw()
+                .subscribe { drawReady ->
+                    println("${AppConst.TAG}: Draw ready=$drawReady")
+                })
+        mDisposables.add(
+            onReadyToInteract()
+                .subscribe { interactionReady ->
+                    println("${AppConst.TAG}: Interaction ready=$interactionReady")
                 })
 
-        // Canvas size change
+        // Preference
         mDisposables.add(
-            Observables.combineLatest(
-                mOnLayoutChangeSignal,
-                widget.onSetCanvasSize())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { (changed, size) ->
-                    if (changed && !size.isAreaEmpty) {
-                        println("${AppConst.TAG}: the layout is done, and canvas " +
-                                "size is ${size.width} x ${size.height}")
-
-                        // Mark it not ready for interacting with user.
-                        mDrawReadySignal.onNext(false)
-
-                        onUpdateLayoutOrCanvas(size.width, size.height)
-
-                        // Mark it ready!
-                        mDrawReadySignal.onNext(true)
-                    }
+            onConfigReady()
+                .subscribe {
+                    mDirtyFlag.markNotDirty(CanvasViewDirtyFlag.VIEW_PREPARING_CONFIG)
                 })
 
         // View-port
-        mDisposables.add(
-            onUpdateViewPortScale()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { scale ->
-                    widget.setViewPortScale(scale)
-                })
+//        mDisposables.add(
+//            onUpdateViewPortScale()
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { scale ->
+//                    widget.setViewPortScale(scale)
+//                })
 
         // Drawing
         mDisposables.add(
             onReadyToDraw()
-                .switchMap { ready ->
-                    if (ready) {
-                        widget.onDrawSVG(replayAll = true)
-                            .compose(handleDrawSVGEvent())
+                .switchMap { readyToDraw ->
+                    if (readyToDraw) {
+                        widget.onSetCanvasSize()
+                            .flatMap { size ->
+                                onUpdateLayoutOrCanvas(size.width, size.height)
+
+                                widget.onDrawSVG(replayAll = true)
+                                    .compose(handleDrawSVGEvent())
+                            }
                     } else {
-                        Observable.never()
+                        Observable.empty()
                     }
                 }
                 .subscribe())
 
-        // Anti-aliasing drawing
-        mDisposables.add(
-            mDrawReadySignal
-                .switchMap { ready ->
-                    if (ready) {
-                        onAntiAliasingDraw()
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { scene ->
-                    mSceneBuffer.setCurrentScene(scene)
-
-                    invalidate()
-                })
-
         // Add or remove scraps
-        mDisposables.add(
-            onReadyToDraw()
-                .switchMap { ready ->
-                    if (ready) {
-                        widget.onAddScrapWidget()
-                            .subscribeOn(AndroidSchedulers.mainThread())
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { scrapWidget ->
-                    addScrap(scrapWidget)
-                })
-        mDisposables.add(
-            onReadyToDraw()
-                .switchMap { ready ->
-                    if (ready) {
-                        widget.onRemoveScrapWidget()
-                            .subscribeOn(AndroidSchedulers.mainThread())
-                    } else {
-                        Observable.never()
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { scrapWidget ->
-                    removeScrap(scrapWidget)
-                })
+//        mDisposables.add(
+//            onReadyToDraw()
+//                .switchMap { ready ->
+//                    if (ready) {
+//                        widget.onAddScrapWidget()
+//                    } else {
+//                        Observable.never()
+//                    }
+//                }
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { scrapWidget ->
+//                    addScrap(scrapWidget)
+//                })
+//        mDisposables.add(
+//            onReadyToDraw()
+//                .switchMap { ready ->
+//                    if (ready) {
+//                        widget.onRemoveScrapWidget()
+//                            .subscribeOn(AndroidSchedulers.mainThread())
+//                    } else {
+//                        Observable.never()
+//                    }
+//                }
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { scrapWidget ->
+//                    removeScrap(scrapWidget)
+//                })
 
         // Touch
         mDisposables.add(
-            Observables
-                .combineLatest(
-                    onReadyToDraw(),
-                    mInteractionReadySignal)
+            onReadyToInteract()
                 .observeOn(AndroidSchedulers.mainThread())
-                .switchMap { (drawReady, interactionReady) ->
-                    if (drawReady && interactionReady) {
+                .switchMap { readyToInteract ->
+                    if (readyToInteract) {
                         Observable.merge(
                             GestureEventObservable(mGestureDetector)
                                 // Consume the [GestureEvent] and produce [CanvasEvent]
@@ -259,23 +229,22 @@ class PaperCanvasView : View,
                 }
                 .subscribe())
 
-        // Debug
-        mDisposables.add(
-            widget.onPrintDebugMessage()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                })
-        mDisposables.add(
-            mDrawReadySignal
-                .subscribe { drawReady ->
-                    println("${AppConst.TAG}: Draw ready=$drawReady")
-                })
-        mDisposables.add(
-            mInteractionReadySignal
-                .subscribe { interactionReady ->
-                    println("${AppConst.TAG}: Interaction ready=$interactionReady")
-                })
+        // Anti-aliasing drawing
+//        mDisposables.add(
+//            mDrawReadySignal
+//                .switchMap { ready ->
+//                    if (ready) {
+//                        onAntiAliasingDraw()
+//                    } else {
+//                        Observable.never()
+//                    }
+//                }
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { scene ->
+//                    mSceneBuffer.setCurrentScene(scene)
+//
+//                    invalidate()
+//                })
     }
 
     override fun unbindWidget() {
@@ -289,6 +258,9 @@ class PaperCanvasView : View,
     override fun onMeasure(widthSpec: Int,
                            heightSpec: Int) {
         println("${AppConst.TAG}: PaperCanvasView # onMeasure()")
+
+        mDirtyFlag.markDirty(CanvasViewDirtyFlag.VIEW_MEASURING)
+
         super.onMeasure(widthSpec, heightSpec)
     }
 
@@ -300,20 +272,51 @@ class PaperCanvasView : View,
         println("${AppConst.TAG}: PaperCanvasView # onLayout(changed=$changed)")
         super.onLayout(changed, left, top, right, bottom)
 
-        if (changed) {
-            mOnLayoutChangeSignal.onNext(changed)
+        mDirtyFlag.markNotDirty(CanvasViewDirtyFlag.VIEW_MEASURING)
+    }
+
+    override fun onSurfaceTextureSizeChanged(surfaceTexture: SurfaceTexture,
+                                             width: Int,
+                                             height: Int) {
+        mDirtyFlag.markDirty(CanvasViewDirtyFlag.VIEW_PREPARING_SURFACE)
+    }
+
+    override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) {
+        // DO NOTHING
+    }
+
+    override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean {
+        mDirtyFlag.markDirty(CanvasViewDirtyFlag.VIEW_PREPARING_SURFACE)
+        return true
+    }
+
+    override fun onSurfaceTextureAvailable(surfaceTexture: SurfaceTexture,
+                                           width: Int,
+                                           height: Int) {
+        mDirtyFlag.markNotDirty(CanvasViewDirtyFlag.VIEW_PREPARING_SURFACE)
+
+        synchronized(mLock) {
+            mSurface = Surface(surfaceTexture)
         }
     }
 
     // Preference //////////////////////////////////////////////////////////////
 
-    private val mPreferenceReadySignal = BehaviorSubject.create<Boolean>()
-
-    private fun onReadyToDraw(): Observable<Boolean> {
-        return Observables.combineLatest(
-            mDrawReadySignal,
-            mPreferenceReadySignal)
-            .map { (a, b) -> a && b }
+    private fun onConfigReady(): Observable<Any> {
+        return Observables
+            .combineLatest(
+                mPrefs.getBoolean(context.resources.getString(R.string.prefs_show_path_joints), false)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext { enabled ->
+                        mIfShowPathJoints = enabled
+                    },
+                mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
+                                 mPathInterpolatorID)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext { interpolator ->
+                        mPathInterpolatorID = interpolator
+                    })
+            .map { Any() }
     }
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
@@ -344,16 +347,11 @@ class PaperCanvasView : View,
 
     private val mRenderingScheduler = SingleScheduler()
 
-    /**
-     * A signal indicating whether it's ready to render. see [onUpdateLayoutOrCanvas].
-     */
-    private val mDrawReadySignal = BehaviorSubject.createDefault(false)
+    // Lock
+    private val mLock = Any()
 
-    /**
-     * A signal indicating whether it's ready to interact with the user. see
-     * [handleDrawSVGEvent].
-     */
-    private val mInteractionReadySignal = BehaviorSubject.createDefault(false)
+    private var mSurface: Surface? = null
+    private val mDirtyRect = android.graphics.Rect()
 
     /**
      * A signal of requesting the anti-aliasing drawing.
@@ -371,10 +369,6 @@ class PaperCanvasView : View,
      * Scale factor from Model size to View size.
      */
     private var mScaleM2V = Float.NaN
-    /**
-     * Scale factor from thumbnail size to View size.
-     */
-    private var mScaleThumb = Float.NaN
 
     /**
      * The matrix used for mapping a point from the canvas world to view port
@@ -401,32 +395,32 @@ class PaperCanvasView : View,
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
     private val mMatrixStack = Stack<Matrix>()
 
-    /**
-     * The Bitmap in which the sketch and the scraps are drawn to, yet thumbnail
-     * resolution.
-     */
-    private var mThumbBitmap: Bitmap? = null
-    /**
-     * The canvas hiding [mThumbBitmap].
-     */
-    private lateinit var mThumbCanvas: Canvas
-
-    /**
-     * The scene buffer in which the sketch and the scraps are drawn to, which
-     * is the best resolution but cut to the rectangle as big as the view's
-     * visible area.
-     */
-    private lateinit var mSceneBuffer: SceneBuffer
-
-    /**
-     * The Bitmap that all the layers merge to, of size of the rectangle as big
-     * as the view's visible area.
-     */
-    private var mMergedBitmap: Bitmap? = null
-    /**
-     * The canvas hiding [mMergedBitmap].
-     */
-    private lateinit var mMergedCanvas: Canvas
+//    /**
+//     * The Bitmap in which the sketch and the scraps are drawn to, yet thumbnail
+//     * resolution.
+//     */
+//    private var mThumbBitmap: Bitmap? = null
+//    /**
+//     * The canvas hiding [mThumbBitmap].
+//     */
+//    private lateinit var mThumbCanvas: Canvas
+//
+//    /**
+//     * The scene buffer in which the sketch and the scraps are drawn to, which
+//     * is the best resolution but cut to the rectangle as big as the view's
+//     * visible area.
+//     */
+//    private lateinit var mSceneBuffer: SceneBuffer
+//
+//    /**
+//     * The Bitmap that all the layers merge to, of size of the rectangle as big
+//     * as the view's visible area.
+//     */
+//    private var mMergedBitmap: Bitmap? = null
+//    /**
+//     * The canvas hiding [mMergedBitmap].
+//     */
+//    private lateinit var mMergedCanvas: Canvas
 
     private val mBitmapPaint = Paint()
     private val mEraserPaint = Paint()
@@ -483,30 +477,50 @@ class PaperCanvasView : View,
 
         // Bitmap layers:
 
-        // The thumbnail layer
-        val mw = mMSize.width
-        val mh = mMSize.height
-        val vw = scaleM2V * mw
-        val vh = scaleM2V * mh
-        mScaleThumb = Math.max(vw / DomainConst.BASE_THUMBNAIL_WIDTH,
-                               vh / DomainConst.BASE_THUMBNAIL_HEIGHT)
-        val bw = vw / mScaleThumb
-        val bh = vh / mScaleThumb
-        mThumbBitmap?.recycle()
-        mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
-        mThumbCanvas = Canvas(mThumbBitmap)
+//        // The thumbnail layer
+//        val mw = mMSize.width
+//        val mh = mMSize.height
+//        val vw = scaleM2V * mw
+//        val vh = scaleM2V * mh
+//        mScaleThumb = Math.max(vw / DomainConst.BASE_THUMBNAIL_WIDTH,
+//                               vh / DomainConst.BASE_THUMBNAIL_HEIGHT)
+//        val bw = vw / mScaleThumb
+//        val bh = vh / mScaleThumb
+//        mThumbBitmap?.recycle()
+//        mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
+//        mThumbCanvas = Canvas(mThumbBitmap)
+//
+//        // The view-port layer
+//        mSceneBuffer = SceneBuffer(bufferSize = 2,
+//                                   canvasWidth = spaceWidth,
+//                                   canvasHeight = spaceHeight,
+//                                   bitmapPaint = mBitmapPaint,
+//                                   eraserPaint = mEraserPaint)
+//
+//        // The merged layer
+//        mMergedBitmap?.recycle()
+//        mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+//        mMergedCanvas = Canvas(mMergedBitmap)
+    }
 
-        // The view-port layer
-        mSceneBuffer = SceneBuffer(bufferSize = 2,
-                                   canvasWidth = spaceWidth,
-                                   canvasHeight = spaceHeight,
-                                   bitmapPaint = mBitmapPaint,
-                                   eraserPaint = mEraserPaint)
+    private fun onReadyToDraw(): Observable<Boolean> {
+        return mDirtyFlag
+            .onUpdate(CanvasViewDirtyFlag.VIEW_PREPARING_CONFIG,
+                      CanvasViewDirtyFlag.VIEW_MEASURING,
+                      CanvasViewDirtyFlag.VIEW_PREPARING_SURFACE)
+            .map { event ->
+                event.flag == 0
+            }
+            .debounce(150, TimeUnit.MILLISECONDS)
+    }
 
-        // The merged layer
-        mMergedBitmap?.recycle()
-        mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        mMergedCanvas = Canvas(mMergedBitmap)
+    private fun onReadyToInteract(): Observable<Boolean> {
+        return mDirtyFlag
+            .onUpdate()
+            .map { event ->
+                event.flag == 0
+            }
+            .debounce(150, TimeUnit.MILLISECONDS)
     }
 
     private fun getPaintMode(penType: PenType): PorterDuffXfermode {
@@ -547,61 +561,61 @@ class PaperCanvasView : View,
         }
     }
 
-    override fun onDraw(canvas: Canvas) {
-        if (!mDrawReadySignal.value!!) return
-
-        // Scale from model to view.
-        val scaleM2V = mScaleM2V
-        // Scale contributed by view port.
-        val mw = mMSize.width
-        val mh = mMSize.height
-        val vw = scaleM2V * mw
-        val vh = scaleM2V * mh
-
-        // Calculate the view port matrix.
-        computeCanvasMatrix(scaleM2V)
-
-        // Layers rendering ///////////////////////////////////////////////////
-
-        // Background layer
-        canvas.withPadding { c ->
-            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-
-            // Extract the transform from the canvas matrix.
-            mTransformHelper.getValues(mCanvasMatrix)
-            val tx = mTransformHelper.translationX
-            val ty = mTransformHelper.translationY
-            val scaleVP = mTransformHelper.scaleX
-
-            // Manually calculate position and size of the background cross/grids
-            // so that they keep sharp!
-            drawBackground(c, vw, vh, tx, ty, scaleVP)
-        }
-
-        // Layers blending ////////////////////////////////////////////////////
-
-        mMergedBitmap?.eraseColor(Color.TRANSPARENT)
-
-        // Print the thumbnail Bitmap to the merged layer
-        mMergedCanvas.withPadding { c ->
-            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-            c.concat(mCanvasMatrix)
-            c.scale(mScaleThumb, mScaleThumb)
-            c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
-        }
-
-        // Print the anti-aliasing Bitmap to the merged layer
-        mMergedCanvas.withPadding { c ->
-            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-            mSceneBuffer.getCurrentScene().print(c)
-        }
-
-        // Print the merged layer to view canvas
-        canvas.with { c ->
-            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-            c.drawBitmap(mMergedBitmap, 0f, 0f, mBitmapPaint)
-        }
-    }
+//    override fun onDraw(canvas: Canvas) {
+//        if (!mDrawReadySignal.value!!) return
+//
+//        // Scale from model to view.
+//        val scaleM2V = mScaleM2V
+//        // Scale contributed by view port.
+//        val mw = mMSize.width
+//        val mh = mMSize.height
+//        val vw = scaleM2V * mw
+//        val vh = scaleM2V * mh
+//
+//        // Calculate the view port matrix.
+//        computeCanvasMatrix(scaleM2V)
+//
+//        // Layers rendering ///////////////////////////////////////////////////
+//
+//        // Background layer
+//        canvas.withPadding { c ->
+//            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+//
+//            // Extract the transform from the canvas matrix.
+//            mTransformHelper.getValues(mCanvasMatrix)
+//            val tx = mTransformHelper.translationX
+//            val ty = mTransformHelper.translationY
+//            val scaleVP = mTransformHelper.scaleX
+//
+//            // Manually calculate position and size of the background cross/grids
+//            // so that they keep sharp!
+//            drawBackground(c, vw, vh, tx, ty, scaleVP)
+//        }
+//
+//        // Layers blending ////////////////////////////////////////////////////
+//
+//        mMergedBitmap?.eraseColor(Color.TRANSPARENT)
+//
+//        // Print the thumbnail Bitmap to the merged layer
+//        mMergedCanvas.withPadding { c ->
+//            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+//            c.concat(mCanvasMatrix)
+//            c.scale(mScaleThumb, mScaleThumb)
+//            c.drawBitmap(mThumbBitmap, 0f, 0f, mBitmapPaint)
+//        }
+//
+//        // Print the anti-aliasing Bitmap to the merged layer
+//        mMergedCanvas.withPadding { c ->
+//            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+//            mSceneBuffer.getCurrentScene().print(c)
+//        }
+//
+//        // Print the merged layer to view canvas
+//        canvas.with { c ->
+//            c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+//            c.drawBitmap(mMergedBitmap, 0f, 0f, mBitmapPaint)
+//        }
+//    }
 
     private fun handleDrawSVGEvent(): ObservableTransformer<CanvasEvent, Unit> {
         return ObservableTransformer { upstream ->
@@ -708,55 +722,60 @@ class PaperCanvasView : View,
                     when (event) {
                         is InitializationBeginEvent -> {
                             // Mark interaction disabled
-                            mInteractionReadySignal.onNext(false)
+                            mDirtyFlag.markDirty(CanvasViewDirtyFlag.VIEW_DRAWING)
                         }
                         is InitializationEndEvent,
                         is InvalidationEvent -> {
                             // First try to load Bitmap from file;
                             // secondly try to redraw
-                            try {
-                                // Load file
-                                val hash = hashCode()
-                                ProfilerUtils.with("load thumbnail") {
-                                    val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
-                                              ?: throw NullPointerException()
-                                    mThumbCanvas.with { c ->
-                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-                                        c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
-                                    }
-                                    bmp.recycle()
+//                            try {
+//                                // Load file
+//                                val hash = hashCode()
+//                                ProfilerUtils.with("load thumbnail") {
+//                                    val bmp = mBitmapRepo?.getBitmap(hash)?.blockingGet()
+//                                              ?: throw NullPointerException()
+//                                    mThumbCanvas.with { c ->
+//                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+//                                        c.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
+//                                    }
+//                                    bmp.recycle()
+//
+//                                    println("${AppConst.TAG}: Found thumbnail cache, so skip drawing")
+//                                }
+//                            } catch (err: Throwable) {
+//                                // Redraw
+//                                ProfilerUtils.with("draw thumbnail") {
+//                                    // Draw sketch and scraps on thumbnail Bitmap
+//                                    // TODO: Both scraps and sketch need to explicitly define the z-order
+//                                    // TODO: so that the paper knows how to render them in the correct
+//                                    // TODO: order.
+//                                    canvas.with { c ->
+//                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
+//                                        c.scale(1f / mScaleThumb, 1f / mScaleThumb)
+//
+//                                        var dirty = false
+//                                        //dispatchDrawScraps(canvas = c,
+//                                        //                   scrapViews = mScrapViews,
+//                                        //                   ifSharpenDrawing = false)
+//                                        // Draw the strokes on the thumbnail canvas
+//                                        mStrokeDrawables.forEach { drawable ->
+//                                            dirty = dirty || drawable.isSomethingToDraw()
+//                                            drawable.draw(canvas = c)
+//                                        }
+//                                    }
+//
+//                                    println("${AppConst.TAG}: Not found thumbnail cache, so draw it again!")
+//                                }
+//                            }
 
-                                    println("${AppConst.TAG}: Found thumbnail cache, so skip drawing")
-                                }
-                            } catch (err: Throwable) {
-                                // Redraw
-                                ProfilerUtils.with("draw thumbnail") {
-                                    // Draw sketch and scraps on thumbnail Bitmap
-                                    // TODO: Both scraps and sketch need to explicitly define the z-order
-                                    // TODO: so that the paper knows how to render them in the correct
-                                    // TODO: order.
-                                    mThumbCanvas.with { c ->
-                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
-                                        c.scale(1f / mScaleThumb, 1f / mScaleThumb)
-
-                                        var dirty = false
-                                        //dispatchDrawScraps(canvas = c,
-                                        //                   scrapViews = mScrapViews,
-                                        //                   ifSharpenDrawing = false)
-                                        // Draw the strokes on the thumbnail canvas
-                                        mStrokeDrawables.forEach { drawable ->
-                                            dirty = dirty || drawable.isSomethingToDraw()
-                                            drawable.draw(canvas = c)
-                                        }
-                                    }
-
-                                    println("${AppConst.TAG}: Not found thumbnail cache, so draw it again!")
-                                }
-                            }
+                            val surface = mSurface!!
+                            mDirtyRect.set(0, 0, width, height)
+                            // Get available canvas
+                            val canvas = surface.lockCanvas(mDirtyRect) ?: throw IllegalStateException()
 
                             // Draw sketch on view-port Bitmap
                             ProfilerUtils.with("draw view-port") {
-                                mSceneBuffer.getCurrentScene().draw { c ->
+                                canvas.withPadding { c ->
                                     computeCanvasMatrix(mScaleM2V)
                                     c.concat(mCanvasMatrix)
 
@@ -772,58 +791,63 @@ class PaperCanvasView : View,
                                 d.markAllDrew()
                             }
 
-                            postInvalidate()
+                            // Submit canvas
+                            surface.unlockCanvasAndPost(canvas)
 
                             // Mark interaction enabled
                             if (event is InitializationEndEvent) {
-                                mInteractionReadySignal.onNext(true)
+                                mDirtyFlag.markNotDirty(CanvasViewDirtyFlag.VIEW_DRAWING)
                             }
                         }
                         is EraseCanvasEvent -> {
-                            mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+//                            mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
 
-                            mSceneBuffer.getCurrentScene().draw { c ->
+                            val surface = mSurface!!
+                            mDirtyRect.set(0, 0, width, height)
+                            // Get available canvas
+                            val canvas = surface.lockCanvas(mDirtyRect) ?: throw IllegalStateException()
+                            canvas.with { c ->
                                 c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
                             }
-
-                            postInvalidate()
+                            // Submit canvas
+                            surface.unlockCanvasAndPost(canvas)
                         }
                     }
                 }
         }
     }
 
-    private fun onAntiAliasingDraw(): Observable<Scene> {
-        return mAntiAliasingSignal
-            .debounce(75, TimeUnit.MILLISECONDS, mRenderingScheduler)
-            // FIXME: The debounce is buggy when the interval is large
-            //.debounce(1750, TimeUnit.MILLISECONDS, mRenderingScheduler)
-            .switchMap { doIt ->
-                if (doIt) {
-                    Observable
-                        .fromCallable {
-                            // View-port drawing
-                            val scene = mSceneBuffer.getEmptyScene()
-
-                            ProfilerUtils.with("draw view-port") {
-                                scene.resetTransform()
-                                scene.eraseDraw { c ->
-                                    c.concat(mCanvasMatrix)
-
-                                    mStrokeDrawables.forEach { d ->
-                                        d.draw(canvas = c, startOver = true)
-                                    }
-                                }
-                            }
-
-                            return@fromCallable scene
-                        }
-                        .subscribeOn(mRenderingScheduler)
-                } else {
-                    Observable.never()
-                }
-            }
-    }
+//    private fun onAntiAliasingDraw(): Observable<Scene> {
+//        return mAntiAliasingSignal
+//            .debounce(75, TimeUnit.MILLISECONDS, mRenderingScheduler)
+//            // FIXME: The debounce is buggy when the interval is large
+//            //.debounce(1750, TimeUnit.MILLISECONDS, mRenderingScheduler)
+//            .switchMap { doIt ->
+//                if (doIt) {
+//                    Observable
+//                        .fromCallable {
+//                            // View-port drawing
+//                            val scene = mSceneBuffer.getEmptyScene()
+//
+//                            ProfilerUtils.with("draw view-port") {
+//                                scene.resetTransform()
+//                                scene.eraseDraw { c ->
+//                                    c.concat(mCanvasMatrix)
+//
+//                                    mStrokeDrawables.forEach { d ->
+//                                        d.draw(canvas = c, startOver = true)
+//                                    }
+//                                }
+//                            }
+//
+//                            return@fromCallable scene
+//                        }
+//                        .subscribeOn(mRenderingScheduler)
+//                } else {
+//                    Observable.never()
+//                }
+//            }
+//    }
 
     private var mBitmapRepo: IBitmapRepository? = null
 
@@ -838,14 +862,15 @@ class PaperCanvasView : View,
         return if (mIsNew) {
             Maybe.empty()
         } else {
-            val hash = hashCode()
-            mBitmapRepo
-                ?.putBitmap(hash, mThumbBitmap!!)
-                ?.map { file ->
-                    Triple(file, mThumbBitmap!!.width, mThumbBitmap!!.height)
-                }
-                ?.toMaybe()
-            ?: Maybe.empty<Triple<File, Int, Int>>()
+//            val hash = hashCode()
+//            mBitmapRepo
+//                ?.putBitmap(hash, mThumbBitmap!!)
+//                ?.map { file ->
+//                    Triple(file, mThumbBitmap!!.width, mThumbBitmap!!.height)
+//                }
+//                ?.toMaybe()
+//            ?: Maybe.empty<Triple<File, Int, Int>>()
+            Maybe.empty()
         }
     }
 
@@ -1030,55 +1055,55 @@ class PaperCanvasView : View,
     }
 
     private fun handleViewPortEvent(event: ViewPortEvent) {
-        when (event) {
-            is ViewPortBeginUpdateEvent -> {
-                // Hold necessary starting states.
-                mTmpMatrixStart.set(mCanvasMatrix)
-                mViewPortStart.set(mViewPort)
-
-                cancelAntiAliasingDrawing()
-            }
-            is ViewPortOnUpdateEvent -> {
-                val bound = constraintViewPort(
-                    event.bound,
-                    left = 0f,
-                    top = 0f,
-                    right = mMSize.width,
-                    bottom = mMSize.height,
-                    minWidth = mViewPortMin.width,
-                    minHeight = mViewPortMin.height,
-                    maxWidth = mViewPortMax.width,
-                    maxHeight = mViewPortMax.height)
-
-                // After applying the constraint, calculate the matrix for anti-aliasing
-                // Bitmap
-                val scaleVp = mViewPortBase.width / bound.width
-                val vpDs = mViewPortStart.width / bound.width
-                val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
-                val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
-                mTmpMatrix.reset()
-                mTmpMatrix.postScale(vpDs, vpDs)
-                mTmpMatrix.postTranslate(vpDx, vpDy)
-                mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
-
-                // Apply final view port boundary
-                mViewPort = bound
-
-                // Calculate the canvas matrix contributed by view-port boundary.
-                computeCanvasMatrix(mScaleM2V)
-
-                cancelAntiAliasingDrawing()
-            }
-            is ViewPortStopUpdateEvent -> {
-                mTmpMatrixStart.reset()
-                mTmpMatrix.reset()
-                mTmpMatrixInverse.reset()
-
-                mSceneBuffer.getCurrentScene().commitNewTransform()
-
-                requestAntiAliasingDrawing()
-            }
-        }
+//        when (event) {
+//            is ViewPortBeginUpdateEvent -> {
+//                // Hold necessary starting states.
+//                mTmpMatrixStart.set(mCanvasMatrix)
+//                mViewPortStart.set(mViewPort)
+//
+//                cancelAntiAliasingDrawing()
+//            }
+//            is ViewPortOnUpdateEvent -> {
+//                val bound = constraintViewPort(
+//                    event.bound,
+//                    left = 0f,
+//                    top = 0f,
+//                    right = mMSize.width,
+//                    bottom = mMSize.height,
+//                    minWidth = mViewPortMin.width,
+//                    minHeight = mViewPortMin.height,
+//                    maxWidth = mViewPortMax.width,
+//                    maxHeight = mViewPortMax.height)
+//
+//                // After applying the constraint, calculate the matrix for anti-aliasing
+//                // Bitmap
+//                val scaleVp = mViewPortBase.width / bound.width
+//                val vpDs = mViewPortStart.width / bound.width
+//                val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
+//                val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
+//                mTmpMatrix.reset()
+//                mTmpMatrix.postScale(vpDs, vpDs)
+//                mTmpMatrix.postTranslate(vpDx, vpDy)
+//                mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
+//
+//                // Apply final view port boundary
+//                mViewPort = bound
+//
+//                // Calculate the canvas matrix contributed by view-port boundary.
+//                computeCanvasMatrix(mScaleM2V)
+//
+//                cancelAntiAliasingDrawing()
+//            }
+//            is ViewPortStopUpdateEvent -> {
+//                mTmpMatrixStart.reset()
+//                mTmpMatrix.reset()
+//                mTmpMatrixInverse.reset()
+//
+//                mSceneBuffer.getCurrentScene().commitNewTransform()
+//
+//                requestAntiAliasingDrawing()
+//            }
+//        }
     }
 
     // TODO: Make the view-port code a component.
