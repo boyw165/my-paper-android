@@ -24,6 +24,8 @@ package com.paper.view.canvas
 
 import androidx.annotation.IntDef
 import com.paper.model.DirtyFlag
+import com.paper.model.event.DirtyEvent
+import io.reactivex.Observable
 
 /**
  * Dirty flag for canvas view.
@@ -51,5 +53,9 @@ data class CanvasViewDirtyFlag(override var flag: Int = 0)
 
     override fun markNotDirty(@Type vararg types: Int) {
         super.markNotDirty(*types)
+    }
+
+    override fun onUpdate(@Type vararg withTypes: Int): Observable<DirtyEvent> {
+        return super.onUpdate(*withTypes)
     }
 }

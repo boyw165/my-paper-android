@@ -24,7 +24,8 @@ package com.paper.model
 
 import com.paper.model.event.DirtyEvent
 import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import io.reactivex.functions.Predicate
+import io.reactivex.subjects.BehaviorSubject
 
 /**
  * An observable dirty flag.
@@ -37,7 +38,8 @@ open class DirtyFlag(open var flag: Int = 0) {
         synchronized(mLock) {
             types.forEach { type ->
                 flag = flag.or(type)
-                mFlagSignal.onNext(DirtyEvent(flag = flag))
+                mFlagSignal.onNext(DirtyEvent(flag = flag,
+                                              changedType = type))
             }
         }
     }
@@ -46,7 +48,8 @@ open class DirtyFlag(open var flag: Int = 0) {
         synchronized(mLock) {
             types.forEach { type ->
                 flag = flag.and(type.inv())
-                mFlagSignal.onNext(DirtyEvent(flag = flag))
+                mFlagSignal.onNext(DirtyEvent(flag = flag,
+                                              changedType = type))
             }
         }
     }
@@ -58,10 +61,24 @@ open class DirtyFlag(open var flag: Int = 0) {
         }
     }
 
-    private val mFlagSignal = PublishSubject.create<DirtyEvent>().toSerialized()
+    protected val mFlagSignal = BehaviorSubject.create<DirtyEvent>().toSerialized()
 
-    fun onUpdate(): Observable<DirtyEvent> {
-        return mFlagSignal
+    open fun onUpdate(vararg withTypes: Int): Observable<DirtyEvent> {
+        return if (withTypes.isNotEmpty()) {
+            // Prepare the mask for only showing the cared types
+            var mask = 0
+            withTypes.forEach { mask = mask.or(it) }
+
+            val withTypesArray = Array(withTypes.size) { i -> withTypes[i] }
+            val filter = Predicate<DirtyEvent> { event ->
+                withTypesArray.contains(event.changedType)
+            }
+            mFlagSignal
+                .filter(filter)
+                .map { event -> event.copy(flag = event.flag.and(mask)) }
+        } else {
+            mFlagSignal
+        }
     }
 
     companion object {
