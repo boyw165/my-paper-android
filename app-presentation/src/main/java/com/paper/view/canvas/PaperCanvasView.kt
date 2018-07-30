@@ -155,12 +155,13 @@ class PaperCanvasView : TextureView,
                 })
 
         // View-port
-//        mDisposables.add(
-//            onUpdateViewPortScale()
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe { scale ->
-//                    widget.setViewPortScale(scale)
-//                })
+        mDisposables.add(
+            onUpdateViewPortScale()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scale ->
+                    // To get the right scaled pen size
+                    widget.setViewPortScale(scale)
+                })
 
         // Drawing
         mDisposables.add(
@@ -168,10 +169,17 @@ class PaperCanvasView : TextureView,
                 .switchMap { readyToDraw ->
                     if (readyToDraw) {
                         widget.onSetCanvasSize()
+                            .observeOn(AndroidSchedulers.mainThread())
                             .flatMap { size ->
-                                onUpdateLayoutOrCanvas(size.width, size.height)
+                                updateLayoutOrCanvas(size.width, size.height)
 
-                                widget.onDrawSVG(replayAll = true)
+                                Observable.merge(listOf(
+                                    // Initialization from view-model
+                                    widget.onDrawSVG(replayAll = true),
+                                    // Consume the [GestureEvent] and produce [CanvasEvent]
+                                    GestureEventObservable(mGestureDetector).compose(touchEventToCanvasEvent()),
+                                    // Other canvas event sources
+                                    Observable.merge(mCanvasEventSources)))
                                     .compose(handleDrawSVGEvent())
                             }
                     } else {
@@ -181,53 +189,33 @@ class PaperCanvasView : TextureView,
                 .subscribe())
 
         // Add or remove scraps
-//        mDisposables.add(
-//            onReadyToDraw()
-//                .switchMap { ready ->
-//                    if (ready) {
-//                        widget.onAddScrapWidget()
-//                    } else {
-//                        Observable.never()
-//                    }
-//                }
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe { scrapWidget ->
-//                    addScrap(scrapWidget)
-//                })
-//        mDisposables.add(
-//            onReadyToDraw()
-//                .switchMap { ready ->
-//                    if (ready) {
-//                        widget.onRemoveScrapWidget()
-//                            .subscribeOn(AndroidSchedulers.mainThread())
-//                    } else {
-//                        Observable.never()
-//                    }
-//                }
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe { scrapWidget ->
-//                    removeScrap(scrapWidget)
-//                })
-
-        // Touch
         mDisposables.add(
-            onReadyToInteract()
-                .observeOn(AndroidSchedulers.mainThread())
-                .switchMap { readyToInteract ->
-                    if (readyToInteract) {
-                        Observable.merge(
-                            GestureEventObservable(mGestureDetector)
-                                // Consume the [GestureEvent] and produce [CanvasEvent]
-                                .compose(handleTouchEvent()),
-                            // Other canvas event sources
-                            Observable.merge(mCanvasEventSources))
-                            // Consume the [CanvasEvent]
-                            .compose(handleCanvasEvent())
+            onReadyToDraw()
+                .switchMap { ready ->
+                    if (ready) {
+                        widget.onAddScrapWidget()
                     } else {
                         Observable.never()
                     }
                 }
-                .subscribe())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scrapWidget ->
+                    addScrap(scrapWidget)
+                })
+        mDisposables.add(
+            onReadyToDraw()
+                .switchMap { ready ->
+                    if (ready) {
+                        widget.onRemoveScrapWidget()
+                            .subscribeOn(AndroidSchedulers.mainThread())
+                    } else {
+                        Observable.empty()
+                    }
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { scrapWidget ->
+                    removeScrap(scrapWidget)
+                })
 
         // Anti-aliasing drawing
 //        mDisposables.add(
@@ -433,8 +421,8 @@ class PaperCanvasView : TextureView,
     // Temporary strokes
     private val mStrokeDrawables = CopyOnWriteArrayList<SvgDrawable>()
 
-    private fun onUpdateLayoutOrCanvas(canvasWidth: Float,
-                                       canvasHeight: Float) {
+    private fun updateLayoutOrCanvas(canvasWidth: Float,
+                                     canvasHeight: Float) {
         // The maximum view port, a rectangle as the same width over
         // height ratio and it just fits in the canvas rectangle as
         // follow:
@@ -521,6 +509,14 @@ class PaperCanvasView : TextureView,
                 event.flag == 0
             }
             .debounce(150, TimeUnit.MILLISECONDS)
+    }
+
+    private fun canvasEventSource(): Observable<CanvasEvent> {
+        return Observable.merge(
+            // Consume the [GestureEvent] and produce [CanvasEvent]
+            GestureEventObservable(mGestureDetector).compose(touchEventToCanvasEvent()),
+            // Other canvas event sources
+            Observable.merge(mCanvasEventSources))
     }
 
     private fun getPaintMode(penType: PenType): PorterDuffXfermode {
@@ -624,6 +620,11 @@ class PaperCanvasView : TextureView,
                 // To drawable (must do) and invalidation event
                 .flatMap { event ->
                     when (event) {
+                        is ViewPortEvent -> {
+                            handleViewPortEvent(event)
+
+                            Observable.just(InvalidationEvent())
+                        }
                         is StartSketchEvent -> {
                             val nx = event.point.x
                             val ny = event.point.y
@@ -1260,7 +1261,7 @@ class PaperCanvasView : TextureView,
     /**
      * Convert the [GestureEvent] to [CanvasEvent].
      */
-    private fun handleTouchEvent(): ObservableTransformer<GestureEvent, CanvasEvent> {
+    private fun touchEventToCanvasEvent(): ObservableTransformer<GestureEvent, CanvasEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 .map { event ->
