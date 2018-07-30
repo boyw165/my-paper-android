@@ -28,12 +28,15 @@ import io.reactivex.functions.Predicate
 import io.reactivex.subjects.BehaviorSubject
 
 /**
- * An observable dirty flag.
+ * A thread-safe and observable dirty flag.
  */
 open class DirtyFlag(open var flag: Int = 0) {
 
     private val mLock = Any()
 
+    /**
+     * Mark the given types dirty.
+     */
     open fun markDirty(vararg types: Int) {
         synchronized(mLock) {
             types.forEach { type ->
@@ -44,6 +47,9 @@ open class DirtyFlag(open var flag: Int = 0) {
         }
     }
 
+    /**
+     * Mark the given types not dirty.
+     */
     open fun markNotDirty(vararg types: Int) {
         synchronized(mLock) {
             types.forEach { type ->
@@ -54,6 +60,9 @@ open class DirtyFlag(open var flag: Int = 0) {
         }
     }
 
+    /**
+     * To know the given types are all dirty or not.
+     */
     fun isDirty(vararg types: Int): Boolean {
         synchronized(mLock) {
             return DirtyFlag.isDirty(flag = this.flag,
@@ -63,9 +72,14 @@ open class DirtyFlag(open var flag: Int = 0) {
 
     protected val mFlagSignal = BehaviorSubject.create<DirtyEvent>().toSerialized()
 
+    /**
+     * Observe the update of the flag, where you could assign the particular types
+     * and get notified with the changes corresponding the the types.
+     */
     open fun onUpdate(vararg withTypes: Int): Observable<DirtyEvent> {
         return if (withTypes.isNotEmpty()) {
-            // Prepare the mask for only showing the cared types
+            // Prepare the mask for only showing the cared types to provide the
+            // separate flag environment
             var mask = 0
             withTypes.forEach { mask = mask.or(it) }
 
@@ -83,6 +97,9 @@ open class DirtyFlag(open var flag: Int = 0) {
 
     companion object {
 
+        /**
+         * A util method for checking if the types in flag are dirty or not.
+         */
         @JvmStatic
         fun isDirty(flag: Int, vararg types: Int): Boolean {
             var dirty = false
