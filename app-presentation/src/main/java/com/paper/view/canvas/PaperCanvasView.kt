@@ -774,31 +774,42 @@ class PaperCanvasView : TextureView,
 //                                }
 //                            }
 
-                            val surface = mSurface!!
-                            mDirtyRect.set(0, 0, width, height)
-                            // Get available canvas
-                            val canvas = surface.lockCanvas(mDirtyRect) ?: throw IllegalStateException()
+                            synchronized(mLock) {
+                                val surface = mSurface!!
+                                mDirtyRect.set(0, 0, width, height)
+                                // Get available canvas
+                                val canvas = surface.lockCanvas(mDirtyRect) ?: throw IllegalStateException()
 
-                            // Draw sketch on view-port Bitmap
-                            ProfilerUtils.with("draw view-port") {
-                                canvas.withPadding { c ->
-                                    computeCanvasMatrix(mScaleM2V)
-                                    c.concat(mCanvasMatrix)
+                                canvas.with { c ->
+                                    c.clipRect(0, 0, width, height)
+//                                    c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                                    c.drawRGB(255, 255, 255)
+                                }
 
-                                    mStrokeDrawables.forEach { d ->
-                                        d.draw(canvas = c)
+                                // Draw sketch on view-port Bitmap
+                                ProfilerUtils.with("draw view-port") {
+                                    canvas.withPadding { c ->
+                                        c.clipRect(0, 0, width, height)
+
+                                        computeCanvasMatrix(mScaleM2V)
+                                        c.concat(mCanvasMatrix)
+
+                                        mStrokeDrawables.forEach { d ->
+                                            d.draw(canvas = c)
+                                        }
                                     }
                                 }
-                            }
 
-                            // By marking drawables not dirty, the drawable's
-                            // cache is renewed.
-                            mStrokeDrawables.forEach { d ->
-                                d.markAllDrew()
-                            }
+                                // By marking drawables not dirty, the drawable's
+                                // cache is renewed.
+                                mStrokeDrawables.forEach { d ->
+                                    d.markUndrew()
+//                                    d.markAllDrew()
+                                }
 
-                            // Submit canvas
-                            surface.unlockCanvasAndPost(canvas)
+                                // Submit canvas
+                                surface.unlockCanvasAndPost(canvas)
+                            }
 
                             // Mark interaction enabled
                             if (event is InitializationEndEvent) {
@@ -806,17 +817,18 @@ class PaperCanvasView : TextureView,
                             }
                         }
                         is EraseCanvasEvent -> {
-//                            mThumbCanvas.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
-
-                            val surface = mSurface!!
-                            mDirtyRect.set(0, 0, width, height)
-                            // Get available canvas
-                            val canvas = surface.lockCanvas(mDirtyRect) ?: throw IllegalStateException()
-                            canvas.with { c ->
-                                c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                            synchronized(mLock) {
+                                val surface = mSurface!!
+                                mDirtyRect.set(0, 0, width, height)
+                                // Get available canvas
+                                val canvas = surface.lockCanvas(mDirtyRect) ?: throw IllegalStateException()
+                                canvas.with { c ->
+//                                    c.drawColor(Color.WHITE, PorterDuff.Mode.CLEAR)
+                                    c.drawRGB(255, 255, 255)
+                                }
+                                // Submit canvas
+                                surface.unlockCanvasAndPost(canvas)
                             }
-                            // Submit canvas
-                            surface.unlockCanvasAndPost(canvas)
                         }
                     }
                 }
