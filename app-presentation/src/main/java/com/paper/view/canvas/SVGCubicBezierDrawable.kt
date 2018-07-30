@@ -32,13 +32,13 @@ import java.util.*
  * Reference:
  * - http://www.malinc.se/m/MakingABezierSpline.php
  */
-class SvgCubicBezierDrawable(id: UUID,
+class SVGCubicBezierDrawable(id: UUID,
                              context: IPaperContext,
                              points: List<Point> = emptyList(),
                              penColor: Int = 0,
                              penSize: Float = 1f,
                              porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
-    : SvgDrawable(id = id,
+    : SVGDrawable(id = id,
                   context = context,
                   points = points,
                   penColor = penColor,

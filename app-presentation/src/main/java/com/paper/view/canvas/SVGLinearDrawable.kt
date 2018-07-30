@@ -24,53 +24,32 @@ package com.paper.view.canvas
 
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import com.paper.domain.interpolator.HermiteCubicSplineInterpolator
 import com.paper.domain.interpolator.LinearInterpolator
 import com.paper.model.Point
 import java.util.*
 
-class SvgHermiteCubicDrawable(
+class SVGLinearDrawable(
     id: UUID,
     context: IPaperContext,
     points: List<Point> = emptyList(),
     penColor: Int = 0,
     penSize: Float = 1f,
     porterDuffMode: PorterDuffXfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER))
-    : SvgDrawable(id = id,
+    : SVGDrawable(id = id,
                   context = context,
                   points = points,
                   penColor = penColor,
                   penSize = penSize,
                   porterDuffMode = porterDuffMode) {
 
-    private val threshold = 3.0 * mContext.getOneDp()
-
     override fun addSplineImpl(point: Point) {
         if (mPointList.size > 1) {
             val i = mPointList.lastIndex
             val previous = mPointList[i - 1]
             val current = mPointList[i]
-            val distance = previous.distanceTo(current)
 
-            // FIXME: The Hermite cubic draws weirdly if the path segment is
-            // FIXME: too short.
-            val spline = if (distance > threshold) {
-                if (mPointList.size == 2) {
-                    HermiteCubicSplineInterpolator(start = previous,
-                                                   startSlope = previous.vectorTo(current),
-                                                   end = current,
-                                                   endSlope = previous.vectorTo(current))
-                } else {
-                    val beforePrevious = mPointList[i - 2]
-                    HermiteCubicSplineInterpolator(start = previous,
-                                                   startSlope = beforePrevious.vectorTo(previous),
-                                                   end = current,
-                                                   endSlope = previous.vectorTo(current))
-                }
-            } else {
-                LinearInterpolator(start = previous,
-                                   end = current)
-            }
+            val spline = LinearInterpolator(start = previous,
+                                            end = current)
 
             mSplineList.add(spline)
         }

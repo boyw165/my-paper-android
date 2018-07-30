@@ -424,7 +424,7 @@ class PaperCanvasView : TextureView,
     private val mGridPaint = Paint()
 
     // Temporary strokes
-    private val mStrokeDrawables = CopyOnWriteArrayList<SvgDrawable>()
+    private val mStrokeDrawables = CopyOnWriteArrayList<SVGDrawable>()
 
     private fun updateLayoutOrCanvas(canvasWidth: Float,
                                      canvasHeight: Float) {
@@ -1433,26 +1433,26 @@ class PaperCanvasView : TextureView,
         get() = mIfShowPathJoints
 
     private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_cubic_bezier)
-    private fun createSvgDrawable(event: CanvasEvent): SvgDrawable {
+    private fun createSvgDrawable(event: CanvasEvent): SVGDrawable {
         return when (event) {
             is StartSketchEvent -> {
                 when (mPathInterpolatorID) {
                     resources.getString(R.string.prefs_path_interpolator_cubic_hermite) -> {
-                        SvgHermiteCubicDrawable(id = event.strokeID,
+                        SVGHermiteCubicDrawable(id = event.strokeID,
                                                 context = this@PaperCanvasView,
                                                 penColor = event.penColor,
                                                 penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     resources.getString(R.string.prefs_path_interpolator_cubic_bezier) -> {
-                        SvgCubicBezierDrawable(id = event.strokeID,
+                        SVGCubicBezierDrawable(id = event.strokeID,
                                                context = this@PaperCanvasView,
                                                penColor = event.penColor,
                                                penSize = getScaledPenSize(event),
                                                porterDuffMode = getPaintMode(event.penType))
                     }
                     resources.getString(R.string.prefs_path_interpolator_linear) -> {
-                        SvgLinearDrawable(id = event.strokeID,
+                        SVGLinearDrawable(id = event.strokeID,
                                           context = this@PaperCanvasView,
                                           penColor = event.penColor,
                                           penSize = getScaledPenSize(event),
@@ -1465,7 +1465,7 @@ class PaperCanvasView : TextureView,
             is AddSketchStrokeEvent -> {
                 when (mPathInterpolatorID) {
                     resources.getString(R.string.prefs_path_interpolator_cubic_hermite) -> {
-                        SvgHermiteCubicDrawable(id = event.strokeID,
+                        SVGHermiteCubicDrawable(id = event.strokeID,
                                                 context = this@PaperCanvasView,
                                                 points = event.points.map { p ->
                                                     val (x, y) = toViewWorld(p.x, p.y)
@@ -1476,7 +1476,7 @@ class PaperCanvasView : TextureView,
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     resources.getString(R.string.prefs_path_interpolator_cubic_bezier) -> {
-                        SvgCubicBezierDrawable(id = event.strokeID,
+                        SVGCubicBezierDrawable(id = event.strokeID,
                                                context = this@PaperCanvasView,
                                                points = event.points.map { p ->
                                                    val (x, y) = toViewWorld(p.x, p.y)
@@ -1487,7 +1487,7 @@ class PaperCanvasView : TextureView,
                                                porterDuffMode = getPaintMode(event.penType))
                     }
                     else -> {
-                        SvgLinearDrawable(id = event.strokeID,
+                        SVGLinearDrawable(id = event.strokeID,
                                           context = this@PaperCanvasView,
                                           points = event.points.map { p ->
                                               val (x, y) = toViewWorld(p.x, p.y)

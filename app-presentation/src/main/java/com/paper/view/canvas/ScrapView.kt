@@ -45,7 +45,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
     private val mChildren = mutableListOf<ScrapView>()
 
     // Sketch
-    private val mDrawables = mutableListOf<SvgDrawable>()
+    private val mDrawables = mutableListOf<SVGDrawable>()
 
     // Rendering properties.
     private var mX = Float.NaN

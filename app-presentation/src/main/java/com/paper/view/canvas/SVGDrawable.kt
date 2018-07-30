@@ -29,7 +29,7 @@ import com.paper.model.DirtyType
 import com.paper.model.Point
 import java.util.*
 
-abstract class SvgDrawable(val id: UUID,
+abstract class SVGDrawable(val id: UUID,
                            context: IPaperContext,
                            points: List<Point> = emptyList(),
                            penColor: Int = 0,
@@ -203,7 +203,7 @@ abstract class SvgDrawable(val id: UUID,
             if (this === other) return true
             if (javaClass != other?.javaClass) return false
 
-            other as SvgDrawable
+            other as SVGDrawable
 
             if (mPenColor != other.mPenColor) return false
             if (mPenSize != other.mPenSize) return false
