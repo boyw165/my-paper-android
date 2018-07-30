@@ -238,6 +238,11 @@ class PaperCanvasView : TextureView,
     override fun unbindWidget() {
         mDisposables.clear()
 
+        synchronized(mLock) {
+            mSurface?.release()
+            mSurface = null
+        }
+
         mScrapViews.forEach { scrapView ->
             scrapView.unbindWidget()
         }
