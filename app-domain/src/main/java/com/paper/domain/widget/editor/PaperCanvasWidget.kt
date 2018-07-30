@@ -202,7 +202,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     /**
      * The signal for the external world to know this widget wants to draw SVG.
      */
-    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>()
+    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>().toSerialized()
     /**
      * The current stroke color.
      */

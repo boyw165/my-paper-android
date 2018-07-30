@@ -151,8 +151,8 @@ class PaperAutoSaveImpl(
     // Sketch & strokes ///////////////////////////////////////////////////////
 
     private val mSketch = mutableListOf<SketchStroke>()
-    private val mAddStrokeSignal = PublishSubject.create<SketchStroke>()
-    private val mRemoveStrokeSignal = PublishSubject.create<SketchStroke>()
+    private val mAddStrokeSignal = PublishSubject.create<SketchStroke>().toSerialized()
+    private val mRemoveStrokeSignal = PublishSubject.create<SketchStroke>().toSerialized()
 
     override fun getSketch(): List<SketchStroke> {
         mLock.lock()
@@ -219,8 +219,8 @@ class PaperAutoSaveImpl(
     // Scraps /////////////////////////////////////////////////////////////////
 
     private var mScraps = mutableListOf<Scrap>()
-    private val mAddScrapSignal = PublishSubject.create<Scrap>()
-    private val mRemoveScrapSignal = PublishSubject.create<Scrap>()
+    private val mAddScrapSignal = PublishSubject.create<Scrap>().toSerialized()
+    private val mRemoveScrapSignal = PublishSubject.create<Scrap>().toSerialized()
 
     override fun getScraps(): List<Scrap> {
         mLock.lock()
