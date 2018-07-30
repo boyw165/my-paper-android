@@ -30,7 +30,7 @@ import io.reactivex.subjects.BehaviorSubject
 /**
  * A thread-safe and observable dirty flag.
  */
-open class DirtyFlag(open var flag: Int = 0) {
+open class DirtyFlag(protected open var flag: Int = 0) {
 
     private val mLock = Any()
 
