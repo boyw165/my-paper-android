@@ -148,12 +148,16 @@ class PaperEditorActivity : AppCompatActivity() {
                         .toObservable()
                         .doOnSubscribe { mUpdateProgressSignal.onNext(ProgressEvent.start(0)) }
                         .doOnNext { mUpdateProgressSignal.onNext(ProgressEvent.stop(100)) }
+                        .doOnComplete { close() }
+                        .doOnError {
+                            mErrorSignal.onNext(it)
+                            close()
+                        }
                         .observeOn(mUiScheduler)
                         .flatMap { (file, width, height) ->
                             mWidget.requestStop(file, width, height)
                         }
                         .observeOn(mUiScheduler)
-                        .doOnComplete { close() }
                 }
                 .observeOn(mUiScheduler)
                 .subscribe())

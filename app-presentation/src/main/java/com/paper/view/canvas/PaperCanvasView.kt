@@ -56,6 +56,7 @@ import com.paper.view.with
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.internal.schedulers.SingleScheduler
@@ -882,6 +883,14 @@ class PaperCanvasView : TextureView,
         mBitmapRepo = repo
     }
 
+    private fun getThumbnailBitmap(): Single<Bitmap> {
+        return Single
+            .fromCallable {
+                getBitmap()
+            }
+            .subscribeOn(Schedulers.io())
+    }
+
     /**
      * Write the thumbnail Bitmap to a file maintained by the Bitmap repository.
      */
@@ -889,15 +898,22 @@ class PaperCanvasView : TextureView,
         return if (mIsNew) {
             Maybe.empty()
         } else {
-//            val hash = hashCode()
-//            mBitmapRepo
-//                ?.putBitmap(hash, mThumbBitmap!!)
-//                ?.map { file ->
-//                    Triple(file, mThumbBitmap!!.width, mThumbBitmap!!.height)
-//                }
-//                ?.toMaybe()
-//            ?: Maybe.empty<Triple<File, Int, Int>>()
-            Maybe.empty()
+            val hash = hashCode()
+            getThumbnailBitmap()
+                .flatMap { bmp ->
+                    mBitmapRepo
+                        ?.putBitmap(hash, bmp)
+                        ?.map { file ->
+                            val fileAndSize = Triple(file, bmp.width, bmp.height)
+
+                            // Recycle the Bitmap
+                            bmp.recycle()
+
+                            fileAndSize
+                        }
+                    ?: Single.never<Triple<File, Int, Int>>()
+                }
+                .toMaybe()
         }
     }
 
