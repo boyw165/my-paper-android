@@ -24,8 +24,8 @@ package com.paper.view.canvas
 
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import com.paper.domain.interpolator.HermiteCubicSplineInterpolator
-import com.paper.domain.interpolator.LinearInterpolator
+import com.paper.interpolator.HermiteCubicSplineInterpolator
+import com.paper.interpolator.LinearInterpolator
 import com.paper.model.Point
 import java.util.*
 
@@ -57,19 +57,19 @@ class SVGHermiteCubicDrawable(
             val spline = if (distance > threshold) {
                 if (mPointList.size == 2) {
                     HermiteCubicSplineInterpolator(start = previous,
-                                                   startSlope = previous.vectorTo(current),
-                                                   end = current,
-                                                   endSlope = previous.vectorTo(current))
+                                                                          startSlope = previous.vectorTo(current),
+                                                                          end = current,
+                                                                          endSlope = previous.vectorTo(current))
                 } else {
                     val beforePrevious = mPointList[i - 2]
                     HermiteCubicSplineInterpolator(start = previous,
-                                                   startSlope = beforePrevious.vectorTo(previous),
-                                                   end = current,
-                                                   endSlope = previous.vectorTo(current))
+                                                                          startSlope = beforePrevious.vectorTo(previous),
+                                                                          end = current,
+                                                                          endSlope = previous.vectorTo(current))
                 }
             } else {
                 LinearInterpolator(start = previous,
-                                   end = current)
+                                                          end = current)
             }
 
             mSplineList.add(spline)

@@ -23,7 +23,7 @@
 package com.paper.view.canvas
 
 import android.graphics.*
-import com.paper.domain.interpolator.ISplineInterpolator
+import com.paper.interpolator.ISplineInterpolator
 import com.paper.model.DirtyFlag
 import com.paper.model.DirtyType
 import com.paper.model.Point
@@ -58,7 +58,7 @@ abstract class SVGDrawable(val id: UUID,
     private var mMinWidth: Float = 0f
     private var mMaxWidth: Float = 0f
     private var mVelocityFilterWeight: Float = 0.toFloat()
-    private val mPath = Path()
+    protected val mPath = Path()
 
     init {
         mBasedWidth = mPenSize
@@ -163,16 +163,7 @@ abstract class SVGDrawable(val id: UUID,
                     val spline = mSplineList[i - 1]
 
                     // Interpolation
-                    mPath.reset()
-                    for (progress in 0..10) {
-                        val t = progress.toDouble() / 10.0
-                        val p = spline.f(t)
-
-                        when (progress) {
-                            0 -> mPath.moveTo(p.x, p.y)
-                            else -> mPath.lineTo(p.x, p.y)
-                        }
-                    }
+                    spline.constructPath(mPath)
                     canvas.drawPath(mPath, mStrokePaint)
                 }
             }

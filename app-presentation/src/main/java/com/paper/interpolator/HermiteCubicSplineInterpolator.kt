@@ -20,8 +20,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.interpolator
+package com.paper.interpolator
 
+import android.graphics.Path
 import com.paper.model.Point
 
 /**
@@ -57,6 +58,10 @@ class HermiteCubicSplineInterpolator(private val start: Point,
         return Point(x = (h00 * start.x + h10 * startSlope.x + h01 * end.x + h11 * endSlope.x).toFloat(),
                      y = (h00 * start.y + h10 * startSlope.y + h01 * end.y + h11 * endSlope.y).toFloat(),
                      time = 0)
+    }
+
+    override fun constructPath(path: Path) {
+        TODO("not implemented")
     }
 
     /**

@@ -20,32 +20,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.interpolator
-
-import com.paper.model.Point
+package com.paper.interpolator
 
 /**
- * A linear function is a polynomial function in which the variable x has
- * degree at most one.
- *
- * See wiki page, https://en.wikipedia.org/wiki/Linear_function_(calculus)
+ * A representation of arithmetic f(x).
  */
-class LinearInterpolator(private val start: Point,
-                         private val end: Point)
-    : ISplineInterpolator {
+interface IMathFunctionOf {
 
-    /**
-     * f(x) with linear interpolation.
-     *
-     * @param t [0.0 .. 1.0]
-     */
-    override fun f(t: Double): Point {
-        if (t < 0.0 || t > 1.0) {
-            throw IllegalArgumentException("Given t is out of boundary")
-        }
-
-        return Point(x = ((1.0 - t) * start.x + t * end.x).toFloat(),
-                     y = ((1.0 - t) * start.y + t * end.y).toFloat(),
-                     time = 0)
-    }
+    fun f(x: Double): Double
 }

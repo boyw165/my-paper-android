@@ -24,7 +24,7 @@ package com.paper.view.canvas
 
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import com.paper.domain.interpolator.LinearInterpolator
+import com.paper.interpolator.LinearInterpolator
 import com.paper.model.Point
 import java.util.*
 
@@ -49,7 +49,7 @@ class SVGLinearDrawable(
             val current = mPointList[i]
 
             val spline = LinearInterpolator(start = previous,
-                                            end = current)
+                                                                   end = current)
 
             mSplineList.add(spline)
         }

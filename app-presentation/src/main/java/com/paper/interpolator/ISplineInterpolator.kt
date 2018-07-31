@@ -20,11 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.interpolator
+package com.paper.interpolator
 
+import android.graphics.Path
 import com.paper.model.Point
 
 interface ISplineInterpolator {
 
+    /**
+     * Return the interpolation (x, y) given t (from 0.0 to 1.0).
+     *
+     * @param t [0.0..1.0]
+     */
     fun f(t: Double): Point
+
+    /**
+     * Use the interpolation to construct the Android graphics [Path].
+     */
+    fun constructPath(path: Path)
 }

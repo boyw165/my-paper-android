@@ -24,7 +24,7 @@ package com.paper.view.canvas
 
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import com.paper.domain.interpolator.CubicBezierInterpolator
+import com.paper.interpolator.CubicBezierInterpolator
 import com.paper.model.Point
 import java.util.*
 
@@ -53,11 +53,11 @@ class SVGCubicBezierDrawable(id: UUID,
 
             val spline = if (mPointList.size == 2) {
                 CubicBezierInterpolator(start = start,
-                                        startControl = Point(0.67f * start.x + 0.33f * end.x,
-                                                             0.67f * start.y + 0.33f * end.y),
-                                        end = end,
-                                        endControl = Point(0.33f * start.x + 0.67f * end.x,
-                                                           0.33f * start.y + 0.67f * end.y))
+                                                               startControl = Point(0.67f * start.x + 0.33f * end.x,
+                                                                                    0.67f * start.y + 0.33f * end.y),
+                                                               end = end,
+                                                               endControl = Point(0.33f * start.x + 0.67f * end.x,
+                                                                                  0.33f * start.y + 0.67f * end.y))
             } else {
                 // TODO: Use B-Bezier when the drawing architecture allows to
                 // Current implementation is more like A-Frame cubic bezier
@@ -74,9 +74,9 @@ class SVGCubicBezierDrawable(id: UUID,
                                        (startControl.y + end.y) / 2f)
 
                 CubicBezierInterpolator(start = start,
-                                        startControl = startControl,
-                                        end = end,
-                                        endControl = endControl)
+                                                               startControl = startControl,
+                                                               end = end,
+                                                               endControl = endControl)
             }
 
             mSplineList.add(spline)

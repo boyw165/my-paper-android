@@ -20,8 +20,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.interpolator
+package com.paper.interpolator
 
+import android.graphics.Path
 import com.paper.model.Point
 
 /**
@@ -61,5 +62,13 @@ class CubicBezierInterpolator(val start: Point,
         return Point(x = (b1 * start.x + b2 * startControl.x + b3 * endControl.x + b4 * end.x).toFloat(),
                      y = (b1 * start.y + b2 * startControl.y + b3 * endControl.y + b4 * end.y).toFloat(),
                      time = 0)
+    }
+
+    override fun constructPath(path: Path) {
+        path.reset()
+        path.moveTo(start.x, start.y)
+        path.cubicTo(startControl.x, startControl.y,
+                     endControl.x, endControl.y,
+                     end.x, end.y)
     }
 }
