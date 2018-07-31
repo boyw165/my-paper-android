@@ -73,7 +73,7 @@ class PaperEditorActivity : AppCompatActivity() {
 
     // Back button and signal.
     private val mBtnClose by lazy { findViewById<View>(R.id.btn_close) }
-    private val mClickSysBackSignal = PublishSubject.create<Any>()
+    private val mClickSysBackSignal = PublishSubject.create<Any>().toSerialized()
 
     // Undo & redo buttons
     private val mBtnUndo by lazy { findViewById<View>(R.id.btn_undo) }
@@ -86,9 +86,9 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mWorkerScheduler = Schedulers.io()
 
     // Progress signal.
-    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>().toSerialized()
     // Error signal
-    private val mErrorSignal = PublishSubject.create<Throwable>()
+    private val mErrorSignal = PublishSubject.create<Throwable>().toSerialized()
 
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mWidget by lazy {
