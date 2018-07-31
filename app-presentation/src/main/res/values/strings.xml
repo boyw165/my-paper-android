@@ -32,6 +32,7 @@
     <string name="msg_under_construction">Sorry, we\'re still working on this feature</string>
 
     <!-- Editor: Preference -->
+    <string name="prefs_min_path_segment_factor">prefs_min_path_segment_factor</string>
     <string name="prefs_show_path_joints">prefs_show_path_joints</string>
     <string name="prefs_path_interpolator">Path Interpolator</string>
     <string name="prefs_path_interpolator_linear">Linear Interpolator</string>

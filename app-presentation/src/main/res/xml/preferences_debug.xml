@@ -1,28 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
+<android.support.v7.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:title="root_title">
 
-    <PreferenceCategory
+    <android.support.v7.preference.PreferenceCategory
         android:title="Settings">
-    </PreferenceCategory>
+    </android.support.v7.preference.PreferenceCategory>
 
-    <PreferenceCategory
+    <android.support.v7.preference.PreferenceCategory
         android:title="Drawing">
 
-        <SwitchPreference
+        <android.support.v14.preference.SwitchPreference
             android:defaultValue="false"
             android:key="@string/prefs_show_path_joints"
             android:summary="Path is formed by a set of joints, say points. Enable this option to show them."
             android:title="Show Path Joints"/>
 
-        <ListPreference
+        <android.support.v7.preference.ListPreference
             android:defaultValue="@string/prefs_path_interpolator_linear"
             android:entries="@array/prefs_path_interpolator"
             android:entryValues="@array/prefs_path_interpolator"
             android:key="@string/prefs_path_interpolator"
             android:summary="Interpolator is like a f(x), where it returns a Y given a X."
             android:title="Choose the path interpolator"/>
-    </PreferenceCategory>
-</PreferenceScreen>
+
+        <android.support.v7.preference.SeekBarPreference
+            android:defaultValue="8"
+            android:key="@string/prefs_min_path_segment_factor"
+            android:max="50"
+            android:summary="The coefficient for which (factor * oneDP) represents the minimum path segment."
+            android:title="The minimum path segment factor"
+            app:min="1"/>
+    </android.support.v7.preference.PreferenceCategory>
+</android.support.v7.preference.PreferenceScreen>
 

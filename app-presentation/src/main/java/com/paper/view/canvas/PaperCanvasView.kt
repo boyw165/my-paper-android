@@ -302,12 +302,21 @@ class PaperCanvasView : TextureView,
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnNext { enabled ->
                         mIfShowPathJoints = enabled
+                        println("${AppConst.TAG}: show path joints=$mIfShowPathJoints")
                     },
                 mPrefs.getString(context.resources.getString(R.string.prefs_path_interpolator),
                                  mPathInterpolatorID)
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnNext { interpolator ->
                         mPathInterpolatorID = interpolator
+                        println("${AppConst.TAG}: path interpolator ID=$mPathInterpolatorID")
+                    },
+                mPrefs.getInt(context.resources.getString(R.string.prefs_min_path_segment_factor),
+                              mMinPathSegment.toInt())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext { minPathSegment ->
+                        mMinPathSegment = minPathSegment.toFloat() * getOneDp()
+                        println("${AppConst.TAG}: min path segment=$mMinPathSegment")
                     })
             .map { Any() }
     }
@@ -1272,7 +1281,7 @@ class PaperCanvasView : TextureView,
     private val mGestureHistory = mutableListOf<GestureRecord>()
 
     private val mLastFocusPointer = Point()
-    private var mDrawThreshold = 8f * getOneDp()
+    private var mMinPathSegment = 8f * getOneDp()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         return mGestureDetector.onTouchEvent(event, null, null)
@@ -1382,7 +1391,7 @@ class PaperCanvasView : TextureView,
 
                     val dx = x - mLastFocusPointer.x
                     val dy = y - mLastFocusPointer.y
-                    if (dx * dx + dy * dy >= mDrawThreshold * mDrawThreshold) {
+                    if (dx * dx + dy * dy >= mMinPathSegment * mMinPathSegment) {
                         val (nx, ny) = toModelWorld(x, y)
                         mWidget.handleDrag(nx, ny)
 
