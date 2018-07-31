@@ -42,7 +42,7 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun handleDrag(x: Float, y: Float)
 
-    fun handleDragEnd(x: Float, y: Float)
+    fun handleDragEnd()
 
     fun setDrawingMode(mode: DrawingMode)
 

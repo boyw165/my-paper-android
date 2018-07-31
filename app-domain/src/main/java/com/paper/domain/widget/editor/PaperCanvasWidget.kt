@@ -344,8 +344,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                                             point = p))
     }
 
-    override fun handleDragEnd(x: Float,
-                               y: Float) {
+    override fun handleDragEnd() {
         if (!mCanHandleThisDrag) return
 
         // Notify the observer

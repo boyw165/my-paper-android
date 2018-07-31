@@ -1271,8 +1271,11 @@ class PaperCanvasView : TextureView,
     private var mIfHandleDrag = false
     private val mGestureHistory = mutableListOf<GestureRecord>()
 
+    private val mLastFocusPointer = Point()
+    private var mDrawThreshold = 8f * getOneDp()
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        return mGestureDetector.onTouchEvent(event, this, null)
+        return mGestureDetector.onTouchEvent(event, null, null)
     }
 
     /**
@@ -1364,19 +1367,31 @@ class PaperCanvasView : TextureView,
         return if (mIfHandleDrag) {
             when (event) {
                 is DragBeginEvent -> {
-                    val (nx, ny) = toModelWorld(event.startPointer.x,
-                                                event.startPointer.y)
+                    val x = event.startPointer.x
+                    val y = event.startPointer.y
+
+                    val (nx, ny) = toModelWorld(x, y)
                     mWidget.handleDragBegin(nx, ny)
+
+                    // Hold focus x and y
+                    mLastFocusPointer.set(x, y)
                 }
                 is OnDragEvent -> {
-                    val (nx, ny) = toModelWorld(event.stopPointer.x,
-                                                event.stopPointer.y)
-                    mWidget.handleDrag(nx, ny)
+                    val x = event.stopPointer.x
+                    val y = event.stopPointer.y
+
+                    val dx = x - mLastFocusPointer.x
+                    val dy = y - mLastFocusPointer.y
+                    if (dx * dx + dy * dy >= mDrawThreshold * mDrawThreshold) {
+                        val (nx, ny) = toModelWorld(x, y)
+                        mWidget.handleDrag(nx, ny)
+
+                        // Hold focus x and y
+                        mLastFocusPointer.set(x, y)
+                    }
                 }
                 is DragEndEvent -> {
-                    val (nx, ny) = toModelWorld(event.stopPointer.x,
-                                                event.stopPointer.y)
-                    mWidget.handleDragEnd(nx, ny)
+                    mWidget.handleDragEnd()
                 }
             }
 
@@ -1428,10 +1443,12 @@ class PaperCanvasView : TextureView,
 
     // Context ////////////////////////////////////////////////////////////////
 
+    // FIXME: Move to drawing section
     private var mIfShowPathJoints = false
     override val ifShowPathJoints: Boolean
         get() = mIfShowPathJoints
 
+    // FIXME: Move to drawing section
     private var mPathInterpolatorID: String = resources.getString(R.string.prefs_path_interpolator_cubic_bezier)
     private fun createSvgDrawable(event: CanvasEvent): SVGDrawable {
         return when (event) {

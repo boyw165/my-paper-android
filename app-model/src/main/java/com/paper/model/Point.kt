@@ -28,6 +28,12 @@ data class Point(var x: Float = 0f,
     private var mIsHashDirty = true
     private var mHashCode = 0
 
+    fun set(newX: Float,
+            newY: Float) {
+        this.x = newX
+        this.y = newY
+    }
+
     fun offset(tx: Float,
                ty: Float) {
         x += tx
