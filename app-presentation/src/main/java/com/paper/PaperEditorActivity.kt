@@ -26,6 +26,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.domain.widget.editor.IPaperEditorWidget
 import com.paper.domain.widget.editor.PaperEditorWidget
 import com.paper.model.*
 import com.paper.model.event.ProgressEvent
@@ -91,7 +92,7 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mErrorSignal = PublishSubject.create<Throwable>().toSerialized()
 
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
-    private val mWidget by lazy {
+    private val mWidget: IPaperEditorWidget by lazy {
         PaperEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
             paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),

@@ -49,7 +49,8 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                         penPrefs: ICommonPenPrefsRepo,
                         caughtErrorSignal: Observer<Throwable>,
                         uiScheduler: Scheduler,
-                        ioScheduler: Scheduler) {
+                        ioScheduler: Scheduler)
+    : IPaperEditorWidget {
 
     private val mPaperRepo = paperRepo
     private val mPenPrefs = penPrefs
@@ -60,7 +61,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     private val mDisposables = CompositeDisposable()
 
-    fun start(paperID: Long) {
+    override fun start(paperID: Long) {
         ensureNoLeakingSubscription()
 
         // Load paper and establish the paper (canvas) and transform bindings.
@@ -189,14 +190,14 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                 })
     }
 
-    fun stop() {
+    override fun stop() {
         mDisposables.clear()
     }
 
     /**
      * Request to stop; It is granted to stop when receiving a true; vice versa.
      */
-    fun requestStop(bmpFile: File, bmpWidth: Int, bmpHeight: Int): Observable<Boolean> {
+    override fun requestStop(bmpFile: File, bmpWidth: Int, bmpHeight: Int): Observable<Boolean> {
         return try {
             mCanvasWidget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
             Observable.just(true)
@@ -244,11 +245,11 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
     private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperCanvasWidget>().toSerialized()
 
     // TODO: The interface is probably redundant
-    fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
+    override fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
         return mOnCanvasWidgetReadySignal
     }
 
-    fun eraseCanvas(): Observable<Boolean> {
+    override fun eraseCanvas(): Observable<Boolean> {
         mHistoryWidget.eraseAll()
         mCanvasWidget.eraseCanvas()
         return Observable.just(true)
@@ -264,7 +265,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
             workerScheduler = mIoScheduler)
     }
 
-    fun onEditPanelWidgetReady(): Observable<PaperEditPanelWidget> {
+    override fun onEditPanelWidgetReady(): Observable<PaperEditPanelWidget> {
         return mOnEditPanelWidgetReadySignal
     }
 
@@ -278,13 +279,13 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     private val mUndoSignals = mutableListOf<Observable<Any>>()
 
-    fun addUndoSignal(source: Observable<Any>) {
+    override fun addUndoSignal(source: Observable<Any>) {
         mUndoSignals.add(source)
     }
 
     private val mRedoSignals = mutableListOf<Observable<Any>>()
 
-    fun addRedoSignal(source: Observable<Any>) {
+    override fun addRedoSignal(source: Observable<Any>) {
         mRedoSignals.add(source)
     }
 
@@ -292,7 +293,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
         UndoRedoEvent(canUndo = false,
                       canRedo = false))
 
-    fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {
+    override fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {
         return mUndoRedoEventSignal
     }
 
@@ -300,11 +301,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
 
-    fun onUpdateProgress(): Observable<ProgressEvent> {
+    override fun onUpdateProgress(): Observable<ProgressEvent> {
         return mUpdateProgressSignal
-    }
-
-    fun onGetStatus(): Observable<Any> {
-        TODO()
     }
 }
