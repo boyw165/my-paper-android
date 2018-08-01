@@ -912,7 +912,7 @@ class PaperCanvasView : TextureView,
                                 value.right,
                                 value.bottom)))
 
-            invalidate()
+            postInvalidate()
         }
 
     private val mViewPortStart = Rect()
