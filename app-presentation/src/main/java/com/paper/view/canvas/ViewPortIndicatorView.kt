@@ -63,10 +63,10 @@ class ViewPortIndicatorView : View,
         mViewPortPaint.color = ContextCompat.getColor(context, R.color.accent)
         mViewPortPaint.style = Paint.Style.STROKE
         mViewPortPaint.strokeWidth = 3f * mOneDp
-        mViewPortPaint.setShadowLayer(2f * mOneDp, 1f * mOneDp, 1f * mOneDp, Color.parseColor("#7F000000"))
-
-        // FIXME: Making the view software layer so that Paint#setShadowLayer works.
-        setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+//        mViewPortPaint.setShadowLayer(2f * mOneDp, 1f * mOneDp, 1f * mOneDp, Color.parseColor("#7F000000"))
+//
+//        // FIXME: Making the view software layer so that Paint#setShadowLayer works.
+//        setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
         if (isInEditMode) {
             setCanvasAndViewPort(Rect(0f, 0f, 297f, 210f),
