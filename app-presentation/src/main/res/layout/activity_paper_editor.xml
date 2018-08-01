@@ -19,7 +19,6 @@
         android:id="@+id/paper_canvas"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:paddingTop="@dimen/toolbar_height"
         app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toTopOf="@+id/edit_panel"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -27,7 +26,7 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <!-- Top bar -->
-    <FrameLayout
+    <View
         android:id="@+id/btn_toolbar"
         android:layout_width="0dp"
         android:layout_height="0dp"

@@ -171,7 +171,7 @@ class PaperCanvasView : TextureView,
                     if (readyToDraw) {
                         widget.onSetCanvasSize()
                             .observeOn(AndroidSchedulers.mainThread())
-                            .flatMap { size ->
+                            .switchMap { size ->
                                 updateLayoutOrCanvas(size.width, size.height)
 
                                 Observable.merge(listOf(
@@ -180,8 +180,10 @@ class PaperCanvasView : TextureView,
                                     // Consume the [GestureEvent] and produce [CanvasEvent]
                                     GestureEventObservable(mGestureDetector).compose(touchEventToCanvasEvent()),
                                     // Other canvas event sources
-                                    Observable.merge(mCanvasEventSources)))
-                                    .compose(handleDrawSVGEvent())
+                                    Observable.merge(mCanvasEventSources),
+                                    // Anti-aliasing drawing signal
+                                    onAntiAliasingDraw()))
+                                    .compose(consumeCanvasEvent())
                             }
                     } else {
                         Observable.empty()
@@ -628,7 +630,7 @@ class PaperCanvasView : TextureView,
 //        }
 //    }
 
-    private fun handleDrawSVGEvent(): ObservableTransformer<CanvasEvent, Unit> {
+    private fun consumeCanvasEvent(): ObservableTransformer<CanvasEvent, Unit> {
         return ObservableTransformer { upstream ->
             upstream
                 .observeOn(mRenderingScheduler)
@@ -636,9 +638,9 @@ class PaperCanvasView : TextureView,
                 .flatMap { event ->
                     when (event) {
                         is ViewPortEvent -> {
-                            handleViewPortEvent(event)
+                            consumeViewPortEvent(event)
 
-                            Observable.just(InvalidationEvent())
+                            Observable.just(NullCanvasEvent())
                         }
                         is StartSketchEvent -> {
                             val nx = event.point.x
@@ -798,7 +800,7 @@ class PaperCanvasView : TextureView,
 
                                 // Draw sketch on view-port Bitmap
                                 ProfilerUtils.with("draw view-port") {
-                                    canvas.withPadding { c ->
+                                    canvas.with { c ->
                                         c.clipRect(0, 0, width, height)
 
                                         computeCanvasMatrix(mScaleM2V)
@@ -845,37 +847,16 @@ class PaperCanvasView : TextureView,
         }
     }
 
-//    private fun onAntiAliasingDraw(): Observable<Scene> {
-//        return mAntiAliasingSignal
-//            .debounce(75, TimeUnit.MILLISECONDS, mRenderingScheduler)
-//            // FIXME: The debounce is buggy when the interval is large
-//            //.debounce(1750, TimeUnit.MILLISECONDS, mRenderingScheduler)
-//            .switchMap { doIt ->
-//                if (doIt) {
-//                    Observable
-//                        .fromCallable {
-//                            // View-port drawing
-//                            val scene = mSceneBuffer.getEmptyScene()
-//
-//                            ProfilerUtils.with("draw view-port") {
-//                                scene.resetTransform()
-//                                scene.eraseDraw { c ->
-//                                    c.concat(mCanvasMatrix)
-//
-//                                    mStrokeDrawables.forEach { d ->
-//                                        d.draw(canvas = c, startOver = true)
-//                                    }
-//                                }
-//                            }
-//
-//                            return@fromCallable scene
-//                        }
-//                        .subscribeOn(mRenderingScheduler)
-//                } else {
-//                    Observable.never()
-//                }
-//            }
-//    }
+    private fun onAntiAliasingDraw(): Observable<CanvasEvent> {
+        return mAntiAliasingSignal
+            .switchMap { doAntiAliasingDraw ->
+                if (doAntiAliasingDraw) {
+                    Observable.just(InvalidationEvent())
+                } else {
+                    Observable.empty<CanvasEvent>()
+                }
+            }
+    }
 
     private var mBitmapRepo: IBitmapRepository? = null
 
@@ -886,7 +867,8 @@ class PaperCanvasView : TextureView,
     private fun getThumbnailBitmap(): Single<Bitmap> {
         return Single
             .fromCallable {
-                getBitmap()
+                // Get Bitmap from the texture
+                bitmap
             }
             .subscribeOn(Schedulers.io())
     }
@@ -978,14 +960,6 @@ class PaperCanvasView : TextureView,
         if (!isAttachedToWindow) throw IllegalStateException()
     }
 
-    private fun cancelAntiAliasingDrawing() {
-        mAntiAliasingSignal.onNext(false)
-    }
-
-    private fun requestAntiAliasingDrawing() {
-        mAntiAliasingSignal.onNext(true)
-    }
-
     private fun getScaledPenSize(event: CanvasEvent): Float {
         return when (event) {
             is StartSketchEvent -> {
@@ -1043,7 +1017,7 @@ class PaperCanvasView : TextureView,
         return mDrawViewPortSignal
     }
 
-    fun onUpdateViewPortScale(): Observable<Float> {
+    private fun onUpdateViewPortScale(): Observable<Float> {
         return mDrawViewPortSignal
             .map { event ->
                 event.viewPort.width / mViewPortBase.width
@@ -1097,56 +1071,90 @@ class PaperCanvasView : TextureView,
         }
     }
 
-    private fun handleViewPortEvent(event: ViewPortEvent) {
-//        when (event) {
-//            is ViewPortBeginUpdateEvent -> {
-//                // Hold necessary starting states.
-//                mTmpMatrixStart.set(mCanvasMatrix)
-//                mViewPortStart.set(mViewPort)
-//
-//                cancelAntiAliasingDrawing()
-//            }
-//            is ViewPortOnUpdateEvent -> {
-//                val bound = constraintViewPort(
-//                    event.bound,
-//                    left = 0f,
-//                    top = 0f,
-//                    right = mMSize.width,
-//                    bottom = mMSize.height,
-//                    minWidth = mViewPortMin.width,
-//                    minHeight = mViewPortMin.height,
-//                    maxWidth = mViewPortMax.width,
-//                    maxHeight = mViewPortMax.height)
-//
-//                // After applying the constraint, calculate the matrix for anti-aliasing
-//                // Bitmap
-//                val scaleVp = mViewPortBase.width / bound.width
-//                val vpDs = mViewPortStart.width / bound.width
-//                val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
-//                val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
-//                mTmpMatrix.reset()
-//                mTmpMatrix.postScale(vpDs, vpDs)
-//                mTmpMatrix.postTranslate(vpDx, vpDy)
-//                mSceneBuffer.getCurrentScene().setNewTransform(mTmpMatrix)
-//
-//                // Apply final view port boundary
-//                mViewPort = bound
-//
-//                // Calculate the canvas matrix contributed by view-port boundary.
-//                computeCanvasMatrix(mScaleM2V)
-//
-//                cancelAntiAliasingDrawing()
-//            }
-//            is ViewPortStopUpdateEvent -> {
-//                mTmpMatrixStart.reset()
-//                mTmpMatrix.reset()
-//                mTmpMatrixInverse.reset()
-//
-//                mSceneBuffer.getCurrentScene().commitNewTransform()
-//
-//                requestAntiAliasingDrawing()
-//            }
-//        }
+    private var mSnapshotBitmap: Bitmap? = null
+
+    private fun consumeViewPortEvent(event: ViewPortEvent) {
+        when (event) {
+            is ViewPortBeginUpdateEvent -> {
+                // Cancel anti-aliasing drawing
+                mAntiAliasingSignal.onNext(false)
+
+                // Hold necessary starting states.
+                mTmpMatrixStart.set(mCanvasMatrix)
+                mViewPortStart.set(mViewPort)
+
+                // Take snapshot for later transform
+                synchronized(mLock) {
+                    if (hashCode() != AppConst.EMPTY_HASH) {
+                        mSnapshotBitmap = bitmap
+                    }
+                }
+            }
+            is ViewPortOnUpdateEvent -> {
+                val bound = constraintViewPort(
+                    event.bound,
+                    left = 0f,
+                    top = 0f,
+                    right = mMSize.width,
+                    bottom = mMSize.height,
+                    minWidth = mViewPortMin.width,
+                    minHeight = mViewPortMin.height,
+                    maxWidth = mViewPortMax.width,
+                    maxHeight = mViewPortMax.height)
+
+                // After applying the constraint, calculate the matrix for anti-aliasing
+                // Bitmap
+                val scaleVp = mViewPortBase.width / bound.width
+                val vpDs = mViewPortStart.width / bound.width
+                val vpDx = (mViewPortStart.left - bound.left) * mScaleM2V * scaleVp
+                val vpDy = (mViewPortStart.top - bound.top) * mScaleM2V * scaleVp
+                mTmpMatrix.reset()
+                mTmpMatrix.postScale(vpDs, vpDs)
+                mTmpMatrix.postTranslate(vpDx, vpDy)
+
+                // Calculate the canvas matrix contributed by view-port boundary.
+                mCanvasMatrixDirty = true
+                computeCanvasMatrix(mScaleM2V)
+
+                // Apply final view port boundary
+                mViewPort = bound
+
+                synchronized(mLock) {
+                    mSnapshotBitmap?.let { bmp ->
+
+                        val surface = mSurface!!
+
+                        mDirtyRect.set(0, 0, width, height)
+                        // Acquire canvas
+                        val canvas = surface.lockCanvas(mDirtyRect)
+
+                        // Draw snapshot with transform
+                        canvas.with {
+                            canvas.drawRGB(255, 255, 255)
+                            canvas.concat(mTmpMatrix)
+                            canvas.drawBitmap(bmp, 0f, 0f, mBitmapPaint)
+                        }
+
+                        // Enqueue canvas
+                        surface.unlockCanvasAndPost(canvas)
+                    }
+                }
+            }
+            is ViewPortStopUpdateEvent -> {
+                mTmpMatrixStart.reset()
+                mTmpMatrix.reset()
+                mTmpMatrixInverse.reset()
+
+                // Recycle the snapshot
+                synchronized(mLock) {
+                    mSnapshotBitmap?.recycle()
+                    mSnapshotBitmap = null
+                }
+
+                // Request anti-aliasing drawing
+                mAntiAliasingSignal.onNext(true)
+            }
+        }
     }
 
     // TODO: Make the view-port code a component.
