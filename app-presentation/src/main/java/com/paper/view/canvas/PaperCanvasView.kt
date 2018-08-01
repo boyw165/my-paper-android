@@ -219,23 +219,6 @@ class PaperCanvasView : TextureView,
                 .subscribe { scrapWidget ->
                     removeScrap(scrapWidget)
                 })
-
-        // Anti-aliasing drawing
-//        mDisposables.add(
-//            mDrawReadySignal
-//                .switchMap { ready ->
-//                    if (ready) {
-//                        onAntiAliasingDraw()
-//                    } else {
-//                        Observable.never()
-//                    }
-//                }
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe { scene ->
-//                    mSceneBuffer.setCurrentScene(scene)
-//
-//                    invalidate()
-//                })
     }
 
     override fun unbindWidget() {
@@ -400,33 +383,6 @@ class PaperCanvasView : TextureView,
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
     private val mMatrixStack = Stack<Matrix>()
 
-//    /**
-//     * The Bitmap in which the sketch and the scraps are drawn to, yet thumbnail
-//     * resolution.
-//     */
-//    private var mThumbBitmap: Bitmap? = null
-//    /**
-//     * The canvas hiding [mThumbBitmap].
-//     */
-//    private lateinit var mThumbCanvas: Canvas
-//
-//    /**
-//     * The scene buffer in which the sketch and the scraps are drawn to, which
-//     * is the best resolution but cut to the rectangle as big as the view's
-//     * visible area.
-//     */
-//    private lateinit var mSceneBuffer: SceneBuffer
-//
-//    /**
-//     * The Bitmap that all the layers merge to, of size of the rectangle as big
-//     * as the view's visible area.
-//     */
-//    private var mMergedBitmap: Bitmap? = null
-//    /**
-//     * The canvas hiding [mMergedBitmap].
-//     */
-//    private lateinit var mMergedCanvas: Canvas
-
     private val mBitmapPaint = Paint()
     private val mEraserPaint = Paint()
     private val mDrawMode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
@@ -479,33 +435,6 @@ class PaperCanvasView : TextureView,
         // Determine the default view-port (makes sense when view
         // layout is changed).
         resetViewPort()
-
-        // Bitmap layers:
-
-//        // The thumbnail layer
-//        val mw = mMSize.width
-//        val mh = mMSize.height
-//        val vw = scaleM2V * mw
-//        val vh = scaleM2V * mh
-//        mScaleThumb = Math.max(vw / DomainConst.BASE_THUMBNAIL_WIDTH,
-//                               vh / DomainConst.BASE_THUMBNAIL_HEIGHT)
-//        val bw = vw / mScaleThumb
-//        val bh = vh / mScaleThumb
-//        mThumbBitmap?.recycle()
-//        mThumbBitmap = Bitmap.createBitmap(bw.toInt(), bh.toInt(), Bitmap.Config.ARGB_8888)
-//        mThumbCanvas = Canvas(mThumbBitmap)
-//
-//        // The view-port layer
-//        mSceneBuffer = SceneBuffer(bufferSize = 2,
-//                                   canvasWidth = spaceWidth,
-//                                   canvasHeight = spaceHeight,
-//                                   bitmapPaint = mBitmapPaint,
-//                                   eraserPaint = mEraserPaint)
-//
-//        // The merged layer
-//        mMergedBitmap?.recycle()
-//        mMergedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-//        mMergedCanvas = Canvas(mMergedBitmap)
     }
 
     private fun onReadyToDraw(): Observable<Boolean> {
@@ -526,14 +455,6 @@ class PaperCanvasView : TextureView,
                 event.flag == 0
             }
             .debounce(150, TimeUnit.MILLISECONDS)
-    }
-
-    private fun canvasEventSource(): Observable<CanvasEvent> {
-        return Observable.merge(
-            // Consume the [GestureEvent] and produce [CanvasEvent]
-            GestureEventObservable(mGestureDetector).compose(touchEventToCanvasEvent()),
-            // Other canvas event sources
-            Observable.merge(mCanvasEventSources))
     }
 
     private fun getPaintMode(penType: PenType): PorterDuffXfermode {
@@ -1345,21 +1266,6 @@ class PaperCanvasView : TextureView,
      */
     fun addCanvasEventSource(source: Observable<CanvasEvent>) {
         mCanvasEventSources.add(source)
-    }
-
-    /**
-     * Consume the [CanvasEvent].
-     */
-    private fun handleCanvasEvent(): ObservableTransformer<in CanvasEvent, out Unit> {
-        return ObservableTransformer { upstream ->
-            upstream
-                .map { event ->
-                    when (event) {
-                        is ViewPortEvent -> handleViewPortEvent(event)
-                        else -> Unit
-                    }
-                }
-        }
     }
 
     private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasEvent {

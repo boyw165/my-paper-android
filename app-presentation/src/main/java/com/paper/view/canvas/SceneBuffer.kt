@@ -34,12 +34,12 @@ class SceneBuffer(bufferSize: Int,
                   eraserPaint: Paint) {
 
     // TODO: Use priority-queue
-    private val mScenes = Array(bufferSize, { _ ->
+    private val mScenes = Array(bufferSize) { _ ->
         Scene(canvasWidth = canvasWidth,
               canvasHeight = canvasHeight,
               bitmapPaint = bitmapPaint,
               eraserPaint = eraserPaint)
-    })
+    }
     private var mCurrentScene: Scene = mScenes[0]
 
     @Synchronized
