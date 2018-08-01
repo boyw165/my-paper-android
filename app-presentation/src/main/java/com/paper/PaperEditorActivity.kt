@@ -303,7 +303,7 @@ class PaperEditorActivity : AppCompatActivity() {
                 }
                 .subscribe())
 
-        // Start
+        // Load paper and establish the binding
         val paperIdSrc = if (savedState == null) {
             Single.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))
         } else {
@@ -313,6 +313,7 @@ class PaperEditorActivity : AppCompatActivity() {
         }
         mDisposables.add(
             paperIdSrc
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { paperID ->
                     mWidget.start(paperID)
                 })

@@ -241,7 +241,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                           mIoScheduler)
     }
 
-    private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperCanvasWidget>()
+    private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperCanvasWidget>().toSerialized()
 
     // TODO: The interface is probably redundant
     fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
@@ -256,7 +256,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     // Edit panel widget //////////////////////////////////////////////////////
 
-    private val mOnEditPanelWidgetReadySignal = PublishSubject.create<PaperEditPanelWidget>()
+    private val mOnEditPanelWidgetReadySignal = PublishSubject.create<PaperEditPanelWidget>().toSerialized()
 
     private val mEditPanelWidget by lazy {
         PaperEditPanelWidget(
