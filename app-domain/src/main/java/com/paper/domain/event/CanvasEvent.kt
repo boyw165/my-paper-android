@@ -35,6 +35,11 @@ sealed class CanvasEvent
  */
 class NullCanvasEvent : CanvasEvent()
 
+/**
+ * The set of [CanvasEvent]s.
+ */
+data class GroupCanvasEvent(val events: List<CanvasEvent>) : CanvasEvent()
+
 // Lifecycle //////////////////////////////////////////////////////////////////
 
 /**
@@ -58,6 +63,11 @@ class InitializationEndEvent : CanvasEvent()
  * Indicate the view to renew its rendering buffer.
  */
 class InvalidationEvent : CanvasEvent()
+
+/**
+ * A event to clear all the cached sketch.
+ */
+class EraseCanvasEvent : CanvasEvent()
 
 /**
  * A starting sketch event, where it may provide the pen color, pen size, and
@@ -92,11 +102,6 @@ data class AddSketchStrokeEvent(val strokeID: UUID,
  * To remove a stroke.
  */
 data class RemoveSketchStrokeEvent(val strokeID: UUID) : CanvasEvent()
-
-/**
- * A event to clear all the cached sketch.
- */
-class EraseCanvasEvent : CanvasEvent()
 
 // View-port //////////////////////////////////////////////////////////////////
 
