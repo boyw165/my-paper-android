@@ -310,6 +310,8 @@ class PaperCanvasView : TextureView,
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
     private fun addScrap(widget: IScrapWidget) {
+        ensureMainThread()
+
         val scrapView = ScrapView(drawMode = mDrawMode,
                                   eraserMode = mEraserMode)
 
@@ -322,6 +324,8 @@ class PaperCanvasView : TextureView,
     }
 
     private fun removeScrap(widget: IScrapWidget) {
+        ensureMainThread()
+
         val scrapView = mScrapViews.firstOrNull { it == widget }
                         ?: throw NoSuchElementException("Cannot find the widget")
 
@@ -995,6 +999,8 @@ class PaperCanvasView : TextureView,
     private var mSnapshotBitmap: Bitmap? = null
 
     private fun consumeViewPortEvent(event: ViewPortEvent) {
+        ensureNotMainThread()
+
         when (event) {
             is ViewPortBeginUpdateEvent -> {
                 // Cancel anti-aliasing drawing
@@ -1006,6 +1012,7 @@ class PaperCanvasView : TextureView,
 
                 // Take snapshot for later transform
                 synchronized(mLock) {
+                    // TODO: Detect whether the canvas is pixel-wisely empty or not
                     if (hashCode() != AppConst.EMPTY_HASH) {
                         mSnapshotBitmap = bitmap
                     }
@@ -1504,6 +1511,12 @@ class PaperCanvasView : TextureView,
     private fun ensureMainThread() {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw IllegalThreadStateException("Not in MAIN thread")
+        }
+    }
+
+    private fun ensureNotMainThread() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            throw IllegalThreadStateException("Should NOT in MAIN thread")
         }
     }
 
