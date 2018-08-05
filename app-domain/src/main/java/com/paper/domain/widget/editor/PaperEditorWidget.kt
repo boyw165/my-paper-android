@@ -25,10 +25,10 @@ package com.paper.domain.widget.editor
 import com.paper.domain.DomainConst
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.data.ToolType
-import com.paper.model.event.ProgressEvent
 import com.paper.domain.event.UndoRedoEvent
 import com.paper.domain.useCase.BindWidgetWithModel
 import com.paper.model.IPaperTransformRepo
+import com.paper.model.event.ProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
@@ -61,7 +61,7 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     private val mDisposables = CompositeDisposable()
 
-    override fun start(paperID: Long) {
+    override fun start(paperID: Long): Observable<IPaperEditorWidget.OnStart> {
         ensureNoLeakingSubscription()
 
         // Load paper and establish the paper (canvas) and transform bindings.
@@ -85,29 +85,43 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                     caughtErrorSignal = mCaughtErrorSignal)
                     .subscribeOn(mUiScheduler)
             }
-        mDisposables.add(
-            Observables
-                .zip(paperBindingSrc,
-                     historyBindingSrc)
-                .map { (result1, result2) -> result1 && result2 }
-                .observeOn(mUiScheduler)
-                .subscribe { done ->
-                    if (done) {
-                        mOnCanvasWidgetReadySignal.onNext(mCanvasWidget)
+        val onCanvasWidgetReadySignal = Observables
+            .zip(paperBindingSrc,
+                 historyBindingSrc)
+            .map { (paperBindingDone, historyBindingDone) ->
+                if (paperBindingDone && historyBindingDone) {
+                    mCanvasWidget as IPaperCanvasWidget
+                } else {
+                    if (!paperBindingDone && historyBindingDone) {
+                        throw IllegalStateException("Fail to bind paper model with paper widget")
+                    } else if (paperBindingDone && !historyBindingDone) {
+                        throw IllegalStateException("Fail to bind paper model with history widget")
+                    } else {
+                        throw IllegalStateException("Fail to both")
                     }
-                })
-
-        // Bind the edit panel widget with the pen preference model
-        mDisposables.add(
-            BindWidgetWithModel(
-                widget = mEditPanelWidget,
-                model = mPenPrefs)
-                .observeOn(mUiScheduler)
-                .subscribe { done ->
-                    if (done) {
-                        mOnEditPanelWidgetReadySignal.onNext(mEditPanelWidget)
-                    }
-                })
+                }
+            }
+        val onMenuWidgetReadySignal = BindWidgetWithModel(
+            widget = mEditPanelWidget,
+            model = mPenPrefs)
+            .map { done ->
+                if (done) {
+                    mEditPanelWidget
+                } else {
+                    throw IllegalStateException("Fail to bind pen preferences with widget")
+                }
+            }
+        val onGetUndoRedoEventSignal = Observables.combineLatest(
+            onBusy(),
+            mHistoryWidget.onUpdateUndoRedoCapacity())
+            .map { (busy, event) ->
+                if (busy) {
+                    UndoRedoEvent(canUndo = false,
+                                  canRedo = false)
+                } else {
+                    event
+                }
+            }
 
         // Following are all about the edit panel outputs to paper widget:
 
@@ -172,22 +186,11 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
                         .toObservable()
                 }
                 .subscribe())
-        mDisposables.add(
-            Observables.combineLatest(
-                onBusy(),
-                mHistoryWidget.onUpdateUndoRedoCapacity())
-                .map { (busy, event) ->
-                    if (busy) {
-                        UndoRedoEvent(canUndo = false,
-                                      canRedo = false)
-                    } else {
-                        event
-                    }
-                }
-                .observeOn(mUiScheduler)
-                .subscribe { event ->
-                    mUndoRedoEventSignal.onNext(event)
-                })
+
+        return Observable.just(IPaperEditorWidget.OnStart(
+            onCanvasWidgetReady = onCanvasWidgetReadySignal,
+            onMenuWidgetReady = onMenuWidgetReadySignal,
+            onGetUndoRedoEvent = onGetUndoRedoEventSignal))
     }
 
     override fun stop() {
@@ -244,11 +247,6 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     private val mOnCanvasWidgetReadySignal = PublishSubject.create<IPaperCanvasWidget>().toSerialized()
 
-    // TODO: The interface is probably redundant
-    override fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
-        return mOnCanvasWidgetReadySignal
-    }
-
     override fun eraseCanvas(): Observable<Boolean> {
         mHistoryWidget.eraseAll()
         mCanvasWidget.eraseCanvas()
@@ -257,16 +255,10 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     // Edit panel widget //////////////////////////////////////////////////////
 
-    private val mOnEditPanelWidgetReadySignal = PublishSubject.create<PaperEditPanelWidget>().toSerialized()
-
     private val mEditPanelWidget by lazy {
         PaperEditPanelWidget(
             uiScheduler = mUiScheduler,
             workerScheduler = mIoScheduler)
-    }
-
-    override fun onEditPanelWidgetReady(): Observable<PaperEditPanelWidget> {
-        return mOnEditPanelWidgetReadySignal
     }
 
     // Undo & redo ////////////////////////////////////////////////////////////
@@ -287,14 +279,6 @@ class PaperEditorWidget(paperRepo: IPaperRepo,
 
     override fun addRedoSignal(source: Observable<Any>) {
         mRedoSignals.add(source)
-    }
-
-    private val mUndoRedoEventSignal = BehaviorSubject.createDefault(
-        UndoRedoEvent(canUndo = false,
-                      canRedo = false))
-
-    override fun onGetUndoRedoEvent(): Observable<UndoRedoEvent> {
-        return mUndoRedoEventSignal
     }
 
     // Progress & error & Editor status ///////////////////////////////////////

@@ -38,7 +38,6 @@ import com.paper.view.canvas.PaperCanvasView
 import com.paper.view.editPanel.PaperEditPanelView
 import com.paper.view.editPanel.PenSizePreview
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -117,6 +116,8 @@ class PaperEditorActivity : AppCompatActivity() {
         // TODO: Use subject and flatMap
         mCanvasView.addCanvasEventSource(mMenuView.onUpdateViewPortPosition())
 
+        initDebug()
+
         // Progress
         mDisposables.add(
             Observable.merge(
@@ -127,16 +128,6 @@ class PaperEditorActivity : AppCompatActivity() {
                     when {
                         event.justStart -> showIndeterminateProgressDialog()
                         event.justStop -> hideIndeterminateProgressDialog()
-                    }
-                })
-
-        // Error
-        mDisposables.add(
-            mErrorSignal
-                .observeOn(mUiScheduler)
-                .subscribe { error ->
-                    if (BuildConfig.DEBUG) {
-                        showErrorAlert(error)
                     }
                 })
 
@@ -213,13 +204,6 @@ class PaperEditorActivity : AppCompatActivity() {
         // Undo & redo buttons
         mWidget.addUndoSignal(RxView.clicks(mBtnUndo))
         mWidget.addRedoSignal(RxView.clicks(mBtnRedo))
-        mDisposables.add(
-            mWidget.onGetUndoRedoEvent()
-                .observeOn(mUiScheduler)
-                .subscribe { event ->
-                    mBtnUndo.isEnabled = event.canUndo
-                    mBtnRedo.isEnabled = event.canRedo
-                })
 
         // Delete button
         mDisposables.add(
@@ -246,6 +230,77 @@ class PaperEditorActivity : AppCompatActivity() {
                         }
                 }
                 .subscribe())
+
+        // Load paper and establish the binding
+        val paperIdSrc = if (savedState == null) {
+            Observable.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))
+        } else {
+            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+        }
+        mDisposables.add(
+            paperIdSrc
+                .switchMap { paperID ->
+                    mWidget.start(paperID)
+                        .flatMap { sources ->
+                            initWidgets(sources)
+                        }
+                }
+                .subscribe())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        mWidget.stop()
+
+        mDisposables.clear()
+
+        // Force to hide the progress-bar.
+        hideIndeterminateProgressDialog()
+        // Force to hide the error dialog.
+        mErrorThenFinishDialog.dismiss()
+    }
+
+    override fun onBackPressed() {
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+        } else {
+            mClickSysBackSignal.onNext(0)
+        }
+    }
+
+    private fun initWidgets(sources: IPaperEditorWidget.OnStart): Observable<Any> {
+        return Observable.merge(
+            sources.onCanvasWidgetReady
+                .flatMap { widget ->
+                    BindViewWithWidget(view = mCanvasView,
+                                       widget = widget,
+                                       caughtErrorSignal = mErrorSignal)
+                },
+            sources.onMenuWidgetReady
+                .flatMap { widget ->
+                    BindViewWithWidget(view = mMenuView,
+                                       widget = widget,
+                                       caughtErrorSignal = mErrorSignal)
+                },
+            sources.onGetUndoRedoEvent
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { event ->
+                    mBtnUndo.isEnabled = event.canUndo
+                    mBtnRedo.isEnabled = event.canRedo
+                })
+    }
+
+    private fun initDebug() {
+        // Error hub
+        mDisposables.add(
+            mErrorSignal
+                .observeOn(mUiScheduler)
+                .subscribe { error ->
+                    if (BuildConfig.DEBUG) {
+                        showErrorAlert(error)
+                    }
+                })
 
         // Debug menu (triggered by tapping on tool-bar quickly for several times)
         mDisposables.add(
@@ -283,62 +338,6 @@ class PaperEditorActivity : AppCompatActivity() {
                         finish()
                     }
                 })
-
-        // Bind sub-view with the sub-widget if the widget is ready!
-        mDisposables.add(
-            mWidget.onCanvasWidgetReady()
-                .observeOn(mUiScheduler)
-                .switchMap { widget ->
-                    BindViewWithWidget(view = mCanvasView,
-                                       widget = widget,
-                                       caughtErrorSignal = mErrorSignal)
-                }
-                .subscribe())
-        mDisposables.add(
-            mWidget.onEditPanelWidgetReady()
-                .observeOn(mUiScheduler)
-                .switchMap { widget ->
-                    BindViewWithWidget(view = mMenuView,
-                                       widget = widget,
-                                       caughtErrorSignal = mErrorSignal)
-                }
-                .subscribe())
-
-        // Load paper and establish the binding
-        val paperIdSrc = if (savedState == null) {
-            Single.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))
-        } else {
-            mPrefs
-                .getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
-                .first(ModelConst.TEMP_ID)
-        }
-        mDisposables.add(
-            paperIdSrc
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { paperID ->
-                    mWidget.start(paperID)
-                })
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        mWidget.stop()
-
-        mDisposables.clear()
-
-        // Force to hide the progress-bar.
-        hideIndeterminateProgressDialog()
-        // Force to hide the error dialog.
-        mErrorThenFinishDialog.dismiss()
-    }
-
-    override fun onBackPressed() {
-        if (supportFragmentManager.backStackEntryCount > 0) {
-            supportFragmentManager.popBackStack()
-        } else {
-            mClickSysBackSignal.onNext(0)
-        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

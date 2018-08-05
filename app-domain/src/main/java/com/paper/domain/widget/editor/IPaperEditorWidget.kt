@@ -27,11 +27,29 @@ import com.paper.model.event.ProgressEvent
 import io.reactivex.Observable
 import java.io.File
 
+// TODO: It is more like a presenter
 interface IPaperEditorWidget {
 
-    fun start(paperID: Long)
+    /**
+     * The entry for initialization.
+     *
+     * @return A set of signals, where most of them provide the widget which is
+     * ready for binding with view.
+     */
+    fun start(paperID: Long): Observable<OnStart>
 
+    /**
+     * The entry for destruction.
+     */
     fun stop()
+
+    /**
+     * The set the signals returned by [start], where most of them provide the
+     * widget which is ready for binding with view.
+     */
+    data class OnStart(val onCanvasWidgetReady: Observable<IPaperCanvasWidget>,
+                       val onMenuWidgetReady: Observable<PaperEditPanelWidget>,
+                       val onGetUndoRedoEvent: Observable<UndoRedoEvent>)
 
     /**
      * Request to stop; It is granted to stop when receiving a true; vice versa.
@@ -44,19 +62,13 @@ interface IPaperEditorWidget {
 
     fun eraseCanvas(): Observable<Boolean>
 
-    fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget>
-
-    // Edit panel widget //////////////////////////////////////////////////////
-
-    fun onEditPanelWidgetReady(): Observable<PaperEditPanelWidget>
-
     // Undo & redo ////////////////////////////////////////////////////////////
 
+    // FIXME: Use subject and flat operator
     fun addUndoSignal(source: Observable<Any>)
 
+    // FIXME: Use subject and flat operator
     fun addRedoSignal(source: Observable<Any>)
-
-    fun onGetUndoRedoEvent(): Observable<UndoRedoEvent>
 
     // Progress & error & Editor status ///////////////////////////////////////
 
