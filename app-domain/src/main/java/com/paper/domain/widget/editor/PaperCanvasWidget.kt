@@ -295,8 +295,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     private var mCacheTime = 0L
     private var mCanHandleThisDrag = false
 
-    override fun handleDragBegin(x: Float,
-                                 y: Float) {
+    override fun beingDrawCurve(x: Float,
+                                y: Float) {
         mCanHandleThisDrag = hasModelBinding() && mDrawingMode != DrawingMode.IDLE
         if (!mCanHandleThisDrag) return
 
@@ -328,8 +328,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
             penType = mTmpStroke.penType))
     }
 
-    override fun handleDrag(x: Float,
-                            y: Float) {
+    override fun drawCurveTo(x: Float,
+                             y: Float) {
         if (!mCanHandleThisDrag) return
 
         val time = System.currentTimeMillis()
@@ -344,7 +344,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                                             point = p))
     }
 
-    override fun handleDragEnd() {
+    override fun stopDrawCurve() {
         if (!mCanHandleThisDrag) return
 
         // Notify the observer
@@ -354,7 +354,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         mModel?.pushStroke(mTmpStroke)
     }
 
-    override fun handleTap(x: Float, y: Float) {
+    override fun drawDot(x: Float, y: Float) {
         if (!hasModelBinding()) return
 
         // Draw a DOT!!!

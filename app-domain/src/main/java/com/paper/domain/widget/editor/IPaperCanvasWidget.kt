@@ -36,13 +36,13 @@ interface IPaperCanvasWidget : IWidget<IPaper> {
 
     fun handleTouchEnd()
 
-    fun handleTap(x: Float, y: Float)
+    fun drawDot(x: Float, y: Float)
 
-    fun handleDragBegin(x: Float, y: Float)
+    fun beingDrawCurve(x: Float, y: Float)
 
-    fun handleDrag(x: Float, y: Float)
+    fun drawCurveTo(x: Float, y: Float)
 
-    fun handleDragEnd()
+    fun stopDrawCurve()
 
     fun setDrawingMode(mode: DrawingMode)
 

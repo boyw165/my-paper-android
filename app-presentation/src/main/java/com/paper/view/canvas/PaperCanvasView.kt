@@ -1295,7 +1295,7 @@ class PaperCanvasView : TextureView,
 
         val (nx, ny) = toModelWorld(event.downX,
                                     event.downY)
-        mWidget.handleTap(nx, ny)
+        mWidget.drawDot(nx, ny)
 
         // Null action
         return NullCanvasEvent()
@@ -1317,7 +1317,7 @@ class PaperCanvasView : TextureView,
                     val y = event.startPointer.y
 
                     val (nx, ny) = toModelWorld(x, y)
-                    mWidget.handleDragBegin(nx, ny)
+                    mWidget.beingDrawCurve(nx, ny)
 
                     // Hold focus x and y
                     mLastFocusPointer.set(x, y)
@@ -1330,14 +1330,14 @@ class PaperCanvasView : TextureView,
                     val dy = y - mLastFocusPointer.y
                     if (dx * dx + dy * dy >= mMinPathSegment * mMinPathSegment) {
                         val (nx, ny) = toModelWorld(x, y)
-                        mWidget.handleDrag(nx, ny)
+                        mWidget.drawCurveTo(nx, ny)
 
                         // Hold focus x and y
                         mLastFocusPointer.set(x, y)
                     }
                 }
                 is DragEndEvent -> {
-                    mWidget.handleDragEnd()
+                    mWidget.stopDrawCurve()
                 }
             }
 
