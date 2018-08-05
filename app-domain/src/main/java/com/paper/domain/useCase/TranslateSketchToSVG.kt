@@ -40,8 +40,8 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
         val d = SimpleDisposable()
         observer.onSubscribe(d)
 
-        observer.onNext(InitializationBeginEvent())
-        observer.onNext(EraseCanvasEvent())
+        observer.onNext(InitializationBeginEvent)
+        observer.onNext(EraseCanvasEvent)
 
         for (stroke in mStrokes) {
             if (d.isDisposed) break
@@ -61,7 +61,7 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
                     stroke.pointList.lastIndex -> {
                         observer.onNext(OnSketchEvent(strokeID = stroke.id,
                                                       point = pt))
-                        observer.onNext(StopSketchEvent())
+                        observer.onNext(StopSketchEvent)
                     }
                     else -> observer.onNext(
                         OnSketchEvent(strokeID = stroke.id,
@@ -70,7 +70,7 @@ class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent
             }
         }
 
-        observer.onNext(InitializationEndEvent())
+        observer.onNext(InitializationEndEvent)
         observer.onComplete()
     }
 

@@ -23,6 +23,7 @@ package com.paper.domain.widget.editor
 import com.paper.domain.DomainConst
 import com.paper.domain.event.CanvasEvent
 import com.paper.domain.useCase.TranslateSketchToSVG
+import com.paper.model.Point
 import com.paper.model.Scrap
 import com.paper.model.Transform
 import io.reactivex.Observable
@@ -33,15 +34,11 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 class ScrapWidget(
-    private val mUiScheduler: Scheduler,
-    private val mWorkerScheduler: Scheduler)
+    private val uiScheduler: Scheduler,
+    private val workerScheduler: Scheduler)
     : IScrapWidget {
 
     private lateinit var mModel: Scrap
-
-    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>()
-
-    private val mSetTransformSignal = BehaviorSubject.create<Transform>()
 
     private val mCancelSignal = PublishSubject.create<Any>()
     private val mDisposables = CompositeDisposable()
@@ -50,6 +47,8 @@ class ScrapWidget(
         ensureNoLeakedBinding()
 
         mModel = model
+
+        mPositionSignal.onNext(Point(model.x, model.y))
 
         mSetTransformSignal.onNext(Transform(
             translationX = mModel.x,
@@ -72,7 +71,15 @@ class ScrapWidget(
         return mModel.uuid
     }
 
+    private val mPositionSignal = BehaviorSubject.create<Point>().toSerialized()
+
+    override fun onSetPosition(): Observable<Point> {
+        return mPositionSignal
+    }
+
     // Drawing ////////////////////////////////////////////////////////////////
+
+    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>().toSerialized()
 
     override fun onDrawSVG(): Observable<CanvasEvent> {
         return Observable
@@ -80,14 +87,12 @@ class ScrapWidget(
                 mDrawSVGSignal,
                 // For the first time subscription, send events one by one!
                 TranslateSketchToSVG(mModel.sketch)
-                    .subscribeOn(mWorkerScheduler))
+                    .subscribeOn(workerScheduler))
     }
 
     // Touch //////////////////////////////////////////////////////////////////
 
-    override fun handleTap(x: Float, y: Float) {
-        TODO()
-    }
+    private val mSetTransformSignal = BehaviorSubject.create<Transform>().toSerialized()
 
     override fun onTransform(): Observable<Transform> {
         return mSetTransformSignal

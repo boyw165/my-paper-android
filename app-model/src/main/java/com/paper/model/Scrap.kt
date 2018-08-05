@@ -117,11 +117,11 @@ open class Scrap(
     val sketch: List<SketchStroke>
         get() = mSketch.toList()
 
-    fun addStrokeToSketch(stroke: SketchStroke) {
+    fun addSketchStroke(stroke: SketchStroke) {
         mSketch.add(stroke)
     }
 
-    fun removeStrokeToSketch(stroke: SketchStroke) {
+    fun removeSketchStroke(stroke: SketchStroke) {
         mSketch.remove(stroke)
     }
 

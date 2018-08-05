@@ -21,24 +21,26 @@
 package com.paper.view.canvas
 
 import android.graphics.*
-import android.os.Looper
 import android.view.MotionEvent
-import com.cardinalblue.gesture.GestureDetector
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.AppConst
+import com.paper.domain.event.InitializationEndEvent
+import com.paper.domain.event.OnSketchEvent
+import com.paper.domain.event.StartSketchEvent
+import com.paper.domain.event.StopSketchEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.model.Point
 import com.paper.model.Transform
+import com.paper.view.with
+import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import java.util.*
 
-open class ScrapView(drawMode: PorterDuffXfermode,
-                     eraserMode: PorterDuffXfermode) : IScrapView {
+open class ScrapView(private val renderScheduler: Scheduler)
+    : IScrapView {
 
     private lateinit var mWidget: IScrapWidget
-    private val mDrawMode = drawMode
-    private val mEraserMode = eraserMode
 
     private var mContext: IPaperContext? = null
     private var mParent: IParentView? = null
@@ -71,31 +73,54 @@ open class ScrapView(drawMode: PorterDuffXfermode,
     private val mSharpeningMatrix = Matrix()
     private val mSharpeningMatrixInverse = Matrix()
 
-    // Gesture.
-    private var mIfHandleEvent = false
-    private val mGestureDetector: GestureDetector by lazy {
-        val field = GestureDetector(Looper.getMainLooper(),
-                                    mContext!!.getViewConfiguration(),
-                                    mContext!!.getTouchSlop(),
-                                    mContext!!.getTapSlop(),
-                                    mContext!!.getMinFlingVec(),
-                                    mContext!!.getMaxFlingVec())
-//        field.tapGestureListener = this@ScrapView
-//        field.dragGestureListener = this@ScrapView
-//        field.pinchGestureListener = this@ScrapView
-        field
-    }
-
     private val mDisposables = CompositeDisposable()
 
     override fun bindWidget(widget: IScrapWidget) {
         mWidget = widget
 
         mDisposables.add(
+            mWidget
+                .onSetPosition()
+                .subscribe { p ->
+                    mX = p.x
+                    mY = p.y
+                })
+
+        // TODO: Should wire this with the caller
+        mDisposables.add(
             mWidget.onDrawSVG()
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(renderScheduler)
                 .subscribe { event ->
-                    TODO()
+                    when (event) {
+                        is StartSketchEvent -> {
+                            val nx = event.point.x
+                            val ny = event.point.y
+                            val (x, y) = mContext!!.mapM2V(nx, ny)
+
+                            val drawable = SVGDrawableFactory.createSVGDrawable(
+                                strokeID = event.strokeID,
+                                context = mContext!!,
+                                penColor = event.penColor,
+                                penSize = getScaledPenSize(event.penSize),
+                                interpolator = SVGDrawableFactory.CUBIC_BEZIER)
+                            drawable.moveTo(Point(x, y, event.point.time))
+
+                            mDrawables.add(drawable)
+                        }
+                        is OnSketchEvent -> {
+                            val nx = event.point.x
+                            val ny = event.point.y
+                            val (x, y) = mContext!!.mapM2V(nx, ny)
+
+                            val drawable = mDrawables.last()
+                            drawable.lineTo(Point(x, y, event.point.time))
+                        }
+                        is StopSketchEvent -> {
+                            val drawable = mDrawables.last()
+                            drawable.close()
+                        }
+                        is InitializationEndEvent -> invalidate()
+                    }
                 })
 
         mDisposables.add(
@@ -147,29 +172,31 @@ open class ScrapView(drawMode: PorterDuffXfermode,
 
     // Draw ///////////////////////////////////////////////////////
 
+    private fun getScaledPenSize(penSize: Float): Float {
+        return mContext!!.mapM2V(penSize)
+    }
+
     override fun dispatchDraw(canvas: Canvas,
-                              previousXforms: Stack<Matrix>,
+                              parentTransforms: MutableList<Matrix>,
                               ifSharpenDrawing: Boolean) {
-        val count = canvas.save()
+        canvas.with {
+            computeMatrix()
 
-        computeMatrix()
+            // Draw itself
+            canvas.concat(mMatrix)
+            mDrawables.forEach { d ->
+                d.draw(canvas = canvas)
+            }
 
-        // Draw itself
-        canvas.concat(mMatrix)
-        mDrawables.forEach { d ->
-            d.draw(canvas = canvas)
+            // Then children
+            parentTransforms.add(mMatrix)
+            mChildren.forEach { childView ->
+                childView.dispatchDraw(canvas,
+                                       parentTransforms,
+                                       ifSharpenDrawing)
+            }
+            parentTransforms.remove(mMatrix)
         }
-
-        // Then children
-        previousXforms.push(mMatrix)
-        mChildren.forEach {
-            it.dispatchDraw(canvas,
-                            previousXforms,
-                            ifSharpenDrawing)
-        }
-        previousXforms.pop()
-
-        canvas.restoreToCount(count)
     }
 
     private fun onUpdateTransform(xform: Transform) {
@@ -186,7 +213,7 @@ open class ScrapView(drawMode: PorterDuffXfermode,
     }
 
     private fun invalidate() {
-        mParent?.invalidate()
+        mParent?.invalidateCanvas()
     }
 
     private fun computeMatrix() {

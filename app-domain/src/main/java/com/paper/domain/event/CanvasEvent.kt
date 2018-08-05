@@ -33,7 +33,7 @@ sealed class CanvasEvent
 /**
  * Null event means do nothing with it.
  */
-class NullCanvasEvent : CanvasEvent()
+object NullCanvasEvent : CanvasEvent()
 
 /**
  * The set of [CanvasEvent]s.
@@ -45,29 +45,29 @@ data class GroupCanvasEvent(val events: List<CanvasEvent>) : CanvasEvent()
 /**
  * A start signal of initialization.
  */
-class InitializationBeginEvent : CanvasEvent()
+object InitializationBeginEvent : CanvasEvent()
 
 /**
  * A signal of on-going initialization.
  */
-class InitializationDoingEvent : CanvasEvent()
+object InitializationDoingEvent : CanvasEvent()
 
 /**
  * A stop signal of initialization.
  */
-class InitializationEndEvent : CanvasEvent()
+object InitializationEndEvent : CanvasEvent()
 
 // Drawing ////////////////////////////////////////////////////////////////////
 
 /**
  * Indicate the view to renew its rendering buffer.
  */
-class InvalidationEvent : CanvasEvent()
+object InvalidationEvent : CanvasEvent()
 
 /**
  * A event to clear all the cached sketch.
  */
-class EraseCanvasEvent : CanvasEvent()
+object EraseCanvasEvent : CanvasEvent()
 
 /**
  * A starting sketch event, where it may provide the pen color, pen size, and
@@ -87,7 +87,7 @@ data class OnSketchEvent(val strokeID: UUID,
 /**
  * A stopping sketch event.
  */
-class StopSketchEvent : CanvasEvent()
+object StopSketchEvent : CanvasEvent()
 
 /**
  * To add a stroke.

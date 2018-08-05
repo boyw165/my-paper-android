@@ -39,12 +39,9 @@ import java.io.File
 import java.util.*
 import kotlin.NoSuchElementException
 
-class PaperCanvasWidget(uiScheduler: Scheduler,
-                        workerScheduler: Scheduler)
+class PaperCanvasWidget(private val uiScheduler: Scheduler,
+                        private val workerScheduler: Scheduler)
     : IPaperCanvasWidget {
-
-    private val mUiScheduler = uiScheduler
-    private val mWorkerScheduler = workerScheduler
 
     // Model
     private var mModel: IPaper? = null
@@ -74,7 +71,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         // Add or remove stroke
         mDisposables.add(
             model.onAddStroke(replayAll = false)
-                .observeOn(mUiScheduler)
+                .observeOn(uiScheduler)
                 .subscribe { stroke ->
                     mDrawSVGSignal.onNext(
                         AddSketchStrokeEvent(strokeID = stroke.id,
@@ -85,7 +82,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                 })
         mDisposables.add(
             model.onRemoveStroke()
-                .observeOn(mUiScheduler)
+                .observeOn(uiScheduler)
                 .subscribe { stroke ->
                     mDrawSVGSignal.onNext(RemoveSketchStrokeEvent(strokeID = stroke.id))
                 })
@@ -93,11 +90,13 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         // Add or remove scrap
         mDisposables.add(
             model.onAddScrap()
-                .observeOn(mUiScheduler)
+                .observeOn(uiScheduler)
                 // TODO: Use BindWidgetWithModel observable
                 .subscribe { scrapModel ->
-                    val widget = ScrapWidget(mUiScheduler,
-                                             mWorkerScheduler)
+                    // TODO: Polymorphism ScrapWidget -> BaseScrapWidget,
+                    // TODO: BaseScrapWidget <|-- VectorScrapWidget
+                    val widget = ScrapWidget(uiScheduler,
+                                             workerScheduler)
                     mScrapWidgets[scrapModel.uuid] = widget
 
                     widget.bindModel(scrapModel)
@@ -107,7 +106,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
                 })
         mDisposables.add(
             model.onRemoveScrap()
-                .observeOn(mUiScheduler)
+                .observeOn(uiScheduler)
                 .subscribe { scrapM ->
                     val widget = mScrapWidgets[scrapM.uuid] ?:
                                  throw NoSuchElementException("Cannot find the widget")
@@ -121,7 +120,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         // Busy state
         mDisposables.add(
             mBusyFlagSignal
-                .observeOn(mUiScheduler)
+                .observeOn(uiScheduler)
                 .subscribe { busyFlag ->
                     if (busyFlag == 0) {
                         mBusySignal.onNext(false)
@@ -198,7 +197,8 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
     // TODO: Is the mode necessary?
     private var mDrawingMode = DrawingMode.IDLE
 
-    private lateinit var mTmpStroke: SketchStroke
+    private var mWorkingScrapWidget: IScrapWidget? = null
+//    private lateinit var mTmpStroke: SketchStroke
     /**
      * The signal for the external world to know this widget wants to draw SVG.
      */
@@ -268,7 +268,7 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
             }
 
             // Canvas operation would change the busy flag
-            source.observeOn(mUiScheduler)
+            source.observeOn(uiScheduler)
                 .doOnNext { event ->
                     when (event) {
                         is StartSketchEvent -> {
@@ -303,55 +303,62 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         // Clear all the delayed execution.
         mCancelSignal.onNext(0)
 
-        // Create a new stroke and hold it in the temporary pool.
-        val penType = if (mDrawingMode == DrawingMode.ERASER) {
-            PenType.ERASER
-        } else {
-            PenType.PEN
-        }
-        mTmpStroke = SketchStroke(
-            penType = penType,
-            penColor = mPenColor,
-            penSize = mScaledPenSize)
+        // TODO
+//        val workingWidget = ScrapWidget(uiScheduler,
+//                                        workerScheduler)
+//        mWorkingScrapWidget = workingWidget
+//        // Notify observers
+//        mAddWidgetSignal.onNext(workingWidget)
 
-        mCacheTime = System.currentTimeMillis()
-        val p = Point(x, y, time = 0)
-
-        mTmpStroke.addPath(p)
-
-        // Notify the observer the MOVE action
-        mDrawSVGSignal.onNext(StartSketchEvent(
-            strokeID = mTmpStroke.id,
-            point = p,
-            penColor = mTmpStroke.penColor,
-            penSize = mTmpStroke.penSize,
-            penType = mTmpStroke.penType))
+//        // Create a new stroke and hold it in the temporary pool.
+//        val penType = if (mDrawingMode == DrawingMode.ERASER) {
+//            PenType.ERASER
+//        } else {
+//            PenType.PEN
+//        }
+//        mTmpStroke = SketchStroke(
+//            penType = penType,
+//            penColor = mPenColor,
+//            penSize = mScaledPenSize)
+//
+//        mCacheTime = System.currentTimeMillis()
+//        val p = Point(x, y, time = 0)
+//
+//        mTmpStroke.addPath(p)
+//
+//        // Notify the observer the MOVE action
+//        mDrawSVGSignal.onNext(StartSketchEvent(
+//            strokeID = mTmpStroke.id,
+//            point = p,
+//            penColor = mTmpStroke.penColor,
+//            penSize = mTmpStroke.penSize,
+//            penType = mTmpStroke.penType))
     }
 
     override fun drawCurveTo(x: Float,
                              y: Float) {
         if (!mCanHandleThisDrag) return
 
-        val time = System.currentTimeMillis()
-        val diff = System.currentTimeMillis() - mCacheTime
-        mCacheTime = time
-
-        val p = Point(x, y, time = diff)
-        mTmpStroke.addPath(p)
-
-        // Notify the observer the LINE_TO action
-        mDrawSVGSignal.onNext(OnSketchEvent(strokeID = mTmpStroke.id,
-                                            point = p))
+//        val time = System.currentTimeMillis()
+//        val diff = System.currentTimeMillis() - mCacheTime
+//        mCacheTime = time
+//
+//        val p = Point(x, y, time = diff)
+//        mTmpStroke.addPath(p)
+//
+//        // Notify the observer the LINE_TO action
+//        mDrawSVGSignal.onNext(OnSketchEvent(strokeID = mTmpStroke.id,
+//                                            point = p))
     }
 
     override fun stopDrawCurve() {
         if (!mCanHandleThisDrag) return
 
-        // Notify the observer
-        mDrawSVGSignal.onNext(StopSketchEvent())
-
-        // Commit to model
-        mModel?.pushStroke(mTmpStroke)
+//        // Notify the observer
+//        mDrawSVGSignal.onNext(StopSketchEvent())
+//
+//        // Commit to model
+//        mModel?.pushStroke(mTmpStroke)
     }
 
     override fun drawDot(x: Float, y: Float) {
@@ -364,22 +371,36 @@ class PaperCanvasWidget(uiScheduler: Scheduler,
         } else {
             PenType.PEN
         }
-        mTmpStroke = SketchStroke(
+
+        // Create scrap (model) with dot sketch
+        val scrap = Scrap()
+        scrap.x = x
+        scrap.y = y
+        scrap.addSketchStroke(SketchStroke(
             penType = penType,
             penColor = mPenColor,
             penSize = mScaledPenSize,
-            mPointList = mutableListOf(Point(x, y, 0)))
-        // Commit to model
-        mModel?.pushStroke(mTmpStroke)
+            mPointList = mutableListOf(Point(0f, 0f))))
 
-        // Notify the observer
-        mDrawSVGSignal.onNext(StartSketchEvent(
-            strokeID = mTmpStroke.id,
-            point = Point(x, y, 0),
-            penColor = mTmpStroke.penColor,
-            penSize = mTmpStroke.penSize,
-            penType = mTmpStroke.penType))
-        mDrawSVGSignal.onNext(StopSketchEvent())
+        // Commit to model
+        mModel?.addScrap(scrap)
+
+//        mTmpStroke = SketchStroke(
+//            penType = penType,
+//            penColor = mPenColor,
+//            penSize = mScaledPenSize,
+//            mPointList = mutableListOf(Point(x, y, 0)))
+//        // Commit to model
+//        mModel?.pushStroke(mTmpStroke)
+//
+//        // Notify the observer
+//        mDrawSVGSignal.onNext(StartSketchEvent(
+//            strokeID = mTmpStroke.id,
+//            point = Point(x, y, 0),
+//            penColor = mTmpStroke.penColor,
+//            penSize = mTmpStroke.penSize,
+//            penType = mTmpStroke.penType))
+//        mDrawSVGSignal.onNext(StopSketchEvent())
     }
 
     // Debug //////////////////////////////////////////////////////////////////

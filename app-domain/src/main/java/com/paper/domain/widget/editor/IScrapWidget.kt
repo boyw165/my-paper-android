@@ -21,6 +21,7 @@
 package com.paper.domain.widget.editor
 
 import com.paper.domain.event.CanvasEvent
+import com.paper.model.Point
 import com.paper.model.Scrap
 import com.paper.model.Transform
 import io.reactivex.Observable
@@ -30,11 +31,11 @@ interface IScrapWidget: IWidget<Scrap> {
 
     // For input //////////////////////////////////////////////////////////////
 
-    fun handleTap(x: Float, y: Float)
-
     // For output /////////////////////////////////////////////////////////////
 
     fun getId(): UUID
+
+    fun onSetPosition(): Observable<Point>
 
     fun onDrawSVG(): Observable<CanvasEvent>
 

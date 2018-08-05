@@ -25,7 +25,6 @@ import android.graphics.Matrix
 import android.view.MotionEvent
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.domain.widget.editor.IScrapWidget
-import java.util.*
 
 interface IScrapView {
 
@@ -49,7 +48,7 @@ interface IScrapView {
     // TODO: How to pass the current transform in the recursion call?
 
     fun dispatchDraw(canvas: Canvas,
-                     previousXforms: Stack<Matrix>,
+                     parentTransforms: MutableList<Matrix>,
                      ifSharpenDrawing: Boolean)
 
     // Touch //////////////////////////////////////////////////////////////////

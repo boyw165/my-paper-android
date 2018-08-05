@@ -74,7 +74,7 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
             val sketchJson = root["sketch"].asJsonArray
 
             sketchJson.forEach {
-                model.addStrokeToSketch(
+                model.addSketchStroke(
                     context.deserialize(it, SketchStroke::class.java))
             }
         }

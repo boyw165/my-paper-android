@@ -67,7 +67,6 @@ import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 class PaperCanvasView : TextureView,
@@ -176,11 +175,13 @@ class PaperCanvasView : TextureView,
 
                                 Observable.merge(listOf(
                                     // Initialization from view-model
+                                    // TODO: Remove it
                                     widget.onDrawSVG(replayAll = true),
+                                    mInvalidateCanvasSignal,
                                     // Consume the [GestureEvent] and produce [CanvasEvent]
                                     GestureEventObservable(mGestureDetector).compose(touchEventToCanvasEvent()),
                                     // Other canvas event sources
-                                    Observable.merge(mCanvasEventSources),
+                                    Observable.merge(mOtherCanvasEventSources),
                                     // Anti-aliasing drawing signal
                                     onAntiAliasingDraw()))
                                     .compose(consumeCanvasEvent())
@@ -312,13 +313,14 @@ class PaperCanvasView : TextureView,
     private fun addScrap(widget: IScrapWidget) {
         ensureMainThread()
 
-        val scrapView = ScrapView(drawMode = mDrawMode,
-                                  eraserMode = mEraserMode)
+        val scrapView = ScrapView(renderScheduler = mRenderingScheduler)
 
         scrapView.setPaperContext(this)
         scrapView.setParent(this)
-        scrapView.bindWidget(widget)
+
         mScrapViews.add(scrapView)
+
+        scrapView.bindWidget(widget)
 
         invalidate()
     }
@@ -385,7 +387,7 @@ class PaperCanvasView : TextureView,
 
     // Rendering resource.
     private val mOneDp by lazy { context.resources.getDimension(R.dimen.one_dp) }
-    private val mMatrixStack = Stack<Matrix>()
+    private val mParentTransforms = Stack<Matrix>()
 
     private val mBitmapPaint = Paint()
     private val mEraserPaint = Paint()
@@ -395,8 +397,8 @@ class PaperCanvasView : TextureView,
     // Background & grids
     private val mGridPaint = Paint()
 
-    // Temporary strokes
-    private val mStrokeDrawables = CopyOnWriteArrayList<SVGDrawable>()
+//    // Temporary strokes
+//    private val mStrokeDrawables = CopyOnWriteArrayList<SVGDrawable>()
 
     private fun updateLayoutOrCanvas(canvasWidth: Float,
                                      canvasHeight: Float) {
@@ -486,11 +488,14 @@ class PaperCanvasView : TextureView,
         mTmpMatrix.set(mCanvasMatrix)
 
         // Prepare the transform stack for later sharp rendering.
-        mMatrixStack.clear()
-        mMatrixStack.push(mCanvasMatrix)
+        if (mParentTransforms.size != 1 ||
+            mParentTransforms[0] != mCanvasMatrix) {
+            mParentTransforms.clear()
+            mParentTransforms.push(mCanvasMatrix)
+        }
 
         scrapViews.forEach { scrapView ->
-            scrapView.dispatchDraw(canvas, mMatrixStack, ifSharpenDrawing)
+            scrapView.dispatchDraw(canvas, mParentTransforms, ifSharpenDrawing)
         }
 
         // Ensure no scraps modify the canvas matrix.
@@ -499,7 +504,13 @@ class PaperCanvasView : TextureView,
         }
     }
 
-//    override fun onDraw(canvas: Canvas) {
+    private val mInvalidateCanvasSignal = PublishSubject.create<CanvasEvent>().toSerialized()
+
+    override fun invalidateCanvas() {
+        mInvalidateCanvasSignal.onNext(InvalidationEvent)
+    }
+
+    //    override fun onDraw(canvas: Canvas) {
 //        if (!mDrawReadySignal.value!!) return
 //
 //        // Scale from model to view.
@@ -565,71 +576,71 @@ class PaperCanvasView : TextureView,
                         is ViewPortEvent -> {
                             consumeViewPortEvent(event)
 
-                            Observable.just(NullCanvasEvent())
+                            Observable.just(NullCanvasEvent)
                         }
-                        is StartSketchEvent -> {
-                            val nx = event.point.x
-                            val ny = event.point.y
-                            val (x, y) = toViewWorld(nx, ny)
-
-                            val drawable = createSvgDrawable(event)
-                            drawable.moveTo(Point(x, y, event.point.time))
-
-                            mStrokeDrawables.add(drawable)
-
-                            mIsHashDirty = true
-
-                            Observable.just(InvalidationEvent())
-                        }
-                        is OnSketchEvent -> {
-                            val nx = event.point.x
-                            val ny = event.point.y
-                            val (x, y) = toViewWorld(nx, ny)
-
-                            val drawable = mStrokeDrawables.last()
-                            drawable.lineTo(Point(x, y, event.point.time))
-
-                            mIsHashDirty = true
-
-                            Observable.just(InvalidationEvent())
-                        }
-                        is StopSketchEvent -> {
-                            val drawable = mStrokeDrawables.last()
-                            drawable.close()
-
-                            Observable.just(InvalidationEvent())
-                        }
-                        is AddSketchStrokeEvent -> {
-                            if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.strokeID }) {
-                                val drawable = createSvgDrawable(event)
-                                mStrokeDrawables.add(drawable)
-
-                                mIsHashDirty = true
-
-                                Observable.just(InvalidationEvent())
-                            } else {
-                                Observable.just(NullCanvasEvent())
-                            }
-                        }
-                        is RemoveSketchStrokeEvent -> {
-                            val i = mStrokeDrawables.indexOfFirst { d ->
-                                d.id == event.strokeID
-                            }
-                            if (i >= 0) {
-                                mStrokeDrawables.removeAt(i)
-
-                                // Invalidate drawables
-                                mStrokeDrawables.forEach { d -> d.markUndrew() }
-
-                                mIsHashDirty = true
-
-                                Observable.just(
-                                    EraseCanvasEvent(),
-                                    InvalidationEvent())
-                            } else {
-                                Observable.just(NullCanvasEvent())
-                            }
-                        }
+//                        is StartSketchEvent -> {
+//                            val nx = event.point.x
+//                            val ny = event.point.y
+//                            val (x, y) = toViewWorld(nx, ny)
+//
+//                            val drawable = createSvgDrawable(event)
+//                            drawable.moveTo(Point(x, y, event.point.time))
+//
+//                            mStrokeDrawables.add(drawable)
+//
+//                            mIsHashDirty = true
+//
+//                            Observable.just(InvalidationEvent())
+//                        }
+//                        is OnSketchEvent -> {
+//                            val nx = event.point.x
+//                            val ny = event.point.y
+//                            val (x, y) = toViewWorld(nx, ny)
+//
+//                            val drawable = mStrokeDrawables.last()
+//                            drawable.lineTo(Point(x, y, event.point.time))
+//
+//                            mIsHashDirty = true
+//
+//                            Observable.just(InvalidationEvent())
+//                        }
+//                        is StopSketchEvent -> {
+//                            val drawable = mStrokeDrawables.last()
+//                            drawable.close()
+//
+//                            Observable.just(InvalidationEvent())
+//                        }
+//                        is AddSketchStrokeEvent -> {
+//                            if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.strokeID }) {
+//                                val drawable = createSvgDrawable(event)
+//                                mStrokeDrawables.add(drawable)
+//
+//                                mIsHashDirty = true
+//
+//                                Observable.just(InvalidationEvent())
+//                            } else {
+//                                Observable.just(NullCanvasEvent())
+//                            }
+//                        }
+//                        is RemoveSketchStrokeEvent -> {
+//                            val i = mStrokeDrawables.indexOfFirst { d ->
+//                                d.id == event.strokeID
+//                            }
+//                            if (i >= 0) {
+//                                mStrokeDrawables.removeAt(i)
+//
+//                                // Invalidate drawables
+//                                mStrokeDrawables.forEach { d -> d.markUndrew() }
+//
+//                                mIsHashDirty = true
+//
+//                                Observable.just(
+//                                    EraseCanvasEvent(),
+//                                    InvalidationEvent())
+//                            } else {
+//                                Observable.just(NullCanvasEvent())
+//                            }
+//                        }
                         else -> Observable.just(event)
                     }
                 }
@@ -649,7 +660,7 @@ class PaperCanvasView : TextureView,
                         // It's important to use the same observable pattern to
                         // initialize the stroke without slowing down by the
                         // frequent rendering requests.
-                        InitializationDoingEvent()
+                        InitializationDoingEvent
                     } else {
                         if (now !is InitializationEndEvent) {
                             mIsNew = false
@@ -726,23 +737,24 @@ class PaperCanvasView : TextureView,
                                 // Draw sketch on view-port Bitmap
                                 ProfilerUtils.with("draw view-port") {
                                     canvas.with { c ->
-                                        c.clipRect(0, 0, width, height)
-
                                         computeCanvasMatrix(mScaleM2V)
-                                        c.concat(mCanvasMatrix)
 
-                                        mStrokeDrawables.forEach { d ->
-                                            d.draw(canvas = c)
-                                        }
+//                                        c.clipRect(0, 0, width, height)
+//                                        c.concat(mCanvasMatrix)
+//
+//                                        mStrokeDrawables.forEach { d ->
+//                                            d.draw(canvas = c)
+//                                        }
+                                        dispatchDrawScraps(c, mScrapViews, false)
                                     }
                                 }
 
-                                // By marking drawables not dirty, the drawable's
-                                // cache is renewed.
-                                mStrokeDrawables.forEach { d ->
-                                    d.markUndrew()
-//                                    d.markAllDrew()
-                                }
+//                                // By marking drawables not dirty, the drawable's
+//                                // cache is renewed.
+//                                mStrokeDrawables.forEach { d ->
+//                                    d.markUndrew()
+////                                    d.markAllDrew()
+//                                }
 
                                 // Submit canvas
                                 surface.unlockCanvasAndPost(canvas)
@@ -776,7 +788,7 @@ class PaperCanvasView : TextureView,
         return mAntiAliasingSignal
             .switchMap { doAntiAliasingDraw ->
                 if (doAntiAliasingDraw) {
-                    Observable.just(InvalidationEvent())
+                    Observable.just(InvalidationEvent)
                 } else {
                     Observable.empty<CanvasEvent>()
                 }
@@ -848,12 +860,13 @@ class PaperCanvasView : TextureView,
                 bmpCanvasMatrix.postScale(scale, scale)
                 val bmpCanvas = Canvas(bmp)
                 bmpCanvas.with { c ->
-                    c.concat(bmpCanvasMatrix)
-                    mStrokeDrawables.forEach { d ->
-                        d.markUndrew()
-                        d.draw(c)
-                        d.markAllDrew()
-                    }
+//                    c.concat(bmpCanvasMatrix)
+//                    mStrokeDrawables.forEach { d ->
+//                        d.markUndrew()
+//                        d.draw(c)
+//                        d.markAllDrew()
+//                    }
+                    dispatchDrawScraps(c, mScrapViews, true)
                 }
 
                 bmp
@@ -1260,19 +1273,19 @@ class PaperCanvasView : TextureView,
                         is OnPinchEvent,
                         is PinchEndEvent -> handlePinchEvent(event)
 
-                        else -> NullCanvasEvent()
+                        else -> NullCanvasEvent
                     }
                 }
         }
     }
 
-    private val mCanvasEventSources = mutableListOf<Observable<CanvasEvent>>()
+    private val mOtherCanvasEventSources = mutableListOf<Observable<CanvasEvent>>()
 
     /**
      * For [CanvasEvent] external sources.
      */
     fun addCanvasEventSource(source: Observable<CanvasEvent>) {
-        mCanvasEventSources.add(source)
+        mOtherCanvasEventSources.add(source)
     }
 
     private fun handleTouchLifecycleEvent(event: GestureEvent): CanvasEvent {
@@ -1287,7 +1300,7 @@ class PaperCanvasView : TextureView,
         }
 
         // Null action
-        return NullCanvasEvent()
+        return NullCanvasEvent
     }
 
     private fun handleTapEvent(event: TapEvent): CanvasEvent {
@@ -1298,7 +1311,7 @@ class PaperCanvasView : TextureView,
         mWidget.drawDot(nx, ny)
 
         // Null action
-        return NullCanvasEvent()
+        return NullCanvasEvent
     }
 
     private fun handleDragEvent(event: GestureEvent): CanvasEvent {
@@ -1342,7 +1355,7 @@ class PaperCanvasView : TextureView,
             }
 
             // Null action
-            NullCanvasEvent()
+            NullCanvasEvent
         } else {
             when (event) {
                 is DragBeginEvent -> {
@@ -1359,7 +1372,7 @@ class PaperCanvasView : TextureView,
                 }
                 else -> {
                     // Null action
-                    NullCanvasEvent()
+                    NullCanvasEvent
                 }
             }
         }
@@ -1382,7 +1395,7 @@ class PaperCanvasView : TextureView,
             }
             else -> {
                 // Null action
-                NullCanvasEvent()
+                NullCanvasEvent
             }
         }
     }
@@ -1582,7 +1595,7 @@ class PaperCanvasView : TextureView,
         other as PaperCanvasView
 
         if (mScrapViews != other.mScrapViews) return false
-        if (mStrokeDrawables != other.mStrokeDrawables) return false
+//        if (mStrokeDrawables != other.mStrokeDrawables) return false
         if (mViewPortMin != other.mViewPortMin) return false
         if (mViewPortMax != other.mViewPortMax) return false
         if (mViewPortBase != other.mViewPortBase) return false
@@ -1594,15 +1607,19 @@ class PaperCanvasView : TextureView,
     private var mHashCode = AppConst.EMPTY_HASH
 
     override fun hashCode(): Int {
-        return if (mScrapViews.isEmpty() && mStrokeDrawables.isEmpty()) {
+//        return if (mScrapViews.isEmpty() && mStrokeDrawables.isEmpty()) {
+        return if (mScrapViews.isEmpty()) {
             AppConst.EMPTY_HASH
         } else {
             // FIXME: Consider scraps hash too.
 
             if (mIsHashDirty) {
                 mHashCode = AppConst.EMPTY_HASH
-                mStrokeDrawables.forEach { d ->
-                    mHashCode = 31 * mHashCode + d.hashCode()
+//                mStrokeDrawables.forEach { d ->
+//                    mHashCode = 31 * mHashCode + d.hashCode()
+//                }
+                mScrapViews.forEach { v ->
+                    mHashCode = 31 * mHashCode + v.hashCode()
                 }
 
                 mIsHashDirty = false

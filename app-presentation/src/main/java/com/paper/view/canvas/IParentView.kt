@@ -25,5 +25,5 @@ package com.paper.view.canvas
  */
 interface IParentView {
 
-    fun invalidate()
+    fun invalidateCanvas()
 }

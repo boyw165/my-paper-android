@@ -52,9 +52,9 @@ class ScrapJSONTranslatorTest {
         model.z = ModelConst.MOST_BOTTOM_Z
         model.scale = 0.5f
 
-        model.addStrokeToSketch(SketchStroke(penColor = Color.parseColor("#FF0000"),
-                                             penSize = 0.5f,
-                                             penType = PenType.PEN)
+        model.addSketchStroke(SketchStroke(penColor = Color.parseColor("#FF0000"),
+                                           penSize = 0.5f,
+                                           penType = PenType.PEN)
                                     .addAllPath(listOf(Point(0.18075603f,
                                                              0.25663146f,
                                                              0),
