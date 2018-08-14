@@ -23,9 +23,9 @@
 package com.paper.view.canvas
 
 import androidx.annotation.IntDef
-import com.paper.model.DirtyFlag
-import com.paper.model.event.DirtyEvent
 import io.reactivex.Observable
+import io.useful.dirtyflag.DirtyEvent
+import io.useful.dirtyflag.DirtyFlag
 
 /**
  * Dirty flag for canvas view.

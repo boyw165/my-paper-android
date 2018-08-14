@@ -47,6 +47,9 @@ dependencies {
     api rootProject.ext.dep.rxJava
     api rootProject.ext.dep.rxKotlin
 
+    // Dirty flag
+    api rootProject.ext.dep.dirtyflag
+
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit
     testImplementation rootProject.ext.dep.testMockito

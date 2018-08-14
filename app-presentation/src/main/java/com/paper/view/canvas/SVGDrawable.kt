@@ -24,9 +24,9 @@ package com.paper.view.canvas
 
 import android.graphics.*
 import com.paper.interpolator.ISplineInterpolator
-import com.paper.model.DirtyFlag
 import com.paper.model.DirtyType
 import com.paper.model.Point
+import io.useful.dirtyflag.DirtyFlag
 import java.util.*
 
 abstract class SVGDrawable(val id: UUID,
