@@ -7,7 +7,7 @@ ext {
     targetCompatibilityVersion = JavaVersion.VERSION_1_7
 
     SUPPORT_LIB_VER = '27.1.1'
-    KOTLIN_VER = '1.2.21'
+    KOTLIN_VER = '1.2.60'
     RX_BINDING_VER = '2.1.1'
     DAGGER2_VER = '2.13'
     BOLTS_VER = '1.4.0'
@@ -90,6 +90,8 @@ ext {
             rxBindingCompat           : "com.jakewharton.rxbinding2:rxbinding-appcompat-v7:${RX_BINDING_VER}",
             rxBindingRecyclerViewV7   : "com.jakewharton.rxbinding2:rxbinding-recyclerview-v7:${RX_BINDING_VER}",
             rxPermissions             : 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.4@aar',
+            // Dirty Flag
+            dirtyflag                 : 'io.useful.dirtyflag:dirty-flag:1.0.0',
             // Gesture
             collageGestureDetector    : 'com.cardinalblue.gesture:collage-gesture-detector:2.4.4',
             collageGestureDetectorRx  : 'com.cardinalblue.gesture:collage-gesture-detector-rx:2.4.5',
@@ -130,7 +132,7 @@ ext {
             testJunit                 : 'junit:junit:4.12',
             testGoogleTruth           : 'com.google.truth:truth:0.34',
             testMockito               : 'org.mockito:mockito-core:2.8.9',
-            testEspressoCore          : 'com.android.support.test.espresso:espresso-core:3.0.1',
-            testRunner                : 'com.android.support.test:runner:1.0.1'
+            testEspressoCore          : 'com.android.support.test.espresso:espresso-core:3.0.2',
+            testRunner                : 'com.android.support.test:runner:1.0.2'
     ]
 }

@@ -13,7 +13,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.3'
+        classpath 'com.android.tools.build:gradle:3.1.4'
         classpath rootProject.ext.dep.kotlinGradle
         classpath rootProject.ext.dep.googleServices
         // Google Protobuf
@@ -29,6 +29,7 @@ allprojects {
         google()
         jcenter()
         maven { url 'https://dl.bintray.com/cblue/android' }
+        maven { url 'https://dl.bintray.com/boyw165/android' }
     }
 }
 
