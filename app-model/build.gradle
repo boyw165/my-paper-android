@@ -39,7 +39,7 @@ dependencies {
     api rootProject.ext.dep.androidArchWorkFirebaseJob
 
     // Kotlin.
-    api rootProject.ext.dep.kotlinStdlibJre7
+    api rootProject.ext.dep.kotlinStdlibJdk7
 
     // JSON.
     api rootProject.ext.dep.gson

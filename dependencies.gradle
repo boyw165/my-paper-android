@@ -63,8 +63,8 @@ ext {
             // Kotlin.
             kotlinGradle              : "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN_VER",
             kotlinStdlib              : "org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VER",
-            kotlinStdlibJre7          : "org.jetbrains.kotlin:kotlin-stdlib-jre7:$KOTLIN_VER",
-            kotlinStdlibJre8          : "org.jetbrains.kotlin:kotlin-stdlib-jre8:$KOTLIN_VER",
+            kotlinStdlibJdk7          : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$KOTLIN_VER",
+            kotlinStdlibJdk8          : "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VER",
             kotlinUnitTest            : "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN_VER",
             kotlinCoroutinesCore      : 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.21',
             // Facebook.

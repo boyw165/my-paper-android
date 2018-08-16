@@ -34,7 +34,7 @@ dependencies {
     api rootProject.ext.dep.supportAppcompatV7
 
     // Kotlin.
-    api rootProject.ext.dep.kotlinStdlibJre7
+    api rootProject.ext.dep.kotlinStdlibJdk7
     // RxKotlin.
     api rootProject.ext.dep.rxKotlin
     // Rx-Java.

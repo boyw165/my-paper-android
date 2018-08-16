@@ -172,6 +172,7 @@ dependencies {
     testImplementation rootProject.ext.dep.testMockito
 
     // Instrumentation tests.
+    androidTestImplementation rootProject.ext.dep.testRunner
     androidTestImplementation rootProject.ext.dep.testEspressoCore
 }
 
