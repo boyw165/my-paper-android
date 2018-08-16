@@ -21,10 +21,9 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
+import com.paper.model.BaseScrap
 import com.paper.model.IPaper
 import com.paper.model.PaperAutoSaveImpl
-import com.paper.model.Scrap
-import com.paper.model.sketch.SketchStroke
 import java.lang.reflect.Type
 
 /**
@@ -38,12 +37,8 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
-        val sketchJson = JsonArray()
-        src.getSketch().forEach { sketchJson.add(context.serialize(it, SketchStroke::class.java)) }
-        root.add("sketch", sketchJson)
-
         val scrapJson = JsonArray()
-        src.getScraps().forEach { scrapJson.add(context.serialize(it, Scrap::class.java)) }
+        src.getScraps().forEach { scrapJson.add(context.serialize(it, BaseScrap::class.java)) }
         root.add("scraps", scrapJson)
 
         return root
@@ -55,17 +50,10 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
         val root = json.asJsonObject
         val paperDetails = PaperAutoSaveImpl()
 
-        if (root.has("sketch")) {
-            root["sketch"].asJsonArray.forEach {
-                paperDetails.pushStroke(context.deserialize(
-                    it, SketchStroke::class.java))
-            }
-        }
-
         if (root.has("scraps")) {
             root["scraps"].asJsonArray.forEach {
                 paperDetails.addScrap(context.deserialize(
-                    it, Scrap::class.java))
+                    it, BaseScrap::class.java))
             }
         }
 

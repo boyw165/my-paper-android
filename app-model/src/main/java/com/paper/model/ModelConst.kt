@@ -27,9 +27,8 @@ object ModelConst {
     const val TEMP_ID = -1L
     const val INVALID_ID = Long.MAX_VALUE
 
-    const val MOST_TOP_Z = Long.MAX_VALUE
-    const val MOST_BOTTOM_Z = 0L
-    const val INVALID_Z = -2L
+    const val MOST_TOP_Z = Int.MAX_VALUE
+    const val MOST_BOTTOM_Z = Int.MIN_VALUE
 
     val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
     val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)

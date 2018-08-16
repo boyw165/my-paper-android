@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present Paper
+// Copyright Aug 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,25 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.transform
+package com.paper.model
 
-import com.paper.model.IPaperTransform
-import com.paper.model.IPaper
-
-class AddStrokeTransform : IPaperTransform {
-
-//    private val mPaper = paper
-//    private val mRedoStroke = paper.getSketch().last().copy()
-
-    override fun undo(target: IPaper) {
-//        mPaper.popStroke()
-    }
-
-    override fun redo(target: IPaper) {
-//        mPaper.pushStroke(mRedoStroke)
-    }
-
-    override fun toString(): String {
-        return javaClass.simpleName
-    }
-}
+interface IImageScrap : IScrap

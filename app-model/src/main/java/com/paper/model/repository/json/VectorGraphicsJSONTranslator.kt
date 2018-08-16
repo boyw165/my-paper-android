@@ -23,13 +23,13 @@ package com.paper.model.repository.json
 import com.google.gson.*
 import com.paper.model.Color
 import com.paper.model.sketch.PenType
-import com.paper.model.sketch.SketchStroke
+import com.paper.model.sketch.VectorGraphics
 import java.lang.reflect.Type
 
-class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
-                                   JsonDeserializer<SketchStroke> {
+class VectorGraphicsJSONTranslator : JsonSerializer<VectorGraphics>,
+                                     JsonDeserializer<VectorGraphics> {
 
-    override fun serialize(src: SketchStroke,
+    override fun serialize(src: VectorGraphics,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -37,7 +37,7 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         // Pen type
         root.addProperty("penType", encodePenType(src.penType))
         // Pen color, #ARGB
-        root.addProperty("penColor", "#${Integer.toHexString(src.penColor)}")
+        root.addProperty("penColor", Color.toHexString(src.penColor))
         // Pen size
         root.addProperty("penSize", src.penSize)
 
@@ -53,7 +53,7 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): SketchStroke {
+                             context: JsonDeserializationContext): VectorGraphics {
         val root = json.asJsonObject
 
         // Pen type
@@ -67,9 +67,9 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
         // Pen width
         val penSize = root.get("penSize").asFloat
 
-        val model = SketchStroke(penColor = penColor,
-                                 penSize = penSize,
-                                 penType = penType)
+        val model = VectorGraphics(penColor = penColor,
+                                   penSize = penSize,
+                                   penType = penType)
 
         // Parse path-tuple
         val pathString = root.get("path").asString
@@ -78,7 +78,7 @@ class SketchStrokeJSONTranslator : JsonSerializer<SketchStroke>,
 
         // Z index
         if (root.has("z")) {
-            model.z = root["z"].asLong
+            model.z = root["z"].asInt
         }
 
         return model

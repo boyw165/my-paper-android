@@ -22,6 +22,22 @@ package com.paper.model
 
 object Color {
 
+    const val RED = 0xFFFF0000.toInt()
+    const val GREEN = 0xFF00FF00.toInt()
+    const val BLUE = 0xFF0000FF.toInt()
+
+    /**
+     * Convert ARGB integer to hex color palette.
+     */
+    @JvmStatic
+    fun toHexString(color: Int): String {
+        val colorWithAlpha = color or -0x1000000
+        return "#${Integer.toHexString(colorWithAlpha).toUpperCase()}"
+    }
+
+    /**
+     * Convert the hex color palette to ARGB integer.
+     */
     @JvmStatic
     fun parseColor(colorString: String): Int {
         if (colorString[0] == '#') {

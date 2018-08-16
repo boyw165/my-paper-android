@@ -24,11 +24,16 @@ import android.os.StrictMode
 import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
+import com.google.gson.GsonBuilder
 import com.paper.model.*
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSqliteImpl
 import com.paper.model.repository.PaperTransformRepoFileImpl
+import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.repository.json.VectorGraphicsJSONTranslator
+import com.paper.model.sketch.VectorGraphics
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
 
@@ -74,10 +79,22 @@ class PaperApplication : MultiDexApplication(),
 
     // Repository and scheduler ///////////////////////////////////////////////
 
+    private val mJsonTranslator by lazy {
+        GsonBuilder()
+            .registerTypeAdapter(PaperAutoSaveImpl::class.java,
+                                 PaperJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java,
+                                 VectorGraphicsJSONTranslator())
+            .registerTypeAdapter(BaseScrap::class.java,
+                                 ScrapJSONTranslator())
+            .create()
+    }
+
     private val mDbScheduler = SingleScheduler()
     private val mPaperRepo by lazy {
         PaperRepoSqliteImpl(authority = packageName,
                             resolver = contentResolver,
+                            jsonTranslator = mJsonTranslator,
                             fileDir = getExternalFilesDir("media"),
                             prefs = preference,
                             dbIoScheduler = mDbScheduler)

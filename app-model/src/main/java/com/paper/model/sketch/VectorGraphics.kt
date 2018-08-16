@@ -26,12 +26,12 @@ import com.paper.model.Rect
 import java.util.*
 
 /**
- * The sketch model. A sketch contains stroke(s), [SketchStroke]. Each
+ * The sketch model. A sketch contains stroke(s), [VectorGraphics]. Each
  * stroke contains tuple(s), [Point]. A tuple represents a node of
  * a path segment and contains at least one point, [Point]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
-data class SketchStroke(
+data class VectorGraphics(
     val id: UUID = UUID.randomUUID(),
     // The byte order is ARGB.
     val penColor: Int = 0,
@@ -61,9 +61,9 @@ data class SketchStroke(
 
     /**
      * The z-order, where the value should be greater than or equal to 0.
-     * @see [ModelConst.INVALID_Z]
+     * @see [ModelConst.MOST_BOTTOM_Z]
      */
-    var z = ModelConst.INVALID_Z
+    var z = ModelConst.MOST_BOTTOM_Z
         set(value) {
             field = value
 
@@ -71,7 +71,7 @@ data class SketchStroke(
             mIsHashDirty = true
         }
 
-    fun addPath(p: Point): SketchStroke {
+    fun addPath(p: Point): VectorGraphics {
         // Calculate new boundary.
         calculateBound(p.x, p.y)
 
@@ -83,7 +83,7 @@ data class SketchStroke(
         return this
     }
 
-    fun addAllPath(PointList: List<Point>): SketchStroke {
+    fun addAllPath(PointList: List<Point>): VectorGraphics {
         // Calculate new boundary.
         for (p in PointList) {
             calculateBound(p.x, p.y)
@@ -122,7 +122,7 @@ data class SketchStroke(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SketchStroke
+        other as VectorGraphics
 
         if (penColor != other.penColor) return false
         if (penSize != other.penSize) return false

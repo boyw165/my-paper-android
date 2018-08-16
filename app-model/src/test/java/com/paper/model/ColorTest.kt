@@ -1,6 +1,7 @@
-// Copyright May 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
-// Author: boyw165@gmail.com
+// Author: djken0106@gmail.com,
+//         boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,58 +23,25 @@
 
 package com.paper.model
 
-import com.paper.model.sketch.SketchStroke
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner::class)
-class SketchStrokeTest {
+class ColorTest {
 
     @Test
-    fun listHashCode() {
-        val randomList = mutableListOf<Point>()
-        val hashCode1 = randomList.hashCode()
-
-        randomList.add(Point(1f, 2f))
-        val hashCode2 = randomList.hashCode()
-
-        Assert.assertNotEquals(hashCode1, hashCode2)
-
-        randomList.remove(Point(1f, 2f))
-        val hashCode3 = randomList.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode3)
-        Assert.assertEquals(hashCode1, hashCode3)
+    fun `hex color palette to int`() {
+        Assert.assertEquals(0xFFFF0000.toInt(), Color.parseColor("#FF0000"))
+        Assert.assertEquals(0xFF00FF00.toInt(), Color.parseColor("#00FF00"))
+        Assert.assertEquals(0xFF0000FF.toInt(), Color.parseColor("#0000FF"))
     }
 
     @Test
-    fun addPath_hashCodeShouldBeDifferent() {
-        val stroke = SketchStroke()
-
-        stroke.addPath(Point(0f, 0f))
-
-        val hashCode1 = stroke.hashCode()
-
-        stroke.addPath(Point(1f, 1f))
-
-        val hashCode2 = stroke.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
-    }
-
-    @Test
-    fun changeZ_hashCodeShouldBeDifferent() {
-        val stroke = SketchStroke()
-
-        val hashCode1 = stroke.hashCode()
-
-        stroke.z = ModelConst.MOST_TOP_Z
-
-        val hashCode2 = stroke.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
+    fun `int color to hex string`() {
+        Assert.assertEquals("#FFFF0000", Color.toHexString(Color.RED))
+        Assert.assertEquals("#FF00FF00", Color.toHexString(Color.GREEN))
+        Assert.assertEquals("#FF0000FF", Color.toHexString(Color.BLUE))
     }
 }
-

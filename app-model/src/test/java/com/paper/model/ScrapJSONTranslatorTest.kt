@@ -25,79 +25,97 @@ package com.paper.model
 
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.ScrapJSONTranslator
-import com.paper.model.repository.json.SketchStrokeJSONTranslator
+import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.PenType
-import com.paper.model.sketch.SketchStroke
+import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
-private const val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"x\":100.0,\"y\":200.0,\"z\":1,\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"penType\":\"pen\",\"penColor\":\"#00000000\",\"penSize\":0.5}]}"
+private const val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"penType\":\"pen\",\"penColor\":\"#00000000\",\"penSize\":0.5}]}"
 
 @RunWith(MockitoJUnitRunner::class)
 class ScrapJSONTranslatorTest {
 
-    @Test
-    fun serializeDummyScrap() {
-        val translator = GsonBuilder()
-            .registerTypeAdapter(Scrap::class.java, ScrapJSONTranslator())
-            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
+    private val translator by lazy {
+        GsonBuilder()
+            .registerTypeAdapter(BaseScrap::class.java, ScrapJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
             .create()
-
-        val model = Scrap()
-        val uuid = model.uuid
-        model.x = 100f
-        model.y = 200f
-        model.z = ModelConst.MOST_BOTTOM_Z
-        model.scale = 0.5f
-
-        model.addSketchStroke(SketchStroke(penColor = Color.parseColor("#FF0000"),
-                                           penSize = 0.5f,
-                                           penType = PenType.PEN)
-                                    .addAllPath(listOf(Point(0.18075603f,
-                                                             0.25663146f,
-                                                             0),
-                                                       Point(0.5f,
-                                                             0.5f,
-                                                             100))))
-
-        Assert.assertEquals("{\"uuid\":\"$uuid\",\"x\":100.0,\"y\":200.0,\"z\":${ModelConst.MOST_BOTTOM_Z},\"scale\":0.5,\"rotationInRadians\":0.0,\"sketch\":[{\"penType\":\"pen\",\"penColor\":\"#ffff0000\",\"penSize\":0.5,\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"z\":${ModelConst.INVALID_Z}}]}",
-                translator.toJson(model, Scrap::class.java))
     }
 
     @Test
-    fun deserializeScrap_With_Sketch() {
-        val gson = GsonBuilder()
-            .registerTypeAdapter(Scrap::class.java, ScrapJSONTranslator())
-            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
-            .create()
-        val model = gson.fromJson<Scrap>(TEST_SCRAP_JSON, Scrap::class.java)
+    fun `serialize svg scrap`() {
+        val model = SVGScrap()
+        val uuid = model.uuid
+        model.setFrame(Frame(x = 100f,
+                             y = 200f,
+                             z = ModelConst.MOST_BOTTOM_Z,
+                             scaleX = 0.1f,
+                             scaleY = 0.2f,
+                             rotationInDegrees = 30f))
 
-        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.uuid.toString())
+        model.addSVG(VectorGraphics(penColor = Color.parseColor("#FF0000"),
+                                    penSize = 0.5f,
+                                    penType = PenType.PEN)
+                         .addAllPath(listOf(Point(0.18075603f,
+                                                  0.25663146f,
+                                                  0),
+                                            Point(0.5f,
+                                                  0.5f,
+                                                  100))))
 
-        Assert.assertEquals(100f, model.x)
-        Assert.assertEquals(200f, model.y)
-        Assert.assertEquals(1L, model.z)
-        Assert.assertEquals(0.5f, model.scale)
+        val jsonText = translator.toJson(model, BaseScrap::class.java)
+        System.out.println("JSON output = $jsonText")
+
+        Assert.assertTrue(jsonText.contains("\"uuid\":\"$uuid\""))
+        Assert.assertTrue(jsonText.contains("\"type\":\"svg\""))
+
+        Assert.assertTrue(jsonText.contains("\"x\":100.0"))
+        Assert.assertTrue(jsonText.contains("\"y\":200.0"))
+        Assert.assertTrue(jsonText.contains("\"z\":${ModelConst.MOST_BOTTOM_Z}"))
+        Assert.assertTrue(jsonText.contains("\"scaleX\":0.1"))
+        Assert.assertTrue(jsonText.contains("\"scaleY\":0.2"))
+        Assert.assertTrue(jsonText.contains("\"rotationInDegrees\":30.0"))
+
+        Assert.assertTrue(jsonText.contains("\"penType\":\"pen\""))
+        Assert.assertTrue(jsonText.contains("\"penColor\":\"#FFFF0000\""))
+        Assert.assertTrue(jsonText.contains("\"penSize\":0.5"))
+
+        Assert.assertTrue(jsonText.contains("\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\""))
+    }
+
+    @Test
+    fun `deserialize svg scrap`() {
+        val model = translator.fromJson<SVGScrap>(TEST_SCRAP_JSON, BaseScrap::class.java)
+
+        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getId().toString())
+
+        Assert.assertEquals(100f, model.getFrame().x)
+        Assert.assertEquals(200f, model.getFrame().y)
+        Assert.assertEquals(1, model.getFrame().z)
+        Assert.assertEquals(0.5f, model.getFrame().scaleX)
+        Assert.assertEquals(0.5f, model.getFrame().scaleY)
+        Assert.assertEquals(30f, model.getFrame().rotationInDegrees)
 
         // Every sketch has just one point.
-        for (sketch in model.sketch) {
-            Assert.assertEquals(2, sketch.pointList.size)
+        model.getSVGs().forEach { svg ->
+            Assert.assertEquals(2, svg.pointList.size)
         }
 
         // Match x-y pair exactly.
-        for ((i, stroke) in model.sketch.withIndex()) {
+        model.getSVGs().forEachIndexed { i, svg ->
             when (i) {
                 0 -> {
-                    Assert.assertEquals(0.18075603f, stroke.pointList[0].x)
-                    Assert.assertEquals(0.25663146f, stroke.pointList[0].y)
-                    Assert.assertEquals(0, stroke.pointList[0].time)
+                    Assert.assertEquals(0.18075603f, svg.pointList[i].x)
+                    Assert.assertEquals(0.25663146f, svg.pointList[i].y)
+                    Assert.assertEquals(0, svg.pointList[i].time)
                 }
                 1 -> {
-                    Assert.assertEquals(0.5f, stroke.pointList[0].x)
-                    Assert.assertEquals(0.5f, stroke.pointList[0].y)
-                    Assert.assertEquals(100, stroke.pointList[0].time)
+                    Assert.assertEquals(0.5f, svg.pointList[i].x)
+                    Assert.assertEquals(0.5f, svg.pointList[i].y)
+                    Assert.assertEquals(100, svg.pointList[i].time)
                 }
             }
         }

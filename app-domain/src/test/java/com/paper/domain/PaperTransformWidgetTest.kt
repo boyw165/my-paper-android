@@ -27,7 +27,7 @@ import com.paper.domain.widget.editor.PaperTransformWidget
 import com.paper.model.PaperAutoSaveImpl
 import com.paper.model.Point
 import com.paper.model.repository.PaperTransformRepoFileImpl
-import com.paper.model.sketch.SketchStroke
+import com.paper.model.sketch.VectorGraphics
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
 import org.junit.Assert
@@ -39,9 +39,9 @@ import java.io.File
 @RunWith(MockitoJUnitRunner::class)
 class PaperTransformWidgetTest {
 
-    private val mTestStroke1 = SketchStroke()
-    private val mTestStroke2 = SketchStroke()
-    private val mTestStroke3 = SketchStroke()
+    private val mTestStroke1 = VectorGraphics()
+    private val mTestStroke2 = VectorGraphics()
+    private val mTestStroke3 = VectorGraphics()
 
     init {
         mTestStroke1.addPath(Point(x = 1f, y = 1f))

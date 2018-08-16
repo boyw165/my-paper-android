@@ -21,9 +21,9 @@
 package com.paper.model
 
 import com.google.gson.GsonBuilder
-import com.paper.model.repository.json.SketchStrokeJSONTranslator
+import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.PenType
-import com.paper.model.sketch.SketchStroke
+import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,15 +33,15 @@ private const val SKETCH_PEN_STROKE = "{\"penType\":\"pen\",\"penColor\":\"#FFED
 private const val SKETCH_ERASER_STROKE = "{\"penType\":\"eraser\",\"penColor\":\"#FFED4956\",\"penSize\":1,\"path\":\"(0.18075603,0.25663146,0)\",\"z\":1}"
 
 @RunWith(MockitoJUnitRunner::class)
-class SketchStrokeJSONTranslatorTest {
+class VectorGraphicsJSONTranslatorTest {
 
     @Test
     fun deserializePenStroke() {
         val translator = GsonBuilder()
-            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
             .create()
 
-        val sketchStroke = translator.fromJson(SKETCH_PEN_STROKE, SketchStroke::class.java)
+        val sketchStroke = translator.fromJson(SKETCH_PEN_STROKE, VectorGraphics::class.java)
 
         Assert.assertEquals(PenType.PEN, sketchStroke.penType)
         Assert.assertEquals(Color.parseColor("#FFED4956"), sketchStroke.penColor)
@@ -53,10 +53,10 @@ class SketchStrokeJSONTranslatorTest {
     @Test
     fun deserializeEraserStroke() {
         val translator = GsonBuilder()
-            .registerTypeAdapter(SketchStroke::class.java, SketchStrokeJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
             .create()
 
-        val sketchStroke = translator.fromJson(SKETCH_ERASER_STROKE, SketchStroke::class.java)
+        val sketchStroke = translator.fromJson(SKETCH_ERASER_STROKE, VectorGraphics::class.java)
 
         Assert.assertEquals(PenType.ERASER, sketchStroke.penType)
     }

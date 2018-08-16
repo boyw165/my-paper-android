@@ -21,63 +21,77 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
-import com.paper.model.Scrap
-import com.paper.model.sketch.SketchStroke
+import com.paper.model.*
+import com.paper.model.sketch.VectorGraphics
+import java.lang.UnsupportedOperationException
 import java.lang.reflect.Type
 import java.util.*
 
-class ScrapJSONTranslator : JsonSerializer<Scrap>,
-                            JsonDeserializer<Scrap> {
+class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
+                            JsonDeserializer<BaseScrap> {
 
-    override fun serialize(src: Scrap,
+    override fun serialize(src: BaseScrap,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
+        val frame = src.getFrame()
 
-        root.addProperty("uuid", src.uuid.toString())
+        root.addProperty("uuid", src.getId().toString())
 
-        root.addProperty("x", src.x)
-        root.addProperty("y", src.y)
-        root.addProperty("z", src.z)
+        root.addProperty("x", frame.x)
+        root.addProperty("y", frame.y)
+        root.addProperty("z", frame.z)
 
-        root.addProperty("scale", src.scale)
-        root.addProperty("rotationInRadians", src.rotationInRadians)
+        root.addProperty("scaleX", frame.scaleX)
+        root.addProperty("scaleY", frame.scaleY)
+        root.addProperty("rotationInDegrees", frame.rotationInDegrees)
 
-        // See SketchStrokeJSONTranslator.kt
-        val sketchJson = JsonArray()
-        src.sketch.forEach { sketchJson.add(context.serialize(it, SketchStroke::class.java)) }
-        root.add("sketch", sketchJson)
+        when (src) {
+            is ISVGScrap -> {
+                // If it is a VectorGraphics scrap ...
+                root.addProperty("type", ScrapType.SVG)
+
+                val svgJSON = JsonArray()
+                val svgs = src.getSVGs()
+
+                svgs.forEach { svgJSON.add(context.serialize(it, VectorGraphics::class.java)) }
+
+                root.add("svg", svgJSON)
+            }
+        }
 
         return root
     }
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): Scrap {
+                             context: JsonDeserializationContext): BaseScrap {
         val root = json.asJsonObject
+        val id = UUID.fromString(root.get("uuid").asString)
+        val type = root["type"].asString
 
-        val model = Scrap(
-            uuid = UUID.fromString(root.get("uuid").asString))
+        val model = when (type) {
+            ScrapType.SVG -> {
+                val field = SVGScrap(id)
 
-        model.x = root.get("x").asFloat
-        model.y = root.get("y").asFloat
+                val sketchJson = root["svg"].asJsonArray
+                sketchJson.forEach {
+                    field.addSVG(context.deserialize(
+                        it, VectorGraphics::class.java))
+                }
 
-        if (root.has("z")) {
-            model.z = root["z"].asLong
-        }
-
-        model.scale = root.get("scale").asFloat
-        model.rotationInRadians = root.get("rotationInRadians").asFloat
-
-        // See SketchStrokeJSONTranslator.kt
-        if (root.has("sketch")) {
-            val sketchJson = root["sketch"].asJsonArray
-
-            sketchJson.forEach {
-                model.addSketchStroke(
-                    context.deserialize(it, SketchStroke::class.java))
+                field
             }
+            else -> throw UnsupportedOperationException()
         }
+
+        // Positioning, scale, and rotation
+        model.setFrame(Frame(root.get("x").asFloat,
+                             root.get("y").asFloat,
+                             if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z,
+                             root.get("scaleX").asFloat,
+                             root.get("scaleY").asFloat,
+                             root.get("rotationInDegrees").asFloat))
 
         return model
     }

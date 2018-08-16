@@ -24,7 +24,7 @@ package com.paper.model
 
 interface IPaperTransform {
 
-    fun undo()
+    fun undo(target: IPaper)
 
-    fun redo()
+    fun redo(target: IPaper)
 }

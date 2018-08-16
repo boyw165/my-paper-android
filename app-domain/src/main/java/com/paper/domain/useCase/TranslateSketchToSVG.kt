@@ -23,7 +23,7 @@
 package com.paper.domain.useCase
 
 import com.paper.domain.event.*
-import com.paper.model.sketch.SketchStroke
+import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable
@@ -32,7 +32,7 @@ import io.reactivex.disposables.Disposable
  * Produce a reactive stream of strokes enclosing by a [InitializationBeginEvent]
  * and [InitializationEndEvent].
  */
-class TranslateSketchToSVG(strokes: List<SketchStroke>) : Observable<CanvasEvent>() {
+class TranslateSketchToSVG(strokes: List<VectorGraphics>) : Observable<CanvasEvent>() {
 
     private val mStrokes = strokes.toList()
 

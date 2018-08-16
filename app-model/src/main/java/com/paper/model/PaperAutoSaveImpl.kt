@@ -21,14 +21,10 @@
 package com.paper.model
 
 import com.paper.model.repository.IPaperRepo
-import com.paper.model.sketch.SketchStroke
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.util.*
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.Condition
-import java.util.concurrent.locks.ReentrantLock
 
 class PaperAutoSaveImpl(
     // The SQLite ID.
@@ -38,6 +34,8 @@ class PaperAutoSaveImpl(
     createdAt: Long = 0L)
     : IPaper,
       NoObfuscation {
+
+    private val mLock = Any()
 
     // General ////////////////////////////////////////////////////////////////
 
@@ -82,15 +80,15 @@ class PaperAutoSaveImpl(
     }
 
     override fun setWidth(width: Float) {
-        mLock.lock()
-        mWidth = width
-        mLock.unlock()
+        synchronized(mLock) {
+            mWidth = width
+        }
     }
 
     override fun setHeight(height: Float) {
-        mLock.lock()
-        mHeight = height
-        mLock.unlock()
+        synchronized(mLock) {
+            mHeight = height
+        }
     }
 
     // Caption & tags /////////////////////////////////////////////////////////
@@ -122,27 +120,27 @@ class PaperAutoSaveImpl(
     }
 
     override fun setThumbnail(file: File) {
-        mLock.lock()
-        mThumbnail = file
-        mLock.unlock()
+        synchronized(mLock) {
+            mThumbnail = file
+        }
 
         // Request to save file
         requestAutoSave()
     }
 
     override fun setThumbnailWidth(width: Int) {
-        mLock.lock()
-        mThumbnailWidth = width
-        mLock.unlock()
+        synchronized(mLock) {
+            mThumbnailWidth = width
+        }
 
         // Request to save file
         requestAutoSave()
     }
 
     override fun setThumbnailHeight(height: Int) {
-        mLock.lock()
-        mThumbnailHeight = height
-        mLock.unlock()
+        synchronized(mLock) {
+            mThumbnailHeight = height
+        }
 
         // Request to save file
         requestAutoSave()
@@ -150,108 +148,106 @@ class PaperAutoSaveImpl(
 
     // Sketch & strokes ///////////////////////////////////////////////////////
 
-    private val mSketch = mutableListOf<SketchStroke>()
-    private val mAddStrokeSignal = PublishSubject.create<SketchStroke>().toSerialized()
-    private val mRemoveStrokeSignal = PublishSubject.create<SketchStroke>().toSerialized()
-
-    override fun getSketch(): List<SketchStroke> {
-        mLock.lock()
-        val sketch: List<SketchStroke> = mSketch.toList()
-        mLock.unlock()
-
-        return sketch
-    }
-
-    override fun pushStroke(stroke: SketchStroke) {
-        mLock.lock()
-        if (stroke.pointList.isNotEmpty()) {
-            mSketch.add(stroke)
-        }
-        mLock.unlock()
-
-        mAddStrokeSignal.onNext(stroke)
-
-        // Request to save file
-        requestAutoSave()
-    }
-
-    override fun popStroke(): SketchStroke {
-        mLock.lock()
-        val stroke = mSketch.removeAt(mSketch.lastIndex)
-        mLock.unlock()
-
-        mRemoveStrokeSignal.onNext(stroke)
-
-        // Request to save file
-        requestAutoSave()
-
-        return stroke
-    }
-
-    override fun removeAllStrokes() {
-        mLock.lock()
-        val removed = mSketch.toList()
-        mSketch.clear()
-        mLock.unlock()
-
-        removed.forEach { stroke ->
-            mRemoveStrokeSignal.onNext(stroke)
-        }
-
-        // Request to save file
-        requestAutoSave()
-    }
-
-    override fun onAddStroke(replayAll: Boolean): Observable<SketchStroke> {
-        return if (replayAll) {
-            Observable.merge(
-                Observable.fromIterable(getSketch()),
-                mAddStrokeSignal)
-        } else {
-            mAddStrokeSignal
-        }
-    }
-
-    override fun onRemoveStroke(): Observable<SketchStroke> {
-        return mRemoveStrokeSignal
-    }
+//    private val mSketch = mutableListOf<VectorGraphics>()
+//    private val mAddStrokeSignal = PublishSubject.create<VectorGraphics>().toSerialized()
+//    private val mRemoveStrokeSignal = PublishSubject.create<VectorGraphics>().toSerialized()
+//
+//    override fun getSketch(): List<VectorGraphics> {
+//        mLock.lock()
+//        val sketch: List<VectorGraphics> = mSketch.toList()
+//        mLock.unlock()
+//
+//        return sketch
+//    }
+//
+//    override fun pushStroke(stroke: VectorGraphics) {
+//        mLock.lock()
+//        if (stroke.pointList.isNotEmpty()) {
+//            mSketch.add(stroke)
+//        }
+//        mLock.unlock()
+//
+//        mAddStrokeSignal.onNext(stroke)
+//
+//        // Request to save file
+//        requestAutoSave()
+//    }
+//
+//    override fun popStroke(): VectorGraphics {
+//        mLock.lock()
+//        val stroke = mSketch.removeAt(mSketch.lastIndex)
+//        mLock.unlock()
+//
+//        mRemoveStrokeSignal.onNext(stroke)
+//
+//        // Request to save file
+//        requestAutoSave()
+//
+//        return stroke
+//    }
+//
+//    override fun removeAllStrokes() {
+//        mLock.lock()
+//        val removed = mSketch.toList()
+//        mSketch.clear()
+//        mLock.unlock()
+//
+//        removed.forEach { stroke ->
+//            mRemoveStrokeSignal.onNext(stroke)
+//        }
+//
+//        // Request to save file
+//        requestAutoSave()
+//    }
+//
+//    override fun onAddStroke(replayAll: Boolean): Observable<VectorGraphics> {
+//        return if (replayAll) {
+//            Observable.merge(
+//                Observable.fromIterable(getSketch()),
+//                mAddStrokeSignal)
+//        } else {
+//            mAddStrokeSignal
+//        }
+//    }
+//
+//    override fun onRemoveStroke(): Observable<VectorGraphics> {
+//        return mRemoveStrokeSignal
+//    }
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    private var mScraps = mutableListOf<Scrap>()
-    private val mAddScrapSignal = PublishSubject.create<Scrap>().toSerialized()
-    private val mRemoveScrapSignal = PublishSubject.create<Scrap>().toSerialized()
+    private var mScraps = mutableListOf<BaseScrap>()
+    private val mAddScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
+    private val mRemoveScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
 
-    override fun getScraps(): List<Scrap> {
-        mLock.lock()
-        // Must clone the list in case concurrent modification
-        val scraps = mScraps.toList()
-        mLock.unlock()
-
-        return scraps
+    override fun getScraps(): List<BaseScrap> {
+        synchronized(mLock) {
+            // Must clone the list in case concurrent modification
+            return mScraps.toList()
+        }
     }
 
-    override fun addScrap(scrap: Scrap) {
-        mLock.lock()
-        mScraps.add(scrap)
-        mAddScrapSignal.onNext(scrap)
-        mLock.unlock()
+    override fun addScrap(scrap: BaseScrap) {
+        synchronized(mLock) {
+            mScraps.add(scrap)
+            mAddScrapSignal.onNext(scrap)
+        }
 
         // Request to save file
         requestAutoSave()
     }
 
-    override fun removeScrap(scrap: Scrap) {
-        mLock.lock()
-        mScraps.remove(scrap)
-        mRemoveScrapSignal.onNext(scrap)
-        mLock.unlock()
+    override fun removeScrap(scrap: BaseScrap) {
+        synchronized(mLock) {
+            mScraps.remove(scrap)
+            mRemoveScrapSignal.onNext(scrap)
+        }
 
         // Request to save file
         requestAutoSave()
     }
 
-    override fun onAddScrap(replayAll: Boolean): Observable<Scrap> {
+    override fun onAddScrap(replayAll: Boolean): Observable<BaseScrap> {
         return if (replayAll) {
             Observable.merge(
                 Observable.fromIterable(getScraps()),
@@ -261,7 +257,7 @@ class PaperAutoSaveImpl(
         }
     }
 
-    override fun onRemoveScrap(): Observable<Scrap> {
+    override fun onRemoveScrap(): Observable<BaseScrap> {
         return mRemoveScrapSignal
     }
 
@@ -278,34 +274,6 @@ class PaperAutoSaveImpl(
 
     private fun requestAutoSave() {
         mRepo?.putPaper(this@PaperAutoSaveImpl)
-    }
-
-    // Thread save ////////////////////////////////////////////////////////////
-
-    private val mLock = ReentrantLock()
-
-    override fun lock() {
-        mLock.lock()
-    }
-
-    override fun tryLock(): Boolean {
-        return mLock.tryLock()
-    }
-
-    override fun tryLock(time: Long, unit: TimeUnit?): Boolean {
-        return mLock.tryLock(time, unit)
-    }
-
-    override fun unlock() {
-        mLock.unlock()
-    }
-
-    override fun lockInterruptibly() {
-        mLock.lockInterruptibly()
-    }
-
-    override fun newCondition(): Condition {
-        return mLock.newCondition()
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
@@ -325,7 +293,7 @@ class PaperAutoSaveImpl(
         if (mThumbnail != other.mThumbnail) return false
         if (mThumbnailWidth != other.mThumbnailWidth) return false
         if (mThumbnailHeight != other.mThumbnailHeight) return false
-        if (mSketch != other.mSketch) return false
+//        if (mSketch != other.mSketch) return false
         if (mScraps != other.mScraps) return false
 
         return true
@@ -341,7 +309,7 @@ class PaperAutoSaveImpl(
         result = 31 * result + (mThumbnail?.hashCode() ?: 0)
         result = 31 * result + mThumbnailWidth
         result = 31 * result + mThumbnailHeight
-        result = 31 * result + mSketch.hashCode()
+//        result = 31 * result + mSketch.hashCode()
         result = 31 * result + mScraps.hashCode()
         return result
     }

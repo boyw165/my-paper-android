@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,9 +22,16 @@
 
 package com.paper.model
 
-data class Transform(var translationX: Float = 0f,
-                     var translationY: Float = 0f,
-                     var scaleX: Float = 1f,
-                     var scaleY: Float = 1f,
-                     var rotationInRadians: Float = 0f)
-    : NoObfuscation
+import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Observable
+
+interface ISVGScrap : IScrap {
+
+    fun addSVG(svg: VectorGraphics)
+
+    fun removeSVG(svg: VectorGraphics)
+
+    fun getSVGs(): List<VectorGraphics>
+
+    fun onUpdateSVGs(): Observable<List<VectorGraphics>>
+}

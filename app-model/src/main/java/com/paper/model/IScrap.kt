@@ -1,7 +1,6 @@
-// Copyright Apr 2017-present Paper
+// Copyright Aug 2018-present Paper
 //
-// Author: boyw165@gmail.com,
-//         djken0106@gmail.com
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -24,49 +23,15 @@
 package com.paper.model
 
 import io.reactivex.Observable
-import java.io.File
 import java.util.*
-import java.util.concurrent.locks.Lock
 
-interface IPaper {
+interface IScrap {
 
-    // The SQLite ID.
-    fun getId(): Long
-    // The global ID.
-    fun getUUID(): UUID
+    fun getId(): UUID
 
-    fun getCreatedAt(): Long
+    fun setFrame(frame: Frame)
 
-    fun getModifiedAt(): Long
-    fun setModifiedAt(time: Long)
+    fun getFrame(): Frame
 
-    // By default is landscape A4, 210 x 297 units.
-    fun getWidth(): Float
-    fun getHeight(): Float
-
-    fun setWidth(width: Float)
-    fun setHeight(height: Float)
-
-    fun getThumbnail(): File?
-    fun getThumbnailWidth(): Int
-    fun getThumbnailHeight(): Int
-
-    fun setThumbnail(file: File)
-    fun setThumbnailWidth(width: Int)
-    fun setThumbnailHeight(height: Int)
-
-    fun getCaption(): String
-    fun getTags(): List<String>
-
-    // Scraps /////////////////////////////////////////////////////////////////
-
-    fun getScraps(): List<BaseScrap>
-
-    fun addScrap(scrap: BaseScrap)
-
-    fun removeScrap(scrap: BaseScrap)
-
-    fun onAddScrap(replayAll: Boolean = true): Observable<BaseScrap>
-
-    fun onRemoveScrap(): Observable<BaseScrap>
+    fun onUpdateFrame(): Observable<Frame>
 }

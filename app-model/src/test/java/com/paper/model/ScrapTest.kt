@@ -32,11 +32,12 @@ class ScrapTest {
 
     @Test
     fun changeXY_hashCodeShouldBeDifferent() {
-        val scrap = Scrap()
+        val scrap = BaseScrap()
         val hashCode1 = scrap.hashCode()
 
-        scrap.x = 1f
-        scrap.y = 2f
+        scrap.setFrame(scrap.getFrame()
+                           .copy(x = 1f,
+                                 y = 2f))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertNotEquals(hashCode2, hashCode1)
@@ -44,15 +45,18 @@ class ScrapTest {
 
     @Test
     fun changeXYRestoreXY_hashCodeShouldBeSame() {
-        val scrap = Scrap()
-        val startX = scrap.x
-        val startY = scrap.y
+        val scrap = BaseScrap()
+        val startX = scrap.getFrame().x
+        val startY = scrap.getFrame().y
         val hashCode1 = scrap.hashCode()
 
-        scrap.x = 1f
-        scrap.y = 2f
-        scrap.x = startX
-        scrap.y = startY
+
+        scrap.setFrame(scrap.getFrame()
+                           .copy(x = 1f,
+                                 y = 2f))
+        scrap.setFrame(scrap.getFrame()
+                           .copy(x = startX,
+                                 y = startY))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertEquals(hashCode1, hashCode2)
@@ -60,15 +64,17 @@ class ScrapTest {
 
     @Test
     fun changeZ_hashCodeShouldBeDifferent() {
-        val scrap = Scrap()
+        val scrap = BaseScrap()
         val hashCode1 = scrap.hashCode()
 
-        scrap.z = ModelConst.MOST_BOTTOM_Z
+        scrap.setFrame(scrap.getFrame()
+                           .copy(z = ModelConst.MOST_BOTTOM_Z))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertNotEquals(hashCode2, hashCode1)
 
-        scrap.z = ModelConst.MOST_TOP_Z
+        scrap.setFrame(scrap.getFrame()
+                           .copy(z = ModelConst.MOST_TOP_Z))
         val hashCode3 = scrap.hashCode()
 
         Assert.assertNotEquals(hashCode2, hashCode3)
@@ -76,10 +82,12 @@ class ScrapTest {
 
     @Test
     fun changeScale_hashCodeShouldBeDifferent() {
-        val scrap = Scrap()
+        val scrap = BaseScrap()
         val hashCode1 = scrap.hashCode()
 
-        scrap.scale = 2f
+        scrap.setFrame(scrap.getFrame()
+                           .copy(scaleX = 2f,
+                                 scaleY = 2f))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertNotEquals(hashCode2, hashCode1)
@@ -87,12 +95,14 @@ class ScrapTest {
 
     @Test
     fun changeScaleRestoreScale_hashCodeShouldBeSame() {
-        val scrap = Scrap()
-        val startScale = scrap.scale
+        val scrap = BaseScrap()
+        val startScale = scrap.getFrame().scaleX
         val hashCode1 = scrap.hashCode()
 
-        scrap.scale = 2f
-        scrap.scale = startScale
+        scrap.setFrame(scrap.getFrame()
+                           .copy(scaleX = 2f))
+        scrap.setFrame(scrap.getFrame()
+                           .copy(scaleX = startScale))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertEquals(hashCode2, hashCode1)
@@ -100,10 +110,11 @@ class ScrapTest {
 
     @Test
     fun changeRotation_hashCodeShouldBeDifferent() {
-        val scrap = Scrap()
+        val scrap = BaseScrap()
         val hashCode1 = scrap.hashCode()
 
-        scrap.rotationInRadians = Math.PI.toFloat()
+        scrap.setFrame(scrap.getFrame()
+                           .copy(rotationInDegrees = 180f))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertNotEquals(hashCode2, hashCode1)
@@ -111,12 +122,14 @@ class ScrapTest {
 
     @Test
     fun changeRotationRestoreRotation_hashCodeShouldBeSame() {
-        val scrap = Scrap()
-        val startRotation = scrap.rotationInRadians
+        val scrap = BaseScrap()
+        val startRotation = scrap.getFrame().rotationInDegrees
         val hashCode1 = scrap.hashCode()
 
-        scrap.rotationInRadians = Math.PI.toFloat()
-        scrap.rotationInRadians = startRotation
+        scrap.setFrame(scrap.getFrame()
+                           .copy(rotationInDegrees = 180f))
+        scrap.setFrame(scrap.getFrame()
+                           .copy(rotationInDegrees = startRotation))
         val hashCode2 = scrap.hashCode()
 
         Assert.assertEquals(hashCode2, hashCode1)

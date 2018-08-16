@@ -33,10 +33,10 @@ import android.graphics.PointF
  * <pre>
  * // Usage 1:
  * final TransformUtils util = new TransformUtils(matrix);
- * util.getTranslationX();
+ * util.getX();
  *
  * // Usage 2:
- * TransformUtils.getTranslationX(matrix);
+ * TransformUtils.getX(matrix);
  * </pre>
  */
 class TransformUtils {
