@@ -74,12 +74,15 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
             ScrapType.SVG -> {
                 val field = SVGScrap(id)
 
+                // Must have a "svg" property
                 val sketchJson = root["svg"].asJsonArray
+                val svgList = mutableListOf<VectorGraphics>()
                 sketchJson.forEach {
-                    field.addSVG(context.deserialize(
+                    svgList.add(context.deserialize(
                         it, VectorGraphics::class.java))
                 }
 
+                field.setSVGs(svgList)
                 field
             }
             else -> throw UnsupportedOperationException()

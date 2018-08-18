@@ -46,7 +46,7 @@ class TranslateSketchToSVG(strokes: List<VectorGraphics>) : Observable<CanvasEve
         for (stroke in mStrokes) {
             if (d.isDisposed) break
 
-            val points = stroke.pointList
+            val points = stroke.getTupleList
             for ((i, pt) in points.iterator().withIndex()) {
                 if (d.isDisposed) break
 
@@ -55,10 +55,10 @@ class TranslateSketchToSVG(strokes: List<VectorGraphics>) : Observable<CanvasEve
                         StartSketchEvent(
                             strokeID = stroke.id,
                             point = pt,
-                            penColor = stroke.penColor,
+                            penColor = stroke.color,
                             penSize = stroke.penSize,
-                            penType = stroke.penType))
-                    stroke.pointList.lastIndex -> {
+                            penType = stroke.style))
+                    stroke.getTupleList.lastIndex -> {
                         observer.onNext(OnSketchEvent(strokeID = stroke.id,
                                                       point = pt))
                         observer.onNext(StopSketchEvent)

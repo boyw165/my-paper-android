@@ -88,10 +88,8 @@ class PaperContentProvider : ContentProvider(),
                              oldVersion: Int,
                              newVersion: Int) {
         // Don't support downgrade
-        if (newVersion == PaperTable.TABLE_VERSION_CODE_10001_BETA) {
-            db.execSQL("DROP TABLE IF EXISTS ${PaperTable.TABLE_NAME}")
-            onDbCreate(db)
-        }
+        db.execSQL("DROP TABLE IF EXISTS ${PaperTable.TABLE_NAME}")
+        onDbCreate(db)
 
         // e.g. db.execSQL("ALTER TABLE ${PaperTable.TABLE_NAME} ADD COLUMN ${PaperTable.COL_THUMB_DIRTY} INTEGER DEFAULT 0")
     }

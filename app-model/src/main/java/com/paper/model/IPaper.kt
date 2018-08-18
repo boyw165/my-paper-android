@@ -65,8 +65,4 @@ interface IPaper {
     fun addScrap(scrap: BaseScrap)
 
     fun removeScrap(scrap: BaseScrap)
-
-    fun onAddScrap(replayAll: Boolean = true): Observable<BaseScrap>
-
-    fun onRemoveScrap(): Observable<BaseScrap>
 }

@@ -22,43 +22,114 @@ package com.paper.model
 
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
-import com.paper.model.sketch.PenType
+import com.paper.model.sketch.SVGStyle.Fill
+import com.paper.model.sketch.SVGStyle.Stroke
 import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
-private const val SKETCH_PEN_STROKE = "{\"penType\":\"pen\",\"penColor\":\"#FFED4956\",\"penSize\":0.09569436,\"path\":\"(0.18075603,0.25663146,0)\",\"z\":1}"
-private const val SKETCH_ERASER_STROKE = "{\"penType\":\"eraser\",\"penColor\":\"#FFED4956\",\"penSize\":1,\"path\":\"(0.18075603,0.25663146,0)\",\"z\":1}"
-
 @RunWith(MockitoJUnitRunner::class)
 class VectorGraphicsJSONTranslatorTest {
 
-    @Test
-    fun deserializePenStroke() {
-        val translator = GsonBuilder()
+    private val pointSeparator = VectorGraphicsJSONTranslator.POINT_SEPARATOR
+    private val translator by lazy {
+        GsonBuilder()
             .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
             .create()
-
-        val sketchStroke = translator.fromJson(SKETCH_PEN_STROKE, VectorGraphics::class.java)
-
-        Assert.assertEquals(PenType.PEN, sketchStroke.penType)
-        Assert.assertEquals(Color.parseColor("#FFED4956"), sketchStroke.penColor)
-        Assert.assertEquals(0.09569436f, sketchStroke.penSize)
-        Assert.assertEquals(1, sketchStroke.pointList.size)
-        Assert.assertEquals(1L, sketchStroke.z)
     }
 
     @Test
-    fun deserializeEraserStroke() {
-        val translator = GsonBuilder()
-            .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
-            .create()
+    fun `serialize style`() {
+        val graphics = VectorGraphics(style = mutableSetOf(Fill(color = Color.RED,
+                                                                rule = Fill.NONE_ZERO),
+                                                           Stroke(size = 1.5f,
+                                                                  color = Color.GREEN,
+                                                                  closed = true)))
+        val jsonString = translator.toJson(graphics)
 
-        val sketchStroke = translator.fromJson(SKETCH_ERASER_STROKE, VectorGraphics::class.java)
+        System.out.println("JSON = $jsonString")
 
-        Assert.assertEquals(PenType.ERASER, sketchStroke.penType)
+        Assert.assertTrue(jsonString, jsonString.contains("\"style\""))
+        Assert.assertTrue(jsonString, jsonString.contains("\"fill\":[\"#FFFF0000\",${Fill.NONE_ZERO}]"))
+        Assert.assertTrue(jsonString, jsonString.contains("\"stroke\":[\"#FF00FF00\",1.5,true]"))
+    }
+
+    @Test
+    fun `deserialize style`() {
+        val svg = translator.fromJson("{\"style\":{\"fill\":[\"#FFFF0000\",1],\"stroke\":[\"#FF00FF00\",1.5,true]}}", VectorGraphics::class.java)
+
+        svg.style.forEach { s ->
+            when (s) {
+                is Fill -> {
+                    Assert.assertEquals(Color.RED, s.color)
+                    Assert.assertEquals(Fill.NONE_ZERO, s.rule)
+                }
+                is Stroke -> {
+                    Assert.assertEquals(Color.GREEN, s.color)
+                    Assert.assertEquals(1.5f, s.size)
+                    Assert.assertEquals(true, s.closed)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `serialize linear path`() {
+        val graphics = VectorGraphics(style = mutableSetOf(Fill(color = Color.RED,
+                                                                rule = Fill.NONE_ZERO),
+                                                           Stroke(size = 1.5f,
+                                                                  color = Color.GREEN,
+                                                                  closed = true)),
+                                      tupleList = mutableListOf(LinearPointTuple(0f, 0f),
+                                                                LinearPointTuple(1f, 1f)))
+        val jsonString = translator.toJson(graphics)
+
+        System.out.println("JSON = $jsonString")
+
+        Assert.assertTrue(jsonString, jsonString.contains("\"path\":\"0.0,0.0${pointSeparator}1.0,1.0\""))
+    }
+
+    @Test
+    fun `serialize cubic path`() {
+        val graphics = VectorGraphics(style = mutableSetOf(Fill(color = Color.RED,
+                                                                rule = Fill.NONE_ZERO),
+                                                           Stroke(size = 1.5f,
+                                                                  color = Color.GREEN,
+                                                                  closed = true)),
+                                      tupleList = mutableListOf(LinearPointTuple(0f, 0f),
+                                                                CubicPointTuple(Point(1f, 1f),
+                                                                                Point(2f, 2f),
+                                                                                Point(3f, 3f))))
+        val jsonString = translator.toJson(graphics)
+
+        System.out.println("JSON = $jsonString")
+
+        Assert.assertTrue(jsonString, jsonString.contains("\"path\":\"" +
+                                                          "0.0,0.0$pointSeparator" +
+                                                          "1.0,1.0,2.0,2.0,3.0,3.0" +
+                                                          "\""))
+    }
+
+    @Test
+    fun `deserialize cubic path`() {
+        val svg = translator.fromJson("{\"path\":\"" +
+                                      "0.1,0.2$pointSeparator" +
+                                      "1.1,1.2,2.1,2.2,3.1,3.2" +
+                                      "\"}", VectorGraphics::class.java)
+
+        Assert.assertTrue(svg.getTupleAt(0) is LinearPointTuple)
+        Assert.assertEquals(0.1f, (svg.getTupleAt(0) as LinearPointTuple).x)
+        Assert.assertEquals(0.2f, (svg.getTupleAt(0) as LinearPointTuple).y)
+
+        Assert.assertTrue(svg.getTupleAt(1) is CubicPointTuple)
+        Assert.assertEquals(1.1f, (svg.getTupleAt(1) as CubicPointTuple).prevControl.x)
+        Assert.assertEquals(1.2f, (svg.getTupleAt(1) as CubicPointTuple).prevControl.y)
+        Assert.assertEquals(2.1f, (svg.getTupleAt(1) as CubicPointTuple).currentControl.x)
+        Assert.assertEquals(2.2f, (svg.getTupleAt(1) as CubicPointTuple).currentControl.y)
+        Assert.assertEquals(3.1f, (svg.getTupleAt(1) as CubicPointTuple).currentEnd.x)
+        Assert.assertEquals(3.2f, (svg.getTupleAt(1) as CubicPointTuple).currentEnd.y)
     }
 }
 

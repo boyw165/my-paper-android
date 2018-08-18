@@ -22,7 +22,6 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
 import java.util.*
 
 interface IScrap {
@@ -32,6 +31,4 @@ interface IScrap {
     fun setFrame(frame: Frame)
 
     fun getFrame(): Frame
-
-    fun onUpdateFrame(): Observable<Frame>
 }

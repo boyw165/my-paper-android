@@ -22,7 +22,26 @@
 
 package com.paper.model.sketch
 
-enum class PenType {
-    ERASER,
-    PEN
+import android.support.annotation.IntDef
+
+sealed class SVGStyle {
+
+    data class Fill(val color: Int,
+                    @Rule val rule: Int) : SVGStyle() {
+
+        @Retention(AnnotationRetention.SOURCE)
+        @IntDef(NONE_ZERO,
+                EVEN_ODD)
+        annotation class Rule
+
+        companion object {
+            const val NONE_ZERO = 1.shl(0)
+            const val EVEN_ODD = 1.shl(1)
+        }
+    }
+
+    data class Stroke(val color: Int,
+                      val size: Float,
+                      val closed: Boolean) : SVGStyle()
 }
+

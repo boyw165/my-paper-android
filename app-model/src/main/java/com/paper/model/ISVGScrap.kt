@@ -22,16 +22,24 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
-import io.reactivex.Observable
 
 interface ISVGScrap : IScrap {
 
-    fun addSVG(svg: VectorGraphics)
+    fun moveTo(x: Float,
+               y: Float,
+               style: Set<SVGStyle>,
+               closedShape: Boolean)
 
-    fun removeSVG(svg: VectorGraphics)
+    fun lineTo(x: Float,
+               y: Float)
+
+    fun cubicTo(previousControl: Point,
+                currentControl: Point,
+                currentPoint: Point)
+
+    fun setSVGs(src: List<VectorGraphics>)
 
     fun getSVGs(): List<VectorGraphics>
-
-    fun onUpdateSVGs(): Observable<List<VectorGraphics>>
 }

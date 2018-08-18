@@ -20,32 +20,24 @@
 
 package com.paper.model.sketch
 
-import com.paper.model.ModelConst
-import com.paper.model.Point
-import com.paper.model.Rect
+import com.paper.model.*
 import java.util.*
 
 /**
  * The sketch model. A sketch contains stroke(s), [VectorGraphics]. Each
- * stroke contains tuple(s), [Point]. A tuple represents a node of
+ * stroke contains tuple(s), [PointTuple]. A tuple represents a node of
  * a path segment and contains at least one point, [Point]. These
  * points are endpoints or control-points for describing a bezier curve.
  */
 data class VectorGraphics(
     val id: UUID = UUID.randomUUID(),
-    // The byte order is ARGB.
-    val penColor: Int = 0,
-    val penSize: Float = 0.toFloat(),
-    val penType: PenType = PenType.PEN,
-    private val mPointList: MutableList<Point> = mutableListOf()) {
+    val style: Set<SVGStyle> = setOf(SVGStyle.Stroke(color = Color.RED,
+                                                     size = 0.1f,
+                                                     closed = false)),
+    private val tupleList: MutableList<PointTuple> = mutableListOf()) {
 
     private var mIsHashDirty = true
     private var mHashCode = 0
-
-    /**
-     * A stroke essentially is a list of points.
-     */
-    val pointList: List<Point> get() = mPointList.toList()
 
     /**
      * The upright rectangle just covering all the points.
@@ -60,22 +52,26 @@ data class VectorGraphics(
     val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
 
     /**
-     * The z-order, where the value should be greater than or equal to 0.
-     * @see [ModelConst.MOST_BOTTOM_Z]
+     * A stroke essentially is a list of points.
      */
-    var z = ModelConst.MOST_BOTTOM_Z
-        set(value) {
-            field = value
+    fun getTupleList(): List<PointTuple> {
+        return tupleList.toList()
+    }
 
-            // Flag hash code dirty
-            mIsHashDirty = true
+    fun getTupleAt(position: Int): PointTuple {
+        val src = tupleList[position]
+
+        return when (src) {
+            is LinearPointTuple -> src.copy()
+            is CubicPointTuple -> src.copy()
         }
+    }
 
-    fun addPath(p: Point): VectorGraphics {
+    fun addTuple(p: PointTuple): VectorGraphics {
         // Calculate new boundary.
-        calculateBound(p.x, p.y)
+        calculateBound(p)
 
-        mPointList.add(p)
+        tupleList.add(p)
 
         // Flag hash code dirty
         mIsHashDirty = true
@@ -83,13 +79,12 @@ data class VectorGraphics(
         return this
     }
 
-    fun addAllPath(PointList: List<Point>): VectorGraphics {
-        // Calculate new boundary.
-        for (p in PointList) {
-            calculateBound(p.x, p.y)
-        }
+    fun setTupleList(PointList: List<PointTuple>): VectorGraphics {
+        tupleList.clear()
+        tupleList.addAll(PointList)
 
-        this.mPointList.addAll(PointList)
+        // Calculate new boundary.
+        tupleList.forEach { calculateBound(it) }
 
         // Flag hash code dirty
         mIsHashDirty = true
@@ -97,23 +92,26 @@ data class VectorGraphics(
         return this
     }
 
-    fun offset(offsetX: Float, offsetY: Float) {
-        mPointList.forEach { p ->
-            p.x += offsetX
-            p.y += offsetY
+    fun offset(offsetX: Float,
+               offsetY: Float) {
+        val src = tupleList.toList()
 
-            calculateBound(p.x, p.y)
+        tupleList.clear()
+        src.forEach {
+            tupleList.add(it.offset(offsetX, offsetY))
+            calculateBound(it)
         }
 
         // Flag hash code dirty
         mIsHashDirty = true
     }
 
-    private fun calculateBound(x: Float, y: Float) {
-        mBound.left = Math.min(mBound.left, x)
-        mBound.top = Math.min(mBound.top, y)
-        mBound.right = Math.max(mBound.right, x)
-        mBound.bottom = Math.max(mBound.bottom, y)
+    private fun calculateBound(p: PointTuple) {
+        // TODO: Bezier curve has different way to calculate boundary
+//        mBound.left = Math.min(mBound.left, p.currentEnd.x)
+//        mBound.top = Math.min(mBound.top, p.currentEnd.y)
+//        mBound.right = Math.max(mBound.right, p.currentEnd.x)
+//        mBound.bottom = Math.max(mBound.bottom, p.currentEnd.y)
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
@@ -124,21 +122,16 @@ data class VectorGraphics(
 
         other as VectorGraphics
 
-        if (penColor != other.penColor) return false
-        if (penSize != other.penSize) return false
-        if (penType != other.penType) return false
-        if (mPointList != other.mPointList) return false
+        if (style != other.style) return false
+        if (tupleList != other.tupleList) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = z.hashCode()
-            mHashCode = 31 * mHashCode + penColor.hashCode()
-            mHashCode = 31 * mHashCode + penSize.hashCode()
-            mHashCode = 31 * mHashCode + penType.hashCode()
-            mHashCode = 31 * mHashCode + mPointList.hashCode()
+            mHashCode = tupleList.hashCode()
+            mHashCode = 31 * mHashCode + style.hashCode()
 
             mIsHashDirty = false
         }
@@ -148,10 +141,8 @@ data class VectorGraphics(
 
     override fun toString(): String {
         return "stroke{" +
-               "  z=" + z +
-               ", penColor=" + penColor +
-               ", penSize=" + penSize +
-               ", pointList=" + mPointList +
+               ", style=" + style +
+               ", getTupleList=" + tupleList +
                '}'
     }
 }

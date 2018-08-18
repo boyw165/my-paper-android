@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -92,6 +94,7 @@ data class Point(var x: Float = 0f,
         if (mIsHashDirty) {
             mHashCode = x.hashCode()
             mHashCode = 31 * mHashCode + y.hashCode()
+            mHashCode = 31 * mHashCode + time.hashCode()
 
             mIsHashDirty = false
         }

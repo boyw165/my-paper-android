@@ -20,8 +20,6 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 open class BaseScrap(open val uuid: UUID = UUID.randomUUID())
@@ -38,7 +36,6 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID())
     }
 
     private var mFrame = Frame()
-    private val mFrameSignal = PublishSubject.create<Frame>().toSerialized()
 
     override fun setFrame(frame: Frame) {
         synchronized(mLock) {
@@ -48,9 +45,6 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID())
             // Frame is immutable, the only way to update it is by creating new
             // one
             mFrame = frame.copy()
-
-            // Signal out
-            mFrameSignal.onNext(frame.copy())
         }
     }
 
@@ -58,10 +52,6 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID())
         synchronized(mLock) {
             return mFrame.copy()
         }
-    }
-
-    override fun onUpdateFrame(): Observable<Frame> {
-        return mFrameSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////

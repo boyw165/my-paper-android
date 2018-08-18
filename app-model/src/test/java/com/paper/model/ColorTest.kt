@@ -33,9 +33,15 @@ class ColorTest {
 
     @Test
     fun `hex color palette to int`() {
+        // Without explicit alpha
         Assert.assertEquals(0xFFFF0000.toInt(), Color.parseColor("#FF0000"))
         Assert.assertEquals(0xFF00FF00.toInt(), Color.parseColor("#00FF00"))
         Assert.assertEquals(0xFF0000FF.toInt(), Color.parseColor("#0000FF"))
+
+        // WIth explicit alpha
+        Assert.assertEquals(0xFFFF0000.toInt(), Color.parseColor("#FFFF0000"))
+        Assert.assertEquals(0xFF00FF00.toInt(), Color.parseColor("#FF00FF00"))
+        Assert.assertEquals(0xFF0000FF.toInt(), Color.parseColor("#FF0000FF"))
     }
 
     @Test

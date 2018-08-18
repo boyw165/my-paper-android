@@ -31,9 +31,13 @@ object PaperTable {
      */
     internal const val TABLE_VERSION_CODE_10001_BETA = 2
     /**
+     * Change STRING to TEXT.
+     */
+    internal const val TABLE_VERSION_CODE_10002_BETA = 3
+    /**
      * The SQLite database version.
      */
-    const val TABLE_VERSION_CODE = TABLE_VERSION_CODE_10001_BETA
+    const val TABLE_VERSION_CODE = TABLE_VERSION_CODE_10002_BETA
 
     // Common.
     const val COL_DATA: String = "data"

@@ -26,14 +26,11 @@ package com.paper.model
 import com.google.gson.GsonBuilder
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
-import com.paper.model.sketch.PenType
 import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
-
-private const val TEST_SCRAP_JSON = "{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[{\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\",\"penType\":\"pen\",\"penColor\":\"#00000000\",\"penSize\":0.5}]}"
 
 @RunWith(MockitoJUnitRunner::class)
 class ScrapJSONTranslatorTest {
@@ -46,7 +43,7 @@ class ScrapJSONTranslatorTest {
     }
 
     @Test
-    fun `serialize svg scrap`() {
+    fun `serialize svg scrap with empty path tuple list`() {
         val model = SVGScrap()
         val uuid = model.uuid
         model.setFrame(Frame(x = 100f,
@@ -56,18 +53,8 @@ class ScrapJSONTranslatorTest {
                              scaleY = 0.2f,
                              rotationInDegrees = 30f))
 
-        model.addSVG(VectorGraphics(penColor = Color.parseColor("#FF0000"),
-                                    penSize = 0.5f,
-                                    penType = PenType.PEN)
-                         .addAllPath(listOf(Point(0.18075603f,
-                                                  0.25663146f,
-                                                  0),
-                                            Point(0.5f,
-                                                  0.5f,
-                                                  100))))
-
         val jsonText = translator.toJson(model, BaseScrap::class.java)
-        System.out.println("JSON output = $jsonText")
+        System.out.println("JSON = $jsonText")
 
         Assert.assertTrue(jsonText.contains("\"uuid\":\"$uuid\""))
         Assert.assertTrue(jsonText.contains("\"type\":\"svg\""))
@@ -79,16 +66,12 @@ class ScrapJSONTranslatorTest {
         Assert.assertTrue(jsonText.contains("\"scaleY\":0.2"))
         Assert.assertTrue(jsonText.contains("\"rotationInDegrees\":30.0"))
 
-        Assert.assertTrue(jsonText.contains("\"penType\":\"pen\""))
-        Assert.assertTrue(jsonText.contains("\"penColor\":\"#FFFF0000\""))
-        Assert.assertTrue(jsonText.contains("\"penSize\":0.5"))
-
-        Assert.assertTrue(jsonText.contains("\"path\":\"(0.18075603,0.25663146,0) (0.5,0.5,100)\""))
+        Assert.assertTrue(jsonText.contains("\"svg\":[]"))
     }
 
     @Test
-    fun `deserialize svg scrap`() {
-        val model = translator.fromJson<SVGScrap>(TEST_SCRAP_JSON, BaseScrap::class.java)
+    fun `deserialize svg scrap with empty tuple list`() {
+        val model = translator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", BaseScrap::class.java)
 
         Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getId().toString())
 
@@ -98,27 +81,6 @@ class ScrapJSONTranslatorTest {
         Assert.assertEquals(0.5f, model.getFrame().scaleX)
         Assert.assertEquals(0.5f, model.getFrame().scaleY)
         Assert.assertEquals(30f, model.getFrame().rotationInDegrees)
-
-        // Every sketch has just one point.
-        model.getSVGs().forEach { svg ->
-            Assert.assertEquals(2, svg.pointList.size)
-        }
-
-        // Match x-y pair exactly.
-        model.getSVGs().forEachIndexed { i, svg ->
-            when (i) {
-                0 -> {
-                    Assert.assertEquals(0.18075603f, svg.pointList[i].x)
-                    Assert.assertEquals(0.25663146f, svg.pointList[i].y)
-                    Assert.assertEquals(0, svg.pointList[i].time)
-                }
-                1 -> {
-                    Assert.assertEquals(0.5f, svg.pointList[i].x)
-                    Assert.assertEquals(0.5f, svg.pointList[i].y)
-                    Assert.assertEquals(100, svg.pointList[i].time)
-                }
-            }
-        }
     }
 }
 

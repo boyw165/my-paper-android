@@ -44,14 +44,14 @@ class PaperTransformWidgetTest {
     private val mTestStroke3 = VectorGraphics()
 
     init {
-        mTestStroke1.addPath(Point(x = 1f, y = 1f))
+        mTestStroke1.addTuple(Point(x = 1f, y = 1f))
 
-        mTestStroke2.addPath(Point(x = 1f, y = 1f))
-        mTestStroke2.addPath(Point(x = 2f, y = 2f))
+        mTestStroke2.addTuple(Point(x = 1f, y = 1f))
+        mTestStroke2.addTuple(Point(x = 2f, y = 2f))
 
-        mTestStroke3.addPath(Point(x = 1f, y = 1f))
-        mTestStroke3.addPath(Point(x = 2f, y = 2f))
-        mTestStroke3.addPath(Point(x = 3f, y = 3f))
+        mTestStroke3.addTuple(Point(x = 1f, y = 1f))
+        mTestStroke3.addTuple(Point(x = 2f, y = 2f))
+        mTestStroke3.addTuple(Point(x = 3f, y = 3f))
     }
 
     @Test

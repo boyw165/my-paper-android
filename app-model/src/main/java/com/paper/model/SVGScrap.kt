@@ -20,53 +20,70 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class SVGScrap(override val uuid: UUID = UUID.randomUUID())
+open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
+                    defaultGraphics: MutableList<VectorGraphics> = mutableListOf())
     : BaseScrap(uuid),
       ISVGScrap {
 
     /**
      * Sketch is a set of strokes.
      */
-    private val mSketch = mutableListOf<VectorGraphics>()
-    private val mSketchSignal = PublishSubject.create<List<VectorGraphics>>().toSerialized()
+    private val mGraphicsList = defaultGraphics
 
-    override fun addSVG(svg: VectorGraphics) {
+    override fun setSVGs(src: List<VectorGraphics>) {
         synchronized(mLock) {
-            mSketch.add(svg)
-
-            // Mark dirty
-            mIsHashDirty = true
-
-            // Signal out
-            mSketchSignal.onNext(mSketch.toList())
-        }
-    }
-
-    override fun removeSVG(svg: VectorGraphics) {
-        synchronized(mLock) {
-            mSketch.remove(svg)
-
-            // Mark dirty
-            mIsHashDirty = true
-
-            // Signal out
-            mSketchSignal.onNext(mSketch.toList())
+            mGraphicsList.clear()
+            mGraphicsList.addAll(src)
         }
     }
 
     override fun getSVGs(): List<VectorGraphics> {
-        synchronized(mLock) {
-            return mSketch.toList()
+        return synchronized(mLock) {
+            mGraphicsList.toList()
         }
     }
 
-    override fun onUpdateSVGs(): Observable<List<VectorGraphics>> {
-        return mSketchSignal
+    override fun moveTo(x: Float,
+                        y: Float,
+                        style: Set<SVGStyle>,
+                        closedShape: Boolean) {
+        synchronized(mLock) {
+            mGraphicsList.add(VectorGraphics(style = style,
+                                             tupleList = mutableListOf(LinearPointTuple(x, y))))
+
+            // Mark dirty
+            mIsHashDirty = true
+        }
+    }
+
+    override fun lineTo(x: Float, y: Float) {
+        synchronized(mLock) {
+            val graphics = mGraphicsList.last()
+
+            graphics.addTuple(LinearPointTuple(x, y))
+
+            // Mark dirty
+            mIsHashDirty = true
+        }
+    }
+
+    override fun cubicTo(previousControl: Point,
+                         currentControl: Point,
+                         currentPoint: Point) {
+        synchronized(mLock) {
+            val graphics = mGraphicsList.last()
+
+            graphics.addTuple(CubicPointTuple(previousControl.copy(),
+                                              currentControl.copy(),
+                                              currentPoint.copy()))
+
+            // Mark dirty
+            mIsHashDirty = true
+        }
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
@@ -79,7 +96,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID())
 
         if (!super.equals(other)) return false
 
-        val svgs = synchronized(mLock) { mSketch.toList() }
+        val svgs = synchronized(mLock) { mGraphicsList.toList() }
         val otherSVGs = other.getSVGs()
 
         if (svgs.hashCode() != otherSVGs.hashCode()) return false

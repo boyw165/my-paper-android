@@ -162,7 +162,7 @@ class PaperAutoSaveImpl(
 //
 //    override fun pushStroke(stroke: VectorGraphics) {
 //        mLock.lock()
-//        if (stroke.pointList.isNotEmpty()) {
+//        if (stroke.getTupleList.isNotEmpty()) {
 //            mSketch.add(stroke)
 //        }
 //        mLock.unlock()
@@ -217,8 +217,6 @@ class PaperAutoSaveImpl(
     // Scraps /////////////////////////////////////////////////////////////////
 
     private var mScraps = mutableListOf<BaseScrap>()
-    private val mAddScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
-    private val mRemoveScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
 
     override fun getScraps(): List<BaseScrap> {
         synchronized(mLock) {
@@ -230,7 +228,6 @@ class PaperAutoSaveImpl(
     override fun addScrap(scrap: BaseScrap) {
         synchronized(mLock) {
             mScraps.add(scrap)
-            mAddScrapSignal.onNext(scrap)
         }
 
         // Request to save file
@@ -240,25 +237,10 @@ class PaperAutoSaveImpl(
     override fun removeScrap(scrap: BaseScrap) {
         synchronized(mLock) {
             mScraps.remove(scrap)
-            mRemoveScrapSignal.onNext(scrap)
         }
 
         // Request to save file
         requestAutoSave()
-    }
-
-    override fun onAddScrap(replayAll: Boolean): Observable<BaseScrap> {
-        return if (replayAll) {
-            Observable.merge(
-                Observable.fromIterable(getScraps()),
-                mAddScrapSignal)
-        } else {
-            mAddScrapSignal
-        }
-    }
-
-    override fun onRemoveScrap(): Observable<BaseScrap> {
-        return mRemoveScrapSignal
     }
 
     // Auto-save //////////////////////////////////////////////////////////////
