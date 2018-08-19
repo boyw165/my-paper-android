@@ -24,7 +24,7 @@ import com.paper.model.repository.IPaperRepo
 import java.io.File
 import java.util.*
 
-class BasePaper(
+open class BasePaper(
     // The SQLite ID.
     id: Long = ModelConst.TEMP_ID,
     // The global ID.
@@ -58,11 +58,15 @@ class BasePaper(
     private var mModifiedAt: Long = 0L
 
     override fun getModifiedAt(): Long {
-        return mModifiedAt
+        synchronized(mLock) {
+            return mModifiedAt
+        }
     }
 
     override fun setModifiedAt(time: Long) {
-        mModifiedAt = time
+        synchronized(mLock) {
+            mModifiedAt = time
+        }
     }
 
     private var mWidth: Float = 512f
@@ -109,19 +113,9 @@ class BasePaper(
     // Thumbnail //////////////////////////////////////////////////////////////
 
     private var mThumbnail: File? = null
-    private var mThumbnailWidth: Int = 0
-    private var mThumbnailHeight: Int = 0
 
     override fun getThumbnail(): File? {
         return mThumbnail
-    }
-
-    override fun getThumbnailWidth(): Int {
-        return mThumbnailWidth
-    }
-
-    override fun getThumbnailHeight(): Int {
-        return mThumbnailHeight
     }
 
     override fun setThumbnail(file: File) {
@@ -133,18 +127,15 @@ class BasePaper(
         requestAutoSave()
     }
 
-    override fun setThumbnailWidth(width: Int) {
-        synchronized(mLock) {
-            mThumbnailWidth = width
-        }
+    private var mThumbnailSize = Pair(0f, 0f)
 
-        // Request to save file
-        requestAutoSave()
+    override fun getThumbnailSize(): Pair<Float, Float> {
+        return mThumbnailSize.copy()
     }
 
-    override fun setThumbnailHeight(height: Int) {
+    override fun setThumbnailSize(size: Pair<Float, Float>) {
         synchronized(mLock) {
-            mThumbnailHeight = height
+            mThumbnailSize = size.copy()
         }
 
         // Request to save file
@@ -271,33 +262,29 @@ class BasePaper(
 
         other as BasePaper
 
-        if (mID != other.mID) return false
-        if (mUUID != other.mUUID) return false
-        if (mCreatedAt != other.mCreatedAt) return false
-        if (mModifiedAt != other.mModifiedAt) return false
-        if (mWidth != other.mWidth) return false
-        if (mHeight != other.mHeight) return false
-        if (mThumbnail != other.mThumbnail) return false
-        if (mThumbnailWidth != other.mThumbnailWidth) return false
-        if (mThumbnailHeight != other.mThumbnailHeight) return false
-//        if (mSketch != other.mSketch) return false
-        if (mScraps != other.mScraps) return false
+        if (getId() != other.getId()) return false
+        if (getUUID() != other.getUUID()) return false
+        if (getCreatedAt() != other.mCreatedAt) return false
+        if (getModifiedAt() != other.getModifiedAt()) return false
+        if (getSize() != other.getSize()) return false
+        if (getThumbnail() != other.getThumbnail()) return false
+        if (getThumbnailSize() != other.getThumbnailSize()) return false
+        if (getScraps() != other.getScraps()) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = mID.hashCode()
-        result = 31 * result + mUUID.hashCode()
-        result = 31 * result + mCreatedAt.hashCode()
-        result = 31 * result + mModifiedAt.hashCode()
-        result = 31 * result + mWidth.hashCode()
-        result = 31 * result + mHeight.hashCode()
-        result = 31 * result + (mThumbnail?.hashCode() ?: 0)
-        result = 31 * result + mThumbnailWidth
-        result = 31 * result + mThumbnailHeight
-//        result = 31 * result + mSketch.hashCode()
-        result = 31 * result + mScraps.hashCode()
+        var result = getId().hashCode()
+        result = 31 * result + getUUID().hashCode()
+        result = 31 * result + getCreatedAt().hashCode()
+        result = 31 * result + getModifiedAt().hashCode()
+        result = 31 * result + getSize().hashCode()
+        getThumbnail()?.let {
+            result = 31 * result + it.hashCode()
+        }
+        result = 31 * result + getThumbnailSize().hashCode()
+        result = 31 * result + getScraps().hashCode()
         return result
     }
 }

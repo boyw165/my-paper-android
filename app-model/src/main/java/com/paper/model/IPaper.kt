@@ -45,12 +45,10 @@ interface IPaper {
     fun setViewPort(rect: Rect)
 
     fun getThumbnail(): File?
-    fun getThumbnailWidth(): Int
-    fun getThumbnailHeight(): Int
-
     fun setThumbnail(file: File)
-    fun setThumbnailWidth(width: Int)
-    fun setThumbnailHeight(height: Int)
+
+    fun getThumbnailSize(): Pair<Float, Float>
+    fun setThumbnailSize(size: Pair<Float, Float>)
 
     fun getCaption(): String
     fun getTags(): List<String>
