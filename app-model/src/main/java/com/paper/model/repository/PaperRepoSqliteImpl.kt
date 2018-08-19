@@ -159,8 +159,6 @@ class PaperRepoSqliteImpl(private val authority: String,
                                 PaperTable.COL_UUID,
                                 PaperTable.COL_CREATED_AT,
                                 PaperTable.COL_MODIFIED_AT,
-                                PaperTable.COL_WIDTH,
-                                PaperTable.COL_HEIGHT,
                                 PaperTable.COL_CAPTION,
                                 PaperTable.COL_THUMB_PATH,
                                 PaperTable.COL_THUMB_WIDTH,
@@ -214,11 +212,9 @@ class PaperRepoSqliteImpl(private val authority: String,
             Single
                 .fromCallable {
                     val timestamp = getCurrentTime()
-                    val newPaper = PaperAutoSaveImpl(
+                    val newPaper = BasePaper(
                         createdAt = timestamp)
                     newPaper.setModifiedAt(timestamp)
-                    newPaper.setWidth(mTmpPaperWidth)
-                    newPaper.setHeight(mTmpPaperHeight)
 
                     // Enable auto-save
                     newPaper.setAutoSaveRepo(this@PaperRepoSqliteImpl)
@@ -243,8 +239,6 @@ class PaperRepoSqliteImpl(private val authority: String,
                                 PaperTable.COL_UUID,
                                 PaperTable.COL_CREATED_AT,
                                 PaperTable.COL_MODIFIED_AT,
-                                PaperTable.COL_WIDTH,
-                                PaperTable.COL_HEIGHT,
                                 PaperTable.COL_CAPTION,
                                 PaperTable.COL_THUMB_PATH,
                                 PaperTable.COL_THUMB_WIDTH,
@@ -268,7 +262,7 @@ class PaperRepoSqliteImpl(private val authority: String,
                             fullyRead = true)
 
                         // Enable auto-save
-                        if (paper is PaperAutoSaveImpl) {
+                        if (paper is BasePaper) {
                             paper.setAutoSaveRepo(this@PaperRepoSqliteImpl)
                         }
 
@@ -325,7 +319,7 @@ class PaperRepoSqliteImpl(private val authority: String,
                             val newID = newURI.lastPathSegment.toLong()
                             prefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID).blockingGet()
 
-                            if (paper is PaperAutoSaveImpl) {
+                            if (paper is BasePaper) {
                                 paper.mID = newID
                             }
 
@@ -464,8 +458,6 @@ class PaperRepoSqliteImpl(private val authority: String,
         values.put(PaperTable.COL_UUID, paper.getUUID().toString())
         values.put(PaperTable.COL_CREATED_AT, paper.getCreatedAt())
         values.put(PaperTable.COL_MODIFIED_AT, paper.getModifiedAt())
-        values.put(PaperTable.COL_WIDTH, paper.getWidth())
-        values.put(PaperTable.COL_HEIGHT, paper.getHeight())
         values.put(PaperTable.COL_CAPTION, paper.getCaption())
 
         values.put(PaperTable.COL_THUMB_PATH, paper.getThumbnail()?.canonicalPath ?: "")
@@ -481,16 +473,13 @@ class PaperRepoSqliteImpl(private val authority: String,
 
     private fun convertCursorToPaper(cursor: Cursor,
                                      fullyRead: Boolean): IPaper {
-        val paper = PaperAutoSaveImpl(
+        val paper = BasePaper(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
             uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)))
 
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
         paper.setModifiedAt(cursor.getLong(colOfModifiedAt))
-
-        paper.setWidth(cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_WIDTH)))
-        paper.setHeight(cursor.getFloat(cursor.getColumnIndexOrThrow(PaperTable.COL_HEIGHT)))
 
         paper.setThumbnail(File(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))))
         paper.setThumbnailWidth(cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH)))
@@ -499,8 +488,15 @@ class PaperRepoSqliteImpl(private val authority: String,
         if (fullyRead) {
             val paperDetail = jsonTranslator.fromJson(
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
-                PaperAutoSaveImpl::class.java)
+                BasePaper::class.java)
 
+            // Canvas size
+            paper.setSize(paperDetail.getSize())
+
+            // View port
+            paper.setViewPort(paperDetail.getViewPort())
+
+            // Scrap
             paperDetail.getScraps().forEach { paper.addScrap(it) }
         }
 

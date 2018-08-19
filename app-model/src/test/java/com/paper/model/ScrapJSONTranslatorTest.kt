@@ -48,10 +48,12 @@ class ScrapJSONTranslatorTest {
         val uuid = model.uuid
         model.setFrame(Frame(x = 100f,
                              y = 200f,
-                             z = ModelConst.MOST_BOTTOM_Z,
+                             width = 360f,
+                             height = 480f,
                              scaleX = 0.1f,
                              scaleY = 0.2f,
-                             rotationInDegrees = 30f))
+                             rotationInDegrees = 30f,
+                             z = ModelConst.MOST_BOTTOM_Z))
 
         val jsonText = translator.toJson(model, BaseScrap::class.java)
         System.out.println("JSON = $jsonText")
@@ -61,6 +63,8 @@ class ScrapJSONTranslatorTest {
 
         Assert.assertTrue(jsonText.contains("\"x\":100.0"))
         Assert.assertTrue(jsonText.contains("\"y\":200.0"))
+        Assert.assertTrue(jsonText.contains("\"width\":360.0"))
+        Assert.assertTrue(jsonText.contains("\"height\":480.0"))
         Assert.assertTrue(jsonText.contains("\"z\":${ModelConst.MOST_BOTTOM_Z}"))
         Assert.assertTrue(jsonText.contains("\"scaleX\":0.1"))
         Assert.assertTrue(jsonText.contains("\"scaleY\":0.2"))
@@ -71,12 +75,14 @@ class ScrapJSONTranslatorTest {
 
     @Test
     fun `deserialize svg scrap with empty tuple list`() {
-        val model = translator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", BaseScrap::class.java)
+        val model = translator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", BaseScrap::class.java)
 
         Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getId().toString())
 
         Assert.assertEquals(100f, model.getFrame().x)
         Assert.assertEquals(200f, model.getFrame().y)
+        Assert.assertEquals(360f, model.getFrame().width)
+        Assert.assertEquals(480f, model.getFrame().height)
         Assert.assertEquals(1, model.getFrame().z)
         Assert.assertEquals(0.5f, model.getFrame().scaleX)
         Assert.assertEquals(0.5f, model.getFrame().scaleY)

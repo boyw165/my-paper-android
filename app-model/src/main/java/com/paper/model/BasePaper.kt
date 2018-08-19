@@ -21,12 +21,10 @@
 package com.paper.model
 
 import com.paper.model.repository.IPaperRepo
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import java.io.File
 import java.util.*
 
-class PaperAutoSaveImpl(
+class BasePaper(
     // The SQLite ID.
     id: Long = ModelConst.TEMP_ID,
     // The global ID.
@@ -67,27 +65,34 @@ class PaperAutoSaveImpl(
         mModifiedAt = time
     }
 
-    // By default is landscape A4, 210 x 297 units.
-    private var mWidth: Float = 297f
-    private var mHeight: Float = 210f
+    private var mWidth: Float = 512f
+    private var mHeight: Float = 512f
 
-    override fun getWidth(): Float {
-        return mWidth
-    }
-
-    override fun getHeight(): Float {
-        return mHeight
-    }
-
-    override fun setWidth(width: Float) {
+    override fun getSize(): Pair<Float, Float> {
         synchronized(mLock) {
-            mWidth = width
+            return Pair(mWidth, mHeight)
         }
     }
 
-    override fun setHeight(height: Float) {
+    override fun setSize(size: Pair<Float, Float>) {
         synchronized(mLock) {
+            val (width, height) = size
+            mWidth = width
             mHeight = height
+        }
+    }
+
+    private val mViewPort = Rect(0f, 0f, 0f, 0f)
+
+    override fun getViewPort(): Rect {
+        synchronized(mLock) {
+            return mViewPort.copy()
+        }
+    }
+
+    override fun setViewPort(rect: Rect) {
+        synchronized(mLock) {
+            mViewPort.set(rect)
         }
     }
 
@@ -255,7 +260,7 @@ class PaperAutoSaveImpl(
     }
 
     private fun requestAutoSave() {
-        mRepo?.putPaper(this@PaperAutoSaveImpl)
+        mRepo?.putPaper(this@BasePaper)
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
@@ -264,7 +269,7 @@ class PaperAutoSaveImpl(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as PaperAutoSaveImpl
+        other as BasePaper
 
         if (mID != other.mID) return false
         if (mUUID != other.mUUID) return false

@@ -49,8 +49,6 @@ object PaperTable {
     const val COL_COUNT: String = BaseColumns._COUNT
     const val COL_CREATED_AT: String = "create_time"
     const val COL_MODIFIED_AT: String = "modify_time"
-    const val COL_WIDTH: String = "width"
-    const val COL_HEIGHT: String = "height"
     const val COL_CAPTION: String = "caption"
     const val COL_TAG: String = "tag"
     const val COL_THUMB_PATH: String = "thumb_path"

@@ -40,6 +40,9 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
 
         root.addProperty("x", frame.x)
         root.addProperty("y", frame.y)
+        root.addProperty("width", frame.width)
+        root.addProperty("height", frame.height)
+
         root.addProperty("z", frame.z)
 
         root.addProperty("scaleX", frame.scaleX)
@@ -91,10 +94,12 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
         // Positioning, scale, and rotation
         model.setFrame(Frame(root.get("x").asFloat,
                              root.get("y").asFloat,
-                             if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z,
+                             root.get("width").asFloat,
+                             root.get("height").asFloat,
                              root.get("scaleX").asFloat,
                              root.get("scaleY").asFloat,
-                             root.get("rotationInDegrees").asFloat))
+                             root.get("rotationInDegrees").asFloat,
+                             if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z))
 
         return model
     }

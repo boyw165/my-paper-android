@@ -81,12 +81,12 @@ class PaperApplication : MultiDexApplication(),
 
     private val mJsonTranslator by lazy {
         GsonBuilder()
-            .registerTypeAdapter(PaperAutoSaveImpl::class.java,
+            .registerTypeAdapter(BasePaper::class.java,
                                  PaperJSONTranslator())
-            .registerTypeAdapter(VectorGraphics::class.java,
-                                 VectorGraphicsJSONTranslator())
             .registerTypeAdapter(BaseScrap::class.java,
                                  ScrapJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java,
+                                 VectorGraphicsJSONTranslator())
             .create()
     }
 

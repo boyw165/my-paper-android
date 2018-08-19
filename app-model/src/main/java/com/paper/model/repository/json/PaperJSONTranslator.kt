@@ -23,7 +23,8 @@ package com.paper.model.repository.json
 import com.google.gson.*
 import com.paper.model.BaseScrap
 import com.paper.model.IPaper
-import com.paper.model.PaperAutoSaveImpl
+import com.paper.model.BasePaper
+import com.paper.model.Rect
 import java.lang.reflect.Type
 
 /**
@@ -37,6 +38,21 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
 
+        // Canvas size
+        val (width, height) = src.getSize()
+        root.addProperty("width", width)
+        root.addProperty("height", height)
+
+        // View port
+        val viewPort = src.getViewPort()
+        val viewPortJson = JsonArray()
+        viewPortJson.add(viewPort.left)
+        viewPortJson.add(viewPort.top)
+        viewPortJson.add(viewPort.width)
+        viewPortJson.add(viewPort.height)
+        root.add("view-port", viewPortJson)
+
+        // Scraps
         val scrapJson = JsonArray()
         src.getScraps().forEach { scrapJson.add(context.serialize(it, BaseScrap::class.java)) }
         root.add("scraps", scrapJson)
@@ -48,8 +64,24 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
                              typeOfT: Type,
                              context: JsonDeserializationContext): IPaper {
         val root = json.asJsonObject
-        val paperDetails = PaperAutoSaveImpl()
+        val paperDetails = BasePaper()
 
+        // Canvas size
+        val width = root["width"].asFloat
+        val height = root["height"].asFloat
+        paperDetails.setSize(Pair(width, height))
+
+        // View port
+        val viewPortJson = root["view-port"].asJsonArray
+        val vx = viewPortJson[0].asFloat
+        val vy = viewPortJson[1].asFloat
+        val vw = viewPortJson[2].asFloat
+        val vh = viewPortJson[3].asFloat
+        paperDetails.setViewPort(Rect(vx, vy,
+                                      vx + vw,
+                                      vy + vh))
+
+        // Scraps
         if (root.has("scraps")) {
             root["scraps"].asJsonArray.forEach {
                 paperDetails.addScrap(context.deserialize(

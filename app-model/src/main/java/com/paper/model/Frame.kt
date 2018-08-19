@@ -22,8 +22,10 @@ package com.paper.model
 
 data class Frame(val x: Float = 0f,
                  val y: Float = 0f,
-                 val z: Int = 0,
+                 val width: Float = 0f,
+                 val height: Float = 0f,
                  val scaleX: Float = 1f,
                  val scaleY: Float = 1f,
-                 val rotationInDegrees: Float = 0f)
+                 val rotationInDegrees: Float = 0f,
+                 val z: Int = 0)
     : NoObfuscation

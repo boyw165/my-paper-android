@@ -23,10 +23,8 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
 import java.io.File
 import java.util.*
-import java.util.concurrent.locks.Lock
 
 interface IPaper {
 
@@ -40,12 +38,11 @@ interface IPaper {
     fun getModifiedAt(): Long
     fun setModifiedAt(time: Long)
 
-    // By default is landscape A4, 210 x 297 units.
-    fun getWidth(): Float
-    fun getHeight(): Float
+    fun getSize(): Pair<Float, Float>
+    fun setSize(size: Pair<Float, Float>)
 
-    fun setWidth(width: Float)
-    fun setHeight(height: Float)
+    fun getViewPort(): Rect
+    fun setViewPort(rect: Rect)
 
     fun getThumbnail(): File?
     fun getThumbnailWidth(): Int

@@ -23,7 +23,7 @@ package com.paper.domain
 import com.paper.model.event.ProgressEvent
 import com.paper.domain.useCase.LoadPaperAndCreateBinding
 import com.paper.domain.widget.editor.IPaperCanvasWidget
-import com.paper.model.PaperAutoSaveImpl
+import com.paper.model.BasePaper
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Single
 import io.reactivex.schedulers.TestScheduler
@@ -77,7 +77,7 @@ class LoadPaperAndBindModelTest {
 
     @Test
     fun widgetShouldBindModelIfRepoWorks() {
-        val mockedModel = PaperAutoSaveImpl()
+        val mockedModel = BasePaper()
         val mockedRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
@@ -115,7 +115,7 @@ class LoadPaperAndBindModelTest {
 
     @Test
     fun widgetShouldUnbindModelIfDispose() {
-        val mockedModel = PaperAutoSaveImpl()
+        val mockedModel = BasePaper()
         val mockedRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
             .`when`(mockedRepo.getPaperById(Mockito.anyLong()))
