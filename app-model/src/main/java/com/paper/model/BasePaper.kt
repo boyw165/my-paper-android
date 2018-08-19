@@ -212,16 +212,16 @@ open class BasePaper(
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    private var mScraps = mutableListOf<BaseScrap>()
+    private var mScraps = mutableListOf<IScrap>()
 
-    override fun getScraps(): List<BaseScrap> {
+    override fun getScraps(): List<IScrap> {
         synchronized(mLock) {
             // Must clone the list in case concurrent modification
             return mScraps.toList()
         }
     }
 
-    override fun addScrap(scrap: BaseScrap) {
+    override fun addScrap(scrap: IScrap) {
         synchronized(mLock) {
             mScraps.add(scrap)
         }
@@ -230,7 +230,7 @@ open class BasePaper(
         requestAutoSave()
     }
 
-    override fun removeScrap(scrap: BaseScrap) {
+    override fun removeScrap(scrap: IScrap) {
         synchronized(mLock) {
             mScraps.remove(scrap)
         }

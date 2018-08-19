@@ -55,9 +55,9 @@ interface IPaper {
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    fun getScraps(): List<BaseScrap>
+    fun getScraps(): List<IScrap>
 
-    fun addScrap(scrap: BaseScrap)
+    fun addScrap(scrap: IScrap)
 
-    fun removeScrap(scrap: BaseScrap)
+    fun removeScrap(scrap: IScrap)
 }

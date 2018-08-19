@@ -31,11 +31,16 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
-import com.paper.model.*
+import com.paper.model.BasePaper
+import com.paper.model.IPaper
+import com.paper.model.IPreferenceService
+import com.paper.model.ModelConst
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.sqlite.PaperTable
-import io.reactivex.*
 import io.reactivex.Observable
+import io.reactivex.Scheduler
+import io.reactivex.Single
+import io.reactivex.SingleEmitter
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.SingleSubject
@@ -46,7 +51,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 
-class PaperRepoSqliteImpl(private val authority: String,
+class PaperRepoSQLiteImpl(private val authority: String,
                           private val resolver: ContentResolver,
                           private val jsonTranslator: Gson,
                           private val fileDir: File,
@@ -217,7 +222,7 @@ class PaperRepoSqliteImpl(private val authority: String,
                     newPaper.setModifiedAt(timestamp)
 
                     // Enable auto-save
-                    newPaper.setAutoSaveRepo(this@PaperRepoSqliteImpl)
+                    newPaper.setAutoSaveRepo(this@PaperRepoSQLiteImpl)
 
                     return@fromCallable newPaper as IPaper
                 }
@@ -263,7 +268,7 @@ class PaperRepoSqliteImpl(private val authority: String,
 
                         // Enable auto-save
                         if (paper is BasePaper) {
-                            paper.setAutoSaveRepo(this@PaperRepoSqliteImpl)
+                            paper.setAutoSaveRepo(this@PaperRepoSQLiteImpl)
                         }
 
                         if (!observer.isDisposed) {
@@ -461,8 +466,10 @@ class PaperRepoSqliteImpl(private val authority: String,
         values.put(PaperTable.COL_CAPTION, paper.getCaption())
 
         values.put(PaperTable.COL_THUMB_PATH, paper.getThumbnail()?.canonicalPath ?: "")
-        values.put(PaperTable.COL_THUMB_WIDTH, paper.getThumbnailWidth())
-        values.put(PaperTable.COL_THUMB_HEIGHT, paper.getThumbnailHeight())
+
+        val (thumbWidth, thumbHeight) = paper.getThumbnailSize()
+        values.put(PaperTable.COL_THUMB_WIDTH, thumbWidth)
+        values.put(PaperTable.COL_THUMB_HEIGHT, thumbHeight)
 
         // The rest part of Paper is converted to JSON
         val json = jsonTranslator.toJson(paper)
@@ -473,20 +480,25 @@ class PaperRepoSqliteImpl(private val authority: String,
 
     private fun convertCursorToPaper(cursor: Cursor,
                                      fullyRead: Boolean): IPaper {
-        val paper = BasePaper(
+        val paper: IPaper = BasePaper(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
             uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)))
 
+        // Mutable modification time stamp
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
         paper.setModifiedAt(cursor.getLong(colOfModifiedAt))
 
+        // Thumbnail file
         paper.setThumbnail(File(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))))
-        paper.setThumbnailWidth(cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH)))
-        paper.setThumbnailHeight(cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT)))
+
+        // Thumbnail size
+        val thumbWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH)).toFloat()
+        val thumbHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT)).toFloat()
+        paper.setThumbnailSize(Pair(thumbWidth, thumbHeight))
 
         if (fullyRead) {
-            val paperDetail = jsonTranslator.fromJson(
+            val paperDetail: IPaper = jsonTranslator.fromJson(
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
                 BasePaper::class.java)
 

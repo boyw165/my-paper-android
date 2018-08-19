@@ -28,7 +28,7 @@ import com.google.gson.GsonBuilder
 import com.paper.model.*
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
-import com.paper.model.repository.PaperRepoSqliteImpl
+import com.paper.model.repository.PaperRepoSQLiteImpl
 import com.paper.model.repository.PaperTransformRepoFileImpl
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
@@ -92,7 +92,7 @@ class PaperApplication : MultiDexApplication(),
 
     private val mDbScheduler = SingleScheduler()
     private val mPaperRepo by lazy {
-        PaperRepoSqliteImpl(authority = packageName,
+        PaperRepoSQLiteImpl(authority = packageName,
                             resolver = contentResolver,
                             jsonTranslator = mJsonTranslator,
                             fileDir = getExternalFilesDir("media"),
