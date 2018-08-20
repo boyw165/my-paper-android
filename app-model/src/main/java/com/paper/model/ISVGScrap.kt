@@ -34,9 +34,12 @@ interface ISVGScrap : IScrap {
     fun lineTo(x: Float,
                y: Float)
 
-    fun cubicTo(previousControl: Point,
-                currentControl: Point,
-                currentPoint: Point)
+    fun cubicTo(previousControlX: Float,
+                previousControlY: Float,
+                currentControlX: Float,
+                currentControlY: Float,
+                currentPointX: Float,
+                currentPointY: Float)
 
     fun close()
 

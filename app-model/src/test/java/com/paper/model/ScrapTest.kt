@@ -31,108 +31,15 @@ import org.mockito.junit.MockitoJUnitRunner
 class ScrapTest {
 
     @Test
-    fun changeXY_hashCodeShouldBeDifferent() {
+    fun `immutability test`() {
         val scrap = BaseScrap()
-        val hashCode1 = scrap.hashCode()
 
-        scrap.setFrame(scrap.getFrame()
-                           .copy(x = 1f,
-                                 y = 2f))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
-    }
-
-    @Test
-    fun changeXYRestoreXY_hashCodeShouldBeSame() {
-        val scrap = BaseScrap()
-        val startX = scrap.getFrame().x
-        val startY = scrap.getFrame().y
-        val hashCode1 = scrap.hashCode()
-
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(x = 1f,
-                                 y = 2f))
-        scrap.setFrame(scrap.getFrame()
-                           .copy(x = startX,
-                                 y = startY))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertEquals(hashCode1, hashCode2)
-    }
-
-    @Test
-    fun changeZ_hashCodeShouldBeDifferent() {
-        val scrap = BaseScrap()
-        val hashCode1 = scrap.hashCode()
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(z = ModelConst.MOST_BOTTOM_Z))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(z = ModelConst.MOST_TOP_Z))
-        val hashCode3 = scrap.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode3)
-    }
-
-    @Test
-    fun changeScale_hashCodeShouldBeDifferent() {
-        val scrap = BaseScrap()
-        val hashCode1 = scrap.hashCode()
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(scaleX = 2f,
-                                 scaleY = 2f))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
-    }
-
-    @Test
-    fun changeScaleRestoreScale_hashCodeShouldBeSame() {
-        val scrap = BaseScrap()
-        val startScale = scrap.getFrame().scaleX
-        val hashCode1 = scrap.hashCode()
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(scaleX = 2f))
-        scrap.setFrame(scrap.getFrame()
-                           .copy(scaleX = startScale))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertEquals(hashCode2, hashCode1)
-    }
-
-    @Test
-    fun changeRotation_hashCodeShouldBeDifferent() {
-        val scrap = BaseScrap()
-        val hashCode1 = scrap.hashCode()
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(rotationInDegrees = 180f))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
-    }
-
-    @Test
-    fun changeRotationRestoreRotation_hashCodeShouldBeSame() {
-        val scrap = BaseScrap()
-        val startRotation = scrap.getFrame().rotationInDegrees
-        val hashCode1 = scrap.hashCode()
-
-        scrap.setFrame(scrap.getFrame()
-                           .copy(rotationInDegrees = 180f))
-        scrap.setFrame(scrap.getFrame()
-                           .copy(rotationInDegrees = startRotation))
-        val hashCode2 = scrap.hashCode()
-
-        Assert.assertEquals(hashCode2, hashCode1)
+        try {
+            scrap.setFrame(Frame())
+            Assert.fail("setFrame is not allowed")
+        } catch (ignored: Throwable) {
+            // DO NOTHING
+        }
     }
 }
 

@@ -25,72 +25,40 @@ import com.paper.model.sketch.VectorGraphics
 import java.util.*
 
 open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
-                    defaultGraphics: MutableList<VectorGraphics> = mutableListOf())
-    : BaseScrap(uuid),
+                    override val fixedFrame: Frame = Frame(),
+                    open val fixedGraphicsList: List<VectorGraphics> = emptyList())
+    : BaseScrap(uuid, fixedFrame),
       ISVGScrap {
 
-    /**
-     * Sketch is a set of strokes.
-     */
-    private val mGraphicsList = defaultGraphics
-
     override fun setSVGs(src: List<VectorGraphics>) {
-        synchronized(mLock) {
-            mGraphicsList.clear()
-            mGraphicsList.addAll(src)
-        }
-    }
-
-    override fun close() {
-        TODO("not implemented")
+        throw IllegalAccessException("This is an immutable instance")
     }
 
     override fun getSVGs(): List<VectorGraphics> {
-        return synchronized(mLock) {
-            mGraphicsList.toList()
-        }
+        return fixedGraphicsList.toList()
     }
 
     override fun moveTo(x: Float,
                         y: Float,
                         style: Set<SVGStyle>) {
-        synchronized(mLock) {
-            mGraphicsList.add(VectorGraphics(
-                style = style,
-                tupleList = mutableListOf(LinearPointTuple(x, y))))
-
-            // Mark dirty
-            mIsHashDirty = true
-        }
+        throw IllegalAccessException("This is an immutable instance")
     }
 
     override fun lineTo(x: Float, y: Float) {
-        synchronized(mLock) {
-            val graphics = mGraphicsList.last()
-
-            graphics.addTuple(LinearPointTuple(x, y))
-
-            // Mark dirty
-            mIsHashDirty = true
-        }
+        throw IllegalAccessException("This is an immutable instance")
     }
 
-    override fun cubicTo(previousControl: Point,
-                         currentControl: Point,
-                         currentPoint: Point) {
-        synchronized(mLock) {
-            val graphics = mGraphicsList.last()
+    override fun cubicTo(previousControlX: Float,
+                         previousControlY: Float,
+                         currentControlX: Float,
+                         currentControlY: Float,
+                         currentPointX: Float,
+                         currentPointY: Float) {
+        throw IllegalAccessException("This is an immutable instance")
+    }
 
-            graphics.addTuple(CubicPointTuple(previousControl.x,
-                                              previousControl.y,
-                                              currentControl.x,
-                                              currentControl.y,
-                                              currentPoint.x,
-                                              currentPoint.y))
-
-            // Mark dirty
-            mIsHashDirty = true
-        }
+    override fun close() {
+        throw IllegalAccessException("This is an immutable instance")
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
@@ -103,7 +71,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
 
         if (!super.equals(other)) return false
 
-        val svgs = synchronized(mLock) { mGraphicsList.toList() }
+        val svgs = synchronized(mLock) { fixedGraphicsList.toList() }
         val otherSVGs = other.getSVGs()
 
         if (svgs.hashCode() != otherSVGs.hashCode()) return false

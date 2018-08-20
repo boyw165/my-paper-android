@@ -73,10 +73,18 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
         val id = UUID.fromString(root.get("uuid").asString)
         val type = root["type"].asString
 
+        // Positioning, scale, and rotation
+        val frame = Frame(root.get("x").asFloat,
+                          root.get("y").asFloat,
+                          root.get("width").asFloat,
+                          root.get("height").asFloat,
+                          root.get("scaleX").asFloat,
+                          root.get("scaleY").asFloat,
+                          root.get("rotationInDegrees").asFloat,
+                          if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z)
+
         val model = when (type) {
             ScrapType.SVG -> {
-                val field = SVGScrap(id)
-
                 // Must have a "svg" property
                 val sketchJson = root["svg"].asJsonArray
                 val svgList = mutableListOf<VectorGraphics>()
@@ -85,21 +93,12 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
                         it, VectorGraphics::class.java))
                 }
 
-                field.setSVGs(svgList)
-                field
+                SVGScrap(uuid = id,
+                         fixedFrame = frame,
+                         fixedGraphicsList = svgList)
             }
             else -> throw UnsupportedOperationException()
         }
-
-        // Positioning, scale, and rotation
-        model.setFrame(Frame(root.get("x").asFloat,
-                             root.get("y").asFloat,
-                             root.get("width").asFloat,
-                             root.get("height").asFloat,
-                             root.get("scaleX").asFloat,
-                             root.get("scaleY").asFloat,
-                             root.get("rotationInDegrees").asFloat,
-                             if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z))
 
         return model
     }
