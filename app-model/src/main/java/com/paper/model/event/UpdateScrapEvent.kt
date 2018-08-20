@@ -20,27 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.event
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+import com.paper.model.IScrap
 
-interface ISVGScrap : IScrap {
+sealed class UpdateScrapEvent
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
+data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScrapEvent()
 
-    fun lineTo(x: Float,
-               y: Float)
+data class AddScrapEvent(val scrap: IScrap) : UpdateScrapEvent()
 
-    fun cubicTo(previousControl: Point,
-                currentControl: Point,
-                currentPoint: Point)
-
-    fun close()
-
-    fun setSVGs(src: List<VectorGraphics>)
-
-    fun getSVGs(): List<VectorGraphics>
-}
+data class RemoveScrapEvent(val scrap: IScrap) : UpdateScrapEvent()

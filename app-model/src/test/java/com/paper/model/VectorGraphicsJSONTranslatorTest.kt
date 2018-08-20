@@ -99,9 +99,9 @@ class VectorGraphicsJSONTranslatorTest {
                                                                   color = Color.GREEN,
                                                                   closed = true)),
                                       tupleList = mutableListOf(LinearPointTuple(0f, 0f),
-                                                                CubicPointTuple(Point(1f, 1f),
-                                                                                Point(2f, 2f),
-                                                                                Point(3f, 3f))))
+                                                                CubicPointTuple(1f, 1f,
+                                                                                2f, 2f,
+                                                                                3f, 3f)))
         val jsonString = translator.toJson(graphics)
 
         System.out.println("JSON = $jsonString")
@@ -124,12 +124,11 @@ class VectorGraphicsJSONTranslatorTest {
         Assert.assertEquals(0.2f, (svg.getTupleAt(0) as LinearPointTuple).y)
 
         Assert.assertTrue(svg.getTupleAt(1) is CubicPointTuple)
-        Assert.assertEquals(1.1f, (svg.getTupleAt(1) as CubicPointTuple).prevControl.x)
-        Assert.assertEquals(1.2f, (svg.getTupleAt(1) as CubicPointTuple).prevControl.y)
-        Assert.assertEquals(2.1f, (svg.getTupleAt(1) as CubicPointTuple).currentControl.x)
-        Assert.assertEquals(2.2f, (svg.getTupleAt(1) as CubicPointTuple).currentControl.y)
-        Assert.assertEquals(3.1f, (svg.getTupleAt(1) as CubicPointTuple).currentEnd.x)
-        Assert.assertEquals(3.2f, (svg.getTupleAt(1) as CubicPointTuple).currentEnd.y)
+        Assert.assertEquals(1.1f, (svg.getTupleAt(1) as CubicPointTuple).prevControlX)
+        Assert.assertEquals(1.2f, (svg.getTupleAt(1) as CubicPointTuple).prevControlY)
+        Assert.assertEquals(2.1f, (svg.getTupleAt(1) as CubicPointTuple).currentControlX)
+        Assert.assertEquals(2.2f, (svg.getTupleAt(1) as CubicPointTuple).currentControlY)
+        Assert.assertEquals(3.1f, (svg.getTupleAt(1) as CubicPointTuple).currentEndX)
+        Assert.assertEquals(3.2f, (svg.getTupleAt(1) as CubicPointTuple).currentEndY)
     }
 }
-

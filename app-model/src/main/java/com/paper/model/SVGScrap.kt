@@ -41,6 +41,10 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
         }
     }
 
+    override fun close() {
+        TODO("not implemented")
+    }
+
     override fun getSVGs(): List<VectorGraphics> {
         return synchronized(mLock) {
             mGraphicsList.toList()
@@ -49,11 +53,11 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
 
     override fun moveTo(x: Float,
                         y: Float,
-                        style: Set<SVGStyle>,
-                        closedShape: Boolean) {
+                        style: Set<SVGStyle>) {
         synchronized(mLock) {
-            mGraphicsList.add(VectorGraphics(style = style,
-                                             tupleList = mutableListOf(LinearPointTuple(x, y))))
+            mGraphicsList.add(VectorGraphics(
+                style = style,
+                tupleList = mutableListOf(LinearPointTuple(x, y))))
 
             // Mark dirty
             mIsHashDirty = true
@@ -77,9 +81,12 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
         synchronized(mLock) {
             val graphics = mGraphicsList.last()
 
-            graphics.addTuple(CubicPointTuple(previousControl.copy(),
-                                              currentControl.copy(),
-                                              currentPoint.copy()))
+            graphics.addTuple(CubicPointTuple(previousControl.x,
+                                              previousControl.y,
+                                              currentControl.x,
+                                              currentControl.y,
+                                              currentPoint.x,
+                                              currentPoint.y))
 
             // Mark dirty
             mIsHashDirty = true

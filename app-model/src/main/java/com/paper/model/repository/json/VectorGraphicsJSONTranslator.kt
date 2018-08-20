@@ -131,9 +131,9 @@ class VectorGraphicsJSONTranslator : JsonSerializer<VectorGraphics>,
                     builder.append("${p.x},${p.y}")
                 }
                 is CubicPointTuple -> {
-                    builder.append("${p.prevControl.x},${p.prevControl.y}," +
-                                   "${p.currentControl.x},${p.currentControl.y}," +
-                                   "${p.currentEnd.x},${p.currentEnd.y}")
+                    builder.append("${p.prevControlX},${p.prevControlY}," +
+                                   "${p.currentControlX},${p.currentControlY}," +
+                                   "${p.currentEndX},${p.currentEndY}")
                 }
             }
             if (index != tupleList.lastIndex) {
@@ -155,12 +155,12 @@ class VectorGraphicsJSONTranslator : JsonSerializer<VectorGraphics>,
                 out.add(LinearPointTuple(pointList[0].toFloat(),
                                          pointList[1].toFloat()))
             } else if (pointList.size == 6) {
-                out.add(CubicPointTuple(Point(pointList[0].toFloat(),
-                                              pointList[1].toFloat()),
-                                        Point(pointList[2].toFloat(),
-                                              pointList[3].toFloat()),
-                                        Point(pointList[4].toFloat(),
-                                              pointList[5].toFloat())))
+                out.add(CubicPointTuple(pointList[0].toFloat(),
+                                        pointList[1].toFloat(),
+                                        pointList[2].toFloat(),
+                                        pointList[3].toFloat(),
+                                        pointList[4].toFloat(),
+                                        pointList[5].toFloat()))
             }
         }
 

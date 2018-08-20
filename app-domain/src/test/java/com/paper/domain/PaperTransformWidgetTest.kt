@@ -23,7 +23,7 @@
 package com.paper.domain
 
 import com.paper.domain.useCase.BindWidgetWithModel
-import com.paper.domain.widget.editor.PaperTransformWidget
+import com.paper.domain.widget.PaperTransformWidget
 import com.paper.model.BasePaper
 import com.paper.model.Point
 import com.paper.model.repository.PaperTransformRepoFileImpl

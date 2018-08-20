@@ -85,9 +85,12 @@ data class LinearPointTuple(val x: Float,
 /**
  * Cubic bezier tuple.
  */
-data class CubicPointTuple(val prevControl: Point,
-                           val currentControl: Point,
-                           val currentEnd: Point)
+data class CubicPointTuple(val prevControlX: Float,
+                           val prevControlY: Float,
+                           val currentControlX: Float,
+                           val currentControlY: Float,
+                           val currentEndX: Float,
+                           val currentEndY: Float)
     : PointTuple(),
       NoObfuscation {
 
@@ -99,12 +102,12 @@ data class CubicPointTuple(val prevControl: Point,
      */
     override fun offset(x: Float,
                         y: Float): PointTuple {
-        return CubicPointTuple(prevControl = Point(prevControl.x + x,
-                                                   prevControl.y + y),
-                               currentControl = Point(currentControl.x + x,
-                                                      currentControl.y + y),
-                               currentEnd = Point(currentEnd.x,
-                                                  currentEnd.y))
+        return CubicPointTuple(prevControlX + x,
+                               prevControlY + y,
+                               currentControlX + x,
+                               currentControlY + y,
+                               currentEndX,
+                               currentEndY)
     }
 
     // Equality ///////////////////////////////////////////////////////////////
@@ -115,18 +118,24 @@ data class CubicPointTuple(val prevControl: Point,
 
         other as CubicPointTuple
 
-        if (prevControl != other.prevControl) return false
-        if (currentControl != other.currentControl) return false
-        if (currentEnd != other.currentEnd) return false
+        if (prevControlX != other.prevControlX) return false
+        if (prevControlY != other.prevControlY) return false
+        if (currentControlX != other.currentControlX) return false
+        if (currentControlY != other.currentControlY) return false
+        if (currentEndX != other.currentEndX) return false
+        if (currentEndY != other.currentEndY) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         if (mIsHashDirty) {
-            mHashCode = prevControl.hashCode()
-            mHashCode = 31 * mHashCode + currentControl.hashCode()
-            mHashCode = 31 * mHashCode + currentEnd.hashCode()
+            mHashCode = prevControlX.hashCode()
+            mHashCode = 31 * mHashCode + prevControlY.hashCode()
+            mHashCode = 31 * mHashCode + currentControlX.hashCode()
+            mHashCode = 31 * mHashCode + currentControlY.hashCode()
+            mHashCode = 31 * mHashCode + currentEndX.hashCode()
+            mHashCode = 31 * mHashCode + currentEndY.hashCode()
 
             mIsHashDirty = false
         }
@@ -135,8 +144,8 @@ data class CubicPointTuple(val prevControl: Point,
 
     override fun toString(): String {
         return "CubicPointTuple{c=(%.3f, %.3f) c=(%.3f, %.3f) e=(%.3f, %.3f)}"
-            .format(prevControl.x, prevControl.y,
-                    currentControl.x, currentControl.y,
-                    currentEnd.x, currentEnd.y)
+            .format(prevControlX, prevControlY,
+                    currentControlX, currentControlY,
+                    currentEndX, currentEndY)
     }
 }

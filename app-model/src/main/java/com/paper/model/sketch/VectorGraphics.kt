@@ -34,7 +34,8 @@ data class VectorGraphics(
     val style: Set<SVGStyle> = setOf(SVGStyle.Stroke(color = Color.RED,
                                                      size = 0.1f,
                                                      closed = false)),
-    private val tupleList: MutableList<PointTuple> = mutableListOf()) {
+    private val tupleList: MutableList<PointTuple> = mutableListOf())
+    : NoObfuscation {
 
     private var mIsHashDirty = true
     private var mHashCode = 0
