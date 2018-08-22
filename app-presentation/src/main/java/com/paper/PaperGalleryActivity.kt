@@ -44,7 +44,7 @@ import com.paper.model.IPaper
 import com.paper.model.IPaperRepoProvider
 import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.ModelConst
-import com.paper.model.event.ProgressEvent
+import com.paper.model.event.IntProgressEvent
 import com.paper.view.HorizontalCentricItemDecoration
 import com.paper.view.gallery.*
 import com.paper.view.gallery.GalleryViewModelBundle.Type.NativeAds
@@ -93,7 +93,7 @@ class PaperGalleryActivity : AppCompatActivity() {
     private val mPermissions by lazy { RxPermissions(this) }
 
     // Progress signal.
-    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>()
+    private val mUpdateProgressSignal = PublishSubject.create<IntProgressEvent>()
     // Error signal
     private val mErrorSignal = PublishSubject.create<Throwable>()
 

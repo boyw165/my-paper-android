@@ -52,8 +52,8 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
                          previousControlY: Float,
                          currentControlX: Float,
                          currentControlY: Float,
-                         currentPointX: Float,
-                         currentPointY: Float) {
+                         currentEndX: Float,
+                         currentEndY: Float) {
         throw IllegalAccessException("This is an immutable instance")
     }
 

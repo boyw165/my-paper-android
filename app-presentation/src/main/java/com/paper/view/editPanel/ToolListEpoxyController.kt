@@ -25,7 +25,7 @@ import com.bumptech.glide.RequestManager
 import com.paper.R
 import com.paper.domain.data.ToolType
 import com.paper.domain.event.UpdateEditToolsEvent
-import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.domain.vm.PaperMenuWidget
 
 class ToolListEpoxyController(imageLoader: RequestManager)
     : TypedEpoxyController<UpdateEditToolsEvent>() {
@@ -54,12 +54,12 @@ class ToolListEpoxyController(imageLoader: RequestManager)
         }
     }
 
-    private var mWidget: PaperEditPanelWidget? = null
+    private var mWidget: PaperMenuWidget? = null
 
     // TODO: Since the tool list (data) and UI click both lead to the
     // TODO: UI view-model change, merge this two upstream in the new
     // TODO: design!
-    fun setWidget(widget: PaperEditPanelWidget?) {
+    fun setWidget(widget: PaperMenuWidget?) {
         mWidget = widget
     }
 }

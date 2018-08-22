@@ -84,7 +84,7 @@ class BindViewWithWidgetTest {
 
         testObserver.dispose()
 
-        // Must see unbind call!
+        // Must see stop call!
         Mockito.verify(mockView).unbindWidget()
     }
 
@@ -110,7 +110,7 @@ class BindViewWithWidgetTest {
 
         disposables.clear()
 
-        // Must see unbind call!
+        // Must see stop call!
         Mockito.verify(mockView).unbindWidget()
     }
 

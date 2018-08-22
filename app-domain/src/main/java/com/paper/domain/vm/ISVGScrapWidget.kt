@@ -18,53 +18,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.domain.vm
 
-import com.paper.domain.data.DrawingMode
 import com.paper.domain.event.CanvasEvent
-import com.paper.model.IPaper
-import com.paper.model.Rect
+import com.paper.model.ISVGScrap
 import io.reactivex.Observable
-import java.io.File
 
-interface IPaperCanvasWidget : IWidget<IPaper> {
+interface ISVGScrapWidget : IBaseScrapWidget,
+                            ISVGScrap {
 
-    // For input //////////////////////////////////////////////////////////////
-    // TODO: How to define the inbox?
+//    fun drawDot(x: Float,
+//                y: Float)
+//
+//    fun beingDrawCurve(x: Float,
+//                       y: Float)
+//
+//    fun drawCurveTo(x: Float,
+//                    y: Float)
+//
+//    fun stopDrawCurve()
 
-    fun handleTouchBegin()
-
-    fun handleTouchEnd()
-
-    fun drawDot(x: Float, y: Float)
-
-    fun beingDrawCurve(x: Float, y: Float)
-
-    fun drawCurveTo(x: Float, y: Float)
-
-    fun stopDrawCurve()
-
-    fun setDrawingMode(mode: DrawingMode)
-
-    fun setChosenPenColor(color: Int)
-
-    fun setViewPortScale(scale: Float)
-
-    fun setPenSize(size: Float)
-
-    fun setThumbnail(bmpFile: File, bmpWidth: Int, bmpHeight: Int)
-
-    fun eraseCanvas()
-
-    // For output /////////////////////////////////////////////////////////////
-
-    fun onSetCanvasSize(): Observable<Rect>
-
-    fun onAddScrapWidget(): Observable<IScrapWidget>
-
-    fun onRemoveScrapWidget(): Observable<IScrapWidget>
-
-    fun onDrawSVG(replayAll: Boolean = true): Observable<CanvasEvent>
-
-    fun onPrintDebugMessage(): Observable<String>
+    fun onDrawSVG(): Observable<CanvasEvent>
 }

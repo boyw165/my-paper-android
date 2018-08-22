@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -22,28 +22,9 @@
 
 package com.paper.model
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+interface ICanvasOperation {
 
-interface ISVGScrap : IScrap {
+    fun undo(target: IPaper)
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
-
-    fun lineTo(x: Float,
-               y: Float)
-
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
-
-    fun close()
-
-    fun setSVGs(src: List<VectorGraphics>)
-
-    fun getSVGs(): List<VectorGraphics>
+    fun redo(target: IPaper)
 }

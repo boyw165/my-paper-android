@@ -22,5 +22,5 @@ package com.paper.model
 
 interface IPaperTransformRepoProvider {
 
-    fun getPaperTransformRepo(): IPaperTransformRepo
+    fun getPaperTransformRepo(): ICanvasOperationRepo
 }

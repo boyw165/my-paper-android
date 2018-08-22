@@ -20,31 +20,27 @@
 
 package com.paper.model.event
 
-data class ProgressEvent(val justStart: Boolean = false,
-                         val doing: Boolean = false,
-                         val justStop: Boolean = false,
-                         val progress: Int = 0) {
-    companion object {
+open class ProgressEvent(open val justStart: Boolean = false,
+                         open val doing: Boolean = false,
+                         open val justStop: Boolean = false) {
 
-        fun start(progress: Int = 0): ProgressEvent {
-            return ProgressEvent(justStart = true,
-                                 doing = false,
-                                 justStop = false,
-                                 progress = progress)
-        }
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
 
-        fun doing(progress: Int): ProgressEvent {
-            return ProgressEvent(justStart = false,
-                                 doing = true,
-                                 justStop = false,
-                                 progress = progress)
-        }
+        other as ProgressEvent
 
-        fun stop(progress: Int = 100): ProgressEvent {
-            return ProgressEvent(justStart = false,
-                                 doing = false,
-                                 justStop = true,
-                                 progress = progress)
-        }
+        if (justStart != other.justStart) return false
+        if (doing != other.doing) return false
+        if (justStop != other.justStop) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = justStart.hashCode()
+        result = 31 * result + doing.hashCode()
+        result = 31 * result + justStop.hashCode()
+        return result
     }
 }

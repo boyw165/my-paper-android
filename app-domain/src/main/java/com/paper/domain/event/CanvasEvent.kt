@@ -20,9 +20,9 @@
 
 package com.paper.domain.event
 
-import com.paper.model.Point
+import com.paper.model.PointTuple
 import com.paper.model.Rect
-import com.paper.model.sketch.PenType
+import com.paper.model.sketch.VectorGraphics
 import java.util.*
 
 /**
@@ -73,16 +73,12 @@ object EraseCanvasEvent : CanvasEvent()
  * A starting sketch event, where it may provide the pen color, pen size, and
  * pen type information.
  */
-data class StartSketchEvent(val strokeID: UUID,
-                            val point: Point,
-                            val penColor: Int = 0,
-                            val penSize: Float = 0f,
-                            val penType: PenType) : CanvasEvent()
+data class StartSketchEvent(val svg: VectorGraphics) : CanvasEvent()
 /**
  * An on-drawing sketch event.
  */
 data class OnSketchEvent(val strokeID: UUID,
-                         val point: Point) : CanvasEvent()
+                         val point: PointTuple) : CanvasEvent()
 
 /**
  * A stopping sketch event.
@@ -92,16 +88,12 @@ object StopSketchEvent : CanvasEvent()
 /**
  * To add a stroke.
  */
-data class AddSketchStrokeEvent(val strokeID: UUID,
-                                val points: List<Point>,
-                                val penColor: Int = 0,
-                                val penSize: Float = 0f,
-                                val penType: PenType) : CanvasEvent()
+data class AddSvgEvent(val svg: VectorGraphics) : CanvasEvent()
 
 /**
  * To remove a stroke.
  */
-data class RemoveSketchStrokeEvent(val strokeID: UUID) : CanvasEvent()
+data class RemoveSvgEvent(val svgID: UUID) : CanvasEvent()
 
 // View-port //////////////////////////////////////////////////////////////////
 

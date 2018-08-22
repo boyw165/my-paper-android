@@ -20,30 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.presenter
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+interface IPresenter {
 
-interface ISVGScrap : IScrap {
+    fun bindView()
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
-
-    fun lineTo(x: Float,
-               y: Float)
-
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
-
-    fun close()
-
-    fun setSVGs(src: List<VectorGraphics>)
-
-    fun getSVGs(): List<VectorGraphics>
+    fun unBindView()
 }

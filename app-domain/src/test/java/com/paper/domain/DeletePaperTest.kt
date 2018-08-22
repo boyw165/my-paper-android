@@ -37,7 +37,7 @@ import org.mockito.junit.MockitoJUnitRunner
 class DeletePaperTest {
 
     @Test
-    fun getExceptionIfErrorFromRepo() {
+    fun `get exception if error from repo`() {
         val error = RuntimeException("Mocked repo!")
         val mockRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito
@@ -64,7 +64,7 @@ class DeletePaperTest {
     }
 
     @Test
-    fun getTrueIfRepoWorks() {
+    fun `get true if repo works`() {
         val mockID = 5L
         val mockRepo = Mockito.mock(IPaperRepo::class.java)
         Mockito

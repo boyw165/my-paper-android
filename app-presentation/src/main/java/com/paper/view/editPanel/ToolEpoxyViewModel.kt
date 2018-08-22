@@ -26,14 +26,14 @@ import com.airbnb.epoxy.EpoxyModel
 import com.bumptech.glide.RequestManager
 import com.paper.R
 import com.paper.domain.data.ToolType
-import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.domain.vm.PaperMenuWidget
 
 class ToolEpoxyViewModel(
     toolType: ToolType,
     resourceId: Int,
     imgLoader: RequestManager,
     isUsing: Boolean = false,
-    widget: PaperEditPanelWidget? = null)
+    widget: PaperMenuWidget? = null)
     : EpoxyModel<View>() {
 
     private val mToolID = toolType

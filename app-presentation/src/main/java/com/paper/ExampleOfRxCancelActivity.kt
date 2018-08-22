@@ -28,7 +28,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.model.event.ProgressEvent
+import com.paper.model.event.IntProgressEvent
 import com.paper.observables.BooleanDialogSingle
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
@@ -68,7 +68,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
     private val mWorkerSchedulers = Schedulers.io()
 
     // Progress.
-    private val mOnUpdateProgress: Subject<ProgressEvent> = PublishSubject.create()
+    private val mOnUpdateProgress: Subject<IntProgressEvent> = PublishSubject.create()
     private val mOnThrowError: Subject<Throwable> = PublishSubject.create()
 
     // Disposables.
@@ -252,7 +252,7 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
     private fun toShareAction(): Observable<Any> {
         // #1 observable simulating an arbitrary long-run process.
         return generateBmp()
-            .compose(handleError(ProgressEvent(justStop = true)))
+            .compose(handleError(IntProgressEvent(justStop = true)))
             // #2 observable that shows a dialog.
             .switchMap { _ ->
                 showConfirmDialog()
@@ -267,9 +267,9 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
             .switchMap { b: Boolean ->
                 if (b) {
                     shareToFacebook()
-                        .compose(handleError(ProgressEvent(justStop = true)))
+                        .compose(handleError(IntProgressEvent(justStop = true)))
                 } else {
-                    Observable.just(ProgressEvent(justStop = true))
+                    Observable.just(IntProgressEvent(justStop = true))
                 }
             }
     }
@@ -277,30 +277,30 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
     /**
      * An observable emitting the status of generating the Bitmap.
      */
-    private fun generateBmp(): Observable<ProgressEvent> {
+    private fun generateBmp(): Observable<IntProgressEvent> {
         return getSimulatingLongRunProcess()
     }
 
     /**
      * An observable emitting the status of sharing.
      */
-    private fun shareToFacebook(): Observable<ProgressEvent> {
+    private fun shareToFacebook(): Observable<IntProgressEvent> {
         return getSimulatingLongRunProcess()
     }
 
     /**
      * Returns a CANCEL action.
      */
-    private fun toCancelAction(): Observable<ProgressEvent> {
+    private fun toCancelAction(): Observable<IntProgressEvent> {
         return Observable
-            .just(ProgressEvent(justStop = true))
+            .just(IntProgressEvent(justStop = true))
             .doOnNext { state -> mOnUpdateProgress.onNext(state) }
     }
 
     /**
-     * Returns an Observable that emitting [ProgressEvent].
+     * Returns an Observable that emitting [IntProgressEvent].
      */
-    private fun getSimulatingLongRunProcess(): Observable<ProgressEvent> {
+    private fun getSimulatingLongRunProcess(): Observable<IntProgressEvent> {
         return Observable
             // The first simulated long-run process.
             .intervalRange(
@@ -313,22 +313,22 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
                 // Interval period.
                 25, TimeUnit.MILLISECONDS)
             .map { value ->
-                ProgressEvent(doing = true,
-                                                    progress = value.toInt())
+                IntProgressEvent(doing = true,
+                                 progress = value.toInt())
             }
             .compose(handleProgress())
             .compose(goUntilPreviousTaskStops())
     }
 
     /**
-     * A transformer that massage [ProgressEvent] from upstream and bypass to
+     * A transformer that massage [IntProgressEvent] from upstream and bypass to
      * [mOnUpdateProgress] channel.
      */
-    private fun handleProgress(): ObservableTransformer<ProgressEvent, ProgressEvent> {
+    private fun handleProgress(): ObservableTransformer<IntProgressEvent, IntProgressEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 // Create a "start" state.
-                .startWith(ProgressEvent(justStart = true))
+                .startWith(IntProgressEvent(justStart = true))
                 .map { state ->
                     return@map if (state.doing && state.progress == 100) {
                         val stopState = state.copy(justStop = true)
@@ -349,9 +349,9 @@ class ExampleOfRxCancelActivity : AppCompatActivity() {
     }
 
     /**
-     * A transformer that filters START and DOING [ProgressEvent] state.
+     * A transformer that filters START and DOING [IntProgressEvent] state.
      */
-    private fun goUntilPreviousTaskStops(): ObservableTransformer<ProgressEvent, ProgressEvent> {
+    private fun goUntilPreviousTaskStops(): ObservableTransformer<IntProgressEvent, IntProgressEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 .filter { state -> state.justStop }

@@ -31,15 +31,15 @@ import io.reactivex.disposables.Disposable
 // .------.
 // |      | ----> true or false
 // |  ob  |
-// |      | ----> ProgressEvent
+// |      | ----> IntProgressEvent
 // '------'
 
 /**
- * An observable to load paper from DB and then bind widget with the model.
+ * An observable to load paper from DB and then start widget with the model.
  * True if the model is successfully loaded and binding is done. False means
  * neither the model loading nor binding works.
  *
- * There is also a side-effect that it sends ProgressEvent through the given
+ * There is also a side-effect that it sends IntProgressEvent through the given
  * progress signal.
  */
 class DeletePaper(paperID: Long,

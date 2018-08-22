@@ -25,19 +25,24 @@ import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
 import com.google.gson.GsonBuilder
+import com.paper.domain.ISchedulerProvider
 import com.paper.model.*
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSQLiteImpl
-import com.paper.model.repository.PaperTransformRepoFileImpl
+import com.paper.model.repository.PaperCanvasOperationRepoFileLRUImpl
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Scheduler
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.schedulers.Schedulers
 
 class PaperApplication : MultiDexApplication(),
+                         ISchedulerProvider,
                          IPaperRepoProvider,
                          IPaperTransformRepoProvider,
                          IBitmapRepoProvider,
@@ -90,7 +95,24 @@ class PaperApplication : MultiDexApplication(),
             .create()
     }
 
+    override fun main(): Scheduler {
+        return AndroidSchedulers.mainThread()
+    }
+
+    override fun computation(): Scheduler {
+        return Schedulers.computation()
+    }
+
+    override fun io(): Scheduler {
+        return Schedulers.io()
+    }
+
     private val mDbScheduler = SingleScheduler()
+
+    override fun db(): Scheduler {
+        return mDbScheduler
+    }
+
     private val mPaperRepo by lazy {
         PaperRepoSQLiteImpl(authority = packageName,
                             resolver = contentResolver,
@@ -109,13 +131,12 @@ class PaperApplication : MultiDexApplication(),
     }
 
     private val mPaperTransformRepo by lazy {
-        PaperTransformRepoFileImpl(fileDir = getExternalFilesDir("transform"))
+        PaperCanvasOperationRepoFileLRUImpl(fileDir = getExternalFilesDir("transform"))
     }
 
-    override fun getPaperTransformRepo(): IPaperTransformRepo {
+    override fun getPaperTransformRepo(): ICanvasOperationRepo {
         return mPaperTransformRepo
     }
-
 
     // Shared preference //////////////////////////////////////////////////////
 

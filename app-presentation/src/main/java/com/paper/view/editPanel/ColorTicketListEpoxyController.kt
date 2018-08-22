@@ -23,7 +23,7 @@ package com.paper.view.editPanel
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.domain.event.UpdateColorTicketsEvent
-import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.domain.vm.PaperMenuWidget
 
 class ColorTicketListEpoxyController(imageLoader: RequestManager)
     : TypedEpoxyController<UpdateColorTicketsEvent>() {
@@ -41,9 +41,9 @@ class ColorTicketListEpoxyController(imageLoader: RequestManager)
         }
     }
 
-    private var mWidget: PaperEditPanelWidget? = null
+    private var mWidget: PaperMenuWidget? = null
 
-    fun setWidget(widget: PaperEditPanelWidget?) {
+    fun setWidget(widget: PaperMenuWidget?) {
         mWidget = widget
     }
 }

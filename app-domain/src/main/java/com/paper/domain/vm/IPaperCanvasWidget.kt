@@ -1,6 +1,4 @@
-// Copyright Aug 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,30 +18,41 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain.vm
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+import com.paper.domain.data.DrawingMode
+import com.paper.model.ICanvasOperation
+import com.paper.model.IPaper
+import com.paper.model.event.UpdateScrapEvent
+import io.reactivex.Observable
 
-interface ISVGScrap : IScrap {
+interface IPaperCanvasWidget : IWidget,
+                               IPaper {
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-    fun lineTo(x: Float,
-               y: Float)
+    fun handleTouchBegin()
 
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
+    fun handleTouchEnd()
 
-    fun close()
+    fun setDrawingMode(mode: DrawingMode)
 
-    fun setSVGs(src: List<VectorGraphics>)
+    fun setChosenPenColor(color: Int)
 
-    fun getSVGs(): List<VectorGraphics>
+    fun setViewPortScale(scale: Float)
+
+    fun setPenSize(size: Float)
+
+    fun eraseCanvas()
+
+    // For output /////////////////////////////////////////////////////////////
+
+    fun onUpdateCanvasSize(): Observable<Pair<Float, Float>>
+
+    fun onUpdateScrap(): Observable<UpdateScrapEvent>
+
+    fun onUpdateCanvasOperation(): Observable<ICanvasOperation>
+
+    fun onPrintDebugMessage(): Observable<String>
 }

@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,14 +18,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain.vm
 
-import io.reactivex.Single
-import java.util.*
+interface IWidget {
 
-interface IPaperTransformRepo {
+    /**
+     * Bind model.
+     *
+     * @return Ready observable
+     */
+    fun start()
 
-    fun putRecord(key: UUID, transform: IPaperTransform): Single<Boolean>
-
-    fun getRecord(key: UUID): Single<IPaperTransform>
+    fun stop()
 }

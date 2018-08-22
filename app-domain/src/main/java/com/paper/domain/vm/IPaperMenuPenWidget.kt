@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,25 +18,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.transform
+package com.paper.domain.vm
 
-import com.paper.model.IPaperTransform
-import com.paper.model.IPaper
+import com.paper.domain.event.UpdateColorTicketsEvent
+import io.reactivex.Observable
 
-class AddStrokeTransform : IPaperTransform {
+interface IPaperMenuPenWidget : IWidget {
 
-//    private val mPaper = paper
-//    private val mRedoStroke = paper.getSketch().last().copy()
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-    override fun undo(target: IPaper) {
-//        mPaper.popStroke()
-    }
+    fun setPenColor(color: Int)
 
-    override fun redo(target: IPaper) {
-//        mPaper.pushStroke(mRedoStroke)
-    }
+    fun setPenSize(size: Float)
 
-    override fun toString(): String {
-        return javaClass.simpleName
-    }
+    // For output /////////////////////////////////////////////////////////////
+
+    fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent>
+
+    /**
+     * Update of pen size ranging from 0.0 to 1.0
+     *
+     * @return An observable of pen size ranging from 0.0 to 1.0
+     */
+    fun onUpdatePenSize(): Observable<Float>
 }

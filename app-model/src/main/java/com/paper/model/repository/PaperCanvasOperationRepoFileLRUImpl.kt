@@ -22,22 +22,23 @@
 
 package com.paper.model.repository
 
-import com.paper.model.IPaperTransform
-import com.paper.model.IPaperTransformRepo
+import com.paper.model.ICanvasOperation
+import com.paper.model.ICanvasOperationRepo
 import com.paper.model.ModelConst
 import io.reactivex.Single
 import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
 
-class PaperTransformRepoFileImpl(fileDir: File) : IPaperTransformRepo {
+class PaperCanvasOperationRepoFileLRUImpl(fileDir: File)
+    : ICanvasOperationRepo {
 
     // TODO: Serialize the transform to file
 
-    private val mLookupTable = HashMap<UUID, IPaperTransform>()
+    private val mLookupTable = HashMap<UUID, ICanvasOperation>()
 
     override fun putRecord(key: UUID,
-                           transform: IPaperTransform): Single<Boolean> {
+                           transform: ICanvasOperation): Single<Boolean> {
         mLookupTable[key] = transform
 
         println("${ModelConst.TAG}: put $transform to transformation repo (file impl)")
@@ -45,7 +46,7 @@ class PaperTransformRepoFileImpl(fileDir: File) : IPaperTransformRepo {
         return Single.just(true)
     }
 
-    override fun getRecord(key: UUID): Single<IPaperTransform> {
+    override fun getRecord(key: UUID): Single<ICanvasOperation> {
         val transform = mLookupTable[key]
 
         println("${ModelConst.TAG}: get $transform from transformation repo (file impl)")

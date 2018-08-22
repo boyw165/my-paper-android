@@ -20,102 +20,75 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.domain.vm
 
+import com.paper.domain.ISchedulerProvider
 import com.paper.domain.event.UndoRedoEvent
+import com.paper.model.ICanvasOperation
+import com.paper.model.ICanvasOperationRepo
 import com.paper.model.IPaper
-import com.paper.model.IPaperTransformRepo
-import com.paper.model.transform.AddStrokeTransform
+import com.paper.model.operation.AddScrapOperation
 import io.reactivex.Observable
-import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
+import io.useful.dirtyflag.DirtyFlag
 import java.util.*
 
-class PaperTransformWidget(historyRepo: IPaperTransformRepo,
-                           uiScheduler: Scheduler,
-                           ioScheduler: Scheduler)
-    : IWidget<IPaper> {
+class PaperHistoryWidget(private val historyRepo: ICanvasOperationRepo,
+                         private val schedulers: ISchedulerProvider)
+    : IPaperHistoryWidget {
 
-    private lateinit var mPaper: IPaper
-    private val mOperationRepo = historyRepo
-
-    private val mUiScheduler = uiScheduler
-    private val mIoScheduler = ioScheduler
+    private val BUSY = 1
 
     private val mDisposables = CompositeDisposable()
 
-    override fun bindModel(model: IPaper) {
+    override fun start() {
         ensureNoLeakedBinding()
 
-        mPaper = model
+        mOperationSignal
+            .flatMap { _ ->
+                val key = UUID.randomUUID()
+                val value = AddScrapOperation()
 
-        bindPaperImpl()
+                mUndoKeys.push(key)
+
+                historyRepo
+                    .putRecord(key, value)
+                    .doOnSuccess {
+                        mUndoCapacitySignal.onNext(
+                            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                                          canRedo = mRedoKeys.size > 0))
+                    }
+                    .toObservable()
+            }
+            .subscribe()
+            .addTo(mDisposables)
     }
 
-    override fun unbindModel() {
-        unbindPaperImpl()
-    }
-
-    private fun bindPaperImpl() {
-        mDisposables.add(
-            mPaper.onAddStroke(replayAll = false)
-                .observeOn(mUiScheduler)
-                .flatMap {
-                    val key = UUID.randomUUID()
-                    val value = AddStrokeTransform(
-                        paper = mPaper)
-
-                    mUndoKeys.push(key)
-
-                    mOperationRepo
-                        .putRecord(key, value)
-                        .doOnSuccess {
-                            mUndoCapacitySignal.onNext(
-                                UndoRedoEvent(canUndo = mUndoKeys.size > 0,
-                                              canRedo = mRedoKeys.size > 0))
-                        }
-                        .toObservable()
-                }
-                .subscribe())
-        // TODO
-        //mDisposables.add(
-        //    mPaper.onRemoveStroke()
-        //      .observeOn(mUiScheduler)
-        //      .flatMap {
-        //          Observable.never<Any>()
-        //      }
-        //      .subscribe())
-    }
-
-    private fun unbindPaperImpl() {
+    override fun stop() {
         mDisposables.clear()
     }
 
     private fun ensureNoLeakedBinding() {
         if (mDisposables.size() > 0)
-            throw IllegalStateException("Already bind a model")
+            throw IllegalStateException("Already start a model")
     }
 
     // Number of on-going task ////////////////////////////////////////////////
 
-    private val mBusySignal = BehaviorSubject.createDefault(false)
-
-    private fun markBusy() {
-        mBusySignal.onNext(true)
-    }
-
-    private fun markNotBusy() {
-        mBusySignal.onNext(false)
-    }
+    private val mBusySignal = DirtyFlag()
 
     /**
      * A busy state of this widget.
      */
-    fun onBusy(): Observable<Boolean> {
+    override fun onBusy(): Observable<Boolean> {
         return mBusySignal
+            .onUpdate()
+            .map { event ->
+                event.flag != 0
+            }
     }
 
     // Undo & redo ////////////////////////////////////////////////////////////
@@ -124,11 +97,22 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
     private val mRedoKeys = Stack<UUID>()
     private val mUndoCapacitySignal = PublishSubject.create<UndoRedoEvent>()
 
-    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoEvent> {
-        return mUndoCapacitySignal
+    private val mOperationSignal = PublishSubject.create<ICanvasOperation>().toSerialized()
+
+    override fun putOperation(operation: ICanvasOperation) {
+        mOperationSignal.onNext(operation)
     }
 
-    fun undo(): Single<Boolean> {
+    override fun eraseAll() {
+        mUndoKeys.clear()
+        mRedoKeys.clear()
+
+        mUndoCapacitySignal.onNext(
+            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
+                          canRedo = mRedoKeys.size > 0))
+    }
+
+    override fun undo(paper: IPaper): Single<Boolean> {
         val key = mUndoKeys.pop()
         mRedoKeys.push(key)
 
@@ -139,16 +123,14 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         return Single
             .just(key)
             .flatMap { k ->
-                markBusy()
+                mBusySignal.markDirty(BUSY)
 
-                mOperationRepo
+                historyRepo
                     .getRecord(k)
                     .flatMap { transform ->
-                        unbindModel()
-                        transform.undo()
-                        bindPaperImpl()
+                        transform.undo(paper)
 
-                        markNotBusy()
+                        mBusySignal.markNotDirty(BUSY)
 
                         Single.just(true)
                     }
@@ -156,7 +138,7 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
             .onErrorReturnItem(false)
     }
 
-    fun redo(): Single<Boolean> {
+    override fun redo(paper: IPaper): Single<Boolean> {
         val key = mRedoKeys.pop()
         mUndoKeys.push(key)
 
@@ -167,16 +149,14 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
         return Single
             .just(key)
             .flatMap { k ->
-                markBusy()
+                mBusySignal.markDirty(BUSY)
 
-                mOperationRepo
+                historyRepo
                     .getRecord(k)
                     .flatMap { transform ->
-                        unbindModel()
-                        transform.redo()
-                        bindPaperImpl()
+                        transform.redo(paper)
 
-                        markNotBusy()
+                        mBusySignal.markNotDirty(BUSY)
 
                         Single.just(true)
                     }
@@ -184,13 +164,9 @@ class PaperTransformWidget(historyRepo: IPaperTransformRepo,
             .onErrorReturnItem(false)
     }
 
-    fun eraseAll() {
-        mUndoKeys.clear()
-        mRedoKeys.clear()
 
-        mUndoCapacitySignal.onNext(
-            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
-                          canRedo = mRedoKeys.size > 0))
+    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoEvent> {
+        return mUndoCapacitySignal
     }
 
     override fun toString(): String {

@@ -24,11 +24,11 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.view.MotionEvent
 import com.cardinalblue.gesture.IAllGesturesListener
-import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.domain.vm.IBaseScrapWidget
 
 interface IScrapView {
 
-    fun bindWidget(widget: IScrapWidget)
+    fun bindWidget(widget: IBaseScrapWidget)
 
     fun unbindWidget()
 

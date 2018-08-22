@@ -1,6 +1,4 @@
-// Copyright Aug 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,30 +18,26 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain.vm
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+import com.paper.model.ICanvasOperation
+import com.paper.model.IPaper
+import io.reactivex.Observable
+import io.reactivex.Single
 
-interface ISVGScrap : IScrap {
+interface IPaperHistoryWidget : IWidget {
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
+    // For input //////////////////////////////////////////////////////////////
 
-    fun lineTo(x: Float,
-               y: Float)
+    fun putOperation(operation: ICanvasOperation)
 
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
+    fun eraseAll()
 
-    fun close()
+    fun undo(paper: IPaper): Single<Boolean>
 
-    fun setSVGs(src: List<VectorGraphics>)
+    fun redo(paper: IPaper): Single<Boolean>
 
-    fun getSVGs(): List<VectorGraphics>
+    // For output /////////////////////////////////////////////////////////////
+
+    fun onBusy(): Observable<Boolean>
 }

@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,26 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.widget.editor
+package com.paper.model.operation
 
-import com.paper.domain.event.CanvasEvent
-import com.paper.model.Point
-import com.paper.model.Scrap
-import com.paper.model.Transform
-import io.reactivex.Observable
-import java.util.*
+import com.paper.model.ICanvasOperation
+import com.paper.model.IPaper
 
-interface IScrapWidget: IWidget<Scrap> {
+class RemoveScrapOperation : ICanvasOperation {
 
-    // For input //////////////////////////////////////////////////////////////
+    override fun undo(target: IPaper) {
+        // TODO
+    }
 
-    // For output /////////////////////////////////////////////////////////////
+    override fun redo(target: IPaper) {
+        // TODO
+    }
 
-    fun getId(): UUID
-
-    fun onSetPosition(): Observable<Point>
-
-    fun onDrawSVG(): Observable<CanvasEvent>
-
-    fun onTransform(): Observable<Transform>
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

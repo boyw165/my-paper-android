@@ -26,10 +26,10 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.domain.widget.editor.IPaperEditorWidget
-import com.paper.domain.widget.editor.PaperEditorWidget
+import com.paper.domain.ISchedulerProvider
+import com.paper.presenter.PaperEditorPresenter
 import com.paper.model.*
-import com.paper.model.event.ProgressEvent
+import com.paper.model.event.IntProgressEvent
 import com.paper.model.event.TimedCounterEvent
 import com.paper.model.repository.CommonPenPrefsRepoFileImpl
 import com.paper.observables.BooleanDialogSingle
@@ -40,6 +40,7 @@ import com.paper.view.editPanel.PenSizePreview
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 
@@ -86,19 +87,18 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mWorkerScheduler = Schedulers.io()
 
     // Progress signal.
-    private val mUpdateProgressSignal = PublishSubject.create<ProgressEvent>().toSerialized()
+    private val mUpdateProgressSignal = PublishSubject.create<IntProgressEvent>().toSerialized()
     // Error signal
     private val mErrorSignal = PublishSubject.create<Throwable>().toSerialized()
 
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
-    private val mWidget: IPaperEditorWidget by lazy {
-        PaperEditorWidget(
+    private val mPresenter by lazy {
+        PaperEditorPresenter(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
             paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
-            uiScheduler = AndroidSchedulers.mainThread(),
-            ioScheduler = Schedulers.io())
+            schedulers = (application as ISchedulerProvider))
     }
 
     // Disposables
@@ -119,76 +119,76 @@ class PaperEditorActivity : AppCompatActivity() {
         initDebug()
 
         // Progress
-        mDisposables.add(
-            Observable.merge(
-                mUpdateProgressSignal,
-                mWidget.onUpdateProgress())
-                .observeOn(mUiScheduler)
-                .subscribe { event ->
-                    when {
-                        event.justStart -> showIndeterminateProgressDialog()
-                        event.justStop -> hideIndeterminateProgressDialog()
-                    }
-                })
+        Observable.merge(
+            mUpdateProgressSignal,
+            mPresenter.onUpdateProgress())
+            .observeOn(mUiScheduler)
+            .subscribe { event ->
+                when {
+                    event.justStart -> showIndeterminateProgressDialog()
+                    event.justStop -> hideIndeterminateProgressDialog()
+                }
+            }
+            .addTo(mDisposables)
 
         // Close button.
-        mDisposables.add(
-            onClickCloseButton()
-                .switchMap {
-                    mCanvasView
-                        .writeThumbFileToBitmapRepository()
-                        .toObservable()
-                        .doOnSubscribe { mUpdateProgressSignal.onNext(ProgressEvent.start(0)) }
-                        .doOnNext { mUpdateProgressSignal.onNext(ProgressEvent.stop(100)) }
-                        .doOnComplete { close() }
-                        .doOnError {
-                            mErrorSignal.onNext(it)
-                            close()
-                        }
-                        .observeOn(mUiScheduler)
-                        .flatMap { (file, width, height) ->
-                            mWidget.requestStop(file, width, height)
-                        }
-                        .observeOn(mUiScheduler)
-                }
-                .observeOn(mUiScheduler)
-                .subscribe())
+        onClickCloseButton()
+            .switchMap { _ ->
+                mCanvasView
+                    .writeThumbFileToBitmapRepository()
+                    .toObservable()
+                    .doOnSubscribe { mUpdateProgressSignal.onNext(IntProgressEvent.start(0)) }
+                    .doOnNext { mUpdateProgressSignal.onNext(IntProgressEvent.stop(100)) }
+                    .doOnComplete { close() }
+                    .doOnError {
+                        mErrorSignal.onNext(it)
+                        close()
+                    }
+                    .observeOn(mUiScheduler)
+                    .flatMap { (file, width, height) ->
+                        mPresenter.requestStop(file, width, height)
+                    }
+                    .observeOn(mUiScheduler)
+            }
+            .observeOn(mUiScheduler)
+            .subscribe()
+            .addTo(mDisposables)
 
         // Export button
-        mDisposables.add(
-            mMenuView.onClickExport()
-                .switchMap {
-                    mCanvasView
-                        .writeFileToSystemMediaStore()
-                        .toObservable()
-                        .doOnSubscribe {
-                            mUpdateProgressSignal.onNext(ProgressEvent.start())
-                        }
-                        .doOnComplete {
-                            mUpdateProgressSignal.onNext(ProgressEvent.stop())
-                        }
-                        .doOnError {
-                            mUpdateProgressSignal.onNext(ProgressEvent.stop())
-                        }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    Toast.makeText(this@PaperEditorActivity,
-                                   resources.getString(R.string.msg_export_successfully),
-                                   Toast.LENGTH_SHORT)
-                        .show()
-                })
+        mMenuView.onClickExport()
+            .switchMap { _ ->
+                mCanvasView
+                    .writeFileToSystemMediaStore()
+                    .toObservable()
+                    .doOnSubscribe {
+                        mUpdateProgressSignal.onNext(IntProgressEvent.start())
+                    }
+                    .doOnComplete {
+                        mUpdateProgressSignal.onNext(IntProgressEvent.stop())
+                    }
+                    .doOnError {
+                        mUpdateProgressSignal.onNext(IntProgressEvent.stop())
+                    }
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe {
+                Toast.makeText(this@PaperEditorActivity,
+                               resources.getString(R.string.msg_export_successfully),
+                               Toast.LENGTH_SHORT)
+                    .show()
+            }
+            .addTo(mDisposables)
 
         // View port : boundary
-        mDisposables.add(
-            mCanvasView
-                .onDrawViewPort()
-                .observeOn(mUiScheduler)
-                .subscribe { event ->
-                    mMenuView.setCanvasAndViewPort(
-                        event.canvas,
-                        event.viewPort)
-                })
+        mCanvasView
+            .onDrawViewPort()
+            .observeOn(mUiScheduler)
+            .subscribe { event ->
+                mMenuView.setCanvasAndViewPort(
+                    event.canvas,
+                    event.viewPort)
+            }
+            .addTo(mDisposables)
 
         // Pen size: the menu view needs to know the view-port scale so that it
         // gets the right pen size observed in
@@ -196,62 +196,74 @@ class PaperEditorActivity : AppCompatActivity() {
         mMenuPenSizeView.setCanvasContext(mCanvasView)
 
         // Pen size preview
-        mDisposables.add(
-            mMenuPenSizeView
-                .updatePenSize(sizeSrc = mMenuView.onUpdatePenSize(),
-                               colorSrc = mMenuView.onUpdatePenColor()))
+        mMenuPenSizeView
+            .updatePenSize(sizeSrc = mMenuView.onUpdatePenSize(),
+                           colorSrc = mMenuView.onUpdatePenColor())
+            .addTo(mDisposables)
 
         // Undo & redo buttons
-        mWidget.addUndoSignal(RxView.clicks(mBtnUndo))
-        mWidget.addRedoSignal(RxView.clicks(mBtnRedo))
+        mPresenter.handleOnClickUndoButton(RxView.clicks(mBtnUndo))
+        mPresenter.handleOnClickRedoButton(RxView.clicks(mBtnRedo))
+        mPresenter.onUpdateUndoRedoCapacity()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe { event ->
+                mBtnUndo.isEnabled = event.canUndo
+                mBtnRedo.isEnabled = event.canRedo
+            }
+            .addTo(mDisposables)
 
         // Delete button
-        mDisposables.add(
-            RxView.clicks(mBtnDelete)
-                .observeOn(mUiScheduler)
-                .switchMap {
-                    val builder = AlertDialog.Builder(this@PaperEditorActivity)
-                        .setTitle(R.string.doodle_clear_title)
-                        .setMessage(R.string.doodle_clear_message)
-                        .setCancelable(true)
+        RxView.clicks(mBtnDelete)
+            .observeOn(mUiScheduler)
+            .switchMap {
+                val builder = AlertDialog.Builder(this@PaperEditorActivity)
+                    .setTitle(R.string.doodle_clear_title)
+                    .setMessage(R.string.doodle_clear_message)
+                    .setCancelable(true)
 
-                    BooleanDialogSingle(
-                        builder = builder,
-                        positiveButtonString = resources.getString(R.string.doodle_clear_ok),
-                        negativeButtonString = resources.getString(R.string.doodle_clear_cancel))
-                        .toObservable()
-                        .observeOn(mUiScheduler)
-                        .flatMap { doIt ->
-                            if (doIt) {
-                                mWidget.eraseCanvas()
-                            } else {
-                                Observable.never()
-                            }
+                BooleanDialogSingle(
+                    builder = builder,
+                    positiveButtonString = resources.getString(R.string.doodle_clear_ok),
+                    negativeButtonString = resources.getString(R.string.doodle_clear_cancel))
+                    .toObservable()
+                    .observeOn(mUiScheduler)
+                    .flatMap { doIt ->
+                        if (doIt) {
+                            mPresenter.eraseCanvas()
+                        } else {
+                            Observable.never()
                         }
-                }
-                .subscribe())
+                    }
+            }
+            .subscribe()
+            .addTo(mDisposables)
+        // TODO: Refactor to below
+//        mPresenter
+//            .handleDelete(RxView.clicks(mBtnDelete))
+//            .addTo(mDisposables)
 
         // Load paper and establish the binding
+        // FIXME: save-restore
         val paperIdSrc = if (savedState == null) {
             Observable.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))
         } else {
-            mPrefs.getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.TEMP_ID)
+            Observable.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))
         }
-        mDisposables.add(
-            paperIdSrc
-                .switchMap { paperID ->
-                    mWidget.start(paperID)
-                        .flatMap { sources ->
-                            initWidgets(sources)
-                        }
-                }
-                .subscribe())
+        paperIdSrc
+            .switchMap { paperID ->
+                mPresenter.start(paperID)
+                    .flatMap { sources ->
+                        initWidgets(sources)
+                    }
+            }
+            .subscribe()
+            .addTo(mDisposables)
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        mWidget.stop()
+        mPresenter.stop()
 
         mDisposables.clear()
 
@@ -269,7 +281,13 @@ class PaperEditorActivity : AppCompatActivity() {
         }
     }
 
-    private fun initWidgets(sources: IPaperEditorWidget.OnStart): Observable<Any> {
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+//        outState.putLong()
+    }
+
+    private fun initWidgets(sources: PaperEditorPresenter.OnStart): Observable<Any> {
         return Observable.merge(
             sources.onCanvasWidgetReady
                 .flatMap { widget ->
@@ -282,12 +300,6 @@ class PaperEditorActivity : AppCompatActivity() {
                     BindViewWithWidget(view = mMenuView,
                                        widget = widget,
                                        caughtErrorSignal = mErrorSignal)
-                },
-            sources.onGetUndoRedoEvent
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { event ->
-                    mBtnUndo.isEnabled = event.canUndo
-                    mBtnRedo.isEnabled = event.canRedo
                 })
     }
 

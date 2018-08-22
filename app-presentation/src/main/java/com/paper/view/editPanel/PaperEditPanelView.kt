@@ -32,7 +32,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
 import com.paper.domain.event.CanvasEvent
 import com.paper.domain.event.UpdatePenSizeEvent
-import com.paper.domain.widget.editor.PaperEditPanelWidget
+import com.paper.domain.vm.PaperMenuWidget
 import com.paper.model.ModelConst
 import com.paper.model.Rect
 import com.paper.observables.SeekBarChangeObservable
@@ -48,7 +48,7 @@ import io.reactivex.subjects.PublishSubject
  * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
  */
 class PaperEditPanelView : ConstraintLayout,
-                           IWidgetView<PaperEditPanelWidget> {
+                           IWidgetView<PaperMenuWidget> {
 
     private val mDisposables = CompositeDisposable()
 
@@ -79,9 +79,9 @@ class PaperEditPanelView : ConstraintLayout,
         }
     }
 
-    private lateinit var mWidget: PaperEditPanelWidget
+    private lateinit var mWidget: PaperMenuWidget
 
-    override fun bindWidget(widget: PaperEditPanelWidget) {
+    override fun bindWidget(widget: PaperMenuWidget) {
         ensureMainThread()
         ensureNoLeakingSubscription()
 
@@ -121,22 +121,22 @@ class PaperEditPanelView : ConstraintLayout,
                 })
 
         // Pen size
-        mDisposables.add(
-            widget.changePenSize(
-                SeekBarChangeObservable(mPenSizeView)
-                    .filter { it.fromUser }
-                    .map { event ->
-                        val t = event.progress.toFloat() / 100f
-                        val penSize = (1f - t) * ModelConst.MIN_PEN_SIZE + t * ModelConst.MAX_PEN_SIZE
-
-                        UpdatePenSizeEvent(lifecycle = event.lifecycle,
-                                           size = penSize)
-                    }
-                    .doOnNext {
-                        // Bypass event to external component, e.g. another
-                        // size previewer
-                        mPenSizeSignal.onNext(it)
-                    }))
+//        mDisposables.add(
+//            widget.setPenSize(
+//                SeekBarChangeObservable(mPenSizeView)
+//                    .filter { it.fromUser }
+//                    .map { event ->
+//                        val t = event.progress.toFloat() / 100f
+//                        val penSize = (1f - t) * ModelConst.MIN_PEN_SIZE + t * ModelConst.MAX_PEN_SIZE
+//
+//                        UpdatePenSizeEvent(lifecycle = event.lifecycle,
+//                                           size = penSize)
+//                    }
+//                    .doOnNext {
+//                        // Bypass event to external component, e.g. another
+//                        // size previewer
+//                        mPenSizeSignal.onNext(it)
+//                    }))
         // Pen size initialization
         mDisposables.add(
             widget.onUpdatePenSize()
@@ -162,7 +162,7 @@ class PaperEditPanelView : ConstraintLayout,
 
     private fun ensureNoLeakingSubscription() {
         if (mDisposables.size() > 0) throw IllegalStateException(
-            "Already bind to a widget")
+            "Already start to a widget")
     }
 
     // Canvas context /////////////////////////////////////////////////////////

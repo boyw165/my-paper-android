@@ -24,6 +24,7 @@ import com.paper.model.repository.IPaperRepo
 import java.io.File
 import java.util.*
 
+// TODO: Make it immutable
 open class BasePaper(
     // The SQLite ID.
     id: Long = ModelConst.TEMP_ID,

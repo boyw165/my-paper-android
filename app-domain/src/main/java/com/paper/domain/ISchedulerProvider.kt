@@ -20,30 +20,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Scheduler
 
-interface ISVGScrap : IScrap {
+// TODO: Use it
+interface ISchedulerProvider {
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
+    fun main(): Scheduler
 
-    fun lineTo(x: Float,
-               y: Float)
+    fun computation(): Scheduler
 
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
+    fun io(): Scheduler
 
-    fun close()
-
-    fun setSVGs(src: List<VectorGraphics>)
-
-    fun getSVGs(): List<VectorGraphics>
+    fun db(): Scheduler
 }

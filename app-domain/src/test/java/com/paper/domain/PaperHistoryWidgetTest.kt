@@ -22,59 +22,47 @@
 
 package com.paper.domain
 
-import com.paper.domain.useCase.BindWidgetWithModel
-import com.paper.domain.widget.PaperTransformWidget
+import com.paper.domain.useCase.StartWidgetAutoStopObservable
+import com.paper.domain.vm.PaperHistoryWidget
 import com.paper.model.BasePaper
-import com.paper.model.Point
-import com.paper.model.repository.PaperTransformRepoFileImpl
-import com.paper.model.sketch.VectorGraphics
+import com.paper.model.operation.AddScrapOperation
+import com.paper.model.repository.PaperCanvasOperationRepoFileLRUImpl
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner::class)
-class PaperTransformWidgetTest {
-
-    private val mTestStroke1 = VectorGraphics()
-    private val mTestStroke2 = VectorGraphics()
-    private val mTestStroke3 = VectorGraphics()
-
-    init {
-        mTestStroke1.addTuple(Point(x = 1f, y = 1f))
-
-        mTestStroke2.addTuple(Point(x = 1f, y = 1f))
-        mTestStroke2.addTuple(Point(x = 2f, y = 2f))
-
-        mTestStroke3.addTuple(Point(x = 1f, y = 1f))
-        mTestStroke3.addTuple(Point(x = 2f, y = 2f))
-        mTestStroke3.addTuple(Point(x = 3f, y = 3f))
-    }
+class PaperHistoryWidgetTest {
 
     @Test
-    fun addOneStrokeToPaper_TransformRepoShouldRecordIt() {
-        val paper = BasePaper()
-        val historyRepo = PaperTransformRepoFileImpl(fileDir = File("/tmp"))
+    fun `put operation and see one record`() {
+        val historyRepo = PaperCanvasOperationRepoFileLRUImpl(fileDir = File("/tmp"))
+
         val testScheduler = TestScheduler()
+        val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
+//        Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
+//        Mockito.`when`(mockSchedulers.computation()).thenReturn(testScheduler)
+//        Mockito.`when`(mockSchedulers.io()).thenReturn(testScheduler)
+//        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
+
         val disposables = CompositeDisposable()
 
-        val tester = PaperTransformWidget(
+        val tester = PaperHistoryWidget(
             historyRepo = historyRepo,
-            uiScheduler = testScheduler,
-            ioScheduler = testScheduler)
+            schedulers = mockSchedulers)
 
         // Setup
         disposables.add(
-            BindWidgetWithModel(
-                widget = tester,
-                model = paper)
+            StartWidgetAutoStopObservable(tester)
                 .subscribe())
 
         // Add one particular stroke
-        paper.pushStroke(mTestStroke1)
+        tester.putOperation(AddScrapOperation())
         testScheduler.triggerActions()
 
         // Must see one record!
@@ -86,28 +74,31 @@ class PaperTransformWidgetTest {
     @Test
     fun undo_shouldSeeNoStrokeInPaper() {
         val paper = BasePaper()
-        val historyRepo = PaperTransformRepoFileImpl(fileDir = File("/tmp"))
+        val historyRepo = PaperCanvasOperationRepoFileLRUImpl(fileDir = File("/tmp"))
         val testScheduler = TestScheduler()
+        val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
+//        Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
+//        Mockito.`when`(mockSchedulers.computation()).thenReturn(testScheduler)
+//        Mockito.`when`(mockSchedulers.io()).thenReturn(testScheduler)
+//        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
+
         val disposables = CompositeDisposable()
 
-        val tester = PaperTransformWidget(
+        val tester = PaperHistoryWidget(
             historyRepo = historyRepo,
-            uiScheduler = testScheduler,
-            ioScheduler = testScheduler)
+            schedulers = mockSchedulers)
 
         // Setup
         disposables.add(
-            BindWidgetWithModel(
-                widget = tester,
-                model = paper)
+            StartWidgetAutoStopObservable(tester)
                 .subscribe())
 
         // Add one particular stroke
-        paper.pushStroke(mTestStroke1)
+        tester.putOperation(AddScrapOperation())
         testScheduler.triggerActions()
         // Undo immediately
         disposables.add(
-            tester.undo()
+            tester.undo(paper)
                 .subscribe())
         testScheduler.triggerActions()
 

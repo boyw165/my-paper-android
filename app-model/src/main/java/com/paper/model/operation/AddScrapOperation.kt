@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,30 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.operation
 
-import com.paper.model.sketch.SVGStyle
-import com.paper.model.sketch.VectorGraphics
+import com.paper.model.ICanvasOperation
+import com.paper.model.IPaper
 
-interface ISVGScrap : IScrap {
+class AddScrapOperation : ICanvasOperation {
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
+    override fun undo(target: IPaper) {
+        // TODO
+    }
 
-    fun lineTo(x: Float,
-               y: Float)
+    override fun redo(target: IPaper) {
+        // TODO
+    }
 
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
-
-    fun close()
-
-    fun setSVGs(src: List<VectorGraphics>)
-
-    fun getSVGs(): List<VectorGraphics>
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

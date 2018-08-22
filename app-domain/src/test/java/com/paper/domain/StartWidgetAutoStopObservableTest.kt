@@ -22,8 +22,8 @@
 
 package com.paper.domain
 
-import com.paper.domain.useCase.BindWidgetWithModel
-import com.paper.domain.widget.editor.IWidget
+import com.paper.domain.useCase.StartWidgetAutoStopObservable
+import com.paper.domain.vm.IWidget
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import org.junit.Test
@@ -32,48 +32,45 @@ import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner::class)
-class BindWidgetWithModelTest {
+class StartWidgetAutoStopObservableTest {
 
     @Test
-    fun shouldSeeBindWhenSubscribes() {
+    fun `subscribe observable should see widget start`() {
         val mockWidget = Mockito.mock(TypedWidget::class.java)
 
-        val tester = BindWidgetWithModel(widget = mockWidget,
-                                         model = 0)
+        val tester = StartWidgetAutoStopObservable(mockWidget)
         val testObserver = tester.test()
 
         // Must see true
         testObserver.assertValue(true)
-        // Must see bind call!
-        Mockito.verify(mockWidget).bindModel(Mockito.anyInt())
+        // Must see start call!
+        Mockito.verify(mockWidget).start()
 
         testObserver.dispose()
     }
 
     @Test
-    fun shouldSeeUnbindWhenDisposes() {
+    fun `dispose observable should see widget stop`() {
         val mockWidget = Mockito.mock(TypedWidget::class.java)
 
-        val tester = BindWidgetWithModel(widget = mockWidget,
-                                         model = 0)
+        val tester = StartWidgetAutoStopObservable(mockWidget)
         val testObserver = tester.test()
 
         testObserver.dispose()
 
-        // Must see unbind call!
-        Mockito.verify(mockWidget).unbindModel()
+        // Must see stop call!
+        Mockito.verify(mockWidget).stop()
     }
 
     @Test
-    fun shouldSeeNestedUnbindWhenDisposes() {
+    fun `subscribe observable in nested graph should see widget start`() {
         val mockWidget = Mockito.mock(TypedWidget::class.java)
 
-        val tester = BindWidgetWithModel(widget = mockWidget,
-                                         model = 0)
+        val tester = StartWidgetAutoStopObservable(mockWidget)
         // Put the tester in a random nested RX graph
         val testObserver = Observable
             .just(0)
-            .switchMap {
+            .switchMap { _ ->
                 Observable
                     .just(1)
                     .switchMap {
@@ -84,22 +81,21 @@ class BindWidgetWithModelTest {
 
         testObserver.dispose()
 
-        // Must see unbind call!
-        Mockito.verify(mockWidget).unbindModel()
+        // Must see stop call!
+        Mockito.verify(mockWidget).start()
     }
 
     @Test
-    fun shouldSeeNestedUnbindWhenCompositeDisposableDisposes() {
+    fun `dispose observable in nested graph should see widget stop`() {
         val mockWidget = Mockito.mock(TypedWidget::class.java)
 
-        val tester = BindWidgetWithModel(widget = mockWidget,
-                                         model = 0)
+        val tester = StartWidgetAutoStopObservable(mockWidget)
         // Put the tester in a random nested RX graph
         val disposables = CompositeDisposable()
         disposables.add(
             Observable
                 .just(0)
-                .switchMap {
+                .switchMap { _ ->
                     Observable
                         .just(1)
                         .switchMap {
@@ -110,12 +106,12 @@ class BindWidgetWithModelTest {
 
         disposables.clear()
 
-        // Must see unbind call!
-        Mockito.verify(mockWidget).unbindModel()
+        // Must see stop call!
+        Mockito.verify(mockWidget).stop()
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
-    interface TypedWidget : IWidget<Int>
+    interface TypedWidget : IWidget
 }

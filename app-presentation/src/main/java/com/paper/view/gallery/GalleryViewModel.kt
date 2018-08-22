@@ -49,7 +49,7 @@ data class PaperThumbViewModel(val paper: IPaper,
             .onClick(clickSignal)
             .setModifiedTime(paper.getModifiedAt())
             .setThumbnail(paper.getThumbnail(),
-                          paper.getThumbnailWidth(),
+                          paper.getThumbnailSize(),
                           paper.getThumbnailHeight())
             // Epoxy view-model ID.
             .id(paper.getId()) as EpoxyModelWithHolder<EpoxyHolder>
