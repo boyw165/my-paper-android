@@ -24,7 +24,6 @@ import com.paper.model.repository.IPaperRepo
 import java.io.File
 import java.util.*
 
-// TODO: Make it immutable
 open class BasePaper(
     // The SQLite ID.
     id: Long = ModelConst.TEMP_ID,
@@ -142,74 +141,6 @@ open class BasePaper(
         // Request to save file
         requestAutoSave()
     }
-
-    // Sketch & strokes ///////////////////////////////////////////////////////
-
-//    private val mSketch = mutableListOf<VectorGraphics>()
-//    private val mAddStrokeSignal = PublishSubject.create<VectorGraphics>().toSerialized()
-//    private val mRemoveStrokeSignal = PublishSubject.create<VectorGraphics>().toSerialized()
-//
-//    override fun getSketch(): List<VectorGraphics> {
-//        mLock.lock()
-//        val sketch: List<VectorGraphics> = mSketch.toList()
-//        mLock.unlock()
-//
-//        return sketch
-//    }
-//
-//    override fun pushStroke(stroke: VectorGraphics) {
-//        mLock.lock()
-//        if (stroke.getTupleList.isNotEmpty()) {
-//            mSketch.add(stroke)
-//        }
-//        mLock.unlock()
-//
-//        mAddStrokeSignal.onNext(stroke)
-//
-//        // Request to save file
-//        requestAutoSave()
-//    }
-//
-//    override fun popStroke(): VectorGraphics {
-//        mLock.lock()
-//        val stroke = mSketch.removeAt(mSketch.lastIndex)
-//        mLock.unlock()
-//
-//        mRemoveStrokeSignal.onNext(stroke)
-//
-//        // Request to save file
-//        requestAutoSave()
-//
-//        return stroke
-//    }
-//
-//    override fun removeAllStrokes() {
-//        mLock.lock()
-//        val removed = mSketch.toList()
-//        mSketch.clear()
-//        mLock.unlock()
-//
-//        removed.forEach { stroke ->
-//            mRemoveStrokeSignal.onNext(stroke)
-//        }
-//
-//        // Request to save file
-//        requestAutoSave()
-//    }
-//
-//    override fun onAddStroke(replayAll: Boolean): Observable<VectorGraphics> {
-//        return if (replayAll) {
-//            Observable.merge(
-//                Observable.fromIterable(getSketch()),
-//                mAddStrokeSignal)
-//        } else {
-//            mAddStrokeSignal
-//        }
-//    }
-//
-//    override fun onRemoveStroke(): Observable<VectorGraphics> {
-//        return mRemoveStrokeSignal
-//    }
 
     // Scraps /////////////////////////////////////////////////////////////////
 
