@@ -20,7 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.useCase
+package com.paper.domain.action
 
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observer
@@ -42,9 +42,9 @@ import io.reactivex.disposables.Disposable
  * There is also a side-effect that it sends IntProgressEvent through the given
  * progress signal.
  */
-class DeletePaper(paperID: Long,
-                  paperRepo: IPaperRepo,
-                  errorSignal: Observer<Throwable>? = null)
+class DeletePaperSingle(paperID: Long,
+                        paperRepo: IPaperRepo,
+                        errorSignal: Observer<Throwable>? = null)
     : Single<Boolean>() {
 
     private val mPaperID = paperID

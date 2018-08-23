@@ -31,3 +31,5 @@ data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScr
 data class AddScrapEvent(val scrap: IScrap) : UpdateScrapEvent()
 
 data class RemoveScrapEvent(val scrap: IScrap) : UpdateScrapEvent()
+
+data class FocusScrapEvent(val scrap: IScrap) : UpdateScrapEvent()

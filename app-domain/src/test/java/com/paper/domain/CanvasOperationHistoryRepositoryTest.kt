@@ -22,12 +22,12 @@
 
 package com.paper.domain
 
-import com.paper.domain.useCase.StartWidgetAutoStopObservable
-import com.paper.domain.vm.PaperHistoryWidget
-import com.paper.model.BasePaper
-import com.paper.model.operation.AddScrapOperation
-import com.paper.model.repository.PaperCanvasOperationRepoFileLRUImpl
+import com.paper.domain.action.StartWidgetAutoStopObservable
+import com.paper.domain.vm.CanvasOperationHistoryRepository
+import com.paper.domain.vm.ICanvasWidget
+import com.paper.domain.vm.operation.AddScrapOperation
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.TestScheduler
 import org.junit.Assert
 import org.junit.Test
@@ -36,25 +36,19 @@ import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
-@RunWith(MockitoJUnitRunner::class)
-class PaperHistoryWidgetTest {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class CanvasOperationHistoryRepositoryTest {
 
     @Test
     fun `put operation and see one record`() {
-        val historyRepo = PaperCanvasOperationRepoFileLRUImpl(fileDir = File("/tmp"))
-
         val testScheduler = TestScheduler()
         val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
-//        Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
-//        Mockito.`when`(mockSchedulers.computation()).thenReturn(testScheduler)
-//        Mockito.`when`(mockSchedulers.io()).thenReturn(testScheduler)
-//        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
+        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
+
+        val tester = CanvasOperationHistoryRepository(fileDir = File("/tmp"),
+                                                      schedulers = mockSchedulers)
 
         val disposables = CompositeDisposable()
-
-        val tester = PaperHistoryWidget(
-            historyRepo = historyRepo,
-            schedulers = mockSchedulers)
 
         // Setup
         disposables.add(
@@ -66,27 +60,24 @@ class PaperHistoryWidgetTest {
         testScheduler.triggerActions()
 
         // Must see one record!
-        Assert.assertEquals(1, historyRepo.recordSize)
+        Assert.assertEquals(1, tester.undoSize)
 
         disposables.clear()
     }
 
     @Test
-    fun undo_shouldSeeNoStrokeInPaper() {
-        val paper = BasePaper()
-        val historyRepo = PaperCanvasOperationRepoFileLRUImpl(fileDir = File("/tmp"))
+    fun `put operation and undo, should see no record`() {
+        val mockCanvasWidget = Mockito.mock(ICanvasWidget::class.java)
+
         val testScheduler = TestScheduler()
         val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
-//        Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
-//        Mockito.`when`(mockSchedulers.computation()).thenReturn(testScheduler)
-//        Mockito.`when`(mockSchedulers.io()).thenReturn(testScheduler)
-//        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
+        Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
+        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
+
+        val tester = CanvasOperationHistoryRepository(fileDir = File("/tmp"),
+                                                      schedulers = mockSchedulers)
 
         val disposables = CompositeDisposable()
-
-        val tester = PaperHistoryWidget(
-            historyRepo = historyRepo,
-            schedulers = mockSchedulers)
 
         // Setup
         disposables.add(
@@ -97,13 +88,13 @@ class PaperHistoryWidgetTest {
         tester.putOperation(AddScrapOperation())
         testScheduler.triggerActions()
         // Undo immediately
-        disposables.add(
-            tester.undo(paper)
-                .subscribe())
+        tester.undo(mockCanvasWidget)
+            .subscribe()
+            .addTo(disposables)
         testScheduler.triggerActions()
 
         // Must see one record!
-        Assert.assertEquals(1, historyRepo.recordSize)
+        Assert.assertEquals(1, tester.redoSize)
 
         disposables.clear()
     }

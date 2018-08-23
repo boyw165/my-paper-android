@@ -20,23 +20,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.presenter
+package com.paper.domain.vm
 
+import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.data.DrawingMode
+import com.paper.domain.action.StartWidgetAutoStopObservable
 import com.paper.domain.data.ToolType
 import com.paper.domain.event.UndoRedoEvent
-import com.paper.domain.event.UpdateColorTicketsEvent
 import com.paper.domain.event.UpdateEditToolsEvent
-import com.paper.domain.useCase.StartWidgetAutoStopObservable
-import com.paper.domain.vm.IPaperCanvasWidget
-import com.paper.domain.vm.PaperCanvasWidget
-import com.paper.domain.vm.PaperHistoryWidget
-import com.paper.domain.vm.PaperMenuWidget
 import com.paper.model.IPaper
-import com.paper.model.ICanvasOperationRepo
-import com.paper.model.event.EventLifecycle
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
@@ -53,25 +46,25 @@ import java.io.File
 
 // TODO: Shouldn't depend on any Android package!
 
-class PaperEditorPresenter(private val paperID: Long,
-                           private val paperRepo: IPaperRepo,
-                           private val paperTransformRepo: ICanvasOperationRepo,
-                           private val penPrefsRepo: ICommonPenPrefsRepo,
-                           private val caughtErrorSignal: Observer<Throwable>,
-                           private val schedulers: ISchedulerProvider)
-    : IPresenter {
+class EditorWidget(private val paperID: Long,
+                   private val paperRepo: IPaperRepo,
+                   private val lruCacheDir: File,
+                   private val penPrefsRepo: ICommonPenPrefsRepo,
+                   private val caughtErrorSignal: Observer<Throwable>,
+                   private val schedulers: ISchedulerProvider)
+    : IWidget {
 
     private val mCanvasWidget by lazy {
-        PaperCanvasWidget(schedulers = schedulers)
+        CanvasWidget(schedulers = schedulers)
     }
     private val mHistoryWidget by lazy {
-        PaperHistoryWidget(historyRepo = paperTransformRepo,
-                           schedulers = schedulers)
+        CanvasOperationHistoryRepository(fileDir = lruCacheDir,
+                                         schedulers = schedulers)
     }
 
     private val mDisposables = CompositeDisposable()
 
-    override fun bindView() {
+    override fun start() {
         ensureNoLeakingSubscription()
 
         // Load paper and establish the paper (canvas) and transform bindings.
@@ -136,31 +129,31 @@ class PaperEditorPresenter(private val paperID: Long,
             usingIndex = mToolIndex))
 
         // Prepare initial color tickets
-        Observables
-            .combineLatest(
-                penPrefsRepo.getPenColors(),
-                penPrefsRepo.getChosenPenColor())
-            .observeOn(schedulers.main())
-            .subscribe { (colors, chosenColor) ->
-                val index = colors.indexOf(chosenColor)
-
-                // Export the signal as onUpdatePenColorList()
-                mColorTicketsSignal.onNext(UpdateColorTicketsEvent(
-                    colorTickets = colors,
-                    usingIndex = index))
-            }
-            .addTo(mDisposables)
+//        Observables
+//            .combineLatest(
+//                penPrefsRepo.getPenColors(),
+//                penPrefsRepo.getChosenPenColor())
+//            .observeOn(schedulers.main())
+//            .subscribe { (colors, chosenColor) ->
+//                val index = colors.indexOf(chosenColor)
+//
+//                // Export the signal as onUpdatePenColorList()
+//                mColorTicketsSignal.onNext(UpdateColorTicketsEvent(
+//                    colorTickets = colors,
+//                    usingIndex = index))
+//            }
+//            .addTo(mDisposables)
 
         // Prepare initial pen size
-        penPrefsRepo.getPenSize()
-            .observeOn(schedulers.main())
-            .subscribe { penSize ->
-                mPenSizeSignal.onNext(penSize)
-            }
-            .addTo(mDisposables)
+//        penPrefsRepo.getPenSize()
+//            .observeOn(schedulers.main())
+//            .subscribe { penSize ->
+//                mPenSizeSignal.onNext(penSize)
+//            }
+//            .addTo(mDisposables)
     }
 
-    override fun unBindView() {
+    override fun stop() {
         mDisposables.clear()
     }
 
@@ -169,7 +162,7 @@ class PaperEditorPresenter(private val paperID: Long,
      */
     fun requestStop(bmpFile: File, bmpWidth: Int, bmpHeight: Int): Observable<Boolean> {
         return try {
-            mCanvasWidget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
+//            mCanvasWidget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
             Observable.just(true)
         } catch (err: Throwable) {
             Observable.just(false)
@@ -179,22 +172,6 @@ class PaperEditorPresenter(private val paperID: Long,
     private fun ensureNoLeakingSubscription() {
         if (mDisposables.size() > 0) throw IllegalStateException(
             "Already start to a widget")
-    }
-
-    // Initialization /////////////////////////////////////////////////////////
-
-    private val mInitSignal = PublishSubject.create<InitEvent>().toSerialized()
-
-    sealed class InitEvent {
-
-        object OnStart
-
-        /**
-         * The set the signals returned by [start], where most of them provide the
-         * widget which is ready for binding with view.
-         */
-        data class OnFinished(val canvasWidget: IPaperCanvasWidget,
-                              val menuWidget: PaperMenuWidget) : InitEvent()
     }
 
     // Number of on-going task ////////////////////////////////////////////////
@@ -210,32 +187,24 @@ class PaperEditorPresenter(private val paperID: Long,
             .combineLatest(
                 mBusySignal,
                 mCanvasWidget.onBusy(),
-                mHistoryWidget.onBusy(),
-                mEditPanelWidget.onBusy()) { editorBusy, canvasBusy, historyBusy, panelBusy ->
+                mHistoryWidget.onBusy()) { editorBusy, canvasBusy, historyBusy ->
                 println("${DomainConst.TAG}: " +
                         "editor busy=$editorBusy, " +
                         "canvas busy=$canvasBusy, " +
-                        "history busy=$historyBusy, " +
-                        "panel busy=$panelBusy")
-                editorBusy || canvasBusy || historyBusy || panelBusy
+                        "history busy=$historyBusy, ")
+                editorBusy || canvasBusy || historyBusy
             }
     }
 
     // Canvas widget & functions //////////////////////////////////////////////
 
     private fun initCanvasWidget(paper: IPaper): Observable<Boolean> {
-        mCanvasWidget.model = paper
+        mCanvasWidget.setModel(paper)
 
         return StartWidgetAutoStopObservable(
             widget = mCanvasWidget,
             caughtErrorSignal = caughtErrorSignal)
-            .subscribeOn(uiScheduler)
-    }
-
-    private val mOnCanvasWidgetReadySignal = BehaviorSubject.create<IPaperCanvasWidget>().toSerialized()
-
-    fun onCanvasWidgetReady(): Observable<IPaperCanvasWidget> {
-        return mOnCanvasWidgetReadySignal
+            .subscribeOn(schedulers.main())
     }
 
     fun eraseCanvas(): Observable<Boolean> {
@@ -244,20 +213,30 @@ class PaperEditorPresenter(private val paperID: Long,
         return Observable.just(true)
     }
 
+    private val mOnCanvasWidgetReadySignal = BehaviorSubject.create<ICanvasWidget>().toSerialized()
+
+    fun onCanvasWidgetReady(): Observable<ICanvasWidget> {
+        return mOnCanvasWidgetReadySignal
+    }
+
+    private fun onTouchCanvas(event: GestureEvent) {
+        TODO("not implemented")
+    }
+
     // Undo & redo ////////////////////////////////////////////////////////////
 
     private fun initHistoryWidget(): Observable<Boolean> {
         return StartWidgetAutoStopObservable(
             widget = mHistoryWidget,
             caughtErrorSignal = caughtErrorSignal)
-            .subscribeOn(uiScheduler)
+            .subscribeOn(schedulers.main())
     }
 
     fun handleOnClickUndoButton(undoSignal: Observable<Any>) {
         undoSignal
             .flatMap {
                 mHistoryWidget
-                    .undo()
+                    .undo(mCanvasWidget)
                     .toObservable()
             }
             .subscribe()
@@ -268,7 +247,7 @@ class PaperEditorPresenter(private val paperID: Long,
         undoSignal
             .flatMap {
                 mHistoryWidget
-                    .redo()
+                    .redo(mCanvasWidget)
                     .toObservable()
             }
             .subscribe()
@@ -334,54 +313,54 @@ class PaperEditorPresenter(private val paperID: Long,
 
     // Pen Color & size //////////////////////////////////////////////////////
 
-    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
-
-    override fun setPenColor(color: Int) {
-        mCancelSignal.onNext(0)
-
-        mDisposables.add(
-            penPrefsRepo
-                .putChosenPenColor(color)
-                .toObservable()
-                .takeUntil(mCancelSignal)
-                .subscribe())
-    }
-
-    override fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent> {
-        return mColorTicketsSignal
-    }
-
-    override fun setPenSize(size: Float) {
-        return penSizeSrc
-            .flatMap { event ->
-                println("${DomainConst.TAG}: change pen size=${event.size}")
-
-                when (event.lifecycle) {
-                    EventLifecycle.START,
-                    EventLifecycle.STOP -> {
-                        Observable.never<Boolean>()
-                    }
-                    EventLifecycle.DOING -> {
-                        penPrefsRepo
-                            .putPenSize(event.size)
-                            .toObservable()
-                    }
-                }
-            }
-            .subscribe()
-            .addTo(mDisposables)
-    }
-
-    private val mPenSizeSignal = BehaviorSubject.create<Float>()
-
-    /**
-     * Update of pen size ranging from 0.0 to 1.0
-     *
-     * @return An observable of pen size ranging from 0.0 to 1.0
-     */
-    override fun onUpdatePenSize(): Observable<Float> {
-        return mPenSizeSignal
-    }
+//    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
+//
+//    override fun setPenColor(color: Int) {
+//        mCancelSignal.onNext(0)
+//
+//        mDisposables.add(
+//            penPrefsRepo
+//                .putChosenPenColor(color)
+//                .toObservable()
+//                .takeUntil(mCancelSignal)
+//                .subscribe())
+//    }
+//
+//    override fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent> {
+//        return mColorTicketsSignal
+//    }
+//
+//    override fun setPenSize(size: Float) {
+//        return penSizeSrc
+//            .flatMap { event ->
+//                println("${DomainConst.TAG}: change pen size=${event.size}")
+//
+//                when (event.lifecycle) {
+//                    EventLifecycle.START,
+//                    EventLifecycle.STOP -> {
+//                        Observable.never<Boolean>()
+//                    }
+//                    EventLifecycle.DOING -> {
+//                        penPrefsRepo
+//                            .putPenSize(event.size)
+//                            .toObservable()
+//                    }
+//                }
+//            }
+//            .subscribe()
+//            .addTo(mDisposables)
+//    }
+//
+//    private val mPenSizeSignal = BehaviorSubject.create<Float>()
+//
+//    /**
+//     * Update of pen size ranging from 0.0 to 1.0
+//     *
+//     * @return An observable of pen size ranging from 0.0 to 1.0
+//     */
+//    override fun onUpdatePenSize(): Observable<Float> {
+//        return mPenSizeSignal
+//    }
 
     // Progress & error & Editor status ///////////////////////////////////////
 

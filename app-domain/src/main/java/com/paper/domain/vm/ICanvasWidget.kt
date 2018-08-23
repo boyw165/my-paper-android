@@ -20,24 +20,54 @@
 
 package com.paper.domain.vm
 
-import com.paper.model.ICanvasOperation
+import com.paper.domain.data.DrawingMode
 import com.paper.model.IPaper
+import com.paper.model.IScrap
+import com.paper.model.event.UpdateScrapEvent
 import io.reactivex.Observable
-import io.reactivex.Single
 
-interface IPaperHistoryWidget : IWidget {
+/**
+ * The canvas widget (serving as the ViewModel to View).
+ */
+interface ICanvasWidget : IWidget {
 
-    // For input //////////////////////////////////////////////////////////////
+    fun setModel(paper: IPaper)
 
-    fun putOperation(operation: ICanvasOperation)
+    // Add & Remove Scrap /////////////////////////////////////////////////////
 
-    fun eraseAll()
+    fun addScrap(scrap: IScrap)
 
-    fun undo(paper: IPaper): Single<Boolean>
+    fun removeScrap(scrap: IScrap)
 
-    fun redo(paper: IPaper): Single<Boolean>
+    fun getFocusScrap(): IScrap?
 
-    // For output /////////////////////////////////////////////////////////////
+    fun addScrapAndSetFocus(scrap: IScrap)
 
-    fun onBusy(): Observable<Boolean>
+    fun removeScrapAndClearFocus(scrap: IScrap)
+
+    fun onUpdateScrap(): Observable<UpdateScrapEvent>
+
+    // Drawing ///////////////////////////////////////////////////////////////
+
+    fun eraseCanvas()
+
+    fun setDrawingMode(mode: DrawingMode)
+
+    fun setChosenPenColor(color: Int)
+
+    fun setViewPortScale(scale: Float)
+
+    fun setPenSize(size: Float)
+
+    fun onUpdateCanvasSize(): Observable<Pair<Float, Float>>
+
+    // Operation //////////////////////////////////////////////////////////////
+
+    fun getPaper(): IPaper
+
+    fun onUpdateCanvasOperation(): Observable<ICanvasOperation>
+
+    // Debug //////////////////////////////////////////////////////////////////
+
+    fun onPrintDebugMessage(): Observable<String>
 }

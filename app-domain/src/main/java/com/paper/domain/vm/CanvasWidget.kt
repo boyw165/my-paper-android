@@ -22,37 +22,35 @@ package com.paper.domain.vm
 
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
-import com.paper.domain.data.GestureRecord
-import com.paper.model.ICanvasOperation
+import com.paper.domain.vm.operation.AddScrapOperation
+import com.paper.domain.vm.operation.RemoveScrapOperation
 import com.paper.model.IPaper
 import com.paper.model.IScrap
-import com.paper.model.Rect
 import com.paper.model.event.AddScrapEvent
+import com.paper.model.event.FocusScrapEvent
 import com.paper.model.event.RemoveScrapEvent
 import com.paper.model.event.UpdateScrapEvent
-import com.paper.model.operation.AddScrapOperation
-import com.paper.model.operation.RemoveScrapOperation
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
-import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-class PaperCanvasWidget(private val schedulers: ISchedulerProvider)
-    : IPaperCanvasWidget {
+class CanvasWidget(private val schedulers: ISchedulerProvider)
+    : ICanvasWidget {
+
+    private val mLock = Any()
+
+    private var mPaper: IPaper? = null
 
     private val mDisposables = CompositeDisposable()
 
+    // Focus scrap controller
+    @Volatile
+    private var mFocusScrapWidget: IScrap? = null
     // Scrap controllers
     private val mScrapWidgets = ConcurrentHashMap<UUID, IBaseScrapWidget>()
-
-    // Global canceller
-    private val mCancelSignal = PublishSubject.create<Any>()
-
-    // Gesture
-    private val mGestureHistory = mutableListOf<GestureRecord>()
 
     // Debug
     private val mDebugSignal = PublishSubject.create<String>()
@@ -60,12 +58,20 @@ class PaperCanvasWidget(private val schedulers: ISchedulerProvider)
     override fun start() {
         ensureNoLeakedBinding()
 
+        val paper = mPaper!!
+
         // Canvas size
-        mCanvasSizeSignal.onNext(model.getSize())
+        mCanvasSizeSignal.onNext(paper.getSize())
     }
 
     override fun stop() {
         mDisposables.clear()
+    }
+
+    override fun setModel(paper: IPaper) {
+        if (mPaper != null) throw IllegalAccessException("Already set model")
+
+        mPaper = paper
     }
 
     private fun ensureNoLeakedBinding() {
@@ -96,33 +102,55 @@ class PaperCanvasWidget(private val schedulers: ISchedulerProvider)
 
     private val mUpdateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
 
-    override fun getScraps(): List<IScrap> {
-        return mScrapWidgets.toList().map { (_, scrap) ->
-            scrap as IScrap
+    override fun getFocusScrap(): IScrap? {
+        synchronized(mLock) {
+            return mFocusScrapWidget
+        }
+    }
+
+    override fun addScrapAndSetFocus(scrap: IScrap) {
+        addScrap(scrap)
+
+        synchronized(mLock) {
+            mFocusScrapWidget = scrap
+
+            // Signal out
+            mUpdateScrapSignal.onNext(FocusScrapEvent(scrap))
+        }
+    }
+
+    override fun removeScrapAndClearFocus(scrap: IScrap) {
+        removeScrap(scrap)
+
+        synchronized(mLock) {
+            mFocusScrapWidget = null
         }
     }
 
     override fun addScrap(scrap: IScrap) {
         scrap as IBaseScrapWidget
 
-        mScrapWidgets[scrap.getId()] = scrap
+        synchronized(mLock) {
+            mScrapWidgets[scrap.getId()] = scrap
 
-        // Signal out
-        mUpdateScrapSignal.onNext(AddScrapEvent(scrap))
-        // TODO: ADD operation holds immutable scrap?
-        mOperationSignal.onNext(AddScrapOperation())
+            // Signal out
+            mUpdateScrapSignal.onNext(AddScrapEvent(scrap))
+            // TODO: ADD operation holds immutable scrap?
+            mOperationSignal.onNext(AddScrapOperation())
+        }
     }
 
     override fun removeScrap(scrap: IScrap) {
         scrap as IBaseScrapWidget
 
-        // Remove key
-        mScrapWidgets.remove(scrap.getId())
+        synchronized(mLock) {
+            mScrapWidgets.remove(scrap.getId())
 
-        // Signal out
-        mUpdateScrapSignal.onNext(RemoveScrapEvent(scrap))
-        // TODO: REMOVE operation holds immutable scrap?
-        mOperationSignal.onNext(RemoveScrapOperation())
+            // Signal out
+            mUpdateScrapSignal.onNext(RemoveScrapEvent(scrap))
+            // TODO: REMOVE operation holds immutable scrap?
+            mOperationSignal.onNext(RemoveScrapOperation())
+        }
     }
 
     override fun onUpdateScrap(): Observable<UpdateScrapEvent> {
@@ -130,129 +158,15 @@ class PaperCanvasWidget(private val schedulers: ISchedulerProvider)
     }
 
     override fun eraseCanvas() {
-        TODO("not implemented")
+        synchronized(mLock) {
+            TODO("not implemented")
+        }
     }
 
-    private val mCanvasSizeSignal = BehaviorSubject.create<Pair<Float, Float>>()
+    private val mCanvasSizeSignal = BehaviorSubject.create<Pair<Float, Float>>().toSerialized()
 
     override fun onUpdateCanvasSize(): Observable<Pair<Float, Float>> {
         return mCanvasSizeSignal
-    }
-
-    // Gesture ////////////////////////////////////////////////////////////////
-
-    override fun handleTouchBegin() {
-    }
-
-    override fun handleTouchEnd() {
-    }
-
-    // Basic /////////////////////////////////////////////////////////////////
-
-    private var id = 0L
-    private lateinit var uuid: UUID
-
-    private var createdAt = 0L
-    private var modifiedAt = 0L
-
-    private var width = 0f
-    private var height = 0f
-
-    private val viewPort = Rect()
-
-    private var thumbnail: File? = null
-    private var thumbnailWidth = 0f
-    private var thumbnailHeight = 0f
-
-    private var caption = ""
-    private val tags = mutableListOf<String>()
-
-    var model: IPaper
-        set(value) {
-            this.id = value.getId()
-            this.uuid = value.getUUID()
-
-            val (canvasWidth, canvasHeight) = value.getSize()
-            this.width = canvasWidth
-            this.height = canvasHeight
-
-            val vp = value.getViewPort()
-            viewPort.set(vp)
-
-            this.createdAt = value.getCreatedAt()
-            this.modifiedAt = value.getModifiedAt()
-
-            this.thumbnail = value.getThumbnail()
-            val (thumbWidth, thumbHeight) = value.getThumbnailSize()
-            this.thumbnailWidth = thumbWidth
-            this.thumbnailHeight = thumbHeight
-
-            this.caption = value.getCaption()
-
-            this.tags.addAll(value.getTags())
-        }
-        get() = this
-
-    override fun getId(): Long {
-        return id
-    }
-
-    override fun getUUID(): UUID {
-        return uuid
-    }
-
-    override fun getSize(): Pair<Float, Float> {
-        return Pair(width, height)
-    }
-
-    override fun setSize(size: Pair<Float, Float>) {
-        width = size.first
-        height = size.second
-    }
-
-    override fun getCreatedAt(): Long {
-        return createdAt
-    }
-
-    override fun getModifiedAt(): Long {
-        return modifiedAt
-    }
-
-    override fun setModifiedAt(time: Long) {
-        modifiedAt = time
-    }
-
-    override fun getCaption(): String {
-        return caption
-    }
-
-    override fun getTags(): List<String> {
-        return tags
-    }
-
-    override fun getThumbnail(): File? {
-        return thumbnail
-    }
-
-    override fun setThumbnail(file: File) {
-        thumbnail = file
-    }
-
-    override fun getThumbnailSize(): Pair<Float, Float> {
-        return Pair(thumbnailWidth, thumbnailHeight)
-    }
-
-    override fun setThumbnailSize(size: Pair<Float, Float>) {
-        thumbnailWidth = size.first
-        thumbnailHeight = size.second
-    }
-
-    override fun getViewPort(): Rect {
-        return viewPort.copy()
-    }
-
-    override fun setViewPort(rect: Rect) {
-        viewPort.set(rect)
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
@@ -271,22 +185,36 @@ class PaperCanvasWidget(private val schedulers: ISchedulerProvider)
     private var mViewPortScale = Float.NaN
 
     override fun setDrawingMode(mode: DrawingMode) {
-        TODO()
+        synchronized(mLock) {
+            TODO()
+        }
     }
 
     override fun setChosenPenColor(color: Int) {
-        mPenColor = color
+        synchronized(mLock) {
+            mPenColor = color
+        }
     }
 
     override fun setViewPortScale(scale: Float) {
-        mViewPortScale = scale
+        synchronized(mLock) {
+            mViewPortScale = scale
+        }
     }
 
     override fun setPenSize(size: Float) {
-        mPenSize = size
+        synchronized(mLock) {
+            mPenSize = size
+        }
     }
 
     // Operation & undo/redo //////////////////////////////////////////////////
+
+    override fun getPaper(): IPaper {
+        synchronized(mLock) {
+            return mPaper!!
+        }
+    }
 
     private val mOperationSignal = PublishSubject.create<ICanvasOperation>().toSerialized()
 
@@ -297,9 +225,11 @@ class PaperCanvasWidget(private val schedulers: ISchedulerProvider)
     // Equality ///////////////////////////////////////////////////////////////
 
     override fun toString(): String {
-        return "${javaClass.simpleName}{\n" +
-               "id=${getId()}, uuid=${getUUID()}\n" +
-               "scraps=${getScraps().size}\n" +
-               "}"
+        return mPaper?.let { paper ->
+            "${javaClass.simpleName}{\n" +
+            "id=${paper.getId()}, uuid=${paper.getUUID()}\n" +
+            "scraps=${paper.getScraps().size}\n" +
+            "}"
+        } ?: "${javaClass.simpleName}{no model}"
     }
 }

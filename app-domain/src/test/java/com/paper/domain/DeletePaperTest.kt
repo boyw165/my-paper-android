@@ -22,7 +22,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.useCase.DeletePaper
+import com.paper.domain.action.DeletePaperSingle
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Single
@@ -48,7 +48,7 @@ class DeletePaperTest {
         val testErrorObserver = errorSignal.test()
 
         val testScheduler = TestScheduler()
-        val testMainObserver = DeletePaper(
+        val testMainObserver = DeletePaperSingle(
             paperID = 0,
             paperRepo = mockRepo,
             errorSignal = errorSignal)
@@ -73,7 +73,7 @@ class DeletePaperTest {
                 successful = true,
                 id = mockID)))
 
-        val testMainObserver = DeletePaper(
+        val testMainObserver = DeletePaperSingle(
             paperID = 0,
             paperRepo = mockRepo)
             .test()

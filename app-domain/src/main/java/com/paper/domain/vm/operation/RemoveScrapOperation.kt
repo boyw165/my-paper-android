@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,9 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain.vm.operation
 
-interface IPaperTransformRepoProvider {
+import com.paper.domain.vm.ICanvasOperation
+import com.paper.domain.vm.ICanvasWidget
 
-    fun getPaperTransformRepo(): ICanvasOperationRepo
+class RemoveScrapOperation : ICanvasOperation {
+
+    override fun undo(target: ICanvasWidget) {
+        // TODO
+    }
+
+    override fun redo(target: ICanvasWidget) {
+        // TODO
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

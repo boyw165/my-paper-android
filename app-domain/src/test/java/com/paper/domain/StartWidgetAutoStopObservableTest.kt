@@ -22,7 +22,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.useCase.StartWidgetAutoStopObservable
+import com.paper.domain.action.StartWidgetAutoStopObservable
 import com.paper.domain.vm.IWidget
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable

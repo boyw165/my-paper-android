@@ -20,18 +20,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.operation
+package com.paper.domain.vm.operation
 
-import com.paper.model.ICanvasOperation
-import com.paper.model.IPaper
+import com.paper.domain.vm.ICanvasOperation
+import com.paper.domain.vm.ICanvasWidget
 
-class UpdateScrapFrameOperation : ICanvasOperation {
+class AddScrapOperation : ICanvasOperation {
 
-    override fun undo(target: IPaper) {
+    override fun undo(target: ICanvasWidget) {
         // TODO
     }
 
-    override fun redo(target: IPaper) {
+    override fun redo(target: ICanvasWidget) {
         // TODO
     }
 

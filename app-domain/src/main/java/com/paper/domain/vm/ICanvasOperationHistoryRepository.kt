@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,23 +18,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.operation
+package com.paper.domain.vm
 
-import com.paper.model.ICanvasOperation
-import com.paper.model.IPaper
+import io.reactivex.Observable
+import io.reactivex.Single
 
-data class GroupOperation(val operations: List<ICanvasOperation>)
-    : ICanvasOperation {
+interface ICanvasOperationHistoryRepository : IWidget {
 
-    override fun undo(target: IPaper) {
-        // TODO
-    }
+    fun putOperation(operation: ICanvasOperation)
 
-    override fun redo(target: IPaper) {
-        // TODO
-    }
+    fun eraseAll()
 
-    override fun toString(): String {
-        return javaClass.simpleName
-    }
+    fun undo(paper: ICanvasWidget): Single<Boolean>
+
+    fun redo(paper: ICanvasWidget): Single<Boolean>
+
+    fun onBusy(): Observable<Boolean>
 }

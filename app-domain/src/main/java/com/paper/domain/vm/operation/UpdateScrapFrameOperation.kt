@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,41 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.vm.operation
 
-import com.paper.domain.data.DrawingMode
-import com.paper.model.ICanvasOperation
-import com.paper.model.IPaper
-import com.paper.model.event.UpdateScrapEvent
-import io.reactivex.Observable
+import com.paper.domain.vm.ICanvasOperation
+import com.paper.domain.vm.ICanvasWidget
 
-interface IPaperCanvasWidget : IWidget,
-                               IPaper {
+class UpdateScrapFrameOperation : ICanvasOperation {
 
-    // For input //////////////////////////////////////////////////////////////
-    // TODO: How to define the inbox?
+    override fun undo(target: ICanvasWidget) {
+        // TODO
+    }
 
-    fun handleTouchBegin()
+    override fun redo(target: ICanvasWidget) {
+        // TODO
+    }
 
-    fun handleTouchEnd()
-
-    fun setDrawingMode(mode: DrawingMode)
-
-    fun setChosenPenColor(color: Int)
-
-    fun setViewPortScale(scale: Float)
-
-    fun setPenSize(size: Float)
-
-    fun eraseCanvas()
-
-    // For output /////////////////////////////////////////////////////////////
-
-    fun onUpdateCanvasSize(): Observable<Pair<Float, Float>>
-
-    fun onUpdateScrap(): Observable<UpdateScrapEvent>
-
-    fun onUpdateCanvasOperation(): Observable<ICanvasOperation>
-
-    fun onPrintDebugMessage(): Observable<String>
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

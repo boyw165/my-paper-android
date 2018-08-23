@@ -43,6 +43,9 @@ dependencies {
     // JSON.
     api rootProject.ext.dep.gson
 
+    // Gesture
+    api rootProject.ext.dep.collageGestureDetectorRx
+
     // Model
     api project(path: ':app-model')
 

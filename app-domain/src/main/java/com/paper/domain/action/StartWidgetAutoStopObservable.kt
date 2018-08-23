@@ -20,7 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.useCase
+package com.paper.domain.action
 
 import com.paper.domain.DomainConst
 import com.paper.domain.vm.IWidget
