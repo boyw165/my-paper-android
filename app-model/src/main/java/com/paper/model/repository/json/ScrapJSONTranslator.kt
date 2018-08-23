@@ -94,8 +94,8 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
                 }
 
                 SVGScrap(uuid = id,
-                         fixedFrame = frame,
-                         fixedGraphicsList = svgList)
+                         mutableFrame = frame,
+                         graphicsList = svgList)
             }
             else -> throw UnsupportedOperationException()
         }

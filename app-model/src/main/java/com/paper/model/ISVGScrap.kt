@@ -43,7 +43,7 @@ interface ISVGScrap : IScrap {
 
     fun close()
 
-    fun setSVGs(src: List<VectorGraphics>)
+    fun setSVGs(other: List<VectorGraphics>)
 
     fun getSVGs(): List<VectorGraphics>
 }

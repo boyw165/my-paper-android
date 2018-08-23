@@ -27,19 +27,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(MockitoJUnitRunner.Silent::class)
 class ScrapTest {
 
     @Test
-    fun `immutability test`() {
+    fun `frame test`() {
         val scrap = BaseScrap()
 
-        try {
-            scrap.setFrame(Frame())
-            Assert.fail("setFrame is not allowed")
-        } catch (ignored: Throwable) {
-            // DO NOTHING
-        }
+        scrap.setFrame(Frame(x = 100f, y = 200f))
+
+        Assert.assertEquals(100f, scrap.getFrame().x)
+        Assert.assertEquals(200f, scrap.getFrame().y)
     }
 }
 

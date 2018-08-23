@@ -23,7 +23,7 @@ package com.paper.model
 import java.util.*
 
 open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
-                     protected open val fixedFrame: Frame = Frame())
+                     protected open var mutableFrame: Frame = Frame())
     : IScrap,
       NoObfuscation {
 
@@ -37,12 +37,14 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
     }
 
     override fun setFrame(frame: Frame) {
-        throw IllegalAccessException("This is an immutable instance")
+        synchronized(mLock) {
+            mutableFrame = frame
+        }
     }
 
     override fun getFrame(): Frame {
         synchronized(mLock) {
-            return fixedFrame.copy()
+            return mutableFrame.copy()
         }
     }
 
@@ -54,7 +56,7 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
 
         other as BaseScrap
 
-        val frame = synchronized(mLock) { fixedFrame }
+        val frame = synchronized(mLock) { mutableFrame }
         val otherFrame = other.getFrame()
 
         if (uuid != other.uuid) return false
@@ -71,7 +73,7 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
     override fun hashCode(): Int {
         val isHashDirty = synchronized(mLock) { mIsHashDirty }
         if (isHashDirty) {
-            val frame = synchronized(mLock) { fixedFrame }
+            val frame = synchronized(mLock) { mutableFrame }
             var hashCode = uuid.hashCode()
             hashCode = 31 * hashCode + frame.x.hashCode()
             hashCode = 31 * hashCode + frame.y.hashCode()
