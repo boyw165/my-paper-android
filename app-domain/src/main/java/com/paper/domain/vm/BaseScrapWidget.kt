@@ -22,13 +22,13 @@ package com.paper.domain.vm
 
 import com.paper.domain.ISchedulerProvider
 import com.paper.model.Frame
+import com.paper.model.IScrap
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class BaseScrapWidget(protected val uuid: UUID,
-                           frame: Frame,
+open class BaseScrapWidget(private val scrap: IScrap,
                            protected val schedulers: ISchedulerProvider)
     : IBaseScrapWidget {
 
@@ -50,25 +50,27 @@ open class BaseScrapWidget(protected val uuid: UUID,
         }
     }
 
-    override fun getId(): UUID {
-        return uuid
+    override fun getID(): UUID {
+        return scrap.getID()
     }
 
     // Frame //////////////////////////////////////////////////////////////////
 
-    protected var mFrame: Frame = frame
-
     private val mFrameSignal = PublishSubject.create<Frame>().toSerialized()
 
     override fun getFrame(): Frame {
-        return mFrame.copy()
+        synchronized(mLock) {
+            return scrap.getFrame()
+        }
     }
 
-    override fun setFrame(frame: Frame) {
-        mFrame = frame
+    protected fun setFrame(frame: Frame) {
+        synchronized(mLock) {
+            scrap.setFrame(frame)
 
-        // Signal out
-        mFrameSignal.onNext(frame)
+            // Signal out
+            mFrameSignal.onNext(frame)
+        }
     }
 
     override fun onUpdateFrame(): Observable<Frame> {
@@ -78,7 +80,7 @@ open class BaseScrapWidget(protected val uuid: UUID,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    protected fun ensureNoLeakedBinding() {
+    private fun ensureNoLeakedBinding() {
         if (mDisposables.size() > 0)
             throw IllegalStateException("Already start a model")
     }

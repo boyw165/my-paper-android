@@ -21,11 +21,14 @@
 package com.paper.domain.vm
 
 import com.paper.model.Frame
-import com.paper.model.IScrap
 import io.reactivex.Observable
+import java.util.*
 
-interface IBaseScrapWidget : IWidget,
-                             IScrap {
+interface IBaseScrapWidget : IWidget {
+
+    fun getID(): UUID
+
+    fun getFrame(): Frame
 
     fun onUpdateFrame(): Observable<Frame>
 }

@@ -48,7 +48,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
     // Focus scrap controller
     @Volatile
-    private var mFocusScrapWidget: IScrap? = null
+    private var mFocusScrapWidget: IBaseScrapWidget? = null
     // Scrap controllers
     private val mScrapWidgets = ConcurrentHashMap<UUID, IBaseScrapWidget>()
 
@@ -62,6 +62,24 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
         // Canvas size
         mCanvasSizeSignal.onNext(paper.getSize())
+
+        inflateScrapWidgets(paper)
+    }
+
+    private fun inflateScrapWidgets(paper: IPaper) {
+        val scraps = paper.getScraps()
+        scraps.forEach { scrap ->
+            when (scrap) {
+                is ISVGScrap -> {
+                    val widget = SVGScrapWidget(
+                        scrap = scrap,
+                        schedulers = schedulers)
+
+                    addScrapWidget(widget)
+                }
+                else -> TODO()
+            }
+        }
     }
 
     override fun stop() {
@@ -72,6 +90,12 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         if (mPaper != null) throw IllegalAccessException("Already set model")
 
         mPaper = paper
+    }
+
+    override fun toPaper(): IPaper {
+        synchronized(mLock) {
+            return mPaper!!
+        }
     }
 
     private fun ensureNoLeakedBinding() {
@@ -100,54 +124,47 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
     // Add & Remove Scrap /////////////////////////////////////////////////////
 
-    private val mUpdateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
+    private val mUpdateScrapSignal = PublishSubject.create<UpdateScrapWidgetEvent>().toSerialized()
 
-    override fun getFocusScrap(): IScrap? {
+    override fun getFocusScrap(): IBaseScrapWidget? {
         synchronized(mLock) {
             return mFocusScrapWidget
         }
     }
 
-    override fun addScrapAndSetFocus(scrap: IScrap) {
-        addScrap(scrap)
+    override fun addScrapWidgetAndSetFocus(scrapWidget: IBaseScrapWidget) {
+        addScrapWidget(scrapWidget)
 
         synchronized(mLock) {
-            mFocusScrapWidget = scrap
+            mFocusScrapWidget = scrapWidget
 
             // Signal out
-            mUpdateScrapSignal.onNext(FocusScrapEvent(scrap))
+            mUpdateScrapSignal.onNext(FocusScrapWidgetEvent(scrapWidget))
         }
     }
 
-    override fun removeScrapAndClearFocus(scrap: IScrap) {
-        removeScrap(scrap)
-
+    override fun addScrapWidget(scrapWidget: IBaseScrapWidget) {
         synchronized(mLock) {
-            mFocusScrapWidget = null
-        }
-    }
-
-    override fun addScrap(scrap: IScrap) {
-        scrap as IBaseScrapWidget
-
-        synchronized(mLock) {
-            mScrapWidgets[scrap.getId()] = scrap
+            mScrapWidgets[scrapWidget.getID()] = scrapWidget
 
             // Signal out
-            mUpdateScrapSignal.onNext(AddScrapEvent(scrap))
+            mUpdateScrapSignal.onNext(AddScrapWidgetEvent(scrapWidget))
             // TODO: ADD operation holds immutable scrap?
             mOperationSignal.onNext(AddScrapOperation())
         }
     }
 
-    override fun removeScrap(scrap: IScrap) {
-        scrap as IBaseScrapWidget
-
+    override fun removeScrapWidget(scrapWidget: IBaseScrapWidget) {
         synchronized(mLock) {
-            mScrapWidgets.remove(scrap.getId())
+            mScrapWidgets.remove(scrapWidget.getID())
+
+            // Clear focus
+            if (mFocusScrapWidget == scrapWidget) {
+                mFocusScrapWidget = null
+            }
 
             // Signal out
-            mUpdateScrapSignal.onNext(RemoveScrapEvent(scrap))
+            mUpdateScrapSignal.onNext(RemoveScrapWidgetEvent(scrapWidget))
             // TODO: REMOVE operation holds immutable scrap?
             mOperationSignal.onNext(RemoveScrapOperation())
         }
@@ -170,6 +187,42 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
+
+    override fun startSketch(x: Float, y: Float) {
+        synchronized(mLock) {
+            val widget = SVGScrapWidget(
+                scrap = SVGScrap(mutableFrame = Frame(x, y)),
+                schedulers = schedulers)
+            // TODO: Define the style
+            widget.moveTo(x = 0f, y = 0f,
+                          style = setOf(SVGStyle.Stroke(color = Color.RED,
+                                                        size = 0.1f,
+                                                        closed = false)))
+            addScrapWidgetAndSetFocus(widget)
+        }
+    }
+
+    override fun sketchTo(x: Float, y: Float) {
+        synchronized(mLock) {
+            val widget = mFocusScrapWidget!! as ISVGScrapWidget
+            val frame = widget.getFrame()
+            val startX = frame.x
+            val startY = frame.y
+
+            // TODO: Use cubic line?
+            widget.lineTo(x - startX, y - startY)
+
+            TODO()
+        }
+    }
+
+    override fun closeSketch() {
+        synchronized(mLock) {
+            val widget = mFocusScrapWidget!! as ISVGScrapWidget
+
+            TODO()
+        }
+    }
 
     /**
      * The current stroke color.
@@ -209,12 +262,6 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     }
 
     // Operation & undo/redo //////////////////////////////////////////////////
-
-    override fun toPaper(): IPaper {
-        synchronized(mLock) {
-            return mPaper!!
-        }
-    }
 
     private val mOperationSignal = PublishSubject.create<ICanvasOperation>().toSerialized()
 

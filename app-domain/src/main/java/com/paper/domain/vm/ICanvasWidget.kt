@@ -32,21 +32,29 @@ interface ICanvasWidget : IWidget {
 
     fun setModel(paper: IPaper)
 
+    fun toPaper(): IPaper
+
     // Add & Remove Scrap /////////////////////////////////////////////////////
 
-    fun addScrap(scrap: IScrap)
+    fun addScrapWidget(scrapWidget: IBaseScrapWidget)
 
-    fun removeScrap(scrap: IScrap)
+    fun removeScrapWidget(scrapWidget: IBaseScrapWidget)
 
-    fun getFocusScrap(): IScrap?
+    fun getFocusScrap(): IBaseScrapWidget?
 
-    fun addScrapAndSetFocus(scrap: IScrap)
+    fun addScrapWidgetAndSetFocus(scrapWidget: IBaseScrapWidget)
 
-    fun removeScrapAndClearFocus(scrap: IScrap)
+    fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent>
 
-    fun onUpdateScrap(): Observable<UpdateScrapEvent>
+    // Drawing ////////////////////////////////////////////////////////////////
 
-    // Drawing ///////////////////////////////////////////////////////////////
+    fun startSketch(x: Float,
+                    y: Float)
+
+    fun sketchTo(x: Float,
+                 y: Float)
+
+    fun closeSketch()
 
     fun eraseCanvas()
 
@@ -61,8 +69,6 @@ interface ICanvasWidget : IWidget {
     fun onUpdateCanvasSize(): Observable<Pair<Float, Float>>
 
     // Operation //////////////////////////////////////////////////////////////
-
-    fun toPaper(): IPaper
 
     fun onUpdateCanvasOperation(): Observable<ICanvasOperation>
 

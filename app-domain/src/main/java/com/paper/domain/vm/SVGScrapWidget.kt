@@ -24,20 +24,17 @@ import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.event.*
 import com.paper.model.CubicPointTuple
-import com.paper.model.Frame
+import com.paper.model.ISVGScrap
 import com.paper.model.LinearPointTuple
 import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
-import java.util.*
 
-class SVGScrapWidget(uuid: UUID,
-                     frame: Frame,
+class SVGScrapWidget(scrap: ISVGScrap,
                      svgs: List<VectorGraphics> = emptyList(),
                      schedulers: ISchedulerProvider)
-    : BaseScrapWidget(uuid,
-                      frame,
+    : BaseScrapWidget(scrap,
                       schedulers),
       ISVGScrapWidget {
 
@@ -68,19 +65,6 @@ class SVGScrapWidget(uuid: UUID,
 
     private val mSVGList = svgs.toMutableList()
     private lateinit var mWorkingSVG: VectorGraphics
-
-    override fun setSVGs(src: List<VectorGraphics>) {
-        synchronized(mLock) {
-            mSVGList.clear()
-            mSVGList.addAll(src)
-        }
-    }
-
-    override fun getSVGs(): List<VectorGraphics> {
-        synchronized(mLock) {
-            return mSVGList.toList()
-        }
-    }
 
     override fun moveTo(x: Float,
                         y: Float,

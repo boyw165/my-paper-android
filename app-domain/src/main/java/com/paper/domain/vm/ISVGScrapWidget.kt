@@ -21,22 +21,26 @@
 package com.paper.domain.vm
 
 import com.paper.domain.event.CanvasEvent
-import com.paper.model.ISVGScrap
+import com.paper.model.sketch.SVGStyle
 import io.reactivex.Observable
 
-interface ISVGScrapWidget : IBaseScrapWidget,
-                            ISVGScrap {
+interface ISVGScrapWidget : IBaseScrapWidget {
 
-//    fun drawDot(x: Float,
-//                y: Float)
-//
-//    fun beingDrawCurve(x: Float,
-//                       y: Float)
-//
-//    fun drawCurveTo(x: Float,
-//                    y: Float)
-//
-//    fun stopDrawCurve()
+    fun moveTo(x: Float,
+               y: Float,
+               style: Set<SVGStyle>)
+
+    fun lineTo(x: Float,
+               y: Float)
+
+    fun cubicTo(previousControlX: Float,
+                previousControlY: Float,
+                currentControlX: Float,
+                currentControlY: Float,
+                currentEndX: Float,
+                currentEndY: Float)
+
+    fun close()
 
     fun onDrawSVG(): Observable<CanvasEvent>
 }
