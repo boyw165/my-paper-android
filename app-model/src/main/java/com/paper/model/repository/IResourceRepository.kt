@@ -1,7 +1,6 @@
-// Copyright Apr 2017-present Paper
+// Copyright Aug 2018-present Paper
 //
-// Author: boyw165@gmail.com,
-//         djken0106@gmail.com
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -21,44 +20,19 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.repository
 
-import java.net.URI
-import java.util.*
+import android.graphics.Bitmap
+import android.net.Uri
+import io.reactivex.Completable
+import io.reactivex.Single
+import java.io.File
 
-interface IPaper {
+interface IResourceRepository {
 
-    // The SQLite ID.
-    fun getID(): Long
-    // The global ID.
-    fun getUUID(): UUID
+    fun putImage(key: Uri, file: File): Completable
 
-    fun getCreatedAt(): Long
+    fun putImage(key: Uri, bmp: Bitmap): Completable
 
-    fun getModifiedAt(): Long
-    fun setModifiedAt(time: Long)
-
-    fun getSize(): Pair<Float, Float>
-    fun setSize(size: Pair<Float, Float>)
-
-    fun getViewPort(): Rect
-    fun setViewPort(rect: Rect)
-
-    fun getThumbnail(): URI
-    fun setThumbnail(file: URI, width: Int, height: Int)
-
-    fun getThumbnailSize(): Pair<Int, Int>
-
-    fun getCaption(): String
-    fun getTags(): List<String>
-
-    fun copy(): IPaper
-
-    // Scraps /////////////////////////////////////////////////////////////////
-
-    fun getScraps(): List<IScrap>
-
-    fun addScrap(scrap: IScrap)
-
-    fun removeScrap(scrap: IScrap)
+    fun getImage(key: Uri): Single<File>
 }

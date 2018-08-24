@@ -22,6 +22,7 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +30,18 @@ import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
 class SVGScrapTest {
+
+    @Test
+    fun `copy test`() {
+        val tester1 = SVGScrap()
+        val tester2 = tester1.copy() as ISVGScrap
+        tester2.setFrame(Frame(100f, 100f))
+        tester2.setSVGs(listOf(VectorGraphics()))
+
+        Assert.assertNotEquals(tester2, tester1)
+        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
+        Assert.assertNotEquals(tester2.getSVGs().size, tester1.getSVGs().size)
+    }
 
     @Test
     fun `call moveTo without a close, should see no change`() {

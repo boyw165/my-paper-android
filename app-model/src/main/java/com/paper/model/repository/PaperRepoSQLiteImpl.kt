@@ -47,6 +47,7 @@ import io.reactivex.subjects.SingleSubject
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.net.URI
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
@@ -165,7 +166,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
                                 PaperTable.COL_CREATED_AT,
                                 PaperTable.COL_MODIFIED_AT,
                                 PaperTable.COL_CAPTION,
-                                PaperTable.COL_THUMB_PATH,
+                                PaperTable.COL_THUMB_URI,
                                 PaperTable.COL_THUMB_WIDTH,
                                 PaperTable.COL_THUMB_HEIGHT),
                         // selection:
@@ -221,9 +222,6 @@ class PaperRepoSQLiteImpl(private val authority: String,
                         createdAt = timestamp)
                     newPaper.setModifiedAt(timestamp)
 
-                    // Enable auto-save
-                    newPaper.setAutoSaveRepo(this@PaperRepoSQLiteImpl)
-
                     return@fromCallable newPaper as IPaper
                 }
                 .subscribeOn(this.dbIoScheduler)
@@ -245,7 +243,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
                                 PaperTable.COL_CREATED_AT,
                                 PaperTable.COL_MODIFIED_AT,
                                 PaperTable.COL_CAPTION,
-                                PaperTable.COL_THUMB_PATH,
+                                PaperTable.COL_THUMB_URI,
                                 PaperTable.COL_THUMB_WIDTH,
                                 PaperTable.COL_THUMB_HEIGHT,
                                 PaperTable.COL_DATA),
@@ -265,11 +263,6 @@ class PaperRepoSQLiteImpl(private val authority: String,
                         val paper = convertCursorToPaper(
                             c,
                             fullyRead = true)
-
-                        // Enable auto-save
-                        if (paper is BasePaper) {
-                            paper.setAutoSaveRepo(this@PaperRepoSQLiteImpl)
-                        }
 
                         if (!observer.isDisposed) {
                             observer.onSuccess(paper)
@@ -303,7 +296,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
     private fun putPaperImpl(paper: IPaper): Single<UpdateDatabaseEvent> {
         return Single
             .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
-                val id = paper.getId()
+                val id = paper.getID()
                 paper.setModifiedAt(getCurrentTime())
 
                 if (id == ModelConst.TEMP_ID) {
@@ -325,7 +318,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
                             prefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID).blockingGet()
 
                             if (paper is BasePaper) {
-                                paper.mID = newID
+                                paper.setID(newID)
                             }
 
                             if (!emitter.isDisposed) {
@@ -465,7 +458,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
         values.put(PaperTable.COL_MODIFIED_AT, paper.getModifiedAt())
         values.put(PaperTable.COL_CAPTION, paper.getCaption())
 
-        values.put(PaperTable.COL_THUMB_PATH, paper.getThumbnail()?.canonicalPath ?: "")
+        values.put(PaperTable.COL_THUMB_URI, paper.getThumbnail().toString())
 
         val (thumbWidth, thumbHeight) = paper.getThumbnailSize()
         values.put(PaperTable.COL_THUMB_WIDTH, thumbWidth)
@@ -489,13 +482,10 @@ class PaperRepoSQLiteImpl(private val authority: String,
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
         paper.setModifiedAt(cursor.getLong(colOfModifiedAt))
 
-        // Thumbnail file
-        paper.setThumbnail(File(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_PATH))))
-
-        // Thumbnail size
-        val thumbWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH)).toFloat()
-        val thumbHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT)).toFloat()
-        paper.setThumbnailSize(Pair(thumbWidth, thumbHeight))
+        // Thumbnail
+        val thumbWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH))
+        val thumbHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
+        paper.setThumbnail(URI(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_URI))), thumbWidth, thumbHeight)
 
         if (fullyRead) {
             val paperDetail: IPaper = jsonTranslator.fromJson(
@@ -522,7 +512,5 @@ class PaperRepoSQLiteImpl(private val authority: String,
         private const val CHANGE_ADD = "add"
         private const val CHANGE_REMOVE = "remove"
         private const val CHANGE_UPDATE = "update"
-
-        private const val WORK_TAG_PUT_PAPER = "put_paper"
     }
 }

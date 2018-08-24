@@ -95,6 +95,14 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
+    override fun copy(): IScrap {
+        return synchronized(mLock) {
+            SVGScrap(uuid = uuid,
+                     mutableFrame = mutableFrame.copy(),
+                     graphicsList = graphicsList.toMutableList())
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

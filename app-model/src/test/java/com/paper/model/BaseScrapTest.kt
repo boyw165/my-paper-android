@@ -28,7 +28,16 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class ScrapTest {
+class BaseScrapTest {
+
+    @Test
+    fun `copy test`() {
+        val tester1 = BaseScrap()
+        val tester2 = tester1.copy()
+        tester2.setFrame(Frame(x = 100f, y = 200f))
+
+        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
+    }
 
     @Test
     fun `frame test`() {

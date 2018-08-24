@@ -120,7 +120,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     val position = (first + last) / 2
                     val id = mGalleryViewController
                                  .getPaperFromAdapterPosition(position)
-                                 ?.getId() ?: ModelConst.INVALID_ID
+                                 ?.getID() ?: ModelConst.INVALID_ID
 
                     if (id != ModelConst.INVALID_ID) {
                         mSavedPaperIdSignal.onNext(id)

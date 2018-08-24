@@ -47,7 +47,7 @@ class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryViewModel>>(
         val actualData = currentData ?: return -1
         return actualData.indexOfFirst { item ->
             if (item is PaperThumbViewModel) {
-                item.paper.getId() == paperID
+                item.paper.getID() == paperID
             } else {
                 false
             }

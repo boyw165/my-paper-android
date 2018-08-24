@@ -63,7 +63,7 @@ interface ICanvasWidget : IWidget {
 
     // Operation //////////////////////////////////////////////////////////////
 
-    fun getPaper(): IPaper
+    fun toPaper(): IPaper
 
     fun onUpdateCanvasOperation(): Observable<ICanvasOperation>
 

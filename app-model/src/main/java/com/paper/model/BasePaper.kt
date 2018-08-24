@@ -21,15 +21,18 @@
 package com.paper.model
 
 import com.paper.model.repository.IPaperRepo
-import java.io.File
+import java.net.URI
 import java.util.*
 
-open class BasePaper(
-    // The SQLite ID.
-    id: Long = ModelConst.TEMP_ID,
-    // The global ID.
-    uuid: UUID = UUID.randomUUID(),
-    createdAt: Long = 0L)
+open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
+                     private val uuid: UUID = UUID.randomUUID(),
+                     private val createdAt: Long = 0L,
+                     private var modifiedAt: Long = 0L,
+                     private var width: Float = 512f,
+                     private var height: Float = 512f,
+                     private val viewPort: Rect = Rect(0f, 0f, 0f, 0f),
+                     private var thumbnail: Triple<URI, Int, Int> = Triple(URI("file:///null"), 0, 0),
+                     private var scraps: MutableList<IScrap> = mutableListOf())
     : IPaper,
       NoObfuscation {
 
@@ -37,66 +40,57 @@ open class BasePaper(
 
     // General ////////////////////////////////////////////////////////////////
 
-    internal var mID = id
-
-    override fun getId(): Long {
-        return mID
+    override fun getID(): Long {
+        return id
     }
 
-    private val mUUID = uuid
+    fun setID(id: Long) {
+        this.id = id
+    }
 
     override fun getUUID(): UUID {
-        return mUUID
+        return uuid
     }
-
-    private val mCreatedAt = createdAt
 
     override fun getCreatedAt(): Long {
-        return mCreatedAt
+        return createdAt
     }
-
-    private var mModifiedAt: Long = 0L
 
     override fun getModifiedAt(): Long {
         synchronized(mLock) {
-            return mModifiedAt
+            return modifiedAt
         }
     }
 
     override fun setModifiedAt(time: Long) {
         synchronized(mLock) {
-            mModifiedAt = time
+            modifiedAt = time
         }
     }
 
-    private var mWidth: Float = 512f
-    private var mHeight: Float = 512f
-
     override fun getSize(): Pair<Float, Float> {
         synchronized(mLock) {
-            return Pair(mWidth, mHeight)
+            return Pair(width, height)
         }
     }
 
     override fun setSize(size: Pair<Float, Float>) {
         synchronized(mLock) {
             val (width, height) = size
-            mWidth = width
-            mHeight = height
+            this.width = width
+            this.height = height
         }
     }
 
-    private val mViewPort = Rect(0f, 0f, 0f, 0f)
-
     override fun getViewPort(): Rect {
         synchronized(mLock) {
-            return mViewPort.copy()
+            return viewPort.copy()
         }
     }
 
     override fun setViewPort(rect: Rect) {
         synchronized(mLock) {
-            mViewPort.set(rect)
+            viewPort.set(rect)
         }
     }
 
@@ -112,81 +106,61 @@ open class BasePaper(
 
     // Thumbnail //////////////////////////////////////////////////////////////
 
-    private var mThumbnail: File? = null
-
-    override fun getThumbnail(): File? {
-        return mThumbnail
+    override fun getThumbnail(): URI {
+        return thumbnail.first
     }
 
-    override fun setThumbnail(file: File) {
+    override fun setThumbnail(file: URI,
+                              width: Int,
+                              height: Int) {
         synchronized(mLock) {
-            mThumbnail = file
+            thumbnail = Triple(file, width, height)
         }
-
-        // Request to save file
-        requestAutoSave()
     }
 
-    private var mThumbnailSize = Pair(0f, 0f)
-
-    override fun getThumbnailSize(): Pair<Float, Float> {
-        return mThumbnailSize.copy()
-    }
-
-    override fun setThumbnailSize(size: Pair<Float, Float>) {
-        synchronized(mLock) {
-            mThumbnailSize = size.copy()
-        }
-
-        // Request to save file
-        requestAutoSave()
+    override fun getThumbnailSize(): Pair<Int, Int> {
+        return Pair(thumbnail.second, thumbnail.third)
     }
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    private var mScraps = mutableListOf<IScrap>()
-
     override fun getScraps(): List<IScrap> {
         synchronized(mLock) {
             // Must clone the list in case concurrent modification
-            return mScraps.toList()
+            return scraps.toList()
         }
     }
 
     override fun addScrap(scrap: IScrap) {
         synchronized(mLock) {
-            mScraps.add(scrap)
+            scraps.add(scrap)
         }
-
-        // Request to save file
-        requestAutoSave()
     }
 
     override fun removeScrap(scrap: IScrap) {
         synchronized(mLock) {
-            mScraps.remove(scrap)
+            scraps.remove(scrap)
         }
-
-        // Request to save file
-        requestAutoSave()
-    }
-
-    // Auto-save //////////////////////////////////////////////////////////////
-
-    private var mRepo: IPaperRepo? = null
-
-    /**
-     * Enable the auto-save function.
-     */
-    fun setAutoSaveRepo(repo: IPaperRepo) {
-        mRepo = repo
-    }
-
-    private fun requestAutoSave() {
-        mRepo?.putPaper(this@BasePaper)
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
+
+    override fun copy(): IPaper {
+        return synchronized(mLock) {
+            val copyScraps = mutableListOf<IScrap>()
+            scraps.forEach { copyScraps.add(it.copy()) }
+
+            BasePaper(id = id,
+                      uuid = uuid,
+                      createdAt = createdAt,
+                      modifiedAt = modifiedAt,
+                      width = width,
+                      height = height,
+                      viewPort = viewPort.copy(),
+                      thumbnail = thumbnail.copy(),
+                      scraps = copyScraps)
+        }
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -194,9 +168,9 @@ open class BasePaper(
 
         other as BasePaper
 
-        if (getId() != other.getId()) return false
+        if (getID() != other.getID()) return false
         if (getUUID() != other.getUUID()) return false
-        if (getCreatedAt() != other.mCreatedAt) return false
+        if (getCreatedAt() != other.createdAt) return false
         if (getModifiedAt() != other.getModifiedAt()) return false
         if (getSize() != other.getSize()) return false
         if (getThumbnail() != other.getThumbnail()) return false
@@ -207,7 +181,7 @@ open class BasePaper(
     }
 
     override fun hashCode(): Int {
-        var result = getId().hashCode()
+        var result = getID().hashCode()
         result = 31 * result + getUUID().hashCode()
         result = 31 * result + getCreatedAt().hashCode()
         result = 31 * result + getModifiedAt().hashCode()

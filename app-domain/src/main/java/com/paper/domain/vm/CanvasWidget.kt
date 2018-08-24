@@ -210,7 +210,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
     // Operation & undo/redo //////////////////////////////////////////////////
 
-    override fun getPaper(): IPaper {
+    override fun toPaper(): IPaper {
         synchronized(mLock) {
             return mPaper!!
         }
@@ -227,7 +227,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     override fun toString(): String {
         return mPaper?.let { paper ->
             "${javaClass.simpleName}{\n" +
-            "id=${paper.getId()}, uuid=${paper.getUUID()}\n" +
+            "id=${paper.getID()}, uuid=${paper.getUUID()}\n" +
             "scraps=${paper.getScraps().size}\n" +
             "}"
         } ?: "${javaClass.simpleName}{no model}"

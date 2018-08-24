@@ -28,6 +28,10 @@ open class TextScrap(override val uuid: UUID = UUID.randomUUID())
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
+    override fun copy(): IScrap {
+        TODO()
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

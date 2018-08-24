@@ -31,4 +31,6 @@ interface IScrap {
     fun setFrame(frame: Frame)
 
     fun getFrame(): Frame
+
+    fun copy(): IScrap
 }

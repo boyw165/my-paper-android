@@ -73,7 +73,7 @@ class PaperContentProvider : ContentProvider(),
             "${PaperTable.COL_MODIFIED_AT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_CAPTION} TEXT $COMMA" +
             "${PaperTable.COL_TAG} TEXT $COMMA" +
-            "${PaperTable.COL_THUMB_PATH} TEXT NOT NULL $COMMA" +
+            "${PaperTable.COL_THUMB_URI} TEXT NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_WIDTH} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_THUMB_HEIGHT} INTEGER NOT NULL $COMMA" +
             "${PaperTable.COL_DATA} TEXT"

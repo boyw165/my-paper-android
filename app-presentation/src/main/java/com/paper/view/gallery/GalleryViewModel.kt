@@ -45,14 +45,14 @@ data class PaperThumbViewModel(val paper: IPaper,
                                val clickSignal: Observer<Long>) : GalleryViewModel() {
 
     override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {
-        return PaperThumbnailEpoxyViewModel(mPaperId = paper.getId())
+        return PaperThumbnailEpoxyViewModel(mPaperId = paper.getID())
             .onClick(clickSignal)
             .setModifiedTime(paper.getModifiedAt())
             .setThumbnail(paper.getThumbnail(),
                           paper.getThumbnailSize(),
                           paper.getThumbnailHeight())
             // Epoxy view-model ID.
-            .id(paper.getId()) as EpoxyModelWithHolder<EpoxyHolder>
+            .id(paper.getID()) as EpoxyModelWithHolder<EpoxyHolder>
     }
 }
 

@@ -50,6 +50,11 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
+    override fun copy(): IScrap {
+        return BaseScrap(uuid = uuid,
+                         mutableFrame = mutableFrame.copy())
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
