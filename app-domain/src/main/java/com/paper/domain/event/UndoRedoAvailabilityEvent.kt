@@ -22,5 +22,5 @@
 
 package com.paper.domain.event
 
-data class UndoRedoEvent(val canUndo: Boolean,
-                         val canRedo: Boolean)
+data class UndoRedoAvailabilityEvent(val canUndo: Boolean,
+                                     val canRedo: Boolean)

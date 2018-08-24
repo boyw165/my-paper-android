@@ -23,7 +23,7 @@
 package com.paper.domain.vm
 
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.event.UndoRedoEvent
+import com.paper.domain.event.UndoRedoAvailabilityEvent
 import com.paper.domain.vm.operation.AddScrapOperation
 import com.paper.model.ModelConst
 import io.reactivex.Completable
@@ -59,8 +59,8 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
                 putOperationImpl(value)
                     .doOnComplete {
                         mUndoCapacitySignal.onNext(
-                            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
-                                          canRedo = mRedoKeys.size > 0))
+                            UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
+                                                      canRedo = mRedoKeys.size > 0))
                     }
                     .toObservable<Any>()
             }
@@ -96,7 +96,7 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
 
     private val mUndoKeys = Stack<ICanvasOperation>()
     private val mRedoKeys = Stack<ICanvasOperation>()
-    private val mUndoCapacitySignal = PublishSubject.create<UndoRedoEvent>()
+    private val mUndoCapacitySignal = PublishSubject.create<UndoRedoAvailabilityEvent>()
 
     val undoSize: Int
         get() = synchronized(mLock) { mUndoKeys.size }
@@ -137,8 +137,8 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
         mRedoKeys.clear()
 
         mUndoCapacitySignal.onNext(
-            UndoRedoEvent(canUndo = mUndoKeys.size > 0,
-                          canRedo = mRedoKeys.size > 0))
+            UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
+                                      canRedo = mRedoKeys.size > 0))
     }
 
     override fun undo(paper: ICanvasWidget): Single<Boolean> {
@@ -148,8 +148,8 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
                 operation.undo(paper)
 
                 mUndoCapacitySignal.onNext(
-                    UndoRedoEvent(canUndo = mUndoKeys.size > 0,
-                                  canRedo = mRedoKeys.size > 0))
+                    UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
+                                              canRedo = mRedoKeys.size > 0))
 
                 Single.just(true)
             }
@@ -162,8 +162,8 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
                 operation.redo(paper)
 
                 mUndoCapacitySignal.onNext(
-                    UndoRedoEvent(canUndo = mUndoKeys.size > 0,
-                                  canRedo = mRedoKeys.size > 0))
+                    UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
+                                              canRedo = mRedoKeys.size > 0))
 
                 Single.just(true)
             }
@@ -215,7 +215,7 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
             }
     }
 
-    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoEvent> {
+    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoAvailabilityEvent> {
         return mUndoCapacitySignal
     }
 
