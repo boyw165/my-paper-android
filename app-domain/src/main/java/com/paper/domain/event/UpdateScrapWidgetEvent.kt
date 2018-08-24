@@ -20,16 +20,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.event
+package com.paper.domain.event
 
-import com.paper.model.IScrap
+import com.paper.domain.vm.IBaseScrapWidget
 
-sealed class UpdateScrapEvent
+sealed class UpdateScrapWidgetEvent
 
-data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScrapEvent()
+data class GroupUpdateScrapWidgetEvent(val events: List<UpdateScrapWidgetEvent>) : UpdateScrapWidgetEvent()
 
-data class AddScrapEvent(val scrap: IScrap) : UpdateScrapEvent()
+data class AddScrapWidgetEvent(val scrapWidget: IBaseScrapWidget) : UpdateScrapWidgetEvent()
 
-data class RemoveScrapEvent(val scrap: IScrap) : UpdateScrapEvent()
+data class RemoveScrapWidgetEvent(val scrapWidget: IBaseScrapWidget) : UpdateScrapWidgetEvent()
 
-data class FocusScrapEvent(val scrap: IScrap) : UpdateScrapEvent()
+data class FocusScrapWidgetEvent(val scrapWidget: IBaseScrapWidget) : UpdateScrapWidgetEvent()

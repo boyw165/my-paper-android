@@ -24,12 +24,12 @@ import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.vm.operation.AddScrapOperation
 import com.paper.domain.vm.operation.RemoveScrapOperation
-import com.paper.model.IPaper
-import com.paper.model.IScrap
-import com.paper.model.event.AddScrapEvent
-import com.paper.model.event.FocusScrapEvent
-import com.paper.model.event.RemoveScrapEvent
-import com.paper.model.event.UpdateScrapEvent
+import com.paper.domain.event.AddScrapWidgetEvent
+import com.paper.domain.event.FocusScrapWidgetEvent
+import com.paper.domain.event.RemoveScrapWidgetEvent
+import com.paper.domain.event.UpdateScrapWidgetEvent
+import com.paper.model.*
+import com.paper.model.sketch.SVGStyle
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
@@ -153,7 +153,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         }
     }
 
-    override fun onUpdateScrap(): Observable<UpdateScrapEvent> {
+    override fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent> {
         return mUpdateScrapSignal
     }
 

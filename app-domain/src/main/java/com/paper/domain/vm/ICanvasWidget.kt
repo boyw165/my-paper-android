@@ -22,8 +22,7 @@ package com.paper.domain.vm
 
 import com.paper.domain.data.DrawingMode
 import com.paper.model.IPaper
-import com.paper.model.IScrap
-import com.paper.model.event.UpdateScrapEvent
+import com.paper.domain.event.UpdateScrapWidgetEvent
 import io.reactivex.Observable
 
 /**

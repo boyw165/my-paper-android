@@ -27,7 +27,7 @@ import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.action.StartWidgetAutoStopObservable
 import com.paper.domain.data.ToolType
-import com.paper.domain.event.UndoRedoEvent
+import com.paper.domain.event.UndoRedoAvailabilityEvent
 import com.paper.domain.event.UpdateEditToolsEvent
 import com.paper.model.IPaper
 import com.paper.model.event.IntProgressEvent
@@ -254,14 +254,14 @@ class EditorWidget(private val paperID: Long,
             .addTo(mDisposables)
     }
 
-    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoEvent> {
+    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoAvailabilityEvent> {
         return Observables.combineLatest(
             onBusy(),
             mHistoryWidget.onUpdateUndoRedoCapacity())
             .map { (busy, event) ->
                 if (busy) {
-                    UndoRedoEvent(canUndo = false,
-                                  canRedo = false)
+                    UndoRedoAvailabilityEvent(canUndo = false,
+                                              canRedo = false)
                 } else {
                     event
                 }
