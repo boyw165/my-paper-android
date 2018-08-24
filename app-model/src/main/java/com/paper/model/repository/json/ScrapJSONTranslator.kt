@@ -36,7 +36,7 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
         val root = JsonObject()
         val frame = src.getFrame()
 
-        root.addProperty("uuid", src.getId().toString())
+        root.addProperty("uuid", src.getID().toString())
 
         root.addProperty("x", frame.x)
         root.addProperty("y", frame.y)

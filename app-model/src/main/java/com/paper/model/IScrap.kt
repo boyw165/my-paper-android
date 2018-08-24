@@ -26,7 +26,7 @@ import java.util.*
 
 interface IScrap {
 
-    fun getId(): UUID
+    fun getID(): UUID
 
     fun setFrame(frame: Frame)
 

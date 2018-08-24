@@ -77,7 +77,7 @@ class ScrapJSONTranslatorTest {
     fun `deserialize svg scrap with empty tuple list`() {
         val model = translator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", BaseScrap::class.java)
 
-        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getId().toString())
+        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getID().toString())
 
         Assert.assertEquals(100f, model.getFrame().x)
         Assert.assertEquals(200f, model.getFrame().y)

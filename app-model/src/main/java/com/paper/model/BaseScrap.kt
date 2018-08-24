@@ -32,7 +32,7 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
     protected var mIsHashDirty = true
     protected var mHashCode = 0
 
-    override fun getId(): UUID {
+    override fun getID(): UUID {
         return uuid
     }
 
