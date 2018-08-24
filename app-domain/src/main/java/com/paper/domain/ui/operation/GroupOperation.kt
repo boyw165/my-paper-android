@@ -20,10 +20,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm.operation
+package com.paper.domain.ui.operation
 
-import com.paper.domain.vm.ICanvasOperation
-import com.paper.domain.vm.ICanvasWidget
+import com.paper.domain.ui.ICanvasOperation
+import com.paper.domain.ui.ICanvasWidget
 
 data class GroupOperation(val operations: List<ICanvasOperation>)
     : ICanvasOperation {

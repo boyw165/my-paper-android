@@ -1,6 +1,4 @@
-// Copyright Jun 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,40 +18,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
-import androidx.annotation.IntDef
+import com.paper.domain.event.UpdateColorTicketsEvent
 import io.reactivex.Observable
-import io.useful.dirtyflag.DirtyEvent
-import io.useful.dirtyflag.DirtyFlag
 
-/**
- * Dirty flag for canvas.
- */
-data class CanvasDirtyFlag(override var flag: Int = 0)
-    : DirtyFlag(flag) {
+interface IPaperMenuPenWidget : IWidget {
 
-    @Retention(AnnotationRetention.SOURCE)
-    @IntDef(CANVAS_INITIALIZING,
-            CANVAS_OPERATING,
-            CANVAS_EXPORTING)
-    annotation class Type
+    // For input //////////////////////////////////////////////////////////////
+    // TODO: How to define the inbox?
 
-    companion object {
-        const val CANVAS_INITIALIZING = 1.shl(0)
-        const val CANVAS_OPERATING = 1.shl(1)
-        const val CANVAS_EXPORTING = 1.shl(2)
-    }
+    fun setPenColor(color: Int)
 
-    override fun markDirty(@Type vararg types: Int) {
-        super.markDirty(*types)
-    }
+    fun setPenSize(size: Float)
 
-    override fun markNotDirty(@Type vararg types: Int) {
-        super.markNotDirty(*types)
-    }
+    // For output /////////////////////////////////////////////////////////////
 
-    override fun onUpdate(@Type vararg withTypes: Int): Observable<DirtyEvent> {
-        return super.onUpdate(*withTypes)
-    }
+    fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent>
+
+    /**
+     * Update of pen size ranging from 0.0 to 1.0
+     *
+     * @return An observable of pen size ranging from 0.0 to 1.0
+     */
+    fun onUpdatePenSize(): Observable<Float>
 }

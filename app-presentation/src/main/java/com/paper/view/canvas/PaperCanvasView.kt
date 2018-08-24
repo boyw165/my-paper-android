@@ -40,14 +40,14 @@ import com.paper.domain.data.GestureRecord
 import com.paper.domain.event.*
 import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
-import com.paper.domain.widget.editor.IPaperCanvasWidget
-import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.domain.ui.ICanvasWidget
+import com.paper.domain.ui.IBaseScrapWidget
 import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.ModelConst
 import com.paper.model.Point
 import com.paper.model.Rect
 import com.paper.model.repository.IBitmapRepository
-import com.paper.model.sketch.PenType
+import com.paper.model.sketch.SVGStyle
 import com.paper.observables.AddFileToMediaStoreMaybe
 import com.paper.observables.WriteBitmapToFileMaybe
 import com.paper.services.IContextProvider
@@ -81,7 +81,7 @@ class PaperCanvasView : TextureView,
     private val mScrapViews = mutableListOf<IScrapView>()
 
     // Widget.
-    private lateinit var mWidget: IPaperCanvasWidget
+    private lateinit var mWidget: ICanvasWidget
     private val mDisposables = CompositeDisposable()
 
     // Dirty flags
@@ -101,7 +101,7 @@ class PaperCanvasView : TextureView,
     private val mTmpMatrixStart = Matrix()
 
     /**
-     * A util for getting translationX, translationY, scaleX, scaleY, and
+     * A util for getting x, y, scaleX, scaleY, and
      * rotationInDegrees from a [Matrix]
      */
     private val mTransformHelper = TransformUtils()
@@ -168,7 +168,7 @@ class PaperCanvasView : TextureView,
             onReadyToDraw()
                 .switchMap { readyToDraw ->
                     if (readyToDraw) {
-                        widget.onSetCanvasSize()
+                        widget.onUpdateCanvasSize()
                             .observeOn(AndroidSchedulers.mainThread())
                             .switchMap { size ->
                                 updateLayoutOrCanvas(size.width, size.height)
@@ -310,7 +310,7 @@ class PaperCanvasView : TextureView,
 
     // Add / Remove Scraps /////////////////////////////////////////////////////
 
-    private fun addScrap(widget: IScrapWidget) {
+    private fun addScrap(widget: IBaseScrapWidget) {
         ensureMainThread()
 
         val scrapView = ScrapView(renderScheduler = mRenderingScheduler)

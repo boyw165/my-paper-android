@@ -32,10 +32,9 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
 import com.paper.domain.event.CanvasEvent
 import com.paper.domain.event.UpdatePenSizeEvent
-import com.paper.domain.vm.PaperMenuWidget
+import com.paper.domain.ui.PaperMenuWidget
 import com.paper.model.ModelConst
 import com.paper.model.Rect
-import com.paper.observables.SeekBarChangeObservable
 import com.paper.view.IWidgetView
 import com.paper.view.canvas.IPaperContext
 import com.paper.view.canvas.ViewPortIndicatorView

@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,16 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
-interface IWidget {
+interface ICanvasOperation {
 
-    /**
-     * Bind model.
-     *
-     * @return Ready observable
-     */
-    fun start()
+    fun undo(target: ICanvasWidget)
 
-    fun stop()
+    fun redo(target: ICanvasWidget)
 }

@@ -39,7 +39,7 @@ import com.facebook.ads.AdError
 import com.facebook.ads.AdListener
 import com.facebook.ads.NativeAd
 import com.jakewharton.rxbinding2.view.RxView
-import com.paper.domain.useCase.DeletePaper
+import com.paper.domain.action.DeletePaperSingle
 import com.paper.model.IPaper
 import com.paper.model.IPaperRepoProvider
 import com.paper.model.IPreferenceServiceProvider
@@ -195,9 +195,9 @@ class PaperGalleryActivity : AppCompatActivity() {
                         requestPermissions()
                             .observeOn(Schedulers.io())
                             .switchMap {
-                                DeletePaper(paperID = toDeletePaperID,
-                                            paperRepo = mRepo,
-                                            errorSignal = mErrorSignal)
+                                DeletePaperSingle(paperID = toDeletePaperID,
+                                                  paperRepo = mRepo,
+                                                  errorSignal = mErrorSignal)
                                     .toObservable()
                             }
                     } else {

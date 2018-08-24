@@ -26,8 +26,9 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
+import com.paper.domain.ui.ICanvasOperationRepoProvider
 import com.paper.domain.ISchedulerProvider
-import com.paper.presenter.PaperEditorPresenter
+import com.paper.domain.ui.EditorWidget
 import com.paper.model.*
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.event.TimedCounterEvent
@@ -93,9 +94,9 @@ class PaperEditorActivity : AppCompatActivity() {
 
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mPresenter by lazy {
-        PaperEditorPresenter(
+        EditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
-            paperTransformRepo = (application as IPaperTransformRepoProvider).getPaperTransformRepo(),
+            paperTransformRepo = (application as ICanvasOperationRepoProvider).getPaperTransformRepo(),
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
             schedulers = (application as ISchedulerProvider))
@@ -287,7 +288,7 @@ class PaperEditorActivity : AppCompatActivity() {
 //        outState.putLong()
     }
 
-    private fun initWidgets(sources: PaperEditorPresenter.OnStart): Observable<Any> {
+    private fun initWidgets(sources: EditorWidget.OnStart): Observable<Any> {
         return Observable.merge(
             sources.onCanvasWidgetReady
                 .flatMap { widget ->

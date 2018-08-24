@@ -20,11 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui.operation
 
-interface ICanvasOperation {
+import com.paper.domain.ui.ICanvasOperation
+import com.paper.domain.ui.ICanvasWidget
 
-    fun undo(target: ICanvasWidget)
+class RemoveScrapOperation : ICanvasOperation {
 
-    fun redo(target: ICanvasWidget)
+    override fun undo(target: ICanvasWidget) {
+        // TODO
+    }
+
+    override fun redo(target: ICanvasWidget) {
+        // TODO
+    }
+
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,28 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui.operation
 
-import com.paper.domain.event.UpdateColorTicketsEvent
-import io.reactivex.Observable
+import com.paper.domain.ui.ICanvasOperation
+import com.paper.domain.ui.ICanvasWidget
 
-interface IPaperMenuPenWidget : IWidget {
+class AddScrapOperation : ICanvasOperation {
 
-    // For input //////////////////////////////////////////////////////////////
-    // TODO: How to define the inbox?
+    override fun undo(target: ICanvasWidget) {
+        // TODO
+    }
 
-    fun setPenColor(color: Int)
+    override fun redo(target: ICanvasWidget) {
+        // TODO
+    }
 
-    fun setPenSize(size: Float)
-
-    // For output /////////////////////////////////////////////////////////////
-
-    fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent>
-
-    /**
-     * Update of pen size ranging from 0.0 to 1.0
-     *
-     * @return An observable of pen size ranging from 0.0 to 1.0
-     */
-    fun onUpdatePenSize(): Observable<Float>
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

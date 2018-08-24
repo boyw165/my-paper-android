@@ -18,12 +18,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
-import com.paper.domain.vm.operation.AddScrapOperation
-import com.paper.domain.vm.operation.RemoveScrapOperation
+import com.paper.domain.ui.operation.AddScrapOperation
+import com.paper.domain.ui.operation.RemoveScrapOperation
 import com.paper.domain.event.AddScrapWidgetEvent
 import com.paper.domain.event.FocusScrapWidgetEvent
 import com.paper.domain.event.RemoveScrapWidgetEvent

@@ -25,12 +25,13 @@ import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
 import com.google.gson.GsonBuilder
+import com.paper.domain.ui.ICanvasOperationRepoProvider
 import com.paper.domain.ISchedulerProvider
 import com.paper.model.*
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSQLiteImpl
-import com.paper.model.repository.PaperCanvasOperationRepoFileLRUImpl
+import com.paper.domain.ui.CanvasOperationRepoFileLRUImpl
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
@@ -44,7 +45,7 @@ import io.reactivex.schedulers.Schedulers
 class PaperApplication : MultiDexApplication(),
                          ISchedulerProvider,
                          IPaperRepoProvider,
-                         IPaperTransformRepoProvider,
+                         ICanvasOperationRepoProvider,
                          IBitmapRepoProvider,
                          IPreferenceServiceProvider {
 
@@ -131,7 +132,7 @@ class PaperApplication : MultiDexApplication(),
     }
 
     private val mPaperTransformRepo by lazy {
-        PaperCanvasOperationRepoFileLRUImpl(fileDir = getExternalFilesDir("transform"))
+        CanvasOperationRepoFileLRUImpl(fileDir = getExternalFilesDir("transform"))
     }
 
     override fun getPaperTransformRepo(): ICanvasOperationRepo {

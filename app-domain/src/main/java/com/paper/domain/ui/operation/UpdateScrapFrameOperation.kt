@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Apr 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,20 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui.operation
 
-import io.reactivex.Observable
-import io.reactivex.Single
+import com.paper.domain.ui.ICanvasOperation
+import com.paper.domain.ui.ICanvasWidget
 
-interface ICanvasOperationHistoryRepository : IWidget {
+class UpdateScrapFrameOperation : ICanvasOperation {
 
-    fun putOperation(operation: ICanvasOperation)
+    override fun undo(target: ICanvasWidget) {
+        // TODO
+    }
 
-    fun eraseAll()
+    override fun redo(target: ICanvasWidget) {
+        // TODO
+    }
 
-    fun undo(paper: ICanvasWidget): Single<Boolean>
-
-    fun redo(paper: ICanvasWidget): Single<Boolean>
-
-    fun onBusy(): Observable<Boolean>
+    override fun toString(): String {
+        return javaClass.simpleName
+    }
 }

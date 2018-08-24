@@ -29,7 +29,7 @@ import com.paper.domain.event.OnSketchEvent
 import com.paper.domain.event.StartSketchEvent
 import com.paper.domain.event.StopSketchEvent
 import com.paper.domain.util.TransformUtils
-import com.paper.domain.widget.editor.IScrapWidget
+import com.paper.domain.ui.IBaseScrapWidget
 import com.paper.model.Point
 import com.paper.model.Transform
 import com.paper.view.with
@@ -40,7 +40,7 @@ import io.reactivex.disposables.CompositeDisposable
 open class ScrapView(private val renderScheduler: Scheduler)
     : IScrapView {
 
-    private lateinit var mWidget: IScrapWidget
+    private lateinit var mWidget: IBaseScrapWidget
 
     private var mContext: IPaperContext? = null
     private var mParent: IParentView? = null
@@ -75,7 +75,7 @@ open class ScrapView(private val renderScheduler: Scheduler)
 
     private val mDisposables = CompositeDisposable()
 
-    override fun bindWidget(widget: IScrapWidget) {
+    override fun bindWidget(widget: IBaseScrapWidget) {
         mWidget = widget
 
         mDisposables.add(
@@ -124,7 +124,7 @@ open class ScrapView(private val renderScheduler: Scheduler)
                 })
 
         mDisposables.add(
-            mWidget.onTransform()
+            mWidget.getFrame()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { xform ->
                     onUpdateTransform(xform)

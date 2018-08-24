@@ -25,7 +25,7 @@ import android.view.View
 import com.airbnb.epoxy.EpoxyModel
 import com.facebook.drawee.view.SimpleDraweeView
 import com.paper.R
-import com.paper.domain.vm.PaperMenuWidget
+import com.paper.domain.ui.PaperMenuWidget
 
 class ColorTicketEpoxyViewModel(color: Int,
                                 isUsing: Boolean = false,

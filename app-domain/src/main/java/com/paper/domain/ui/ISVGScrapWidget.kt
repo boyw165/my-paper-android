@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,22 +18,29 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm.operation
+package com.paper.domain.ui
 
-import com.paper.domain.vm.ICanvasOperation
-import com.paper.domain.vm.ICanvasWidget
+import com.paper.domain.event.CanvasEvent
+import com.paper.model.sketch.SVGStyle
+import io.reactivex.Observable
 
-class AddScrapOperation : ICanvasOperation {
+interface ISVGScrapWidget : IBaseScrapWidget {
 
-    override fun undo(target: ICanvasWidget) {
-        // TODO
-    }
+    fun moveTo(x: Float,
+               y: Float,
+               style: Set<SVGStyle>)
 
-    override fun redo(target: ICanvasWidget) {
-        // TODO
-    }
+    fun lineTo(x: Float,
+               y: Float)
 
-    override fun toString(): String {
-        return javaClass.simpleName
-    }
+    fun cubicTo(previousControlX: Float,
+                previousControlY: Float,
+                currentControlX: Float,
+                currentControlY: Float,
+                currentEndX: Float,
+                currentEndY: Float)
+
+    fun close()
+
+    fun onDrawSVG(): Observable<CanvasEvent>
 }

@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Jun 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,29 +20,38 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
-import com.paper.domain.event.CanvasEvent
-import com.paper.model.sketch.SVGStyle
+import androidx.annotation.IntDef
 import io.reactivex.Observable
+import io.useful.dirtyflag.DirtyEvent
+import io.useful.dirtyflag.DirtyFlag
 
-interface ISVGScrapWidget : IBaseScrapWidget {
+/**
+ * Dirty flag for SVG.
+ */
+data class SVGDirtyFlag(override var flag: Int = 0)
+    : DirtyFlag(flag) {
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle>)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(SVG_INITIALIZING,
+            SVG_DRAWING)
+    annotation class Type
 
-    fun lineTo(x: Float,
-               y: Float)
+    companion object {
+        const val SVG_INITIALIZING = 1.shl(0)
+        const val SVG_DRAWING = 1.shl(1)
+    }
 
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
+    override fun markDirty(@Type vararg types: Int) {
+        super.markDirty(*types)
+    }
 
-    fun close()
+    override fun markNotDirty(@Type vararg types: Int) {
+        super.markNotDirty(*types)
+    }
 
-    fun onDrawSVG(): Observable<CanvasEvent>
+    override fun onUpdate(@Type vararg withTypes: Int): Observable<DirtyEvent> {
+        return super.onUpdate(*withTypes)
+    }
 }

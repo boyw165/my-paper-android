@@ -23,7 +23,7 @@
 package com.paper.domain
 
 import com.paper.domain.action.StartWidgetAutoStopObservable
-import com.paper.domain.vm.IWidget
+import com.paper.domain.ui.IWidget
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import org.junit.Test

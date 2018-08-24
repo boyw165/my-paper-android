@@ -22,7 +22,7 @@
 
 package com.paper.domain.event
 
-import com.paper.domain.vm.IBaseScrapWidget
+import com.paper.domain.ui.IBaseScrapWidget
 
 sealed class UpdateScrapWidgetEvent
 

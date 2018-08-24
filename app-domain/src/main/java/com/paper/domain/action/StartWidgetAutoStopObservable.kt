@@ -23,7 +23,7 @@
 package com.paper.domain.action
 
 import com.paper.domain.DomainConst
-import com.paper.domain.vm.IWidget
+import com.paper.domain.ui.IWidget
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable

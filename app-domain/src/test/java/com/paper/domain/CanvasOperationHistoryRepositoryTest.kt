@@ -23,9 +23,9 @@
 package com.paper.domain
 
 import com.paper.domain.action.StartWidgetAutoStopObservable
-import com.paper.domain.vm.CanvasOperationHistoryRepository
-import com.paper.domain.vm.ICanvasWidget
-import com.paper.domain.vm.operation.AddScrapOperation
+import com.paper.domain.ui.CanvasOperationHistoryRepository
+import com.paper.domain.ui.ICanvasWidget
+import com.paper.domain.ui.operation.AddScrapOperation
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.TestScheduler

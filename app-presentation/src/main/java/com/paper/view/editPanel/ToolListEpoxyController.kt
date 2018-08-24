@@ -25,7 +25,7 @@ import com.bumptech.glide.RequestManager
 import com.paper.R
 import com.paper.domain.data.ToolType
 import com.paper.domain.event.UpdateEditToolsEvent
-import com.paper.domain.vm.PaperMenuWidget
+import com.paper.domain.ui.PaperMenuWidget
 
 class ToolListEpoxyController(imageLoader: RequestManager)
     : TypedEpoxyController<UpdateEditToolsEvent>() {

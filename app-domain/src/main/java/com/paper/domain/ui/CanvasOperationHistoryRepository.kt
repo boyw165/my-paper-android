@@ -20,11 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.event.UndoRedoAvailabilityEvent
-import com.paper.domain.vm.operation.AddScrapOperation
+import com.paper.domain.ui.operation.AddScrapOperation
 import com.paper.model.ModelConst
 import io.reactivex.Completable
 import io.reactivex.Observable

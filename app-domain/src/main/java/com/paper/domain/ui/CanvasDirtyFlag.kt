@@ -20,7 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
 import androidx.annotation.IntDef
 import io.reactivex.Observable
@@ -28,19 +28,21 @@ import io.useful.dirtyflag.DirtyEvent
 import io.useful.dirtyflag.DirtyFlag
 
 /**
- * Dirty flag for SVG.
+ * Dirty flag for canvas.
  */
-data class SVGDirtyFlag(override var flag: Int = 0)
+data class CanvasDirtyFlag(override var flag: Int = 0)
     : DirtyFlag(flag) {
 
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(SVG_INITIALIZING,
-            SVG_DRAWING)
+    @IntDef(CANVAS_INITIALIZING,
+            CANVAS_OPERATING,
+            CANVAS_EXPORTING)
     annotation class Type
 
     companion object {
-        const val SVG_INITIALIZING = 1.shl(0)
-        const val SVG_DRAWING = 1.shl(1)
+        const val CANVAS_INITIALIZING = 1.shl(0)
+        const val CANVAS_OPERATING = 1.shl(1)
+        const val CANVAS_EXPORTING = 1.shl(2)
     }
 
     override fun markDirty(@Type vararg types: Int) {

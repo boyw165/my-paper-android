@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,22 +18,17 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm.operation
+package com.paper.domain.ui
 
-import com.paper.domain.vm.ICanvasOperation
-import com.paper.domain.vm.ICanvasWidget
+import com.paper.model.Frame
+import io.reactivex.Observable
+import java.util.*
 
-class UpdateScrapFrameOperation : ICanvasOperation {
+interface IBaseScrapWidget : IWidget {
 
-    override fun undo(target: ICanvasWidget) {
-        // TODO
-    }
+    fun getID(): UUID
 
-    override fun redo(target: ICanvasWidget) {
-        // TODO
-    }
+    fun getFrame(): Frame
 
-    override fun toString(): String {
-        return javaClass.simpleName
-    }
+    fun onUpdateFrame(): Observable<Frame>
 }

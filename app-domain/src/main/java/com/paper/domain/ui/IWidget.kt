@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,17 +18,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.vm
+package com.paper.domain.ui
 
-import com.paper.model.Frame
-import io.reactivex.Observable
-import java.util.*
+interface IWidget {
 
-interface IBaseScrapWidget : IWidget {
+    /**
+     * Bind model.
+     *
+     * @return Ready observable
+     */
+    fun start()
 
-    fun getID(): UUID
-
-    fun getFrame(): Frame
-
-    fun onUpdateFrame(): Observable<Frame>
+    fun stop()
 }
