@@ -46,6 +46,8 @@ interface ICanvasWidget : IWidget {
 
     fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent>
 
+    fun eraseCanvas()
+
     // Drawing ////////////////////////////////////////////////////////////////
 
     fun startSketch(x: Float,
@@ -55,8 +57,6 @@ interface ICanvasWidget : IWidget {
                  y: Float)
 
     fun closeSketch()
-
-    fun eraseCanvas()
 
     fun setDrawingMode(mode: DrawingMode)
 

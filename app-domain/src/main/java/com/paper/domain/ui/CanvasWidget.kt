@@ -22,12 +22,9 @@ package com.paper.domain.ui
 
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
+import com.paper.domain.event.*
 import com.paper.domain.ui.operation.AddScrapOperation
 import com.paper.domain.ui.operation.RemoveScrapOperation
-import com.paper.domain.event.AddScrapWidgetEvent
-import com.paper.domain.event.FocusScrapWidgetEvent
-import com.paper.domain.event.RemoveScrapWidgetEvent
-import com.paper.domain.event.UpdateScrapWidgetEvent
 import com.paper.model.*
 import com.paper.model.sketch.SVGStyle
 import io.reactivex.Observable
@@ -170,14 +167,24 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         }
     }
 
-    override fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent> {
-        return mUpdateScrapSignal
-    }
-
     override fun eraseCanvas() {
         synchronized(mLock) {
-            TODO("not implemented")
+            // Prepare remove events
+            val events = mutableListOf<RemoveScrapWidgetEvent>()
+            mScrapWidgets.forEach { (_, widget) ->
+                events.add(RemoveScrapWidgetEvent(widget))
+            }
+
+            // Remove all
+            mScrapWidgets.clear()
+
+            // Signal out
+            mUpdateScrapSignal.onNext(GroupUpdateScrapWidgetEvent(events))
         }
+    }
+
+    override fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent> {
+        return mUpdateScrapSignal
     }
 
     private val mCanvasSizeSignal = BehaviorSubject.create<Pair<Float, Float>>().toSerialized()
