@@ -28,6 +28,7 @@ import com.paper.model.ISVGScrap
 import com.paper.model.LinearPointTuple
 import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
@@ -40,18 +41,20 @@ class SVGScrapWidget(scrap: ISVGScrap,
 
     private val mDirtyFlag = SVGDirtyFlag(SVGDirtyFlag.SVG_INITIALIZING)
 
-    override fun start() {
-        super.start()
+    override fun start(): Completable {
+        return autoStopCompletable {
+            ensureNoLeakedBinding()
 
-        println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
+            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
 
-        synchronized(mLock) {
-            // Initialize SVG
-            val drawEvents = mutableListOf<UpdateScrapContentEvent>()
-            mSVGList.forEach { svg ->
-                drawEvents.add(AddSketchEvent(svg))
+            synchronized(mLock) {
+                // Initialize SVG
+                val drawEvents = mutableListOf<UpdateScrapContentEvent>()
+                mSVGList.forEach { svg ->
+                    drawEvents.add(AddSketchEvent(svg))
+                }
+                mDrawSVGSignal.onNext(GroupUpdateScrapEvent(drawEvents))
             }
-            mDrawSVGSignal.onNext(GroupUpdateScrapEvent(drawEvents))
         }
     }
 

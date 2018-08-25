@@ -51,9 +51,7 @@ class CanvasOperationHistoryRepositoryTest {
         val disposables = CompositeDisposable()
 
         // Setup
-        disposables.add(
-            StartWidgetAutoStopObservable(tester)
-                .subscribe())
+        tester.start().subscribe()
 
         // Add one particular stroke
         tester.putOperation(AddScrapOperation())
@@ -80,9 +78,7 @@ class CanvasOperationHistoryRepositoryTest {
         val disposables = CompositeDisposable()
 
         // Setup
-        disposables.add(
-            StartWidgetAutoStopObservable(tester)
-                .subscribe())
+        tester.start().subscribe()
 
         // Add one particular stroke
         tester.putOperation(AddScrapOperation())

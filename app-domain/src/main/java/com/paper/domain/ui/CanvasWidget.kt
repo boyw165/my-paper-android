@@ -24,9 +24,11 @@ import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.ui_event.*
 import com.paper.model.*
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -38,7 +40,8 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
     private var mPaper: IPaper? = null
 
-    private val mDisposables = CompositeDisposable()
+    private val mStaticDisposableBag = CompositeDisposable()
+    private val mDynamicDisposableBag = ConcurrentHashMap<BaseScrapWidget, Disposable>()
 
     // Focus scrap controller
     @Volatile
@@ -49,12 +52,14 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     // Debug
     private val mDebugSignal = PublishSubject.create<String>()
 
-    override fun start() {
-        ensureNoLeakedBinding()
+    override fun start(): Completable {
+        return autoStopCompletable {
+            ensureNoLeakedBinding()
 
-        val paper = mPaper!!
+            val paper = mPaper!!
 
-        inflateScrapWidgets(paper)
+            inflateScrapWidgets(paper)
+        }
     }
 
     private fun inflateScrapWidgets(paper: IPaper) {
@@ -74,13 +79,15 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     }
 
     override fun stop() {
-        mDisposables.clear()
+        mStaticDisposableBag.clear()
     }
 
-    override fun setModel(paper: IPaper) {
-        if (mPaper != null) throw IllegalAccessException("Already set model")
+    override fun inject(paper: IPaper) {
+        synchronized(mLock) {
+            if (mPaper != null) throw IllegalAccessException("Already set model")
 
-        mPaper = paper
+            mPaper = paper
+        }
     }
 
     override fun toPaper(): IPaper {
@@ -95,7 +102,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     }
 
     private fun ensureNoLeakedBinding() {
-        if (mDisposables.size() > 0)
+        if (mStaticDisposableBag.size() > 0)
             throw IllegalStateException("Already start a model")
     }
 
@@ -113,8 +120,8 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         return mDirtyFlag
             .onUpdate()
             .map { event ->
-                // Ready iff flag is zero
-                event.flag == 0
+                // Ready iff flag is not zero
+                event.flag != 0
             }
     }
 
@@ -144,6 +151,9 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         synchronized(mLock) {
             mScrapWidgets[scrap.getID()] = scrap
 
+            // Start the scrap
+            mDynamicDisposableBag[scrap] = scrap.start().subscribe()
+
             // Signal out
             mUpdateScrapSignal.onNext(AddScrapEvent(scrap))
         }
@@ -152,6 +162,10 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     private fun removeScrap(scrap: BaseScrapWidget) {
         synchronized(mLock) {
             mScrapWidgets.remove(scrap.getID())
+
+            // Stop the scrap
+            mDynamicDisposableBag[scrap]?.dispose()
+            mDynamicDisposableBag.remove(scrap)
 
             // Clear focus
             if (mFocusScrapWidget == scrap) {

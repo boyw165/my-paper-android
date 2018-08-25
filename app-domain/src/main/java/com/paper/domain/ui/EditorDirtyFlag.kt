@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Jun 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,24 +22,38 @@
 
 package com.paper.domain.ui
 
-import io.reactivex.Completable
+import androidx.annotation.IntDef
+import io.reactivex.Observable
+import io.useful.dirtyflag.DirtyEvent
+import io.useful.dirtyflag.DirtyFlag
 
-interface IWidget {
+/**
+ * Dirty flag for editor.
+ */
+data class EditorDirtyFlag(override var flag: Int = 0)
+    : DirtyFlag(flag) {
 
-    /**
-     * Start the widget and caller is responsible for completing the subscription.
-     *
-     * @return A completable that call [stop] when it gets disposed.
-     */
-    fun start(): Completable
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(READ_PAPER_FROM_REPO,
+            WRITE_PAPER_TO_REPO,
+            EXPORT_PAPER_THUMBNAIL)
+    annotation class Type
 
-    fun stop()
+    companion object {
+        const val READ_PAPER_FROM_REPO = 1.shl(0)
+        const val WRITE_PAPER_TO_REPO = 1.shl(1)
+        const val EXPORT_PAPER_THUMBNAIL = 1.shl(2)
+    }
 
-    fun IWidget.autoStopCompletable(lambda: () -> Unit): Completable {
-        return Completable.create { emitter ->
-            lambda()
-            // Enable auto-stop
-            emitter.setCancellable { stop() }
-        }
+    override fun markDirty(@Type vararg types: Int) {
+        super.markDirty(*types)
+    }
+
+    override fun markNotDirty(@Type vararg types: Int) {
+        super.markNotDirty(*types)
+    }
+
+    override fun onUpdate(@Type vararg withTypes: Int): Observable<DirtyEvent> {
+        return super.onUpdate(*withTypes)
     }
 }

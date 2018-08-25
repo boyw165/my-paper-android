@@ -33,6 +33,7 @@ import com.paper.model.IPaper
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
@@ -64,39 +65,40 @@ class EditorWidget(private val paperID: Long,
 
     private val mDisposables = CompositeDisposable()
 
-    override fun start() {
-        ensureNoLeakingSubscription()
+    override fun start(): Completable {
+        return autoStopCompletable {
+            ensureNoLeakingSubscription()
 
-        // Load paper and establish the paper (canvas) and transform bindings.
-        val paperSrc = paperRepo
-            .getPaperById(paperID)
-            .toObservable()
-            .cache()
-        val canvasWidgetReadySrc = paperSrc
-            .flatMap { paper ->
-                initCanvasWidget(paper)
-            }
-        val historyWidgetReadySrc = paperSrc
-            .flatMap {
-                initHistoryWidget()
-            }
-        Observables
-            .zip(canvasWidgetReadySrc,
-                 historyWidgetReadySrc)
-            .subscribe { (canvasWidgetReady, historyWidgetReady) ->
-                if (canvasWidgetReady && historyWidgetReady) {
-                    mOnCanvasWidgetReadySignal.onNext(mCanvasWidget)
-                } else {
-                    if (!canvasWidgetReady && historyWidgetReady) {
-                        throw IllegalStateException("Fail to start paper model with paper widget")
-                    } else if (canvasWidgetReady && !historyWidgetReady) {
-                        throw IllegalStateException("Fail to start paper model with history widget")
+            // Load paper and establish the paper (canvas) and transform bindings.
+            val paperSrc = paperRepo
+                .getPaperById(paperID)
+                .toObservable()
+                .cache()
+            val canvasWidgetReadySrc = paperSrc
+                .flatMap { paper ->
+                    initCanvasWidget(paper)
+                }
+            val historyWidgetReadySrc = paperSrc
+                .flatMap {
+                    initHistoryWidget()
+                }
+            Observables
+                .zip(canvasWidgetReadySrc,
+                     historyWidgetReadySrc)
+                .subscribe { (canvasWidgetReady, historyWidgetReady) ->
+                    if (canvasWidgetReady && historyWidgetReady) {
+                        mOnCanvasWidgetReadySignal.onNext(mCanvasWidget)
                     } else {
-                        throw IllegalStateException("Fail to both")
+                        if (!canvasWidgetReady && historyWidgetReady) {
+                            throw IllegalStateException("Fail to start paper model with paper widget")
+                        } else if (canvasWidgetReady && !historyWidgetReady) {
+                            throw IllegalStateException("Fail to start paper model with history widget")
+                        } else {
+                            throw IllegalStateException("Fail to both")
+                        }
                     }
                 }
-            }
-            .addTo(mDisposables)
+                .addTo(mDisposables)
 
         // Following are all about the edit panel outputs to paper widget:
 
@@ -121,12 +123,12 @@ class EditorWidget(private val paperID: Long,
 //            }
 //            .addTo(mDisposables)
 
-        // Prepare initial tools and select the pen by default.
-        val tools = getEditToolIDs()
-        mToolIndex = tools.indexOf(ToolType.PEN)
-        mEditingTools.onNext(UpdateEditToolsEvent(
-            toolIDs = tools,
-            usingIndex = mToolIndex))
+            // Prepare initial tools and select the pen by default.
+            val tools = getEditToolIDs()
+            mToolIndex = tools.indexOf(ToolType.PEN)
+            mEditingTools.onNext(UpdateEditToolsEvent(
+                toolIDs = tools,
+                usingIndex = mToolIndex))
 
         // Prepare initial color tickets
 //        Observables
@@ -151,6 +153,7 @@ class EditorWidget(private val paperID: Long,
 //                mPenSizeSignal.onNext(penSize)
 //            }
 //            .addTo(mDisposables)
+        }
     }
 
     override fun stop() {
@@ -199,7 +202,7 @@ class EditorWidget(private val paperID: Long,
     // Canvas widget & functions //////////////////////////////////////////////
 
     private fun initCanvasWidget(paper: IPaper): Observable<Boolean> {
-        mCanvasWidget.setModel(paper)
+        mCanvasWidget.inject(paper)
 
         return StartWidgetAutoStopObservable(
             widget = mCanvasWidget,

@@ -49,23 +49,25 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
 
     private val mDisposables = CompositeDisposable()
 
-    override fun start() {
-        ensureNoLeakedBinding()
+    override fun start(): Completable {
+        return autoStopCompletable {
+            ensureNoLeakedBinding()
 
-        mPutOperationSignal
-            .flatMap { _ ->
-                val value = AddScrapOperation()
+            mPutOperationSignal
+                .flatMap { _ ->
+                    val value = AddScrapOperation()
 
-                putOperationImpl(value)
-                    .doOnComplete {
-                        mUndoCapacitySignal.onNext(
-                            UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
-                                                      canRedo = mRedoKeys.size > 0))
-                    }
-                    .toObservable<Any>()
-            }
-            .subscribe()
-            .addTo(mDisposables)
+                    putOperationImpl(value)
+                        .doOnComplete {
+                            mUndoCapacitySignal.onNext(
+                                UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
+                                                          canRedo = mRedoKeys.size > 0))
+                        }
+                        .toObservable<Any>()
+                }
+                .subscribe()
+                .addTo(mDisposables)
+        }
     }
 
     override fun stop() {

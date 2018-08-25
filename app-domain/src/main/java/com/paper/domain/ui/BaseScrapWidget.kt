@@ -23,25 +23,20 @@ package com.paper.domain.ui
 import com.paper.domain.ISchedulerProvider
 import com.paper.model.Frame
 import com.paper.model.IScrap
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class BaseScrapWidget(private val scrap: IScrap,
-                           protected val schedulers: ISchedulerProvider)
+abstract class BaseScrapWidget(private val scrap: IScrap,
+                               protected val schedulers: ISchedulerProvider)
     : IBaseScrapWidget {
 
     protected val mLock = Any()
 
     protected val mCancelSignal = PublishSubject.create<Any>().toSerialized()
     protected val mDisposables = CompositeDisposable()
-
-    override fun start() {
-        synchronized(mLock) {
-            ensureNoLeakedBinding()
-        }
-    }
 
     override fun stop() {
         synchronized(mLock) {
@@ -64,7 +59,7 @@ open class BaseScrapWidget(private val scrap: IScrap,
         }
     }
 
-    fun setFrame(frame: Frame) {
+    internal fun setFrame(frame: Frame) {
         synchronized(mLock) {
             scrap.setFrame(frame)
 
@@ -80,7 +75,7 @@ open class BaseScrapWidget(private val scrap: IScrap,
     ///////////////////////////////////////////////////////////////////////////
     // Protected / Private Methods ////////////////////////////////////////////
 
-    private fun ensureNoLeakedBinding() {
+    protected fun ensureNoLeakedBinding() {
         if (mDisposables.size() > 0)
             throw IllegalStateException("Already start a model")
     }

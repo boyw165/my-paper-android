@@ -32,7 +32,7 @@ import io.reactivex.Single
  */
 interface ICanvasWidget : IWidget {
 
-    fun setModel(paper: IPaper)
+    fun inject(paper: IPaper)
 
     fun toPaper(): IPaper
 

@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,26 +20,33 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain
 
-import io.reactivex.Completable
+import com.paper.domain.ui.SimpleEditorWidget
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
+import java.util.concurrent.TimeUnit
 
-interface IWidget {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class SimpleEditorWidgetTest : BaseTest() {
 
-    /**
-     * Start the widget and caller is responsible for completing the subscription.
-     *
-     * @return A completable that call [stop] when it gets disposed.
-     */
-    fun start(): Completable
+    @Test
+    fun `busy test`() {
+        val tester = SimpleEditorWidget(paperID = 0,
+                                        paperRepo = mockPaperRepo,
+                                        caughtErrorSignal = caughtErrorSignal,
+                                        schedulers = mockSchedulers)
 
-    fun stop()
+        val busyTest = tester
+            .onBusy()
+            .test()
 
-    fun IWidget.autoStopCompletable(lambda: () -> Unit): Completable {
-        return Completable.create { emitter ->
-            lambda()
-            // Enable auto-stop
-            emitter.setCancellable { stop() }
-        }
+        val lifecycleTest = tester.start().test()
+        lifecycleTest.assertSubscribed()
+
+        testScheduler.advanceTimeBy(DEFINITE_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+
+        busyTest.assertValues(true, true, false)
     }
 }

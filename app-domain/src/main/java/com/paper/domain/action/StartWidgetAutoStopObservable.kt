@@ -32,6 +32,7 @@ import io.reactivex.disposables.Disposable
  * Bind the [IWidget] with the model and automatically destroy the binding if it
  * gets disposed.
  */
+@Deprecated("Since IWidget.start() returns a completable, it is redundant")
 class StartWidgetAutoStopObservable(private val widget: IWidget,
                                     private val caughtErrorSignal: Observer<Throwable>? = null)
     : Observable<Boolean>() {
