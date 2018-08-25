@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Jun 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,10 +20,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.domain.ui_event
 
-import com.paper.domain.data.ToolType
+import com.paper.model.event.EventLifecycle
 
-data class UpdateEditToolsEvent(
-    val toolIDs: List<ToolType>,
-    val usingIndex: Int = -1)
+data class UpdatePenSizeEvent(val lifecycle: EventLifecycle,
+                              val size: Float = 0f)

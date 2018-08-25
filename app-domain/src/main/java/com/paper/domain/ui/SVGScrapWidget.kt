@@ -22,7 +22,7 @@ package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.event.*
+import com.paper.domain.ui_event.*
 import com.paper.model.CubicPointTuple
 import com.paper.model.ISVGScrap
 import com.paper.model.LinearPointTuple
@@ -47,11 +47,11 @@ class SVGScrapWidget(scrap: ISVGScrap,
 
         synchronized(mLock) {
             // Initialize SVG
-            val drawEvents = mutableListOf<CanvasEvent>()
+            val drawEvents = mutableListOf<UpdateScrapContentEvent>()
             mSVGList.forEach { svg ->
-                drawEvents.add(AddSvgEvent(svg))
+                drawEvents.add(AddSketchEvent(svg))
             }
-            mDrawSVGSignal.onNext(GroupCanvasEvent(drawEvents))
+            mDrawSVGSignal.onNext(GroupUpdateScrapEvent(drawEvents))
         }
     }
 
@@ -85,7 +85,7 @@ class SVGScrapWidget(scrap: ISVGScrap,
         }
 
         // Signal out
-        mDrawSVGSignal.onNext(StartSketchEvent(workingSVG))
+        mDrawSVGSignal.onNext(StartSketchEvent(x, y))
     }
 
     override fun lineTo(x: Float,
@@ -98,8 +98,7 @@ class SVGScrapWidget(scrap: ISVGScrap,
         }
 
         // Signal out
-        mDrawSVGSignal.onNext(OnSketchEvent(workingSVG.id,
-                                            point))
+        mDrawSVGSignal.onNext(DoLineToEvent(x, y))
     }
 
     override fun cubicTo(previousControlX: Float,
@@ -121,8 +120,12 @@ class SVGScrapWidget(scrap: ISVGScrap,
         }
 
         // Signal out
-        mDrawSVGSignal.onNext(OnSketchEvent(workingSVG.id,
-                                            point))
+        mDrawSVGSignal.onNext(DoCubicToEvent(previousControlX,
+                                             previousControlY,
+                                             currentControlX,
+                                             currentControlY,
+                                             currentEndX,
+                                             currentEndY))
     }
 
     override fun close() {
@@ -137,9 +140,9 @@ class SVGScrapWidget(scrap: ISVGScrap,
      * The signal for the external world to know this widget wants to draw
      * VectorGraphics.
      */
-    private val mDrawSVGSignal = PublishSubject.create<CanvasEvent>().toSerialized()
+    private val mDrawSVGSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
 
-    override fun onDrawSVG(): Observable<CanvasEvent> {
+    override fun onDrawSVG(): Observable<UpdateScrapEvent> {
         return mDrawSVGSignal
     }
 }

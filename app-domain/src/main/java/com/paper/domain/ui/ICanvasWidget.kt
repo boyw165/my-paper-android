@@ -21,9 +21,11 @@
 package com.paper.domain.ui
 
 import com.paper.domain.data.DrawingMode
+import com.paper.domain.ui_event.CanvasDomainEvent
+import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.IPaper
-import com.paper.domain.event.UpdateScrapWidgetEvent
 import io.reactivex.Observable
+import io.reactivex.Single
 
 /**
  * The canvas widget (serving as the ViewModel to View).
@@ -34,30 +36,6 @@ interface ICanvasWidget : IWidget {
 
     fun toPaper(): IPaper
 
-    // Add & Remove Scrap /////////////////////////////////////////////////////
-
-    fun addScrapWidget(scrapWidget: IBaseScrapWidget)
-
-    fun removeScrapWidget(scrapWidget: IBaseScrapWidget)
-
-    fun getFocusScrap(): IBaseScrapWidget?
-
-    fun addScrapWidgetAndSetFocus(scrapWidget: IBaseScrapWidget)
-
-    fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent>
-
-    fun eraseCanvas()
-
-    // Drawing ////////////////////////////////////////////////////////////////
-
-    fun startSketch(x: Float,
-                    y: Float)
-
-    fun sketchTo(x: Float,
-                 y: Float)
-
-    fun closeSketch()
-
     fun setDrawingMode(mode: DrawingMode)
 
     fun setChosenPenColor(color: Int)
@@ -66,11 +44,14 @@ interface ICanvasWidget : IWidget {
 
     fun setPenSize(size: Float)
 
-    fun onUpdateCanvasSize(): Observable<Pair<Float, Float>>
+    fun onInitCanvasSize(): Single<Pair<Float, Float>>
 
-    // Operation //////////////////////////////////////////////////////////////
+    // Add & Remove Scrap /////////////////////////////////////////////////////
 
-    fun onUpdateCanvasOperation(): Observable<ICanvasOperation>
+    fun handleDomainEvent(event: CanvasDomainEvent,
+                          ifOutputOperation: Boolean = false)
+
+    fun onUpdateCanvas(): Observable<UpdateScrapEvent>
 
     // Debug //////////////////////////////////////////////////////////////////
 

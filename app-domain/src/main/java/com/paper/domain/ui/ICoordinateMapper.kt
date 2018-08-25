@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,30 +22,9 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.ui_event.UpdateScrapEvent
-import com.paper.model.Color
-import com.paper.model.sketch.SVGStyle
-import io.reactivex.Observable
+interface ICoordinateMapper {
 
-interface ISVGScrapWidget : IBaseScrapWidget {
+    fun mapPointToDomain(point: Pair<Float, Float>): Pair<Float, Float>
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle> = setOf(SVGStyle.Stroke(color = Color.RED,
-                                                            size = 0.1f,
-                                                            closed = false)))
-
-    fun lineTo(x: Float,
-               y: Float)
-
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
-
-    fun close()
-
-    fun onDrawSVG(): Observable<UpdateScrapEvent>
+    fun mapVectorToDomain(point: Pair<Float, Float>): Pair<Float, Float>
 }

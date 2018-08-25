@@ -18,8 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.domain.ui_event
 
-data class UpdateColorTicketsEvent(
-    val colorTickets: List<Int>,
-    val usingIndex: Int = -1)
+import com.paper.model.Rect
+
+data class DrawViewPortEvent(
+    val canvas: Rect,
+    val viewPort: Rect)

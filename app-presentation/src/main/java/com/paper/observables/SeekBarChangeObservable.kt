@@ -25,7 +25,7 @@ package com.paper.observables
 import android.os.Looper
 import android.widget.SeekBar
 
-import com.paper.domain.event.ProgressBarEvent
+import com.paper.domain.ui_event.ProgressBarEvent
 
 import io.reactivex.Observable
 import io.reactivex.Observer

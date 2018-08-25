@@ -1,6 +1,4 @@
-// Copyright Aug 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Apr 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,16 +18,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.domain.ui_event
 
-import com.paper.domain.ui.IBaseScrapWidget
+import com.paper.domain.data.ToolType
 
-sealed class UpdateScrapWidgetEvent
-
-data class GroupUpdateScrapWidgetEvent(val events: List<UpdateScrapWidgetEvent>) : UpdateScrapWidgetEvent()
-
-data class AddScrapWidgetEvent(val scrapWidget: IBaseScrapWidget) : UpdateScrapWidgetEvent()
-
-data class RemoveScrapWidgetEvent(val scrapWidget: IBaseScrapWidget) : UpdateScrapWidgetEvent()
-
-data class FocusScrapWidgetEvent(val scrapWidget: IBaseScrapWidget) : UpdateScrapWidgetEvent()
+data class UpdateEditToolsEvent(
+    val toolIDs: List<ToolType>,
+    val usingIndex: Int = -1)

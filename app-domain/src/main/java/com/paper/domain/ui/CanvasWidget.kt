@@ -22,14 +22,11 @@ package com.paper.domain.ui
 
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
-import com.paper.domain.event.*
-import com.paper.domain.ui.operation.AddScrapOperation
-import com.paper.domain.ui.operation.RemoveScrapOperation
+import com.paper.domain.ui_event.*
 import com.paper.model.*
-import com.paper.model.sketch.SVGStyle
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -47,7 +44,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     @Volatile
     private var mFocusScrapWidget: IBaseScrapWidget? = null
     // Scrap controllers
-    private val mScrapWidgets = ConcurrentHashMap<UUID, IBaseScrapWidget>()
+    private val mScrapWidgets = ConcurrentHashMap<UUID, BaseScrapWidget>()
 
     // Debug
     private val mDebugSignal = PublishSubject.create<String>()
@@ -56,9 +53,6 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         ensureNoLeakedBinding()
 
         val paper = mPaper!!
-
-        // Canvas size
-        mCanvasSizeSignal.onNext(paper.getSize())
 
         inflateScrapWidgets(paper)
     }
@@ -72,7 +66,7 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
                         scrap = scrap,
                         schedulers = schedulers)
 
-                    addScrapWidget(widget)
+                    addScrap(widget)
                 }
                 else -> TODO()
             }
@@ -93,6 +87,11 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         synchronized(mLock) {
             return mPaper!!
         }
+    }
+
+    override fun onInitCanvasSize(): Single<Pair<Float, Float>> {
+        val paper = mPaper!!
+        return Single.just(paper.getSize())
     }
 
     private fun ensureNoLeakedBinding() {
@@ -119,115 +118,109 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
             }
     }
 
-    // Add & Remove Scrap /////////////////////////////////////////////////////
+    // Scrap manipulation /////////////////////////////////////////////////////
 
-    private val mUpdateScrapSignal = PublishSubject.create<UpdateScrapWidgetEvent>().toSerialized()
+    private val mUpdateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
 
-    override fun getFocusScrap(): IBaseScrapWidget? {
-        synchronized(mLock) {
-            return mFocusScrapWidget
+    override fun onUpdateCanvas(): Observable<UpdateScrapEvent> {
+        return mUpdateScrapSignal
+    }
+
+    override fun handleDomainEvent(event: CanvasDomainEvent,
+                                   ifOutputOperation: Boolean) {
+        when (event) {
+            is AddScrapEvent -> addScrap(event.scrap as BaseScrapWidget)
+            is RemoveScrapEvent -> removeScrap(event.scrap as BaseScrapWidget)
+            is RemoveAllScrapsEvent -> removeAllScraps()
+            is FocusScrapEvent -> focusScrapWidget(event.scrapID)
+
+            is StartSketchEvent -> startSketch(event.x, event.y)
+            is DoSketchEvent -> doSketch(event.x, event.y)
+            is StopSketchEvent -> stopSketch()
         }
     }
 
-    override fun addScrapWidgetAndSetFocus(scrapWidget: IBaseScrapWidget) {
-        addScrapWidget(scrapWidget)
-
+    private fun addScrap(scrap: BaseScrapWidget) {
         synchronized(mLock) {
-            mFocusScrapWidget = scrapWidget
+            mScrapWidgets[scrap.getID()] = scrap
 
             // Signal out
-            mUpdateScrapSignal.onNext(FocusScrapWidgetEvent(scrapWidget))
+            mUpdateScrapSignal.onNext(AddScrapEvent(scrap))
         }
     }
 
-    override fun addScrapWidget(scrapWidget: IBaseScrapWidget) {
+    private fun removeScrap(scrap: BaseScrapWidget) {
         synchronized(mLock) {
-            mScrapWidgets[scrapWidget.getID()] = scrapWidget
-
-            // Signal out
-            mUpdateScrapSignal.onNext(AddScrapWidgetEvent(scrapWidget))
-            // TODO: ADD operation holds immutable scrap?
-            mOperationSignal.onNext(AddScrapOperation())
-        }
-    }
-
-    override fun removeScrapWidget(scrapWidget: IBaseScrapWidget) {
-        synchronized(mLock) {
-            mScrapWidgets.remove(scrapWidget.getID())
+            mScrapWidgets.remove(scrap.getID())
 
             // Clear focus
-            if (mFocusScrapWidget == scrapWidget) {
+            if (mFocusScrapWidget == scrap) {
                 mFocusScrapWidget = null
             }
 
             // Signal out
-            mUpdateScrapSignal.onNext(RemoveScrapWidgetEvent(scrapWidget))
-            // TODO: REMOVE operation holds immutable scrap?
-            mOperationSignal.onNext(RemoveScrapOperation())
+            mUpdateScrapSignal.onNext(RemoveScrapEvent(scrap))
         }
     }
 
-    override fun eraseCanvas() {
+    private fun removeAllScraps() {
         synchronized(mLock) {
             // Prepare remove events
-            val events = mutableListOf<RemoveScrapWidgetEvent>()
+            val events = mutableListOf<RemoveScrapEvent>()
             mScrapWidgets.forEach { (_, widget) ->
-                events.add(RemoveScrapWidgetEvent(widget))
+                events.add(RemoveScrapEvent(widget))
             }
 
             // Remove all
             mScrapWidgets.clear()
 
             // Signal out
-            mUpdateScrapSignal.onNext(GroupUpdateScrapWidgetEvent(events))
+            mUpdateScrapSignal.onNext(GroupUpdateScrapEvent(events))
         }
     }
 
-    override fun onUpdateScrap(): Observable<UpdateScrapWidgetEvent> {
-        return mUpdateScrapSignal
-    }
+    private fun focusScrapWidget(id: UUID): IBaseScrapWidget? {
+        synchronized(mLock) {
+            val widget = mScrapWidgets[id]!!
+            mFocusScrapWidget = widget
 
-    private val mCanvasSizeSignal = BehaviorSubject.create<Pair<Float, Float>>().toSerialized()
+            // Signal out
+            mUpdateScrapSignal.onNext(FocusScrapEvent(widget.getID()))
 
-    override fun onUpdateCanvasSize(): Observable<Pair<Float, Float>> {
-        return mCanvasSizeSignal
+            return mFocusScrapWidget
+        }
     }
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    override fun startSketch(x: Float, y: Float) {
+    private fun startSketch(x: Float, y: Float) {
         synchronized(mLock) {
-            val widget = SVGScrapWidget(
-                scrap = SVGScrap(mutableFrame = Frame(x, y)),
-                schedulers = schedulers)
-            // TODO: Define the style
-            widget.moveTo(x = 0f, y = 0f,
-                          style = setOf(SVGStyle.Stroke(color = Color.RED,
-                                                        size = 0.1f,
-                                                        closed = false)))
-            addScrapWidgetAndSetFocus(widget)
+            val widget = mFocusScrapWidget!! as SVGScrapWidget
+
+            // TODO: Determine style
+            widget.moveTo(x, y)
         }
     }
 
-    override fun sketchTo(x: Float, y: Float) {
+    private fun doSketch(x: Float, y: Float) {
         synchronized(mLock) {
-            val widget = mFocusScrapWidget!! as ISVGScrapWidget
+            val widget = mFocusScrapWidget!! as SVGScrapWidget
             val frame = widget.getFrame()
-            val startX = frame.x
-            val startY = frame.y
+            val nx = x - frame.x
+            val ny = y - frame.y
 
             // TODO: Use cubic line?
-            widget.lineTo(x - startX, y - startY)
-
-            TODO()
+            widget.cubicTo(nx, ny,
+                           nx, ny,
+                           nx, ny)
         }
     }
 
-    override fun closeSketch() {
+    private fun stopSketch() {
         synchronized(mLock) {
-            val widget = mFocusScrapWidget!! as ISVGScrapWidget
+            val widget = mFocusScrapWidget!! as SVGScrapWidget
 
-            TODO()
+            widget.close()
         }
     }
 
@@ -266,14 +259,6 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         synchronized(mLock) {
             mPenSize = size
         }
-    }
-
-    // Operation & undo/redo //////////////////////////////////////////////////
-
-    private val mOperationSignal = PublishSubject.create<ICanvasOperation>().toSerialized()
-
-    override fun onUpdateCanvasOperation(): Observable<ICanvasOperation> {
-        return mOperationSignal
     }
 
     // Equality ///////////////////////////////////////////////////////////////

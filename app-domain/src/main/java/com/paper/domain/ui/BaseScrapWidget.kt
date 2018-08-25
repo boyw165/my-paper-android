@@ -64,7 +64,7 @@ open class BaseScrapWidget(private val scrap: IScrap,
         }
     }
 
-    protected fun setFrame(frame: Frame) {
+    fun setFrame(frame: Frame) {
         synchronized(mLock) {
             scrap.setFrame(frame)
 

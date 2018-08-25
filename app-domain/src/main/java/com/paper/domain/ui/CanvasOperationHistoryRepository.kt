@@ -23,7 +23,7 @@
 package com.paper.domain.ui
 
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.event.UndoRedoAvailabilityEvent
+import com.paper.domain.ui_event.UndoRedoAvailabilityEvent
 import com.paper.domain.ui.operation.AddScrapOperation
 import com.paper.model.ModelConst
 import io.reactivex.Completable

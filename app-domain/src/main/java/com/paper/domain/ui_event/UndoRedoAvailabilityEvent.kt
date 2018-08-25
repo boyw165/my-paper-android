@@ -1,4 +1,4 @@
-// Copyright Jun 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,9 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.domain.ui_event
 
-import com.paper.model.event.EventLifecycle
-
-data class UpdatePenSizeEvent(val lifecycle: EventLifecycle,
-                              val size: Float = 0f)
+data class UndoRedoAvailabilityEvent(val canUndo: Boolean,
+                                     val canRedo: Boolean)

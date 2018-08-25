@@ -20,7 +20,7 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.event.UpdateColorTicketsEvent
+import com.paper.domain.ui_event.UpdateColorTicketsEvent
 import io.reactivex.Observable
 
 interface IPaperMenuPenWidget : IWidget {

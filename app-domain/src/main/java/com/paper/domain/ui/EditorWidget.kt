@@ -27,8 +27,8 @@ import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.action.StartWidgetAutoStopObservable
 import com.paper.domain.data.ToolType
-import com.paper.domain.event.UndoRedoAvailabilityEvent
-import com.paper.domain.event.UpdateEditToolsEvent
+import com.paper.domain.ui_event.UndoRedoAvailabilityEvent
+import com.paper.domain.ui_event.UpdateEditToolsEvent
 import com.paper.model.IPaper
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
@@ -205,12 +205,6 @@ class EditorWidget(private val paperID: Long,
             widget = mCanvasWidget,
             caughtErrorSignal = caughtErrorSignal)
             .subscribeOn(schedulers.main())
-    }
-
-    fun eraseCanvas(): Observable<Boolean> {
-        mHistoryWidget.eraseAll()
-        mCanvasWidget.eraseCanvas()
-        return Observable.just(true)
     }
 
     private val mOnCanvasWidgetReadySignal = BehaviorSubject.create<ICanvasWidget>().toSerialized()

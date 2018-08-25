@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,10 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.event
+package com.paper.domain.ui
 
-import com.paper.model.Rect
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.ui_event.CanvasDomainEvent
+import io.reactivex.ObservableTransformer
 
-data class DrawViewPortEvent(
-    val canvas: Rect,
-    val viewPort: Rect)
+interface IGestureInterpreter {
+
+    // TODO: Input as Observable<GestureEvent>
+    fun toDomainEvent(): ObservableTransformer<GestureEvent, CanvasDomainEvent>
+}
