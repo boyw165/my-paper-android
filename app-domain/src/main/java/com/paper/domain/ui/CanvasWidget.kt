@@ -152,7 +152,9 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
             mScrapWidgets[scrap.getID()] = scrap
 
             // Start the scrap
-            mDynamicDisposableBag[scrap] = scrap.start().subscribe()
+            mDynamicDisposableBag[scrap] = scrap
+                .start()
+                .subscribe()
 
             // Signal out
             mUpdateScrapSignal.onNext(AddScrapEvent(scrap))

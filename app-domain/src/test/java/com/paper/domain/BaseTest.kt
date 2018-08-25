@@ -1,7 +1,8 @@
 package com.paper.domain
 
-import com.paper.model.IPaper
+import com.paper.model.*
 import com.paper.model.repository.IPaperRepo
+import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
@@ -36,7 +37,9 @@ abstract class BaseTest {
     }
 
     protected val mockPaper: IPaper by lazy {
-        val mock = Mockito.mock(IPaper::class.java)
+        val mock = BasePaper()
+        mock.addScrap(SVGScrap(mutableFrame = Frame(2f, 3f),
+                               graphicsList = mutableListOf(VectorGraphics(tupleList = mutableListOf(LinearPointTuple(3f, 4f))))))
         mock
     }
 
