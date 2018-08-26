@@ -24,7 +24,6 @@ package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.action.StartWidgetAutoStopObservable
 import com.paper.model.IPaper
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Completable

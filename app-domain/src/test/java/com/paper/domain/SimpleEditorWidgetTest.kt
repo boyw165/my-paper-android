@@ -29,7 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SimpleEditorWidgetTest : BaseTest() {
+class SimpleEditorWidgetTest : MockDataLayerTest() {
 
     @Test
     fun `busy test`() {
@@ -45,8 +45,9 @@ class SimpleEditorWidgetTest : BaseTest() {
         val lifecycleTest = tester.start().test()
         lifecycleTest.assertSubscribed()
 
-        testScheduler.advanceTimeBy(DEFINITE_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
 
-        busyTest.assertValues(true, true, false)
+        busyTest.assertValueAt(0, true)
+        busyTest.assertValueAt(busyTest.valueCount() - 1, false)
     }
 }

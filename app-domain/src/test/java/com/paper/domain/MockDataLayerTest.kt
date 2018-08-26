@@ -9,17 +9,18 @@ import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
 import org.junit.After
 import org.junit.Before
+import org.mockito.Mock
 import org.mockito.Mockito
 import java.util.concurrent.TimeUnit
 
-abstract class BaseTest {
+abstract class MockDataLayerTest {
 
     companion object {
 
         const val SHORT_TIMEOUT = 60L
         const val NORMAL_TIMEOUT = 180L
         const val LONG_TIMEOUT = 360L
-        const val DEFINITE_LONG_ENOUGH_TIMEOUT = 1000000L
+        const val DEFINITELY_LONG_ENOUGH_TIMEOUT = 1000000L
     }
 
     protected val disposableBag = CompositeDisposable()
@@ -36,25 +37,23 @@ abstract class BaseTest {
         mock
     }
 
-    protected val mockPaper: IPaper by lazy {
-        val mock = BasePaper()
-        mock.addScrap(SVGScrap(mutableFrame = Frame(2f, 3f),
-                               graphicsList = mutableListOf(VectorGraphics(tupleList = mutableListOf(LinearPointTuple(3f, 4f))))))
-        mock
-    }
+    val mockPaper: IPaper
+        get() {
+            val mock = BasePaper()
+            mock.addScrap(SVGScrap(mutableFrame = Frame(2f, 3f),
+                                   graphicsList = mutableListOf(VectorGraphics(tupleList = mutableListOf(LinearPointTuple(3f, 4f))))))
+            return mock
+        }
 
-    protected val mockPaperRepo: IPaperRepo by lazy {
-        val mock = Mockito.mock(IPaperRepo::class.java)
-        Mockito.`when`(mock.getPaperById(Mockito.anyLong()))
-            .thenReturn(
-                Single.just(mockPaper)
-                    .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
-        mock
-    }
+    @Mock
+    lateinit var mockPaperRepo: IPaperRepo
 
     @Before
     fun setup() {
-        // DO NOTHING
+        Mockito.`when`(mockPaperRepo.getPaperById(Mockito.anyLong()))
+            .thenReturn(
+                Single.just(mockPaper)
+                    .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
     }
 
     @After

@@ -20,6 +20,7 @@
 
 package com.paper.domain.ui
 
+import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.ui_event.*
@@ -56,9 +57,15 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
         return autoStopCompletable {
             ensureNoLeakedBinding()
 
+            // Mark initializing
+            mDirtyFlag.markDirty(CanvasDirtyFlag.CANVAS_INITIALIZING)
+
             val paper = mPaper!!
 
             inflateScrapWidgets(paper)
+
+            // Mark initialization done
+            mDirtyFlag.markNotDirty(CanvasDirtyFlag.CANVAS_INITIALIZING)
         }
     }
 
@@ -114,14 +121,18 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
     // Number of on-going task ////////////////////////////////////////////////
 
-    private val mDirtyFlag = CanvasDirtyFlag()
+    private val mDirtyFlag = CanvasDirtyFlag(CanvasDirtyFlag.CANVAS_INITIALIZING)
 
     fun onBusy(): Observable<Boolean> {
         return mDirtyFlag
             .onUpdate()
             .map { event ->
                 // Ready iff flag is not zero
-                event.flag != 0
+                val busy = event.flag != 0
+
+                println("${DomainConst.TAG}: canvas busy=$busy")
+
+                busy
             }
     }
 
@@ -136,6 +147,15 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
     override fun handleDomainEvent(event: CanvasDomainEvent,
                                    ifOutputOperation: Boolean) {
         when (event) {
+            is GroupCanvasEvent -> {
+                val events = event.events
+                events.forEach { handleDomainEvent(it) }
+            }
+            is GroupUpdateScrapEvent -> {
+                val events = event.events
+                events.forEach { handleDomainEvent(it) }
+            }
+
             is AddScrapEvent -> addScrap(event.scrap as BaseScrapWidget)
             is RemoveScrapEvent -> removeScrap(event.scrap as BaseScrapWidget)
             is RemoveAllScrapsEvent -> removeAllScraps()
@@ -211,6 +231,9 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
 
     private fun startSketch(x: Float, y: Float) {
         synchronized(mLock) {
+            // Mark drawing
+            mDirtyFlag.markDirty(CanvasDirtyFlag.CANVAS_OPERATING)
+
             val widget = mFocusScrapWidget!! as SVGScrapWidget
 
             // TODO: Determine style
@@ -237,6 +260,9 @@ class CanvasWidget(private val schedulers: ISchedulerProvider)
             val widget = mFocusScrapWidget!! as SVGScrapWidget
 
             widget.close()
+
+            // Mark drawing
+            mDirtyFlag.markNotDirty(CanvasDirtyFlag.CANVAS_OPERATING)
         }
     }
 

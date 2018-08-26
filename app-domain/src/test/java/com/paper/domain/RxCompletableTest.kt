@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class RxCompletableTest : BaseTest() {
+class RxCompletableTest {
 
     @Test
     fun `auto dispose test`() {
