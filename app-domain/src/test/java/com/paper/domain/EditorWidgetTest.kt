@@ -22,8 +22,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.CanvasWidget
-import com.paper.domain.ui.IBaseScrapWidget
+import com.paper.domain.ui.EditorWidget
 import com.paper.domain.ui.SVGScrapWidget
 import com.paper.domain.ui_event.*
 import com.paper.model.Frame
@@ -31,23 +30,24 @@ import com.paper.model.SVGScrap
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class CanvasWidgetTest : MockDataLayerTest() {
+class EditorWidgetTest : MockDataLayerTest() {
 
     @Test
     fun `initialization busy test`() {
-        val tester = CanvasWidget(schedulers = mockSchedulers)
-        tester.inject(mockPaper)
-        tester.start().test().assertSubscribed()
+        val tester = EditorWidget(schedulers = mockSchedulers)
 
         val busyTest = tester
             .onBusy()
             .test()
 
-        // Trigger
+        // Start widget
+        tester.inject(mockPaper)
+        tester.start().test().assertSubscribed()
+
+        // Trigger for initialization
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
 
         busyTest.assertValueAt(0, true)
@@ -56,22 +56,24 @@ class CanvasWidgetTest : MockDataLayerTest() {
 
     @Test
     fun `sketching, canvas should be busy`() {
-        val tester = CanvasWidget(schedulers = mockSchedulers)
+        val tester = EditorWidget(schedulers = mockSchedulers)
+
+        val busyTest = tester
+            .onBusy()
+            .test()
+
+        // Start widget
         tester.inject(mockPaper)
         tester.start().test().assertSubscribed()
 
         // Trigger for initialization
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
 
-        val busyTest = tester
-            .onBusy()
-            .test()
-
         // Sketch (by simulating the gesture interpreter behavior)
         val widget = SVGScrapWidget(
             scrap = SVGScrap(mutableFrame = Frame(0f, 0f)),
             schedulers = mockSchedulers)
-        tester.handleDomainEvent(GroupCanvasEvent(
+        tester.handleDomainEvent(GroupEditorEvent(
             listOf(AddScrapEvent(widget),
                    FocusScrapEvent(widget.getID()),
                    StartSketchEvent(0f, 0f))))
@@ -84,13 +86,15 @@ class CanvasWidgetTest : MockDataLayerTest() {
 
     @Test
     fun `remove scrap, should see event and scrap stop`() {
-        val tester = CanvasWidget(schedulers = mockSchedulers)
-        tester.inject(mockPaper)
-        tester.start().test().assertSubscribed()
+        val tester = EditorWidget(schedulers = mockSchedulers)
 
         val scrapTest = tester
-            .onUpdateCanvas()
+            .onUpdateScrap()
             .test()
+
+        // Start widget
+        tester.inject(mockPaper)
+        tester.start().test().assertSubscribed()
 
         // Trigger to see the scrap addition
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
@@ -109,13 +113,14 @@ class CanvasWidgetTest : MockDataLayerTest() {
 
     @Test
     fun `add scrap, should see event and scrap start`() {
-        val tester = CanvasWidget(schedulers = mockSchedulers)
+        val tester = EditorWidget(schedulers = mockSchedulers)
+        val scrapTest = tester
+            .onUpdateScrap()
+            .test()
+
+        // Start widget
         tester.inject(mockPaper)
         tester.start().test().assertSubscribed()
-
-        val scrapTest = tester
-            .onUpdateCanvas()
-            .test()
 
         // Trigger
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)

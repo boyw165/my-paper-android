@@ -28,7 +28,7 @@ import io.useful.dirtyflag.DirtyEvent
 import io.useful.dirtyflag.DirtyFlag
 
 /**
- * Dirty flag for editor.
+ * Dirty flag for basic editor.
  */
 data class EditorDirtyFlag(override var flag: Int = 0)
     : DirtyFlag(flag) {
@@ -36,13 +36,15 @@ data class EditorDirtyFlag(override var flag: Int = 0)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(READ_PAPER_FROM_REPO,
             WRITE_PAPER_TO_REPO,
-            EXPORT_PAPER_THUMBNAIL)
+            INITIALIZING_CANVAS,
+            OPERATING_CANVAS)
     annotation class Type
 
     companion object {
         const val READ_PAPER_FROM_REPO = 1.shl(0)
         const val WRITE_PAPER_TO_REPO = 1.shl(1)
-        const val EXPORT_PAPER_THUMBNAIL = 1.shl(2)
+        const val INITIALIZING_CANVAS = 1.shl(2)
+        const val OPERATING_CANVAS = 1.shl(3)
     }
 
     override fun markDirty(@Type vararg types: Int) {

@@ -28,21 +28,21 @@ import com.paper.model.Rect
 import com.paper.model.sketch.VectorGraphics
 import java.util.*
 
-sealed class CanvasDomainEvent
+sealed class EditorEvent
 
-data class GroupCanvasEvent(val events: List<CanvasDomainEvent>) : CanvasDomainEvent()
+data class GroupEditorEvent(val events: List<EditorEvent>) : EditorEvent()
 
 // Lifecycle //////////////////////////////////////////////////////////////////
 
-abstract class CanvasTouchLifecycleEvent : CanvasDomainEvent()
+abstract class EditorTouchLifecycleEvent : EditorEvent()
 
-object TouchBeginEvent : CanvasTouchLifecycleEvent()
+object TouchBeginEvent : EditorTouchLifecycleEvent()
 
-object TouchEndEvent : CanvasTouchLifecycleEvent()
+object TouchEndEvent : EditorTouchLifecycleEvent()
 
 // Add/remove/focus scrap /////////////////////////////////////////////////////
 
-abstract class UpdateScrapEvent : CanvasDomainEvent()
+abstract class UpdateScrapEvent : EditorEvent()
 
 data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScrapEvent()
 
@@ -97,7 +97,7 @@ object StopSketchEvent : UpdateScrapContentEvent()
  * @see [ViewPortOnUpdateEvent]
  * @see [ViewPortStopUpdateEvent]
  */
-abstract class ViewPortEvent : CanvasDomainEvent()
+abstract class ViewPortEvent : EditorEvent()
 
 /**
  * A start signal indicating the view-port is about to update.

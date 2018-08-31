@@ -22,10 +22,9 @@
 
 package com.paper.domain
 
-import com.paper.domain.action.StartWidgetAutoStopObservable
-import com.paper.domain.ui.CanvasOperationHistoryRepository
-import com.paper.domain.ui.ICanvasWidget
+import com.paper.domain.ui.UndoRepository
 import com.paper.domain.ui.operation.AddScrapOperation
+import com.paper.model.IPaper
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.TestScheduler
@@ -37,7 +36,7 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class CanvasOperationHistoryRepositoryTest {
+class UndoRepositoryTest {
 
     @Test
     fun `put operation and see one record`() {
@@ -45,13 +44,11 @@ class CanvasOperationHistoryRepositoryTest {
         val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
         Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
 
-        val tester = CanvasOperationHistoryRepository(fileDir = File("/tmp"),
-                                                      schedulers = mockSchedulers)
-
-        val disposables = CompositeDisposable()
+        val tester = UndoRepository(fileDir = File("/tmp"),
+                                    schedulers = mockSchedulers)
 
         // Setup
-        tester.start().subscribe()
+        tester.start().test().assertSubscribed()
 
         // Add one particular stroke
         tester.putOperation(AddScrapOperation())
@@ -59,21 +56,19 @@ class CanvasOperationHistoryRepositoryTest {
 
         // Must see one record!
         Assert.assertEquals(1, tester.undoSize)
-
-        disposables.clear()
     }
 
     @Test
     fun `put operation and undo, should see no record`() {
-        val mockCanvasWidget = Mockito.mock(ICanvasWidget::class.java)
+        val mockPaper = Mockito.mock(IPaper::class.java)
 
         val testScheduler = TestScheduler()
         val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
         Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
         Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
 
-        val tester = CanvasOperationHistoryRepository(fileDir = File("/tmp"),
-                                                      schedulers = mockSchedulers)
+        val tester = UndoRepository(fileDir = File("/tmp"),
+                                    schedulers = mockSchedulers)
 
         val disposables = CompositeDisposable()
 
@@ -84,7 +79,7 @@ class CanvasOperationHistoryRepositoryTest {
         tester.putOperation(AddScrapOperation())
         testScheduler.triggerActions()
         // Undo immediately
-        tester.undo(mockCanvasWidget)
+        tester.undo(mockPaper)
             .subscribe()
             .addTo(disposables)
         testScheduler.triggerActions()

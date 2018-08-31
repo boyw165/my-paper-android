@@ -1,6 +1,4 @@
-// Copyright Jun 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Feb 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,38 +20,40 @@
 
 package com.paper.domain.ui
 
-import androidx.annotation.IntDef
+import com.paper.domain.data.DrawingMode
+import com.paper.domain.ui_event.EditorEvent
+import com.paper.domain.ui_event.UpdateScrapEvent
+import com.paper.model.IPaper
 import io.reactivex.Observable
-import io.useful.dirtyflag.DirtyEvent
-import io.useful.dirtyflag.DirtyFlag
+import io.reactivex.Single
 
 /**
- * Dirty flag for canvas.
+ * The canvas widget (serving as the ViewModel to View).
  */
-data class CanvasDirtyFlag(override var flag: Int = 0)
-    : DirtyFlag(flag) {
+interface IEditorWidget : IWidget {
 
-    @Retention(AnnotationRetention.SOURCE)
-    @IntDef(CANVAS_INITIALIZING,
-            CANVAS_OPERATING,
-            CANVAS_EXPORTING)
-    annotation class Type
+    fun inject(paper: IPaper)
 
-    companion object {
-        const val CANVAS_INITIALIZING = 1.shl(0)
-        const val CANVAS_OPERATING = 1.shl(1)
-        const val CANVAS_EXPORTING = 1.shl(2)
-    }
+    fun toPaper(): IPaper
 
-    override fun markDirty(@Type vararg types: Int) {
-        super.markDirty(*types)
-    }
+    fun setDrawingMode(mode: DrawingMode)
 
-    override fun markNotDirty(@Type vararg types: Int) {
-        super.markNotDirty(*types)
-    }
+    fun setChosenPenColor(color: Int)
 
-    override fun onUpdate(@Type vararg withTypes: Int): Observable<DirtyEvent> {
-        return super.onUpdate(*withTypes)
-    }
+    fun setViewPortScale(scale: Float)
+
+    fun setPenSize(size: Float)
+
+    fun onInitCanvasSize(): Single<Pair<Float, Float>>
+
+    // Add & Remove Scrap /////////////////////////////////////////////////////
+
+    fun handleDomainEvent(event: EditorEvent,
+                          ifOutputOperation: Boolean = false)
+
+    fun onUpdateScrap(): Observable<UpdateScrapEvent>
+
+    // Debug //////////////////////////////////////////////////////////////////
+
+    fun onPrintDebugMessage(): Observable<String>
 }

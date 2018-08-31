@@ -25,6 +25,7 @@ package com.paper.domain.ui
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.ui_event.UndoRedoAvailabilityEvent
 import com.paper.domain.ui.operation.AddScrapOperation
+import com.paper.model.IPaper
 import com.paper.model.ModelConst
 import io.reactivex.Completable
 import io.reactivex.Observable
@@ -36,8 +37,8 @@ import io.useful.dirtyflag.DirtyFlag
 import java.io.File
 import java.util.*
 
-class CanvasOperationHistoryRepository(private val fileDir: File,
-                                       private val schedulers: ISchedulerProvider)
+class UndoRepository(private val fileDir: File,
+                     private val schedulers: ISchedulerProvider)
     : ICanvasOperationHistoryRepository {
 
     companion object {
@@ -45,49 +46,53 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
         const val BUSY = 1
     }
 
-    private val mLock = Any()
+    private val lock = Any()
 
-    private val mDisposables = CompositeDisposable()
+    private val disposables = CompositeDisposable()
 
-    override fun start(): Completable {
-        return autoStopCompletable {
+    override fun start(): Observable<Boolean> {
+        return autoStop {
             ensureNoLeakedBinding()
 
-            mPutOperationSignal
+            putOperationSignal
                 .flatMap { _ ->
                     val value = AddScrapOperation()
 
                     putOperationImpl(value)
                         .doOnComplete {
-                            mUndoCapacitySignal.onNext(
-                                UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
-                                                          canRedo = mRedoKeys.size > 0))
+                            capacitySignal.onNext(
+                                UndoRedoAvailabilityEvent(canUndo = undoKeys.size > 0,
+                                                          canRedo = redoKeys.size > 0))
                         }
                         .toObservable<Any>()
                 }
                 .subscribe()
-                .addTo(mDisposables)
+                .addTo(disposables)
         }
     }
 
     override fun stop() {
-        mDisposables.clear()
+        disposables.clear()
+    }
+
+    fun inject(paper: IPaper) {
+        TODO("not implemented")
     }
 
     private fun ensureNoLeakedBinding() {
-        if (mDisposables.size() > 0)
+        if (disposables.size() > 0)
             throw IllegalStateException("Already start a model")
     }
 
     // Number of on-going task ////////////////////////////////////////////////
 
-    private val mBusySignal = DirtyFlag()
+    private val busySignal = DirtyFlag()
 
     /**
      * A busy state of this widget.
      */
     override fun onBusy(): Observable<Boolean> {
-        return mBusySignal
+        return busySignal
             .onUpdate()
             .map { event ->
                 event.flag != 0
@@ -96,76 +101,74 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
 
     // Undo & redo ////////////////////////////////////////////////////////////
 
-    private val mUndoKeys = Stack<ICanvasOperation>()
-    private val mRedoKeys = Stack<ICanvasOperation>()
-    private val mUndoCapacitySignal = PublishSubject.create<UndoRedoAvailabilityEvent>()
+    private val undoKeys = Stack<ICanvasOperation>()
+    private val redoKeys = Stack<ICanvasOperation>()
+    private val capacitySignal = PublishSubject.create<UndoRedoAvailabilityEvent>()
 
     val undoSize: Int
-        get() = synchronized(mLock) { mUndoKeys.size }
+        get() = synchronized(lock) { undoKeys.size }
 
     val redoSize: Int
-        get() = synchronized(mLock) { mRedoKeys.size }
+        get() = synchronized(lock) { redoKeys.size }
 
-    private val mPutOperationSignal = PublishSubject.create<ICanvasOperation>().toSerialized()
+    private val putOperationSignal = PublishSubject.create<ICanvasOperation>().toSerialized()
 
     override fun putOperation(operation: ICanvasOperation) {
-        mPutOperationSignal.onNext(operation)
+        putOperationSignal.onNext(operation)
     }
 
     private fun putOperationImpl(operation: ICanvasOperation): Completable {
         return Completable
             .fromCallable {
-                synchronized(mLock) {
+                synchronized(lock) {
                     println("${ModelConst.TAG}: put $operation to transformation repo (file impl)")
 
-                    mUndoKeys.push(operation)
-
-                    true
+                    undoKeys.push(operation)
                 }
             }
             .subscribeOn(schedulers.db())
             .doOnSubscribe {
                 // Mark busy
-                mBusySignal.markDirty(BUSY)
+                busySignal.markDirty(BUSY)
             }
             .doOnComplete {
                 // Mark not busy
-                mBusySignal.markNotDirty(BUSY)
+                busySignal.markNotDirty(BUSY)
             }
     }
 
     override fun eraseAll() {
-        mUndoKeys.clear()
-        mRedoKeys.clear()
+        undoKeys.clear()
+        redoKeys.clear()
 
-        mUndoCapacitySignal.onNext(
-            UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
-                                      canRedo = mRedoKeys.size > 0))
+        capacitySignal.onNext(
+            UndoRedoAvailabilityEvent(canUndo = undoKeys.size > 0,
+                                      canRedo = redoKeys.size > 0))
     }
 
-    override fun undo(paper: ICanvasWidget): Single<Boolean> {
+    override fun undo(paper: IPaper): Single<Boolean> {
         return doUndo()
             .observeOn(schedulers.main())
             .flatMap { operation ->
                 operation.undo(paper)
 
-                mUndoCapacitySignal.onNext(
-                    UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
-                                              canRedo = mRedoKeys.size > 0))
+                capacitySignal.onNext(
+                    UndoRedoAvailabilityEvent(canUndo = undoKeys.size > 0,
+                                              canRedo = redoKeys.size > 0))
 
                 Single.just(true)
             }
     }
 
-    override fun redo(paper: ICanvasWidget): Single<Boolean> {
+    override fun redo(paper: IPaper): Single<Boolean> {
         return doRedo()
             .observeOn(schedulers.main())
             .flatMap { operation ->
                 operation.redo(paper)
 
-                mUndoCapacitySignal.onNext(
-                    UndoRedoAvailabilityEvent(canUndo = mUndoKeys.size > 0,
-                                              canRedo = mRedoKeys.size > 0))
+                capacitySignal.onNext(
+                    UndoRedoAvailabilityEvent(canUndo = undoKeys.size > 0,
+                                              canRedo = redoKeys.size > 0))
 
                 Single.just(true)
             }
@@ -174,9 +177,9 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
     private fun doUndo(): Single<ICanvasOperation> {
         return Single
             .fromCallable {
-                synchronized(mLock) {
-                    val operation = mUndoKeys.pop()
-                    mRedoKeys.push(operation)
+                synchronized(lock) {
+                    val operation = undoKeys.pop()
+                    redoKeys.push(operation)
 
                     println("${ModelConst.TAG}: get $operation from transformation repo (file impl)")
 
@@ -186,20 +189,20 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
             .subscribeOn(schedulers.db())
             .doOnSubscribe {
                 // Mark busy
-                mBusySignal.markDirty(BUSY)
+                busySignal.markDirty(BUSY)
             }
             .doOnSuccess {
                 // Mark not busy
-                mBusySignal.markNotDirty(BUSY)
+                busySignal.markNotDirty(BUSY)
             }
     }
 
     private fun doRedo(): Single<ICanvasOperation> {
         return Single
             .fromCallable {
-                synchronized(mLock) {
-                    val operation = mRedoKeys.pop()
-                    mUndoKeys.push(operation)
+                synchronized(lock) {
+                    val operation = redoKeys.pop()
+                    undoKeys.push(operation)
 
                     println("${ModelConst.TAG}: get $operation from transformation repo (file impl)")
 
@@ -209,16 +212,16 @@ class CanvasOperationHistoryRepository(private val fileDir: File,
             .subscribeOn(schedulers.db())
             .doOnSubscribe {
                 // Mark busy
-                mBusySignal.markDirty(BUSY)
+                busySignal.markDirty(BUSY)
             }
             .doOnSuccess {
                 // Mark not busy
-                mBusySignal.markNotDirty(BUSY)
+                busySignal.markNotDirty(BUSY)
             }
     }
 
     fun onUpdateUndoRedoCapacity(): Observable<UndoRedoAvailabilityEvent> {
-        return mUndoCapacitySignal
+        return capacitySignal
     }
 
     override fun toString(): String {

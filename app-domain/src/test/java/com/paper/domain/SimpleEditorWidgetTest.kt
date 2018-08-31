@@ -42,12 +42,33 @@ class SimpleEditorWidgetTest : MockDataLayerTest() {
             .onBusy()
             .test()
 
+        // Start widget
         val lifecycleTest = tester.start().test()
         lifecycleTest.assertSubscribed()
 
+        // Advance time for initialization
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
 
         busyTest.assertValueAt(0, true)
         busyTest.assertValueAt(busyTest.valueCount() - 1, false)
+    }
+
+    @Test
+    fun `inflation process test`() {
+        val tester = SimpleEditorWidget(paperID = 0,
+                                        paperRepo = mockPaperRepo,
+                                        caughtErrorSignal = caughtErrorSignal,
+                                        schedulers = mockSchedulers)
+
+        val scrapTester = tester.onUpdateScrap().test()
+
+        // Start widget
+        val lifecycleTest = tester.start().test()
+        lifecycleTest.assertSubscribed()
+
+        // Advance time for initialization
+        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+
+        scrapTester.assertValueCount(mockPaper.getScraps().size)
     }
 }

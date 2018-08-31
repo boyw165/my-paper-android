@@ -20,6 +20,7 @@
 
 package com.paper.domain.ui
 
+import com.paper.model.IPaper
 import io.reactivex.Observable
 import io.reactivex.Single
 
@@ -29,9 +30,9 @@ interface ICanvasOperationHistoryRepository : IWidget {
 
     fun eraseAll()
 
-    fun undo(paper: ICanvasWidget): Single<Boolean>
+    fun undo(paper: IPaper): Single<Boolean>
 
-    fun redo(paper: ICanvasWidget): Single<Boolean>
+    fun redo(paper: IPaper): Single<Boolean>
 
     fun onBusy(): Observable<Boolean>
 }

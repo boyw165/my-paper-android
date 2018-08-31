@@ -22,105 +22,45 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
 import com.paper.model.IPaper
 import com.paper.model.repository.IPaperRepo
-import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Observer
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.Observables
-import io.reactivex.rxkotlin.addTo
-import io.reactivex.subjects.PublishSubject
+import io.reactivex.Single
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
 // TODO: Shouldn't depend on any Android package!
 
-class SimpleEditorWidget(private val paperID: Long,
-                         private val paperRepo: IPaperRepo,
-                         private val caughtErrorSignal: Observer<Throwable>,
-                         private val schedulers: ISchedulerProvider)
-    : IWidget {
+open class SimpleEditorWidget(protected val paperID: Long,
+                              protected val paperRepo: IPaperRepo,
+                              protected val caughtErrorSignal: Observer<Throwable>,
+                              schedulers: ISchedulerProvider)
+    : EditorWidget(schedulers = schedulers) {
 
-    protected val mCanvasWidget by lazy {
-        CanvasWidget(schedulers = schedulers)
+    override fun start(): Observable<Boolean> {
+        return inflatePaperJob
     }
 
-    protected val mDisposables = CompositeDisposable()
-
-    override fun start(): Completable {
-        return autoStopCompletable {
-            ensureNoLeakingSubscription()
-
-            // Load paper and start the widget
-            canvasWidgetSrc
-                .subscribe { widget ->
-                    // Signal out the widget is ready
-                    mCanvasWidgetReadySignal.onNext(widget)
-                }
-                .addTo(mDisposables)
-        }
-    }
-
-    override fun stop() {
-        mDisposables.clear()
-    }
-
-    private fun ensureNoLeakingSubscription() {
-        if (mDisposables.size() > 0) throw IllegalStateException(
-            "Already start to a widget")
-    }
-
-    protected val paperSrc: Observable<IPaper> by lazy {
+    protected val loadPaperJob: Single<IPaper> by lazy {
         paperRepo
             .getPaperById(paperID)
-            .toObservable()
             .cache()
     }
 
-    protected val canvasWidgetSrc by lazy {
-        paperSrc
-            .doOnSubscribe {
-                mBusyFlag.markDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
-            }
-            .flatMap { paper ->
-                mBusyFlag.markNotDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
+    protected val inflatePaperJob: Observable<Boolean>
+        get() {
+            return loadPaperJob
+                .doOnSubscribe {
+                    dirtyFlag.markDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
+                }
+                .flatMapObservable { paper ->
+                    dirtyFlag.markNotDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
 
-                mCanvasWidget.inject(paper)
+                    inject(paper)
 
-                mCanvasWidget.start()
-                    .toSingleDefault(mCanvasWidget as ICanvasWidget)
-                    .toObservable()
-            }
-    }
-
-    // Number of on-going task ////////////////////////////////////////////////
-
-    private val mBusyFlag = EditorDirtyFlag(EditorDirtyFlag.READ_PAPER_FROM_REPO)
-
-    /**
-     * An overall busy state of the editor. The state is contributed by its sub-
-     * components, e.g. canvas widget or history widget.
-     */
-    fun onBusy(): Observable<Boolean> {
-        return Observables
-            .combineLatest(
-                mBusyFlag.onUpdate().map { it.flag != 0},
-                mCanvasWidget.onBusy()) { editorBusy, canvasBusy ->
-                println("${DomainConst.TAG}: " +
-                        "editor busy=$editorBusy, " +
-                        "canvas busy=$canvasBusy")
-                editorBusy || canvasBusy
-            }
-    }
-
-    // Canvas widget //////////////////////////////////////////////////////////
-
-    private val mCanvasWidgetReadySignal = PublishSubject.create<ICanvasWidget>().toSerialized()
-
-    fun onCanvasWidgetReady(): Observable<ICanvasWidget> {
-        return mCanvasWidgetReadySignal
-    }
+                    super.start()
+                }
+        }
 }

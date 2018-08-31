@@ -35,8 +35,9 @@ class RxCompletableTest {
     fun `auto dispose test`() {
         var seeDisposed = false
         val tester = Completable
-            .create { downstream ->
-                downstream.setCancellable {
+            .create { emitter ->
+                emitter.onComplete()
+                emitter.setCancellable {
                     seeDisposed = true
                 }
             }

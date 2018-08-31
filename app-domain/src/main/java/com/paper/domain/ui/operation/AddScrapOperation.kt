@@ -23,15 +23,15 @@
 package com.paper.domain.ui.operation
 
 import com.paper.domain.ui.ICanvasOperation
-import com.paper.domain.ui.ICanvasWidget
+import com.paper.model.IPaper
 
 class AddScrapOperation : ICanvasOperation {
 
-    override fun undo(target: ICanvasWidget) {
+    override fun undo(target: IPaper) {
         // TODO
     }
 
-    override fun redo(target: ICanvasWidget) {
+    override fun redo(target: IPaper) {
         // TODO
     }
 

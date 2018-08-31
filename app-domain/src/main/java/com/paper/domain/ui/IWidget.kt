@@ -20,24 +20,32 @@
 
 package com.paper.domain.ui
 
-import io.reactivex.Completable
+import io.reactivex.Observable
 
 interface IWidget {
 
     /**
      * Start the widget and caller is responsible for completing the subscription.
      *
-     * @return A completable that call [stop] when it gets disposed.
+     * @return An observable that gives true if initialization is sucessful, and
+     * call [stop] when it gets disposed.
      */
-    fun start(): Completable
+    fun start(): Observable<Boolean>
 
     fun stop()
 
-    fun IWidget.autoStopCompletable(lambda: () -> Unit): Completable {
-        return Completable.create { emitter ->
-            lambda()
+    /**
+     * An observable that gives true after labmda runs successfully and automatically
+     * calls [stop] when it gets disposed
+     */
+    fun IWidget.autoStop(lambda: () -> Unit): Observable<Boolean> {
+        return Observable.create { emitter ->
             // Enable auto-stop
             emitter.setCancellable { stop() }
+            // Run lambda
+            lambda()
+            // Tell downstream it completes
+            emitter.onNext(true)
         }
     }
 }

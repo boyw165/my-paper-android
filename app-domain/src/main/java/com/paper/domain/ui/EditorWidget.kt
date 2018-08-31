@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,348 +20,290 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.action.StartWidgetAutoStopObservable
-import com.paper.domain.data.ToolType
-import com.paper.domain.ui_event.UndoRedoAvailabilityEvent
-import com.paper.domain.ui_event.UpdateEditToolsEvent
+import com.paper.domain.data.DrawingMode
+import com.paper.domain.ui_event.*
 import com.paper.model.IPaper
-import com.paper.model.event.IntProgressEvent
-import com.paper.model.repository.ICommonPenPrefsRepo
-import com.paper.model.repository.IPaperRepo
-import io.reactivex.Completable
+import com.paper.model.ISVGScrap
 import io.reactivex.Observable
-import io.reactivex.Observer
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.Observables
-import io.reactivex.rxkotlin.addTo
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
-import java.io.File
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
-// TODO: Use dagger 2 to inject the dependency gracefully
+open class EditorWidget(protected val schedulers: ISchedulerProvider)
+    : IEditorWidget {
 
-// TODO: Shouldn't depend on any Android package!
+    protected val lock = Any()
 
-class EditorWidget(private val paperID: Long,
-                   private val paperRepo: IPaperRepo,
-                   private val lruCacheDir: File,
-                   private val penPrefsRepo: ICommonPenPrefsRepo,
-                   private val caughtErrorSignal: Observer<Throwable>,
-                   private val schedulers: ISchedulerProvider)
-    : IWidget {
+    protected var paper: IPaper? = null
 
-    private val mCanvasWidget by lazy {
-        CanvasWidget(schedulers = schedulers)
+    protected val staticDisposableBag = CompositeDisposable()
+    protected val dynamicDisposableBag = ConcurrentHashMap<BaseScrapWidget, Disposable>()
+
+    // Focus scrap controller
+    @Volatile
+    protected var focusScrapWidget: IBaseScrapWidget? = null
+    // Scrap controllers
+    protected val scrapWidgets = ConcurrentHashMap<UUID, BaseScrapWidget>()
+
+    // Debug
+    protected val debugSignal = PublishSubject.create<String>()
+
+    override fun start(): Observable<Boolean> {
+        return autoStop {
+            // Mark initializing
+            dirtyFlag.markDirty(EditorDirtyFlag.INITIALIZING_CANVAS)
+
+            val paper = paper!!
+
+            inflateScrapWidgets(paper)
+
+            // Mark initialization done
+            dirtyFlag.markNotDirty(EditorDirtyFlag.INITIALIZING_CANVAS)
+        }
     }
-    private val mHistoryWidget by lazy {
-        CanvasOperationHistoryRepository(fileDir = lruCacheDir,
-                                         schedulers = schedulers)
-    }
 
-    private val mDisposables = CompositeDisposable()
+    protected fun inflateScrapWidgets(paper: IPaper) {
+        val scraps = paper.getScraps()
+        scraps.forEach { scrap ->
+            when (scrap) {
+                is ISVGScrap -> {
+                    val widget = SVGScrapWidget(
+                        scrap = scrap,
+                        schedulers = schedulers)
 
-    override fun start(): Completable {
-        return autoStopCompletable {
-            ensureNoLeakingSubscription()
-
-            // Load paper and establish the paper (canvas) and transform bindings.
-            val paperSrc = paperRepo
-                .getPaperById(paperID)
-                .toObservable()
-                .cache()
-            val canvasWidgetReadySrc = paperSrc
-                .flatMap { paper ->
-                    initCanvasWidget(paper)
+                    addScrap(widget)
                 }
-            val historyWidgetReadySrc = paperSrc
-                .flatMap {
-                    initHistoryWidget()
-                }
-            Observables
-                .zip(canvasWidgetReadySrc,
-                     historyWidgetReadySrc)
-                .subscribe { (canvasWidgetReady, historyWidgetReady) ->
-                    if (canvasWidgetReady && historyWidgetReady) {
-                        mOnCanvasWidgetReadySignal.onNext(mCanvasWidget)
-                    } else {
-                        if (!canvasWidgetReady && historyWidgetReady) {
-                            throw IllegalStateException("Fail to start paper model with paper widget")
-                        } else if (canvasWidgetReady && !historyWidgetReady) {
-                            throw IllegalStateException("Fail to start paper model with history widget")
-                        } else {
-                            throw IllegalStateException("Fail to both")
-                        }
-                    }
-                }
-                .addTo(mDisposables)
-
-        // Following are all about the edit panel outputs to paper widget:
-
-        // Choose what drawing tool
-//        mEditPanelWidget
-//            .onUpdateEditToolList()
-//            .observeOn(uiScheduler)
-//            .subscribe { event ->
-//                val toolID = event.toolIDs[event.usingIndex]
-//
-//                when (toolID) {
-//                    ToolType.ERASER -> {
-//                        mCanvasWidget.setDrawingMode(DrawingMode.ERASER)
-//                    }
-//                    ToolType.PEN -> {
-//                        mCanvasWidget.setDrawingMode(DrawingMode.SKETCH)
-//                    }
-//                    else -> {
-//                        println("${DomainConst.TAG}: Yet supported")
-//                    }
-//                }
-//            }
-//            .addTo(mDisposables)
-
-            // Prepare initial tools and select the pen by default.
-            val tools = getEditToolIDs()
-            mToolIndex = tools.indexOf(ToolType.PEN)
-            mEditingTools.onNext(UpdateEditToolsEvent(
-                toolIDs = tools,
-                usingIndex = mToolIndex))
-
-        // Prepare initial color tickets
-//        Observables
-//            .combineLatest(
-//                penPrefsRepo.getPenColors(),
-//                penPrefsRepo.getChosenPenColor())
-//            .observeOn(schedulers.main())
-//            .subscribe { (colors, chosenColor) ->
-//                val index = colors.indexOf(chosenColor)
-//
-//                // Export the signal as onUpdatePenColorList()
-//                mColorTicketsSignal.onNext(UpdateColorTicketsEvent(
-//                    colorTickets = colors,
-//                    usingIndex = index))
-//            }
-//            .addTo(mDisposables)
-
-        // Prepare initial pen size
-//        penPrefsRepo.getPenSize()
-//            .observeOn(schedulers.main())
-//            .subscribe { penSize ->
-//                mPenSizeSignal.onNext(penSize)
-//            }
-//            .addTo(mDisposables)
+                else -> TODO()
+            }
         }
     }
 
     override fun stop() {
-        mDisposables.clear()
+        staticDisposableBag.clear()
     }
 
-    /**
-     * Request to stop; It is granted to stop when receiving a true; vice versa.
-     */
-    fun requestStop(bmpFile: File, bmpWidth: Int, bmpHeight: Int): Observable<Boolean> {
-        return try {
-//            mCanvasWidget.setThumbnail(bmpFile, bmpWidth, bmpHeight)
-            Observable.just(true)
-        } catch (err: Throwable) {
-            Observable.just(false)
+    override fun inject(paper: IPaper) {
+        synchronized(lock) {
+            if (this.paper != null) throw IllegalAccessException("Already set model")
+
+            this.paper = paper
         }
     }
 
-    private fun ensureNoLeakingSubscription() {
-        if (mDisposables.size() > 0) throw IllegalStateException(
-            "Already start to a widget")
+    override fun toPaper(): IPaper {
+        synchronized(lock) {
+            return paper!!
+        }
+    }
+
+    override fun onInitCanvasSize(): Single<Pair<Float, Float>> {
+        val paper = paper!!
+        return Single.just(paper.getSize())
+    }
+
+    // Debug //////////////////////////////////////////////////////////////////
+
+    override fun onPrintDebugMessage(): Observable<String> {
+        return debugSignal
     }
 
     // Number of on-going task ////////////////////////////////////////////////
 
-    private val mBusySignal = BehaviorSubject.createDefault(false)
+    protected val dirtyFlag = EditorDirtyFlag(EditorDirtyFlag.INITIALIZING_CANVAS)
+
+    open fun onBusy(): Observable<Boolean> {
+        return dirtyFlag
+            .onUpdate()
+            .map { event ->
+                // Ready iff flag is not zero
+                val busy = event.flag != 0
+
+                println("${DomainConst.TAG}: canvas busy=$busy")
+
+                busy
+            }
+    }
+
+    // Scrap manipulation /////////////////////////////////////////////////////
+
+    protected val updateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
+
+    override fun onUpdateScrap(): Observable<UpdateScrapEvent> {
+        return updateScrapSignal
+    }
+
+    override fun handleDomainEvent(event: EditorEvent,
+                                   ifOutputOperation: Boolean) {
+        when (event) {
+            is GroupEditorEvent -> {
+                val events = event.events
+                events.forEach { handleDomainEvent(it) }
+            }
+            is GroupUpdateScrapEvent -> {
+                val events = event.events
+                events.forEach { handleDomainEvent(it) }
+            }
+
+            is AddScrapEvent -> addScrap(event.scrap as BaseScrapWidget)
+            is RemoveScrapEvent -> removeScrap(event.scrap as BaseScrapWidget)
+            is RemoveAllScrapsEvent -> removeAllScraps()
+            is FocusScrapEvent -> focusScrapWidget(event.scrapID)
+
+            is StartSketchEvent -> startSketch(event.x, event.y)
+            is DoSketchEvent -> doSketch(event.x, event.y)
+            is StopSketchEvent -> stopSketch()
+        }
+    }
+
+    protected fun addScrap(scrap: BaseScrapWidget) {
+        synchronized(lock) {
+            scrapWidgets[scrap.getID()] = scrap
+
+            // Start the scrap
+            dynamicDisposableBag[scrap] = scrap
+                .start()
+                .subscribe()
+
+            // Signal out
+            updateScrapSignal.onNext(AddScrapEvent(scrap))
+        }
+    }
+
+    protected fun removeScrap(scrap: BaseScrapWidget) {
+        synchronized(lock) {
+            scrapWidgets.remove(scrap.getID())
+
+            // Stop the scrap
+            dynamicDisposableBag[scrap]?.dispose()
+            dynamicDisposableBag.remove(scrap)
+
+            // Clear focus
+            if (focusScrapWidget == scrap) {
+                focusScrapWidget = null
+            }
+
+            // Signal out
+            updateScrapSignal.onNext(RemoveScrapEvent(scrap))
+        }
+    }
+
+    protected fun removeAllScraps() {
+        synchronized(lock) {
+            // Prepare remove events
+            val events = mutableListOf<RemoveScrapEvent>()
+            scrapWidgets.forEach { (_, widget) ->
+                events.add(RemoveScrapEvent(widget))
+            }
+
+            // Remove all
+            scrapWidgets.clear()
+
+            // Signal out
+            updateScrapSignal.onNext(GroupUpdateScrapEvent(events))
+        }
+    }
+
+    protected fun focusScrapWidget(id: UUID): IBaseScrapWidget? {
+        synchronized(lock) {
+            val widget = scrapWidgets[id]!!
+            focusScrapWidget = widget
+
+            // Signal out
+            updateScrapSignal.onNext(FocusScrapEvent(widget.getID()))
+
+            return focusScrapWidget
+        }
+    }
+
+    // Drawing ////////////////////////////////////////////////////////////////
+
+    protected fun startSketch(x: Float, y: Float) {
+        synchronized(lock) {
+            // Mark drawing
+            dirtyFlag.markDirty(EditorDirtyFlag.OPERATING_CANVAS)
+
+            val widget = focusScrapWidget!! as SVGScrapWidget
+
+            // TODO: Determine style
+            widget.moveTo(x, y)
+        }
+    }
+
+    protected fun doSketch(x: Float, y: Float) {
+        synchronized(lock) {
+            val widget = focusScrapWidget!! as SVGScrapWidget
+            val frame = widget.getFrame()
+            val nx = x - frame.x
+            val ny = y - frame.y
+
+            // TODO: Use cubic line?
+            widget.cubicTo(nx, ny,
+                           nx, ny,
+                           nx, ny)
+        }
+    }
+
+    protected fun stopSketch() {
+        synchronized(lock) {
+            val widget = focusScrapWidget!! as SVGScrapWidget
+
+            widget.close()
+
+            // Mark drawing
+            dirtyFlag.markNotDirty(EditorDirtyFlag.OPERATING_CANVAS)
+        }
+    }
 
     /**
-     * An overall busy state of the editor. The state is contributed by its sub-
-     * components, e.g. canvas widget or history widget.
+     * The current stroke color.
      */
-    private fun onBusy(): Observable<Boolean> {
-        return Observables
-            .combineLatest(
-                mBusySignal,
-                mCanvasWidget.onBusy(),
-                mHistoryWidget.onBusy()) { editorBusy, canvasBusy, historyBusy ->
-                println("${DomainConst.TAG}: " +
-                        "editor busy=$editorBusy, " +
-                        "canvas busy=$canvasBusy, " +
-                        "history busy=$historyBusy, ")
-                editorBusy || canvasBusy || historyBusy
-            }
-    }
+    protected var mPenColor = 0x2C2F3C
+    /**
+     * The current stroke width, where the value is from 0.0 to 1.0.
+     */
+    protected var mPenSize = 0.2f
+    /**
+     * The current view-port scale.
+     */
+    protected var mViewPortScale = Float.NaN
 
-    // Canvas widget & functions //////////////////////////////////////////////
-
-    private fun initCanvasWidget(paper: IPaper): Observable<Boolean> {
-        mCanvasWidget.inject(paper)
-
-        return StartWidgetAutoStopObservable(
-            widget = mCanvasWidget,
-            caughtErrorSignal = caughtErrorSignal)
-            .subscribeOn(schedulers.main())
-    }
-
-    private val mOnCanvasWidgetReadySignal = BehaviorSubject.create<ICanvasWidget>().toSerialized()
-
-    fun onCanvasWidgetReady(): Observable<ICanvasWidget> {
-        return mOnCanvasWidgetReadySignal
-    }
-
-    private fun onTouchCanvas(event: GestureEvent) {
-        TODO("not implemented")
-    }
-
-    // Undo & redo ////////////////////////////////////////////////////////////
-
-    private fun initHistoryWidget(): Observable<Boolean> {
-        return StartWidgetAutoStopObservable(
-            widget = mHistoryWidget,
-            caughtErrorSignal = caughtErrorSignal)
-            .subscribeOn(schedulers.main())
-    }
-
-    fun handleOnClickUndoButton(undoSignal: Observable<Any>) {
-        undoSignal
-            .flatMap {
-                mHistoryWidget
-                    .undo(mCanvasWidget)
-                    .toObservable()
-            }
-            .subscribe()
-            .addTo(mDisposables)
-    }
-
-    fun handleOnClickRedoButton(undoSignal: Observable<Any>) {
-        undoSignal
-            .flatMap {
-                mHistoryWidget
-                    .redo(mCanvasWidget)
-                    .toObservable()
-            }
-            .subscribe()
-            .addTo(mDisposables)
-    }
-
-    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoAvailabilityEvent> {
-        return Observables.combineLatest(
-            onBusy(),
-            mHistoryWidget.onUpdateUndoRedoCapacity())
-            .map { (busy, event) ->
-                if (busy) {
-                    UndoRedoAvailabilityEvent(canUndo = false,
-                                              canRedo = false)
-                } else {
-                    event
-                }
-            }
-    }
-
-    // Edit tool //////////////////////////////////////////////////////////////
-
-    private var mToolIndex = -1
-    private val mEditingTools = BehaviorSubject.create<UpdateEditToolsEvent>()
-
-    private val mUnsupportedToolMsg = PublishSubject.create<Any>()
-
-    // TODO: Since the tool list (data) and UI click both lead to the
-    // TODO: UI view-model change, merge this two upstream in the new
-    // TODO: design!
-    fun handleClickTool(toolID: ToolType) {
-        val toolIDs = getEditToolIDs()
-        val usingIndex = when (toolID) {
-            ToolType.PEN,
-            ToolType.ERASER -> {
-                toolIDs.indexOf(toolID)
-            }
-            else -> {
-                mUnsupportedToolMsg.onNext(0)
-                toolIDs.indexOf(ToolType.PEN)
-            }
+    override fun setDrawingMode(mode: DrawingMode) {
+        synchronized(lock) {
+            TODO()
         }
-
-        mEditingTools.onNext(UpdateEditToolsEvent(
-            toolIDs = toolIDs,
-            usingIndex = usingIndex))
     }
 
-    fun onUpdateEditToolList(): Observable<UpdateEditToolsEvent> {
-        return mEditingTools
+    override fun setChosenPenColor(color: Int) {
+        synchronized(lock) {
+            mPenColor = color
+        }
     }
 
-    fun onChooseUnsupportedEditTool(): Observable<Any> {
-        return mUnsupportedToolMsg
+    override fun setViewPortScale(scale: Float) {
+        synchronized(lock) {
+            mViewPortScale = scale
+        }
     }
 
-    private fun getEditToolIDs(): List<ToolType> {
-        return listOf(
-            ToolType.ERASER,
-            ToolType.PEN,
-            ToolType.LASSO)
+    override fun setPenSize(size: Float) {
+        synchronized(lock) {
+            mPenSize = size
+        }
     }
 
-    // Pen Color & size //////////////////////////////////////////////////////
+    // Equality ///////////////////////////////////////////////////////////////
 
-//    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
-//
-//    override fun setPenColor(color: Int) {
-//        mCancelSignal.onNext(0)
-//
-//        mDisposables.add(
-//            penPrefsRepo
-//                .putChosenPenColor(color)
-//                .toObservable()
-//                .takeUntil(mCancelSignal)
-//                .subscribe())
-//    }
-//
-//    override fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent> {
-//        return mColorTicketsSignal
-//    }
-//
-//    override fun setPenSize(size: Float) {
-//        return penSizeSrc
-//            .flatMap { event ->
-//                println("${DomainConst.TAG}: change pen size=${event.size}")
-//
-//                when (event.lifecycle) {
-//                    EventLifecycle.START,
-//                    EventLifecycle.STOP -> {
-//                        Observable.never<Boolean>()
-//                    }
-//                    EventLifecycle.DOING -> {
-//                        penPrefsRepo
-//                            .putPenSize(event.size)
-//                            .toObservable()
-//                    }
-//                }
-//            }
-//            .subscribe()
-//            .addTo(mDisposables)
-//    }
-//
-//    private val mPenSizeSignal = BehaviorSubject.create<Float>()
-//
-//    /**
-//     * Update of pen size ranging from 0.0 to 1.0
-//     *
-//     * @return An observable of pen size ranging from 0.0 to 1.0
-//     */
-//    override fun onUpdatePenSize(): Observable<Float> {
-//        return mPenSizeSignal
-//    }
-
-    // Progress & error & Editor status ///////////////////////////////////////
-
-    private val mUpdateProgressSignal = PublishSubject.create<IntProgressEvent>()
-
-    fun onUpdateProgress(): Observable<IntProgressEvent> {
-        return mUpdateProgressSignal
+    override fun toString(): String {
+        return paper?.let { paper ->
+            "${javaClass.simpleName}{\n" +
+            "id=${paper.getID()}, uuid=${paper.getUUID()}\n" +
+            "scraps=${paper.getScraps().size}\n" +
+            "}"
+        } ?: "${javaClass.simpleName}{no model}"
     }
 }

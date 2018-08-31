@@ -28,7 +28,7 @@ import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.ui.ICanvasOperationRepoProvider
 import com.paper.domain.ISchedulerProvider
-import com.paper.domain.ui.EditorWidget
+import com.paper.domain.ui.CompleteEditorWidget
 import com.paper.model.*
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.event.TimedCounterEvent
@@ -94,7 +94,7 @@ class PaperEditorActivity : AppCompatActivity() {
 
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mPresenter by lazy {
-        EditorWidget(
+        CompleteEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
             paperTransformRepo = (application as ICanvasOperationRepoProvider).getPaperTransformRepo(),
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
@@ -288,7 +288,7 @@ class PaperEditorActivity : AppCompatActivity() {
 //        outState.putLong()
     }
 
-    private fun initWidgets(sources: EditorWidget.OnStart): Observable<Any> {
+    private fun initWidgets(sources: CompleteEditorWidget.OnStart): Observable<Any> {
         return Observable.merge(
             sources.onCanvasWidgetReady
                 .flatMap { widget ->

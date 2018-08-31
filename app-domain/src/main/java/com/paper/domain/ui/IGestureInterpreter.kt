@@ -23,11 +23,11 @@
 package com.paper.domain.ui
 
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui_event.CanvasDomainEvent
+import com.paper.domain.ui_event.EditorEvent
 import io.reactivex.ObservableTransformer
 
 interface IGestureInterpreter {
 
     // TODO: Input as Observable<GestureEvent>
-    fun toDomainEvent(): ObservableTransformer<GestureEvent, CanvasDomainEvent>
+    fun toDomainEvent(): ObservableTransformer<GestureEvent, EditorEvent>
 }

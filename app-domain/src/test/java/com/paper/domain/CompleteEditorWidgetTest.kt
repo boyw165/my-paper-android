@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,42 +20,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain
 
-import com.paper.domain.data.DrawingMode
-import com.paper.domain.ui_event.CanvasDomainEvent
-import com.paper.domain.ui_event.UpdateScrapEvent
-import com.paper.model.IPaper
-import io.reactivex.Observable
-import io.reactivex.Single
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-/**
- * The canvas widget (serving as the ViewModel to View).
- */
-interface ICanvasWidget : IWidget {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class CompleteEditorWidgetTest : MockDataLayerTest() {
 
-    fun inject(paper: IPaper)
+    @Test
+    fun `busy test`() {
+    }
 
-    fun toPaper(): IPaper
-
-    fun setDrawingMode(mode: DrawingMode)
-
-    fun setChosenPenColor(color: Int)
-
-    fun setViewPortScale(scale: Float)
-
-    fun setPenSize(size: Float)
-
-    fun onInitCanvasSize(): Single<Pair<Float, Float>>
-
-    // Add & Remove Scrap /////////////////////////////////////////////////////
-
-    fun handleDomainEvent(event: CanvasDomainEvent,
-                          ifOutputOperation: Boolean = false)
-
-    fun onUpdateCanvas(): Observable<UpdateScrapEvent>
-
-    // Debug //////////////////////////////////////////////////////////////////
-
-    fun onPrintDebugMessage(): Observable<String>
+    @Test
+    fun `inflation process test`() {
+    }
 }

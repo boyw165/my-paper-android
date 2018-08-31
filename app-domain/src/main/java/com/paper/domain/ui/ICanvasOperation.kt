@@ -22,9 +22,11 @@
 
 package com.paper.domain.ui
 
+import com.paper.model.IPaper
+
 interface ICanvasOperation {
 
-    fun undo(target: ICanvasWidget)
+    fun undo(target: IPaper)
 
-    fun redo(target: ICanvasWidget)
+    fun redo(target: IPaper)
 }

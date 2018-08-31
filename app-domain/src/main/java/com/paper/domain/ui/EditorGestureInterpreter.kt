@@ -33,11 +33,11 @@ import com.paper.model.SVGScrap
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 
-class CanvasGestureInterpreter(private val mapper: ICoordinateMapper,
+class EditorGestureInterpreter(private val mapper: ICoordinateMapper,
                                private val schedulers: ISchedulerProvider)
     : IGestureInterpreter {
 
-    override fun toDomainEvent(): ObservableTransformer<GestureEvent, CanvasDomainEvent> {
+    override fun toDomainEvent(): ObservableTransformer<GestureEvent, EditorEvent> {
         return ObservableTransformer { upstream ->
             upstream
                 .flatMap { event ->
@@ -46,7 +46,7 @@ class CanvasGestureInterpreter(private val mapper: ICoordinateMapper,
         }
     }
 
-    private fun interpretEvent(event: GestureEvent): Observable<out CanvasDomainEvent> {
+    private fun interpretEvent(event: GestureEvent): Observable<out EditorEvent> {
         return when (event) {
             is DragBeginEvent -> {
                 val x = event.startPointer.x
@@ -63,7 +63,7 @@ class CanvasGestureInterpreter(private val mapper: ICoordinateMapper,
                 // 2. add scrap
                 // 3. focus scrap
                 // 4. start sketch
-                Observable.just(GroupCanvasEvent(
+                Observable.just(GroupEditorEvent(
                     listOf(ClearFocusEvent,
                            AddScrapEvent(widget),
                            FocusScrapEvent(widget.getID()),
