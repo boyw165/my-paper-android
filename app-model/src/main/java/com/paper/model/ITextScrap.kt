@@ -22,4 +22,13 @@
 
 package com.paper.model
 
-interface ITextScrap : IScrap
+import io.reactivex.Observable
+
+interface ITextScrap : IScrap {
+
+    fun getText(): String
+
+    fun setText(text: String)
+
+    fun observeText(): Observable<String>
+}

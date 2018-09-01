@@ -27,11 +27,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(MockitoJUnitRunner.Silent::class)
 class HashCodeUtilTest {
 
     @Test
-    fun testLong_symmetricResult() {
+    fun `long symmetry`() {
         Assert.assertEquals(2, HashCodeUtil.hashCode(2L))
         Assert.assertEquals(1, HashCodeUtil.hashCode(1L))
         Assert.assertEquals(0, HashCodeUtil.hashCode(0L))

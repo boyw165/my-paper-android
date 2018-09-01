@@ -23,6 +23,7 @@
 
 package com.paper.model
 
+import io.reactivex.Observable
 import java.net.URI
 import java.util.*
 
@@ -61,4 +62,8 @@ interface IPaper {
     fun addScrap(scrap: IScrap)
 
     fun removeScrap(scrap: IScrap)
+
+    fun observeAddScrap(): Observable<IScrap>
+
+    fun observeRemoveScrap(): Observable<IScrap>
 }

@@ -30,10 +30,10 @@ import java.net.URI
 import java.util.*
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class PaperTest {
+class PaperTest : BaseModelTest() {
 
     @Test
-    fun `basic copy test`() {
+    fun `basic copy`() {
         val tester1 = BasePaper(id = 1,
                                 uuid = UUID.randomUUID(),
                                 createdAt = 100L,
@@ -54,12 +54,40 @@ class PaperTest {
     }
 
     @Test
-    fun `scraps copy test`() {
+    fun `scraps copy`() {
         val tester1 = BasePaper()
         val tester2 = tester1.copy()
         tester2.addScrap(BaseScrap())
 
         Assert.assertNotEquals(tester2.getScraps(), tester1.getScraps())
+    }
+
+    @Test
+    fun `observe add scrap`() {
+        val tester = BasePaper()
+
+        val addTestObserver = tester.observeAddScrap().test()
+
+        tester.addScrap(createRandomScrap())
+        tester.addScrap(createRandomScrap())
+        tester.addScrap(createRandomScrap())
+
+        addTestObserver.assertValueCount(3)
+    }
+
+    @Test
+    fun `observe remove scrap`() {
+        val tester = BasePaper(scraps = mutableListOf(createRandomScrap(),
+                                                      createRandomScrap(),
+                                                      createRandomScrap()))
+
+        val removeTestObserver = tester.observeRemoveScrap().test()
+
+        tester.removeScrap(tester.getScraps()[0])
+        tester.removeScrap(tester.getScraps()[0])
+        tester.removeScrap(tester.getScraps()[0])
+
+        removeTestObserver.assertValueCount(3)
     }
 }
 

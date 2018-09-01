@@ -23,23 +23,23 @@ package com.paper.model
 import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
 import java.util.*
-import java.util.concurrent.locks.ReentrantLock
 
-open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
-                    override var mutableFrame: Frame = Frame(),
+open class SVGScrap(uuid: UUID = UUID.randomUUID(),
+                    frame: Frame = Frame(),
                     private val graphicsList: MutableList<VectorGraphics> = mutableListOf())
-    : BaseScrap(uuid, mutableFrame),
+    : BaseScrap(uuid = uuid,
+                frame = frame),
       ISVGScrap {
 
     override fun setSVGs(other: List<VectorGraphics>) {
-        synchronized(mLock) {
+        synchronized(lock) {
             graphicsList.clear()
             graphicsList.addAll(other)
         }
     }
 
     override fun getSVGs(): List<VectorGraphics> {
-        synchronized(mLock) {
+        synchronized(lock) {
             return graphicsList.toList()
         }
     }
@@ -51,7 +51,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
     override fun moveTo(x: Float,
                         y: Float,
                         style: Set<SVGStyle>) {
-        synchronized(mLock) {
+        synchronized(lock) {
             // TODO: Fix the session lock
 //            mTmpVectorGraphicsLock.lock()
 
@@ -62,7 +62,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
     }
 
     override fun lineTo(x: Float, y: Float) {
-        synchronized(mLock) {
+        synchronized(lock) {
             val v = mTmpVectorGraphics!!
             v.addTuple(LinearPointTuple(x, y))
         }
@@ -74,7 +74,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
                          currentControlY: Float,
                          currentEndX: Float,
                          currentEndY: Float) {
-        synchronized(mLock) {
+        synchronized(lock) {
             val v = mTmpVectorGraphics!!
             v.addTuple(CubicPointTuple(previousControlX, previousControlY,
                                        currentControlX, currentControlY,
@@ -83,7 +83,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
     }
 
     override fun close() {
-        synchronized(mLock) {
+        synchronized(lock) {
             val v = mTmpVectorGraphics!!
             mTmpVectorGraphics = null
 
@@ -96,11 +96,9 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): IScrap {
-        return synchronized(mLock) {
-            SVGScrap(uuid = uuid,
-                     mutableFrame = mutableFrame.copy(),
-                     graphicsList = graphicsList.toMutableList())
-        }
+        return SVGScrap(uuid = UUID.randomUUID(),
+                        frame = getFrame(),
+                        graphicsList = getSVGs().toMutableList())
     }
 
     override fun equals(other: Any?): Boolean {
@@ -111,7 +109,7 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
 
         if (!super.equals(other)) return false
 
-        val svgs = synchronized(mLock) { graphicsList.toList() }
+        val svgs = synchronized(lock) { graphicsList.toList() }
         val otherSVGs = other.getSVGs()
 
         if (svgs.hashCode() != otherSVGs.hashCode()) return false
@@ -120,19 +118,19 @@ open class SVGScrap(override val uuid: UUID = UUID.randomUUID(),
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(mLock) { mIsHashDirty }
+        val isHashDirty = synchronized(lock) { isHashDirty }
         if (isHashDirty) {
             var hashCode = super.hashCode()
             // FIXME: There is a very short moment in between super.hashCode()
-            // FIXME: and the following code such that mIsHashDirty is false
+            // FIXME: and the following code such that isHashDirty is false
             hashCode = 31 * hashCode + getSVGs().hashCode()
 
-            synchronized(mLock) {
-                mIsHashDirty = false
-                mHashCode = hashCode
+            synchronized(lock) {
+                this.isHashDirty = false
+                cacheHashCode = hashCode
             }
         }
 
-        return mHashCode
+        return cacheHashCode
     }
 }

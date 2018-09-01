@@ -45,15 +45,15 @@ class ScrapJSONTranslatorTest {
     @Test
     fun `serialize svg scrap with empty path tuple list`() {
         val model = SVGScrap(
-            mutableFrame = Frame(x = 100f,
-                                 y = 200f,
-                                 width = 360f,
-                                 height = 480f,
-                                 scaleX = 0.1f,
-                                 scaleY = 0.2f,
-                                 rotationInDegrees = 30f,
-                                 z = ModelConst.MOST_BOTTOM_Z))
-        val uuid = model.uuid
+            frame = Frame(x = 100f,
+                          y = 200f,
+                          width = 360f,
+                          height = 480f,
+                          scaleX = 0.1f,
+                          scaleY = 0.2f,
+                          rotationInDegrees = 30f,
+                          z = ModelConst.MOST_BOTTOM_Z))
+        val uuid = model.getID()
 
         val jsonText = translator.toJson(model, BaseScrap::class.java)
         System.out.println("JSON = $jsonText")

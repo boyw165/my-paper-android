@@ -33,7 +33,7 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class EditorWidgetTest : MockDataLayerTest() {
+class EditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `initialization busy test`() {
@@ -71,7 +71,7 @@ class EditorWidgetTest : MockDataLayerTest() {
 
         // Sketch (by simulating the gesture interpreter behavior)
         val widget = SVGScrapWidget(
-            scrap = SVGScrap(mutableFrame = Frame(0f, 0f)),
+            scrap = SVGScrap(frame = createRandomFrame()),
             schedulers = mockSchedulers)
         tester.handleDomainEvent(GroupEditorEvent(
             listOf(AddScrapEvent(widget),

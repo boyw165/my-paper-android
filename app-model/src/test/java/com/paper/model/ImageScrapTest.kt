@@ -22,44 +22,27 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
+import java.net.URL
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class BaseScrapTest : BaseModelTest() {
+class ImageScrapTest : BaseModelTest() {
 
     @Test
     fun `copy, ID should be different`() {
-        val tester1 = BaseScrap()
-        val tester2 = tester1.copy()
-        tester2.setFrame(Frame(x = 100f, y = 200f))
+        val tester1 = createRandomImageScrap()
+        val tester2 = tester1.copy() as IImageScrap
+        tester2.setFrame(Frame(100f, 100f))
+        tester2.setURL(URL("http://zoo.com/zoo.png"))
 
+        Assert.assertNotEquals(tester2, tester1)
         Assert.assertNotEquals(tester2.getID(), tester1.getID())
         Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
-    }
-
-    @Test
-    fun `set frame`() {
-        val scrap = BaseScrap()
-
-        scrap.setFrame(Frame(x = 100f, y = 200f))
-
-        Assert.assertEquals(100f, scrap.getFrame().x)
-        Assert.assertEquals(200f, scrap.getFrame().y)
-    }
-
-    @Test
-    fun `observe frame`() {
-        val scrap = BaseScrap()
-
-        val frameTestObserver = scrap.observeFrame().test()
-        scrap.setFrame(Frame(x = 100f, y = 200f))
-        scrap.setFrame(Frame(x = 300f, y = 400f))
-
-        frameTestObserver.assertValues(Frame(x = 100f, y = 200f),
-                                       Frame(x = 300f, y = 400f))
+        Assert.assertNotEquals(tester2.getURL(), tester1.getURL())
     }
 }
 

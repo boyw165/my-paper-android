@@ -55,7 +55,7 @@ class EditorGestureInterpreter(private val mapper: ICoordinateMapper,
 
                 // Create widget
                 val widget = SVGScrapWidget(
-                    scrap = SVGScrap(mutableFrame = Frame(nx, ny)),
+                    scrap = SVGScrap(frame = Frame(nx, ny)),
                     schedulers = schedulers)
 
                 // To a sequence of events:

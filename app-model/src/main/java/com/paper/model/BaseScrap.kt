@@ -20,39 +20,48 @@
 
 package com.paper.model
 
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
-                     protected open var mutableFrame: Frame = Frame())
+open class BaseScrap(private val uuid: UUID = UUID.randomUUID(),
+                     private var frame: Frame = Frame())
     : IScrap,
       NoObfuscation {
 
-    protected val mLock = Any()
+    protected val lock = Any()
 
-    protected var mIsHashDirty = true
-    protected var mHashCode = 0
+    protected var isHashDirty = true
+    protected var cacheHashCode = 0
 
     override fun getID(): UUID {
         return uuid
     }
 
     override fun setFrame(frame: Frame) {
-        synchronized(mLock) {
-            mutableFrame = frame
+        synchronized(lock) {
+            this.frame = frame
+            frameSignal.onNext(frame)
         }
     }
 
     override fun getFrame(): Frame {
-        synchronized(mLock) {
-            return mutableFrame.copy()
+        synchronized(lock) {
+            return frame.copy()
         }
+    }
+
+    private val frameSignal = PublishSubject.create<Frame>().toSerialized()
+
+    override fun observeFrame(): Observable<Frame> {
+        return frameSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): IScrap {
-        return BaseScrap(uuid = uuid,
-                         mutableFrame = mutableFrame.copy())
+        return BaseScrap(uuid = UUID.randomUUID(),
+                         frame = frame.copy())
     }
 
     override fun equals(other: Any?): Boolean {
@@ -61,7 +70,7 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
 
         other as BaseScrap
 
-        val frame = synchronized(mLock) { mutableFrame }
+        val frame = synchronized(lock) { frame }
         val otherFrame = other.getFrame()
 
         if (uuid != other.uuid) return false
@@ -76,9 +85,9 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(mLock) { mIsHashDirty }
+        val isHashDirty = synchronized(lock) { isHashDirty }
         if (isHashDirty) {
-            val frame = synchronized(mLock) { mutableFrame }
+            val frame = synchronized(lock) { frame }
             var hashCode = uuid.hashCode()
             hashCode = 31 * hashCode + frame.x.hashCode()
             hashCode = 31 * hashCode + frame.y.hashCode()
@@ -87,14 +96,14 @@ open class BaseScrap(open val uuid: UUID = UUID.randomUUID(),
             hashCode = 31 * hashCode + frame.scaleY.hashCode()
             hashCode = 31 * hashCode + frame.rotationInDegrees.hashCode()
 
-            synchronized(mLock) {
-                mIsHashDirty = false
-                mHashCode = hashCode
+            synchronized(lock) {
+                this.isHashDirty = false
+                cacheHashCode = hashCode
             }
         }
 
-        synchronized(mLock) {
-            return mHashCode
+        synchronized(lock) {
+            return cacheHashCode
         }
     }
 }

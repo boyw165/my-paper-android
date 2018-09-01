@@ -20,7 +20,8 @@
 
 package com.paper.model
 
-import com.paper.model.repository.IPaperRepo
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.net.URI
 import java.util.*
 
@@ -36,7 +37,7 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
     : IPaper,
       NoObfuscation {
 
-    private val mLock = Any()
+    private val lock = Any()
 
     // General ////////////////////////////////////////////////////////////////
 
@@ -57,25 +58,25 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
     }
 
     override fun getModifiedAt(): Long {
-        synchronized(mLock) {
+        synchronized(lock) {
             return modifiedAt
         }
     }
 
     override fun setModifiedAt(time: Long) {
-        synchronized(mLock) {
+        synchronized(lock) {
             modifiedAt = time
         }
     }
 
     override fun getSize(): Pair<Float, Float> {
-        synchronized(mLock) {
+        synchronized(lock) {
             return Pair(width, height)
         }
     }
 
     override fun setSize(size: Pair<Float, Float>) {
-        synchronized(mLock) {
+        synchronized(lock) {
             val (width, height) = size
             this.width = width
             this.height = height
@@ -83,13 +84,13 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
     }
 
     override fun getViewPort(): Rect {
-        synchronized(mLock) {
+        synchronized(lock) {
             return viewPort.copy()
         }
     }
 
     override fun setViewPort(rect: Rect) {
-        synchronized(mLock) {
+        synchronized(lock) {
             viewPort.set(rect)
         }
     }
@@ -113,7 +114,7 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
     override fun setThumbnail(file: URI,
                               width: Int,
                               height: Int) {
-        synchronized(mLock) {
+        synchronized(lock) {
             thumbnail = Triple(file, width, height)
         }
     }
@@ -125,28 +126,41 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
     // Scraps /////////////////////////////////////////////////////////////////
 
     override fun getScraps(): List<IScrap> {
-        synchronized(mLock) {
+        synchronized(lock) {
             // Must clone the list in case concurrent modification
             return scraps.toList()
         }
     }
 
     override fun addScrap(scrap: IScrap) {
-        synchronized(mLock) {
+        synchronized(lock) {
             scraps.add(scrap)
+            addScrapSignal.onNext(scrap)
         }
     }
 
     override fun removeScrap(scrap: IScrap) {
-        synchronized(mLock) {
+        synchronized(lock) {
             scraps.remove(scrap)
+            removeScrapSignal.onNext(scrap)
         }
+    }
+
+    private val addScrapSignal = PublishSubject.create<IScrap>().toSerialized()
+    private val removeScrapSignal = PublishSubject.create<IScrap>().toSerialized()
+
+    override fun observeAddScrap(): Observable<IScrap> {
+        return addScrapSignal
+    }
+
+    override fun observeRemoveScrap(): Observable<IScrap> {
+        return removeScrapSignal
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
 
     override fun copy(): IPaper {
-        return synchronized(mLock) {
+        return synchronized(lock) {
             val copyScraps = mutableListOf<IScrap>()
             scraps.forEach { copyScraps.add(it.copy()) }
 

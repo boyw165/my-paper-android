@@ -11,9 +11,12 @@ import org.junit.After
 import org.junit.Before
 import org.mockito.Mock
 import org.mockito.Mockito
+import java.lang.IllegalStateException
+import java.net.URL
+import java.util.*
 import java.util.concurrent.TimeUnit
 
-abstract class MockDataLayerTest {
+abstract class BaseDomainTest {
 
     companion object {
 
@@ -40,7 +43,7 @@ abstract class MockDataLayerTest {
     val mockPaper: IPaper
         get() {
             val mock = BasePaper()
-            mock.addScrap(SVGScrap(mutableFrame = Frame(2f, 3f),
+            mock.addScrap(SVGScrap(frame = Frame(2f, 3f),
                                    graphicsList = mutableListOf(VectorGraphics(tupleList = mutableListOf(LinearPointTuple(3f, 4f))))))
             return mock
         }
@@ -59,5 +62,52 @@ abstract class MockDataLayerTest {
     @After
     fun stop() {
         disposableBag.clear()
+    }
+
+    private val random = Random()
+
+    protected fun rand(from: Int, to: Int) : Int {
+        return random.nextInt(to - from) + from
+    }
+
+    protected fun rand(from: Float) : Float {
+        return random.nextFloat() + from
+    }
+
+    protected fun createRandomFrame(): Frame {
+        val scale = rand(1, 5).toFloat()
+        return Frame(x = rand(0f),
+                     y = rand(0f),
+                     width = rand(0, 500).toFloat(),
+                     height = rand(0, 500).toFloat(),
+                     scaleX = scale,
+                     scaleY = scale,
+                     rotationInDegrees = rand(0, 360).toFloat(),
+                     z = rand(0, 1000))
+    }
+
+    protected fun createRandomSVGScrap(): ISVGScrap {
+        return SVGScrap(frame = createRandomFrame())
+    }
+
+    protected fun createRandomImageScrap(): IImageScrap {
+        return ImageScrap(frame = createRandomFrame(),
+                          imageURL = URL("http://foo.com/foo.png"))
+    }
+
+    protected fun createRandomTextScrap(): ITextScrap {
+        return TextScrap(frame = createRandomFrame(),
+                         text = "foo")
+    }
+
+    protected fun createRandomScrap(): IScrap {
+        val random = rand(0, 2)
+
+        return when (random) {
+            0 -> createRandomSVGScrap()
+            1 -> createRandomImageScrap()
+            2 -> createRandomTextScrap()
+            else -> throw IllegalStateException()
+        }
     }
 }

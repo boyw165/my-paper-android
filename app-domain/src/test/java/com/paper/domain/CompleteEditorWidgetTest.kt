@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class CompleteEditorWidgetTest : MockDataLayerTest() {
+class CompleteEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `busy test`() {

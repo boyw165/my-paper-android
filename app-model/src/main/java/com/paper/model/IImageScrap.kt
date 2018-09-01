@@ -22,4 +22,14 @@
 
 package com.paper.model
 
-interface IImageScrap : IScrap
+import io.reactivex.Observable
+import java.net.URL
+
+interface IImageScrap : IScrap {
+
+    fun getURL(): URL
+
+    fun setURL(url: URL)
+
+    fun observeURL(): Observable<URL>
+}

@@ -20,16 +20,43 @@
 
 package com.paper.model
 
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
+import java.net.URL
 import java.util.*
 
-open class ImageScrap(override val uuid: UUID = UUID.randomUUID())
-    : BaseScrap(uuid),
+open class ImageScrap(uuid: UUID = UUID.randomUUID(),
+                      frame: Frame = Frame(),
+                      private var imageURL: URL)
+    : BaseScrap(uuid = uuid,
+                frame = frame),
       IImageScrap {
+
+    private val urlSignal = PublishSubject.create<URL>().toSerialized()
+
+    override fun getURL(): URL {
+        synchronized(lock) {
+            return imageURL
+        }
+    }
+
+    override fun setURL(url: URL) {
+        synchronized(lock) {
+            imageURL = url
+            urlSignal.onNext(url)
+        }
+    }
+
+    override fun observeURL(): Observable<URL> {
+        return urlSignal
+    }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): IScrap {
-        TODO()
+        return ImageScrap(uuid = UUID.randomUUID(),
+                          frame = getFrame(),
+                          imageURL = getURL())
     }
 
     override fun equals(other: Any?): Boolean {
@@ -44,18 +71,18 @@ open class ImageScrap(override val uuid: UUID = UUID.randomUUID())
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(mLock) { mIsHashDirty }
+        val isHashDirty = synchronized(lock) { isHashDirty }
         if (isHashDirty) {
             var hashCode = super.hashCode()
             // FIXME: There is a very short moment in between super.hashCode()
-            // FIXME: and the following code such that mIsHashDirty is false
+            // FIXME: and the following code such that isHashDirty is false
 
-            synchronized(mLock) {
-                mIsHashDirty = false
-                mHashCode = hashCode
+            synchronized(lock) {
+                this.isHashDirty = false
+                cacheHashCode = hashCode
             }
         }
 
-        return mHashCode
+        return cacheHashCode
     }
 }

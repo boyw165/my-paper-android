@@ -29,7 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SimpleEditorWidgetTest : MockDataLayerTest() {
+class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `busy test`() {
