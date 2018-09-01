@@ -28,7 +28,6 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import java.util.*
-import java.util.concurrent.atomic.AtomicReference
 
 open class BaseScrapWidget(private val scrap: IScrap,
                            protected val schedulers: ISchedulerProvider)

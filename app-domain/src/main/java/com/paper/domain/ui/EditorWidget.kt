@@ -24,12 +24,15 @@ import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.DrawingMode
 import com.paper.domain.ui_event.*
+import com.paper.model.IImageScrap
 import com.paper.model.IPaper
 import com.paper.model.ISVGScrap
+import com.paper.model.ITextScrap
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -60,6 +63,26 @@ open class EditorWidget(protected val schedulers: ISchedulerProvider)
 
             val paper = paper!!
 
+            // Model add scrap
+            paper.observeAddScrap()
+                .subscribe { scrap ->
+                    val widget = when (scrap) {
+                        is ISVGScrap -> SVGScrapWidget(scrap = scrap,
+                                                       schedulers = schedulers)
+                        is IImageScrap -> TODO()
+                        is ITextScrap -> TODO()
+                        else -> TODO()
+                    }
+                    addWidget(widget)
+                }
+                .addTo(staticDisposableBag)
+            // Model remove scrap
+            paper.observeRemoveScrap()
+                .subscribe { scrap ->
+                    removeWidget(scrap.getID())
+                }
+                .addTo(staticDisposableBag)
+
             inflateScrapWidgets(paper)
 
             // Mark initialization done
@@ -67,19 +90,23 @@ open class EditorWidget(protected val schedulers: ISchedulerProvider)
         }
     }
 
-    protected fun inflateScrapWidgets(paper: IPaper) {
+    private fun inflateScrapWidgets(paper: IPaper) {
         val scraps = paper.getScraps()
         scraps.forEach { scrap ->
-            when (scrap) {
+            val widget = when (scrap) {
                 is ISVGScrap -> {
-                    val widget = SVGScrapWidget(
+                    SVGScrapWidget(
                         scrap = scrap,
                         schedulers = schedulers)
-
-                    addScrap(widget)
                 }
+                // TODO
+                is IImageScrap,
+                is ITextScrap -> BaseScrapWidget(scrap = scrap,
+                                                 schedulers = schedulers)
                 else -> TODO()
             }
+
+            addWidget(widget)
         }
     }
 
@@ -101,14 +128,14 @@ open class EditorWidget(protected val schedulers: ISchedulerProvider)
         }
     }
 
-    override fun onInitCanvasSize(): Single<Pair<Float, Float>> {
+    override fun getCanvasSize(): Single<Pair<Float, Float>> {
         val paper = paper!!
         return Single.just(paper.getSize())
     }
 
     // Debug //////////////////////////////////////////////////////////////////
 
-    override fun onPrintDebugMessage(): Observable<String> {
+    override fun observeDebugMessage(): Observable<String> {
         return debugSignal
     }
 
@@ -131,68 +158,47 @@ open class EditorWidget(protected val schedulers: ISchedulerProvider)
 
     // Scrap manipulation /////////////////////////////////////////////////////
 
-    protected val updateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
+    private val updateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
 
-    override fun onUpdateScrap(): Observable<UpdateScrapEvent> {
+    override fun observeScraps(): Observable<UpdateScrapEvent> {
         return updateScrapSignal
     }
 
-    override fun handleDomainEvent(event: EditorEvent,
-                                   ifOutputOperation: Boolean) {
-        when (event) {
-            is GroupEditorEvent -> {
-                val events = event.events
-                events.forEach { handleDomainEvent(it) }
-            }
-            is GroupUpdateScrapEvent -> {
-                val events = event.events
-                events.forEach { handleDomainEvent(it) }
-            }
-
-            is AddScrapEvent -> addScrap(event.scrap as BaseScrapWidget)
-            is RemoveScrapEvent -> removeScrap(event.scrap as BaseScrapWidget)
-            is RemoveAllScrapsEvent -> removeAllScraps()
-            is FocusScrapEvent -> focusScrapWidget(event.scrapID)
-
-            is StartSketchEvent -> startSketch(event.x, event.y)
-            is DoSketchEvent -> doSketch(event.x, event.y)
-            is StopSketchEvent -> stopSketch()
-        }
-    }
-
-    protected fun addScrap(scrap: BaseScrapWidget) {
+    private fun addWidget(widget: BaseScrapWidget) {
         synchronized(lock) {
-            scrapWidgets[scrap.getID()] = scrap
+            scrapWidgets[widget.getID()] = widget
 
-            // Start the scrap
-            dynamicDisposableBag[scrap] = scrap
+            // Start the widget
+            dynamicDisposableBag[widget] = widget
                 .start()
                 .subscribe()
 
             // Signal out
-            updateScrapSignal.onNext(AddScrapEvent(scrap))
+            updateScrapSignal.onNext(AddScrapEvent(widget))
         }
     }
 
-    protected fun removeScrap(scrap: BaseScrapWidget) {
+    private fun removeWidget(id: UUID) {
         synchronized(lock) {
-            scrapWidgets.remove(scrap.getID())
+            scrapWidgets[id]?.let { widget ->
+                scrapWidgets.remove(widget.getID())
 
-            // Stop the scrap
-            dynamicDisposableBag[scrap]?.dispose()
-            dynamicDisposableBag.remove(scrap)
+                // Stop the scrap
+                dynamicDisposableBag[widget]?.dispose()
+                dynamicDisposableBag.remove(widget)
 
-            // Clear focus
-            if (focusScrapWidget == scrap) {
-                focusScrapWidget = null
+                // Clear focus
+                if (focusScrapWidget == widget) {
+                    focusScrapWidget = null
+                }
+
+                // Signal out
+                updateScrapSignal.onNext(RemoveScrapEvent(widget))
             }
-
-            // Signal out
-            updateScrapSignal.onNext(RemoveScrapEvent(scrap))
         }
     }
 
-    protected fun removeAllScraps() {
+    private fun removeAllScraps() {
         synchronized(lock) {
             // Prepare remove events
             val events = mutableListOf<RemoveScrapEvent>()
@@ -222,42 +228,42 @@ open class EditorWidget(protected val schedulers: ISchedulerProvider)
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    protected fun startSketch(x: Float, y: Float) {
-        synchronized(lock) {
-            // Mark drawing
-            dirtyFlag.markDirty(EditorDirtyFlag.OPERATING_CANVAS)
-
-            val widget = focusScrapWidget!! as SVGScrapWidget
-
-            // TODO: Determine style
-            widget.moveTo(x, y)
-        }
-    }
-
-    protected fun doSketch(x: Float, y: Float) {
-        synchronized(lock) {
-            val widget = focusScrapWidget!! as SVGScrapWidget
-            val frame = widget.getFrame()
-            val nx = x - frame.x
-            val ny = y - frame.y
-
-            // TODO: Use cubic line?
-            widget.cubicTo(nx, ny,
-                           nx, ny,
-                           nx, ny)
-        }
-    }
-
-    protected fun stopSketch() {
-        synchronized(lock) {
-            val widget = focusScrapWidget!! as SVGScrapWidget
-
-            widget.close()
-
-            // Mark drawing
-            dirtyFlag.markNotDirty(EditorDirtyFlag.OPERATING_CANVAS)
-        }
-    }
+//    protected fun startSketch(x: Float, y: Float) {
+//        synchronized(lock) {
+//            // Mark drawing
+//            dirtyFlag.markDirty(EditorDirtyFlag.OPERATING_CANVAS)
+//
+//            val widget = focusScrapWidget!! as SVGScrapWidget
+//
+//            // TODO: Determine style
+//            widget.moveTo(x, y)
+//        }
+//    }
+//
+//    protected fun doSketch(x: Float, y: Float) {
+//        synchronized(lock) {
+//            val widget = focusScrapWidget!! as SVGScrapWidget
+//            val frame = widget.getFrame()
+//            val nx = x - frame.x
+//            val ny = y - frame.y
+//
+//            // TODO: Use cubic line?
+//            widget.cubicTo(nx, ny,
+//                           nx, ny,
+//                           nx, ny)
+//        }
+//    }
+//
+//    protected fun stopSketch() {
+//        synchronized(lock) {
+//            val widget = focusScrapWidget!! as SVGScrapWidget
+//
+//            widget.close()
+//
+//            // Mark drawing
+//            dirtyFlag.markNotDirty(EditorDirtyFlag.OPERATING_CANVAS)
+//        }
+//    }
 
     /**
      * The current stroke color.

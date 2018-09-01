@@ -21,7 +21,6 @@
 package com.paper.domain.ui
 
 import com.paper.domain.data.DrawingMode
-import com.paper.domain.ui_event.EditorEvent
 import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.IPaper
 import io.reactivex.Observable
@@ -44,16 +43,11 @@ interface IEditorWidget : IWidget {
 
     fun setPenSize(size: Float)
 
-    fun onInitCanvasSize(): Single<Pair<Float, Float>>
+    fun getCanvasSize(): Single<Pair<Float, Float>>
 
-    // Add & Remove Scrap /////////////////////////////////////////////////////
-
-    fun handleDomainEvent(event: EditorEvent,
-                          ifOutputOperation: Boolean = false)
-
-    fun onUpdateScrap(): Observable<UpdateScrapEvent>
+    fun observeScraps(): Observable<UpdateScrapEvent>
 
     // Debug //////////////////////////////////////////////////////////////////
 
-    fun onPrintDebugMessage(): Observable<String>
+    fun observeDebugMessage(): Observable<String>
 }

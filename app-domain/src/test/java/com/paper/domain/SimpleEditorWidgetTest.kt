@@ -59,7 +59,7 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
                                         caughtErrorSignal = caughtErrorSignal,
                                         schedulers = mockSchedulers)
 
-        val scrapTester = tester.onUpdateScrap().test()
+        val scrapTester = tester.observeScraps().test()
 
         // Start widget
         val lifecycleTest = tester.start().test()

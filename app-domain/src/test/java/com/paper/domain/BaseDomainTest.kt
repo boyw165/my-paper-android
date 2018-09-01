@@ -43,8 +43,12 @@ abstract class BaseDomainTest {
     val mockPaper: IPaper
         get() {
             val mock = BasePaper()
-            mock.addScrap(SVGScrap(frame = Frame(2f, 3f),
-                                   graphicsList = mutableListOf(VectorGraphics(tupleList = mutableListOf(LinearPointTuple(3f, 4f))))))
+            mock.addScrap(createRandomScrap())
+            mock.addScrap(createRandomScrap())
+            mock.addScrap(createRandomScrap())
+            mock.addScrap(createRandomScrap())
+            mock.addScrap(createRandomScrap())
+            mock.addScrap(createRandomScrap())
             return mock
         }
 

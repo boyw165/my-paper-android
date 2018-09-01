@@ -22,17 +22,11 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.DragBeginEvent
-import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.cardinalblue.gesture.rx.OnDragEvent
 import com.paper.domain.ISchedulerProvider
 import com.paper.domain.ui.ICoordinateMapper
 import com.paper.domain.ui.IManipulator
-import com.paper.domain.ui.SVGScrapWidget
-import com.paper.domain.ui_event.*
-import com.paper.model.Frame
-import com.paper.model.SVGScrap
+import com.paper.domain.ui_event.EditorEvent
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 
@@ -50,40 +44,41 @@ class SketchManipulator(private val mapper: ICoordinateMapper,
     }
 
     private fun interpretEvent(event: GestureEvent): Observable<out EditorEvent> {
-        return when (event) {
-            is DragBeginEvent -> {
-                val x = event.startPointer.x
-                val y = event.startPointer.y
-                val (nx, ny) = mapper.mapPointToDomain(Pair(x, y))
-
-                // Create widget
-                val widget = SVGScrapWidget(
-                    scrap = SVGScrap(frame = Frame(nx, ny)),
-                    schedulers = schedulers)
-
-                // To a sequence of events:
-                // 1. clear focus
-                // 2. add scrap
-                // 3. focus scrap
-                // 4. start sketch
-                Observable.just(GroupEditorEvent(
-                    listOf(ClearFocusEvent,
-                           AddScrapEvent(widget),
-                           FocusScrapEvent(widget.getID()),
-                           StartSketchEvent(nx, ny))))
-            }
-            is OnDragEvent -> {
-                val x = event.stopPointer.x
-                val y = event.stopPointer.y
-                val (nx, ny) = mapper.mapPointToDomain(Pair(x, y))
-
-                Observable.just(DoSketchEvent(nx, ny))
-            }
-            is DragEndEvent -> {
-                Observable.just(StopSketchEvent,
-                                ClearFocusEvent)
-            }
-            else -> TODO()
-        }
+//        return when (event) {
+//            is DragBeginEvent -> {
+//                val x = event.startPointer.x
+//                val y = event.startPointer.y
+//                val (nx, ny) = mapper.mapPointToDomain(Pair(x, y))
+//
+//                // Create widget
+//                val widget = SVGScrapWidget(
+//                    scrap = SVGScrap(frame = Frame(nx, ny)),
+//                    schedulers = schedulers)
+//
+//                // To a sequence of events:
+//                // 1. clear focus
+//                // 2. add scrap
+//                // 3. focus scrap
+//                // 4. start sketch
+//                Observable.just(GroupEditorEvent(
+//                    listOf(ClearFocusEvent,
+//                           AddScrapEvent(widget),
+//                           FocusScrapEvent(widget.getID()),
+//                           StartSketchEvent(nx, ny))))
+//            }
+//            is OnDragEvent -> {
+//                val x = event.stopPointer.x
+//                val y = event.stopPointer.y
+//                val (nx, ny) = mapper.mapPointToDomain(Pair(x, y))
+//
+//                Observable.just(DoSketchEvent(nx, ny))
+//            }
+//            is DragEndEvent -> {
+//                Observable.just(StopSketchEvent,
+//                                ClearFocusEvent)
+//            }
+//            else -> TODO()
+//        }
+        TODO()
     }
 }

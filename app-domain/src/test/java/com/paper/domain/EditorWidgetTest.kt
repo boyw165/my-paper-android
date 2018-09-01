@@ -23,9 +23,7 @@
 package com.paper.domain
 
 import com.paper.domain.ui.EditorWidget
-import com.paper.domain.ui.SVGScrapWidget
 import com.paper.domain.ui_event.*
-import com.paper.model.SVGScrap
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
@@ -54,78 +52,81 @@ class EditorWidgetTest : BaseDomainTest() {
     }
 
     @Test
-    fun `sketching, canvas should be busy`() {
+    fun `add scrap, should see event and scrap start`() {
         val tester = EditorWidget(schedulers = mockSchedulers)
-
-        val busyTest = tester
-            .onBusy()
+        val scrapTest = tester
+            .observeScraps()
             .test()
 
         // Start widget
-        tester.inject(mockPaper)
+        val paper = mockPaper
+        tester.inject(paper)
         tester.start().test().assertSubscribed()
 
         // Make sure the stream moves
         moveScheduler()
 
-        // Sketch (by simulating the gesture interpreter behavior)
-        val widget = SVGScrapWidget(
-            scrap = SVGScrap(frame = createRandomFrame()),
-            schedulers = mockSchedulers)
-        tester.handleDomainEvent(GroupEditorEvent(
-            listOf(AddScrapEvent(widget),
-                   FocusScrapEvent(widget.getID()),
-                   StartSketchEvent(0f, 0f))))
-
-        // Trigger for see sketch event
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
-
-        busyTest.assertValueAt(busyTest.valueCount() - 1, true)
+        paper.getScraps().forEachIndexed { i, _ ->
+            scrapTest.assertValueAt(i) { event ->
+                event is AddScrapEvent
+            }
+        }
     }
 
     @Test
     fun `remove scrap, should see event and scrap stop`() {
-        val tester = EditorWidget(schedulers = mockSchedulers)
+        val candidate = EditorWidget(schedulers = mockSchedulers)
 
-        val scrapTest = tester
-            .onUpdateScrap()
+        val scrapTest = candidate
+            .observeScraps()
             .test()
 
         // Start widget
-        tester.inject(mockPaper)
-        tester.start().test().assertSubscribed()
+        val paper = mockPaper
+        candidate.inject(paper)
+        candidate.start().test().assertSubscribed()
 
         // Make sure the stream moves
         moveScheduler()
 
         // Remove it
-        val scrap = (scrapTest.events[0][0] as AddScrapEvent).scrap
-        tester.handleDomainEvent(RemoveScrapEvent(scrap))
+        paper.removeScrap(paper.getScraps()[0])
 
         // Make sure the stream moves
         moveScheduler()
 
-        scrapTest.assertValueAt(1) { event ->
+        scrapTest.assertValueAt(scrapTest.valueCount() - 1) { event ->
             event is RemoveScrapEvent
         }
     }
 
-    @Test
-    fun `add scrap, should see event and scrap start`() {
-        val tester = EditorWidget(schedulers = mockSchedulers)
-        val scrapTest = tester
-            .onUpdateScrap()
-            .test()
-
-        // Start widget
-        tester.inject(mockPaper)
-        tester.start().test().assertSubscribed()
-
-        // Make sure the stream moves
-        moveScheduler()
-
-        scrapTest.assertValue { event ->
-            event is AddScrapEvent
-        }
-    }
+//    @Test
+//    fun `sketching, canvas should be busy`() {
+//        val tester = EditorWidget(schedulers = mockSchedulers)
+//
+//        val busyTest = tester
+//            .onBusy()
+//            .test()
+//
+//        // Start widget
+//        tester.inject(mockPaper)
+//        tester.start().test().assertSubscribed()
+//
+//        // Make sure the stream moves
+//        moveScheduler()
+//
+//        // Sketch (by simulating the gesture interpreter behavior)
+//        val widget = SVGScrapWidget(
+//            scrap = SVGScrap(frame = createRandomFrame()),
+//            schedulers = mockSchedulers)
+//        tester.handleDomainEvent(GroupEditorEvent(
+//            listOf(AddScrapEvent(widget),
+//                   FocusScrapEvent(widget.getID()),
+//                   StartSketchEvent(0f, 0f))))
+//
+//        // Trigger for see sketch event
+//        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+//
+//        busyTest.assertValueAt(busyTest.valueCount() - 1, true)
+//    }
 }
