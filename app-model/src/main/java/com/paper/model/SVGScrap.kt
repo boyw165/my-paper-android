@@ -20,8 +20,9 @@
 
 package com.paper.model
 
-import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 open class SVGScrap(uuid: UUID = UUID.randomUUID(),
@@ -31,10 +32,22 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
                 frame = frame),
       ISVGScrap {
 
+    private val addSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
+    private val removeSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
+
     override fun setSVGs(other: List<VectorGraphics>) {
         synchronized(lock) {
+            val removed = graphicsList.toList()
             graphicsList.clear()
             graphicsList.addAll(other)
+
+            // Signal out
+            removed.forEach { svg ->
+                removeSVGSignal.onNext(svg)
+            }
+            other.forEach { svg ->
+                addSVGSignal.onNext(svg)
+            }
         }
     }
 
@@ -44,53 +57,30 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
         }
     }
 
-    @Volatile
-    private var mTmpVectorGraphics: VectorGraphics? = null
-//    private val mTmpVectorGraphicsLock = ReentrantLock()
-
-    override fun moveTo(x: Float,
-                        y: Float,
-                        style: Set<SVGStyle>) {
+    override fun addSVG(svg: VectorGraphics) {
         synchronized(lock) {
-            // TODO: Fix the session lock
-//            mTmpVectorGraphicsLock.lock()
+            graphicsList.add(svg)
 
-            mTmpVectorGraphics = VectorGraphics(
-                style = style,
-                tupleList = mutableListOf(LinearPointTuple(x, y)))
+            // Signal out
+            addSVGSignal.onNext(svg)
         }
     }
 
-    override fun lineTo(x: Float, y: Float) {
+    override fun removeSVG(svg: VectorGraphics) {
         synchronized(lock) {
-            val v = mTmpVectorGraphics!!
-            v.addTuple(LinearPointTuple(x, y))
+            graphicsList.remove(svg)
+
+            // Signal out
+            removeSVGSignal.onNext(svg)
         }
     }
 
-    override fun cubicTo(previousControlX: Float,
-                         previousControlY: Float,
-                         currentControlX: Float,
-                         currentControlY: Float,
-                         currentEndX: Float,
-                         currentEndY: Float) {
-        synchronized(lock) {
-            val v = mTmpVectorGraphics!!
-            v.addTuple(CubicPointTuple(previousControlX, previousControlY,
-                                       currentControlX, currentControlY,
-                                       currentEndX, currentEndY))
-        }
+    override fun observeAddSVG(): Observable<VectorGraphics> {
+        return addSVGSignal
     }
 
-    override fun close() {
-        synchronized(lock) {
-            val v = mTmpVectorGraphics!!
-            mTmpVectorGraphics = null
-
-            graphicsList.add(v)
-
-//            mTmpVectorGraphicsLock.unlock()
-        }
+    override fun observeRemoveSVG(): Observable<VectorGraphics> {
+        return removeSVGSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////

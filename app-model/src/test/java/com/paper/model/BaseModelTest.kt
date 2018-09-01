@@ -22,6 +22,7 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.VectorGraphics
 import java.lang.IllegalStateException
 import java.net.URL
 import java.util.*
@@ -50,8 +51,21 @@ abstract class BaseModelTest {
                      z = rand(0, 1000))
     }
 
+    protected fun createRandomSVG(): VectorGraphics {
+        return VectorGraphics(tupleList = mutableListOf(LinearPointTuple(0f, 0f),
+                                                        CubicPointTuple(10f, 10f, 10f, 10f, 20f, 0f),
+                                                        CubicPointTuple(-30f, -30f, -30f, -30f, 40f, 0f),
+                                                        CubicPointTuple(50f, 50f, 50f, 50f, 40f, 20f)))
+    }
+
     protected fun createRandomSVGScrap(): ISVGScrap {
-        return SVGScrap(frame = createRandomFrame())
+        return SVGScrap(frame = createRandomFrame(),
+                        graphicsList = mutableListOf(createRandomSVG(),
+                                                     createRandomSVG(),
+                                                     createRandomSVG(),
+                                                     createRandomSVG(),
+                                                     createRandomSVG(),
+                                                     createRandomSVG()))
     }
 
     protected fun createRandomImageScrap(): IImageScrap {

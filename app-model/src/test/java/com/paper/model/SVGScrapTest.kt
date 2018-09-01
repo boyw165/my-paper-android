@@ -33,7 +33,7 @@ class SVGScrapTest : BaseModelTest() {
 
     @Test
     fun `copy, ID should be different`() {
-        val tester1 = SVGScrap()
+        val tester1 = createRandomSVGScrap()
         val tester2 = tester1.copy() as ISVGScrap
         tester2.setFrame(Frame(100f, 100f))
         tester2.setSVGs(listOf(VectorGraphics()))
@@ -45,50 +45,28 @@ class SVGScrapTest : BaseModelTest() {
     }
 
     @Test
-    fun `call moveTo without a close, should see no change`() {
-        val scrap = SVGScrap()
+    fun `observe add svg`() {
+        val tester = createRandomSVGScrap()
 
-        scrap.moveTo(x = 100f, y = 100f, style = emptySet())
+        val addTestObserver = tester.observeAddSVG().test()
 
-        Assert.assertEquals(0, scrap.getSVGs().size)
+        tester.addSVG(createRandomSVG())
+        tester.addSVG(createRandomSVG())
+        tester.addSVG(createRandomSVG())
+
+        addTestObserver.assertValueCount(3)
     }
 
     @Test
-    fun `call moveTo with a close, should see change`() {
-        val scrap = SVGScrap()
+    fun `observe remove svg`() {
+        val tester = createRandomSVGScrap()
 
-        scrap.moveTo(x = 100f, y = 100f, style = emptySet())
-        scrap.close()
+        val removeTestObserver = tester.observeRemoveSVG().test()
 
-        Assert.assertEquals(1, scrap.getSVGs().size)
+        tester.removeSVG(tester.getSVGs()[0])
+        tester.removeSVG(tester.getSVGs()[0])
+
+        removeTestObserver.assertValueCount(2)
     }
-
-//    @Test
-//    fun `concurrent test`() {
-//        val scrap = SVGScrap()
-//
-//        val testObserver = Completable
-//            .mergeArrayDelayError(
-//                Completable
-//                    .fromCallable {
-//                        scrap.moveTo(11f, 12f, emptySet())
-//                        scrap.lineTo(13f, 14f)
-//                        scrap.close()
-//                    }
-//                    .subscribeOn(Schedulers.computation()),
-//                Completable
-//                    .fromCallable {
-//                        scrap.moveTo(21f, 22f, emptySet())
-//                        scrap.lineTo(23f, 24f)
-//                        scrap.close()
-//                    }
-//                    .subscribeOn(Schedulers.computation()))
-//            .test()
-//
-//        // Await until two concurrent jobs finish
-//        testObserver.await()
-//        testObserver.assertComplete()
-//        Assert.assertEquals(2, scrap.getSVGs().size)
-//    }
 }
 
