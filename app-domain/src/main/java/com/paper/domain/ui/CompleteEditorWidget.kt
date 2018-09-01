@@ -88,7 +88,7 @@ class CompleteEditorWidget(paperID: Long,
                     //                    }
                     //                }
                     //            }
-                    //            .addTo(mDisposables)
+                    //            .addTo(staticDisposableBag)
 
                     // Prepare initial tools and select the pen by default.
                     val tools = getEditToolIDs()
@@ -111,7 +111,7 @@ class CompleteEditorWidget(paperID: Long,
                     //                    colorTickets = colors,
                     //                    usingIndex = index))
                     //            }
-                    //            .addTo(mDisposables)
+                    //            .addTo(staticDisposableBag)
 
                     // Prepare initial pen size
                     //        penPrefsRepo.getPenSize()
@@ -119,7 +119,7 @@ class CompleteEditorWidget(paperID: Long,
                     //            .subscribe { penSize ->
                     //                mPenSizeSignal.onNext(penSize)
                     //            }
-                    //            .addTo(mDisposables)
+                    //            .addTo(staticDisposableBag)
 
                     Observable.just(true)
                 } else {
@@ -236,13 +236,13 @@ class CompleteEditorWidget(paperID: Long,
     //    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
     //
     //    override fun setPenColor(color: Int) {
-    //        mCancelSignal.onNext(0)
+    //        cancelSignal.onNext(0)
     //
-    //        mDisposables.add(
+    //        staticDisposableBag.add(
     //            penPrefsRepo
     //                .putChosenPenColor(color)
     //                .toObservable()
-    //                .takeUntil(mCancelSignal)
+    //                .takeUntil(cancelSignal)
     //                .subscribe())
     //    }
     //
@@ -268,7 +268,7 @@ class CompleteEditorWidget(paperID: Long,
     //                }
     //            }
     //            .subscribe()
-    //            .addTo(mDisposables)
+    //            .addTo(staticDisposableBag)
     //    }
     //
     //    private val mPenSizeSignal = BehaviorSubject.create<Float>()

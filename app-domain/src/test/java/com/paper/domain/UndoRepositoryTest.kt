@@ -36,14 +36,10 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class UndoRepositoryTest {
+class UndoRepositoryTest : BaseDomainTest() {
 
     @Test
     fun `put operation and see one record`() {
-        val testScheduler = TestScheduler()
-        val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
-        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
-
         val tester = UndoRepository(fileDir = File("/tmp"),
                                     schedulers = mockSchedulers)
 
@@ -52,7 +48,9 @@ class UndoRepositoryTest {
 
         // Add one particular stroke
         tester.putOperation(AddScrapOperation())
-        testScheduler.triggerActions()
+
+        // Make sure the stream moves
+        moveScheduler()
 
         // Must see one record!
         Assert.assertEquals(1, tester.undoSize)
@@ -61,11 +59,6 @@ class UndoRepositoryTest {
     @Test
     fun `put operation and undo, should see no record`() {
         val mockPaper = Mockito.mock(IPaper::class.java)
-
-        val testScheduler = TestScheduler()
-        val mockSchedulers = Mockito.mock(ISchedulerProvider::class.java)
-        Mockito.`when`(mockSchedulers.main()).thenReturn(testScheduler)
-        Mockito.`when`(mockSchedulers.db()).thenReturn(testScheduler)
 
         val tester = UndoRepository(fileDir = File("/tmp"),
                                     schedulers = mockSchedulers)
@@ -77,12 +70,17 @@ class UndoRepositoryTest {
 
         // Add one particular stroke
         tester.putOperation(AddScrapOperation())
-        testScheduler.triggerActions()
+
+        // Make sure the stream moves
+        moveScheduler()
+
         // Undo immediately
         tester.undo(mockPaper)
             .subscribe()
             .addTo(disposables)
-        testScheduler.triggerActions()
+
+        // Make sure the stream moves
+        moveScheduler()
 
         // Must see one record!
         Assert.assertEquals(1, tester.redoSize)

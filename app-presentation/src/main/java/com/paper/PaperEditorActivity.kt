@@ -241,7 +241,7 @@ class PaperEditorActivity : AppCompatActivity() {
         // TODO: Refactor to below
 //        mPresenter
 //            .handleDelete(RxView.clicks(mBtnDelete))
-//            .addTo(mDisposables)
+//            .addTo(disposableBag)
 
         // Load paper and establish the binding
         // FIXME: save-restore

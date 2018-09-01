@@ -64,6 +64,10 @@ abstract class BaseDomainTest {
         disposableBag.clear()
     }
 
+    protected fun moveScheduler() {
+        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+    }
+
     private val random = Random()
 
     protected fun rand(from: Int, to: Int) : Int {
@@ -84,6 +88,10 @@ abstract class BaseDomainTest {
                      scaleY = scale,
                      rotationInDegrees = rand(0, 360).toFloat(),
                      z = rand(0, 1000))
+    }
+
+    protected fun createBaseScrapBy(frame: Frame): IScrap {
+        return BaseScrap(frame = frame)
     }
 
     protected fun createRandomSVGScrap(): ISVGScrap {

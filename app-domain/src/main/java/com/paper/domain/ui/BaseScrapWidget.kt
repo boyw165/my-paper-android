@@ -23,25 +23,36 @@ package com.paper.domain.ui
 import com.paper.domain.ISchedulerProvider
 import com.paper.model.Frame
 import com.paper.model.IScrap
-import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 
-abstract class BaseScrapWidget(private val scrap: IScrap,
-                               protected val schedulers: ISchedulerProvider)
+open class BaseScrapWidget(private val scrap: IScrap,
+                           protected val schedulers: ISchedulerProvider)
     : IBaseScrapWidget {
 
-    protected val mLock = Any()
+    protected val lock = Any()
 
-    protected val mCancelSignal = PublishSubject.create<Any>().toSerialized()
-    protected val mDisposables = CompositeDisposable()
+    private val frameDisposableBag = CompositeDisposable()
+    private val staticDisposableBag = CompositeDisposable()
+
+    override fun start(): Observable<Boolean> {
+        return autoStop {
+            scrap.observeFrame()
+                .subscribe { frame ->
+                    frameSignal.onNext(frame)
+                }
+                .addTo(staticDisposableBag)
+        }
+    }
 
     override fun stop() {
-        synchronized(mLock) {
-            mCancelSignal.onNext(0)
-            mDisposables.clear()
+        synchronized(lock) {
+            staticDisposableBag.clear()
+            frameDisposableBag.clear()
         }
     }
 
@@ -51,32 +62,55 @@ abstract class BaseScrapWidget(private val scrap: IScrap,
 
     // Frame //////////////////////////////////////////////////////////////////
 
-    private val mFrameSignal = PublishSubject.create<Frame>().toSerialized()
+    private val frameSignal = PublishSubject.create<Frame>().toSerialized()
 
     override fun getFrame(): Frame {
-        synchronized(mLock) {
+        synchronized(lock) {
             return scrap.getFrame()
         }
     }
 
-    internal fun setFrame(frame: Frame) {
-        synchronized(mLock) {
-            scrap.setFrame(frame)
-
-            // Signal out
-            mFrameSignal.onNext(frame)
-        }
+    override fun observeFrame(): Observable<Frame> {
+        return frameSignal
     }
 
-    override fun onUpdateFrame(): Observable<Frame> {
-        return mFrameSignal
-    }
+    override fun handleFrameDisplacement(src: Observable<Frame>) {
+        frameDisposableBag.clear()
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
+        // Begin of the change
+        src.firstElement()
+            .subscribe { delta ->
+                // model frame + displacement
+                frameSignal.onNext(getFrame().add(delta))
+            }
+            .addTo(frameDisposableBag)
+
+        // Doing some change
+        src.skip(1)
+            .skipLast(1)
+            .subscribe { delta ->
+                // model frame + displacement
+                frameSignal.onNext(getFrame().add(delta))
+            }
+            .addTo(frameDisposableBag)
+
+        // End of the change
+        src.lastElement()
+            .subscribe { delta ->
+                synchronized(lock) {
+                    // model frame + displacement
+                    frameSignal.onNext(getFrame().add(delta))
+
+                    // Commit to model
+                    val current = scrap.getFrame()
+                    scrap.setFrame(current.add(delta))
+                }
+            }
+            .addTo(frameDisposableBag)
+    }
 
     protected fun ensureNoLeakedBinding() {
-        if (mDisposables.size() > 0)
+        if (staticDisposableBag.size() > 0)
             throw IllegalStateException("Already start a model")
     }
 }

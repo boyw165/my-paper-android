@@ -26,7 +26,6 @@ import com.paper.domain.ui.SimpleEditorWidget
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
-import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner.Silent::class)
 class SimpleEditorWidgetTest : BaseDomainTest() {
@@ -46,8 +45,8 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
         val lifecycleTest = tester.start().test()
         lifecycleTest.assertSubscribed()
 
-        // Advance time for initialization
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        // Make sure the stream moves
+        moveScheduler()
 
         busyTest.assertValueAt(0, true)
         busyTest.assertValueAt(busyTest.valueCount() - 1, false)
@@ -66,8 +65,8 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
         val lifecycleTest = tester.start().test()
         lifecycleTest.assertSubscribed()
 
-        // Advance time for initialization
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        // Make sure the stream moves
+        moveScheduler()
 
         scrapTester.assertValueCount(mockPaper.getScraps().size)
     }

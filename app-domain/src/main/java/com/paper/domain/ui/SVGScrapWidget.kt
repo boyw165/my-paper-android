@@ -46,7 +46,7 @@ class SVGScrapWidget(scrap: ISVGScrap,
 
             println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
 
-            synchronized(mLock) {
+            synchronized(lock) {
                 // Initialize SVG
                 val drawEvents = mutableListOf<UpdateScrapContentEvent>()
                 mSVGList.forEach { svg ->
@@ -59,7 +59,6 @@ class SVGScrapWidget(scrap: ISVGScrap,
 
     override fun stop() {
         super.stop()
-
         println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
     }
 
@@ -74,14 +73,11 @@ class SVGScrapWidget(scrap: ISVGScrap,
         // Mark drawing
         mDirtyFlag.markDirty(SVGDirtyFlag.SVG_DRAWING)
 
-        // Clear all the delayed execution.
-        mCancelSignal.onNext(0)
-
         val workingSVG = VectorGraphics(
                 style = style,
                 tupleList = mutableListOf(LinearPointTuple(x, y)))
 
-        synchronized(mLock) {
+        synchronized(lock) {
             mWorkingSVG = workingSVG
             mSVGList.add(workingSVG)
         }
@@ -92,10 +88,10 @@ class SVGScrapWidget(scrap: ISVGScrap,
 
     override fun lineTo(x: Float,
                         y: Float) {
-        val workingSVG = synchronized(mLock) {mWorkingSVG}
+        val workingSVG = synchronized(lock) {mWorkingSVG}
         val point = LinearPointTuple(x, y)
 
-        synchronized(mLock) {
+        synchronized(lock) {
             workingSVG.addTuple(point)
         }
 
@@ -109,7 +105,7 @@ class SVGScrapWidget(scrap: ISVGScrap,
                          currentControlY: Float,
                          currentEndX: Float,
                          currentEndY: Float) {
-        val workingSVG = synchronized(mLock) {mWorkingSVG}
+        val workingSVG = synchronized(lock) {mWorkingSVG}
         val point = CubicPointTuple(previousControlX,
                                     previousControlY,
                                     currentControlX,
@@ -117,7 +113,7 @@ class SVGScrapWidget(scrap: ISVGScrap,
                                     currentEndX,
                                     currentEndY)
 
-        synchronized(mLock) {
+        synchronized(lock) {
             workingSVG.addTuple(point)
         }
 

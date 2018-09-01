@@ -30,5 +30,7 @@ interface IBaseScrapWidget : IWidget {
 
     fun getFrame(): Frame
 
-    fun onUpdateFrame(): Observable<Frame>
+    fun observeFrame(): Observable<Frame>
+
+    fun handleFrameDisplacement(src: Observable<Frame>)
 }

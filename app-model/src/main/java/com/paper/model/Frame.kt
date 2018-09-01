@@ -24,8 +24,31 @@ data class Frame(val x: Float = 0f,
                  val y: Float = 0f,
                  val width: Float = 0f,
                  val height: Float = 0f,
-                 val scaleX: Float = 1f,
-                 val scaleY: Float = 1f,
+                 val scaleX: Float = 0f,
+                 val scaleY: Float = 0f,
                  val rotationInDegrees: Float = 0f,
                  val z: Int = 0)
-    : NoObfuscation
+    : NoObfuscation {
+
+    fun add(other: Frame): Frame {
+        return Frame(x = x + other.x,
+                     y = y + other.y,
+                     width = width + other.width,
+                     height = height + other.height,
+                     scaleX = scaleX + other.scaleX,
+                     scaleY = scaleY + other.scaleY,
+                     rotationInDegrees = rotationInDegrees + other.rotationInDegrees,
+                     z = z + other.z)
+    }
+
+    fun sub(other: Frame): Frame {
+        return Frame(x = x - other.x,
+                     y = y - other.y,
+                     width = width - other.width,
+                     height = height - other.height,
+                     scaleX = scaleX - other.scaleX,
+                     scaleY = scaleY - other.scaleY,
+                     rotationInDegrees = rotationInDegrees - other.rotationInDegrees,
+                     z = z - other.z)
+    }
+}

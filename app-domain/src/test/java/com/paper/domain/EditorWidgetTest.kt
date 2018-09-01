@@ -25,7 +25,6 @@ package com.paper.domain
 import com.paper.domain.ui.EditorWidget
 import com.paper.domain.ui.SVGScrapWidget
 import com.paper.domain.ui_event.*
-import com.paper.model.Frame
 import com.paper.model.SVGScrap
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,8 +65,8 @@ class EditorWidgetTest : BaseDomainTest() {
         tester.inject(mockPaper)
         tester.start().test().assertSubscribed()
 
-        // Trigger for initialization
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        // Make sure the stream moves
+        moveScheduler()
 
         // Sketch (by simulating the gesture interpreter behavior)
         val widget = SVGScrapWidget(
@@ -96,15 +95,15 @@ class EditorWidgetTest : BaseDomainTest() {
         tester.inject(mockPaper)
         tester.start().test().assertSubscribed()
 
-        // Trigger to see the scrap addition
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        // Make sure the stream moves
+        moveScheduler()
 
         // Remove it
         val scrap = (scrapTest.events[0][0] as AddScrapEvent).scrap
         tester.handleDomainEvent(RemoveScrapEvent(scrap))
 
-        // Trigger to see the scrap remove
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        // Make sure the stream moves
+        moveScheduler()
 
         scrapTest.assertValueAt(1) { event ->
             event is RemoveScrapEvent
@@ -122,8 +121,8 @@ class EditorWidgetTest : BaseDomainTest() {
         tester.inject(mockPaper)
         tester.start().test().assertSubscribed()
 
-        // Trigger
-        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+        // Make sure the stream moves
+        moveScheduler()
 
         scrapTest.assertValue { event ->
             event is AddScrapEvent
