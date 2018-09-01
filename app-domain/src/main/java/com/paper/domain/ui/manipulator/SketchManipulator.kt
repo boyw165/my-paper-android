@@ -20,20 +20,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.cardinalblue.gesture.rx.OnDragEvent
 import com.paper.domain.ISchedulerProvider
+import com.paper.domain.ui.ICoordinateMapper
+import com.paper.domain.ui.IManipulator
+import com.paper.domain.ui.SVGScrapWidget
 import com.paper.domain.ui_event.*
 import com.paper.model.Frame
 import com.paper.model.SVGScrap
 import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 
-class EditorManipulator(private val mapper: ICoordinateMapper,
+class SketchManipulator(private val mapper: ICoordinateMapper,
                         private val schedulers: ISchedulerProvider)
     : IManipulator {
 
