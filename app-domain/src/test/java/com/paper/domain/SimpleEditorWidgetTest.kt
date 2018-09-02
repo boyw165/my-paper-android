@@ -40,7 +40,7 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
                                            schedulers = mockSchedulers)
 
         val busyTest = candidate
-            .onBusy()
+            .observeBusy()
             .test()
 
         // Start widget
@@ -52,6 +52,27 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
 
         busyTest.assertValueAt(0, true)
         busyTest.assertValueAt(busyTest.valueCount() - 1, false)
+    }
+
+    @Test
+    fun `see busy if child widget is busy`() {
+        val candidate = SimpleEditorWidget(paperID = 0,
+                                           paperRepo = mockPaperRepo,
+                                           caughtErrorSignal = caughtErrorSignal,
+                                           schedulers = mockSchedulers)
+
+        val busyTest = candidate
+            .observeBusy()
+            .test()
+
+        // Start widget
+        val lifecycleTest = candidate.start().test()
+        lifecycleTest.assertSubscribed()
+
+        // Make sure the stream moves
+        moveScheduler()
+
+        // TODO
     }
 
     @Test

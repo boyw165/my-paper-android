@@ -43,7 +43,7 @@ import java.io.File
 
 class CompleteEditorWidget(paperID: Long,
                            paperRepo: IPaperRepo,
-                           private val lruCacheDir: File,
+                           private val undoWidget: UndoRepository,
                            private val penPrefsRepo: ICommonPenPrefsRepo,
                            caughtErrorSignal: Observer<Throwable>,
                            schedulers: ISchedulerProvider)
@@ -52,16 +52,14 @@ class CompleteEditorWidget(paperID: Long,
                          caughtErrorSignal = caughtErrorSignal,
                          schedulers = schedulers) {
 
-    private val undoWidget by lazy {
-        UndoRepository(fileDir = lruCacheDir,
-                       schedulers = schedulers)
-    }
-
     override fun start(): Observable<Boolean> {
         return super.start()
             .flatMap { done ->
                 if (done) {
-                    initUndoWidget()
+                    paper.observeOn(schedulers.main())
+                        .flatMapObservable {
+                            undoWidget.start()
+                        }
                         .subscribe()
                         .addTo(staticDisposableBag)
 
@@ -142,14 +140,6 @@ class CompleteEditorWidget(paperID: Long,
 
     // Undo & redo ////////////////////////////////////////////////////////////
 
-    private fun initUndoWidget(): Observable<Boolean> {
-        return paper
-            .flatMapObservable { paper ->
-                undoWidget.inject(paper)
-                undoWidget.start()
-            }
-    }
-
     fun handleOnClickUndoButton(undoSignal: Observable<Any>) {
         Observables
             .combineLatest(paper.toObservable(),
@@ -176,9 +166,9 @@ class CompleteEditorWidget(paperID: Long,
             .addTo(staticDisposableBag)
     }
 
-    fun onUpdateUndoRedoCapacity(): Observable<UndoRedoAvailabilityEvent> {
+    fun observeUndoAvailability(): Observable<UndoRedoAvailabilityEvent> {
         return Observables.combineLatest(
-            onBusy(),
+            observeBusy(),
             undoWidget.onUpdateUndoRedoCapacity())
             .map { (busy, event) ->
                 if (busy) {

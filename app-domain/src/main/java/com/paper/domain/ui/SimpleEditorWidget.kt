@@ -30,12 +30,12 @@ import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 open class SimpleEditorWidget(protected val paperID: Long,
                               protected val paperRepo: IPaperRepo,
@@ -48,7 +48,7 @@ open class SimpleEditorWidget(protected val paperID: Long,
     protected val penStyleSignal = BehaviorSubject.createDefault(VectorGraphics.DEFAULT_STYLE).toSerialized()
 
     protected val staticDisposableBag = CompositeDisposable()
-    protected val dynamicDisposableBag = ConcurrentHashMap<BaseScrapWidget, Disposable>()
+    protected val dynamicDisposableBag = ConcurrentHashMap<BaseScrapWidget, CompositeDisposable>()
 
     // Focus scrap controller
     @Volatile
@@ -62,7 +62,7 @@ open class SimpleEditorWidget(protected val paperID: Long,
                 paper.observeOn(schedulers.main())
                     .subscribe { paper ->
                         // Mark initializing
-                        dirtyFlag.markDirty(EditorDirtyFlag.INITIALIZING_CANVAS)
+                        dirtyFlag.markDirty(EditorDirtyFlag.INITIALIZING)
 
                         paper.getScraps()
                             .forEach { scrap ->
@@ -70,7 +70,7 @@ open class SimpleEditorWidget(protected val paperID: Long,
                             }
 
                         // Mark initialization done
-                        dirtyFlag.markNotDirty(EditorDirtyFlag.INITIALIZING_CANVAS)
+                        dirtyFlag.markNotDirty(EditorDirtyFlag.INITIALIZING)
                     }
                     .addTo(staticDisposableBag)
 
@@ -120,16 +120,29 @@ open class SimpleEditorWidget(protected val paperID: Long,
 
     // Number of on-going task ////////////////////////////////////////////////
 
-    protected val dirtyFlag = EditorDirtyFlag(EditorDirtyFlag.INITIALIZING_CANVAS)
+    private val childBusyCount = AtomicInteger(0)
+    private val dirtyFlag = EditorDirtyFlag(EditorDirtyFlag.INITIALIZING)
 
-    open fun onBusy(): Observable<Boolean> {
+    open fun observeBusy(): Observable<Boolean> {
         return dirtyFlag
             .onUpdate()
             .map { event ->
-                // Ready iff flag is not zero
-                val busy = event.flag != 0
+                // Detect any busy child
+                when (event.changedType) {
+                    EditorDirtyFlag.CHILD_IS_BUSY -> {
+                        val childBusy = event.flag.and(EditorDirtyFlag.CHILD_IS_BUSY) == 1
+                        if (childBusy) {
+                            childBusyCount.incrementAndGet()
+                        } else {
+                            childBusyCount.decrementAndGet()
+                        }
+                    }
+                }
 
-                println("${DomainConst.TAG}: canvas busy=$busy")
+                // Ready iff flag is not zero
+                val busy = event.flag != 0 && childBusyCount.get() == 0
+
+                println("${DomainConst.TAG}: editor busy=$busy")
 
                 busy
             }
@@ -171,10 +184,23 @@ open class SimpleEditorWidget(protected val paperID: Long,
         synchronized(lock) {
             scrapWidgets[widget.getID()] = widget
 
+            val widgetDisposableBag = CompositeDisposable()
+
+            // Observe the widget busy state
+            widget.observeBusy()
+                .subscribe { busy ->
+                    if (busy) {
+                        dirtyFlag.markDirty(EditorDirtyFlag.CHILD_IS_BUSY)
+                    } else {
+                        dirtyFlag.markNotDirty(EditorDirtyFlag.CHILD_IS_BUSY)
+                    }
+                }
+                .addTo(widgetDisposableBag)
             // Start the widget
-            dynamicDisposableBag[widget] = widget
-                .start()
+            widget.start()
                 .subscribe()
+                .addTo(widgetDisposableBag)
+            dynamicDisposableBag[widget] = widgetDisposableBag
 
             // Signal out
             updateScrapSignal.onNext(AddScrapEvent(widget))

@@ -36,15 +36,15 @@ data class EditorDirtyFlag(override var flag: Int = 0)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(READ_PAPER_FROM_REPO,
             WRITE_PAPER_TO_REPO,
-            INITIALIZING_CANVAS,
-            OPERATING_CANVAS)
+            INITIALIZING,
+            CHILD_IS_BUSY)
     annotation class Type
 
     companion object {
         const val READ_PAPER_FROM_REPO = 1.shl(0)
         const val WRITE_PAPER_TO_REPO = 1.shl(1)
-        const val INITIALIZING_CANVAS = 1.shl(2)
-        const val OPERATING_CANVAS = 1.shl(3)
+        const val INITIALIZING = 1.shl(2)
+        const val CHILD_IS_BUSY = 1.shl(3)
     }
 
     override fun markDirty(@Type vararg types: Int) {

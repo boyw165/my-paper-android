@@ -41,8 +41,6 @@ class SVGScrapWidget(scrap: ISVGScrap,
                       schedulers),
       IWidget {
 
-    private val dirtyFlag = SVGDirtyFlag(SVGDirtyFlag.SVG_INITIALIZING)
-
     private val svgScrap: ISVGScrap get() = scrap as ISVGScrap
     private val sketchDisposableBag = CompositeDisposable()
 
@@ -51,12 +49,12 @@ class SVGScrapWidget(scrap: ISVGScrap,
             // Add/remove
             svgScrap.observeAddSVG()
                 .subscribe {
-                    // DO NOTHING
+                    // TODO: Yet support, but possible for shape completion
                 }
                 .addTo(staticDisposableBag)
             svgScrap.observeRemoveSVG()
                 .subscribe {
-                    // DO NOTHING
+                    // TODO: Yet support, but possible for shape completion
                 }
                 .addTo(staticDisposableBag)
 
@@ -96,7 +94,7 @@ class SVGScrapWidget(scrap: ISVGScrap,
                  src.firstElement())
             .subscribe { (style, point) ->
                 // Mark drawing
-                dirtyFlag.markDirty(SVGDirtyFlag.SVG_DRAWING)
+                dirtyFlag.markDirty(ScrapDirtyFlag.GENERAL_BUSY)
 
                 svg = VectorGraphics(style = style)
                 svg.addTuple(LinearPointTuple(point.x,
@@ -143,6 +141,9 @@ class SVGScrapWidget(scrap: ISVGScrap,
 
                 // Commit to model
                 svgScrap.addSVG(svg)
+
+                // Mark drawing
+                dirtyFlag.markNotDirty(ScrapDirtyFlag.GENERAL_BUSY)
             }
             .addTo(sketchDisposableBag)
     }

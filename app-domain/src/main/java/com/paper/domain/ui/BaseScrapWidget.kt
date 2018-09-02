@@ -35,6 +35,8 @@ open class BaseScrapWidget(protected val scrap: IScrap,
 
     protected val lock = Any()
 
+    protected val dirtyFlag = ScrapDirtyFlag(0)
+
     private val frameDisposableBag = CompositeDisposable()
     protected val staticDisposableBag = CompositeDisposable()
 
@@ -106,5 +108,15 @@ open class BaseScrapWidget(protected val scrap: IScrap,
                 }
             }
             .addTo(frameDisposableBag)
+    }
+
+    // Busy ///////////////////////////////////////////////////////////////////
+
+    fun observeBusy(): Observable<Boolean> {
+        return dirtyFlag
+            .onUpdate()
+            .map { event ->
+                event.flag != 0
+            }
     }
 }

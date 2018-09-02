@@ -27,20 +27,15 @@ import io.reactivex.Observable
 import io.useful.dirtyflag.DirtyEvent
 import io.useful.dirtyflag.DirtyFlag
 
-/**
- * Dirty flag for SVG.
- */
-data class SVGDirtyFlag(override var flag: Int = 0)
+data class ScrapDirtyFlag(override var flag: Int = 0)
     : DirtyFlag(flag) {
 
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(SVG_INITIALIZING,
-            SVG_DRAWING)
+    @IntDef(GENERAL_BUSY)
     annotation class Type
 
     companion object {
-        const val SVG_INITIALIZING = 1.shl(0)
-        const val SVG_DRAWING = 1.shl(1)
+        const val GENERAL_BUSY = 1.shl(0)
     }
 
     override fun markDirty(@Type vararg types: Int) {
