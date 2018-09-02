@@ -22,10 +22,10 @@
 
 package com.paper.domain.ui_event
 
-import com.paper.domain.ui.IBaseScrapWidget
+import com.paper.domain.ui.BaseScrapWidget
 import com.paper.model.Frame
 import com.paper.model.Rect
-import com.paper.model.sketch.VectorGraphics
+import com.paper.model.sketch.SVGStyle
 import java.util.*
 
 sealed class EditorEvent
@@ -44,11 +44,13 @@ object TouchEndEvent : EditorTouchLifecycleEvent()
 
 abstract class UpdateScrapEvent : EditorEvent()
 
+abstract class UpdateScrapContentEvent : UpdateScrapEvent()
+
 data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScrapEvent()
 
-data class AddScrapEvent(val scrap: IBaseScrapWidget) : UpdateScrapEvent()
+data class AddScrapEvent(val scrap: BaseScrapWidget) : UpdateScrapEvent()
 
-data class RemoveScrapEvent(val scrap: IBaseScrapWidget) : UpdateScrapEvent()
+data class RemoveScrapEvent(val scrap: BaseScrapWidget) : UpdateScrapEvent()
 
 object RemoveAllScrapsEvent : UpdateScrapEvent()
 
@@ -65,29 +67,18 @@ data class UpdateScrapFrameEvent(val scrapID: UUID,
 
 // Draw ///////////////////////////////////////////////////////////////////////
 
-abstract class UpdateScrapContentEvent : UpdateScrapEvent()
+abstract class UpdateSVGEvent : UpdateScrapContentEvent()
 
-data class AddSketchEvent(val svg: VectorGraphics) : UpdateScrapContentEvent()
+data class SketchMoveToEvent(val x: Float,
+                             val y: Float,
+                             val style: Set<SVGStyle>) : UpdateSVGEvent()
 
-data class RemoveSketchEvent(val svg: VectorGraphics) : UpdateScrapContentEvent()
-
-data class StartSketchEvent(val x: Float,
-                            val y: Float) : UpdateScrapContentEvent()
-
-data class DoSketchEvent(val x: Float,
-                         val y: Float) : UpdateScrapContentEvent()
-
-data class DoLineToEvent(val x: Float,
-                         val y: Float) : UpdateScrapContentEvent()
-
-data class DoCubicToEvent(val previousControlX: Float,
-                          val previousControlY: Float,
-                          val currentControlX: Float,
-                          val currentControlY: Float,
-                          val currentEndX: Float,
-                          val currentEndY: Float) : UpdateScrapContentEvent()
-
-object StopSketchEvent : UpdateScrapContentEvent()
+data class SketchCubicToEvent(val previousControlX: Float,
+                              val previousControlY: Float,
+                              val currentControlX: Float,
+                              val currentControlY: Float,
+                              val currentEndX: Float,
+                              val currentEndY: Float) : UpdateSVGEvent()
 
 // View-port //////////////////////////////////////////////////////////////////
 

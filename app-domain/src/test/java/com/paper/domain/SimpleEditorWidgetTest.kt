@@ -23,6 +23,8 @@
 package com.paper.domain
 
 import com.paper.domain.ui.SimpleEditorWidget
+import com.paper.domain.ui_event.AddScrapEvent
+import com.paper.domain.ui_event.RemoveScrapEvent
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
@@ -31,18 +33,18 @@ import org.mockito.junit.MockitoJUnitRunner
 class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
-    fun `busy test`() {
-        val tester = SimpleEditorWidget(paperID = 0,
-                                        paperRepo = mockPaperRepo,
-                                        caughtErrorSignal = caughtErrorSignal,
-                                        schedulers = mockSchedulers)
+    fun `see busy at the first and free at the end`() {
+        val candidate = SimpleEditorWidget(paperID = 0,
+                                           paperRepo = mockPaperRepo,
+                                           caughtErrorSignal = caughtErrorSignal,
+                                           schedulers = mockSchedulers)
 
-        val busyTest = tester
+        val busyTest = candidate
             .onBusy()
             .test()
 
         // Start widget
-        val lifecycleTest = tester.start().test()
+        val lifecycleTest = candidate.start().test()
         lifecycleTest.assertSubscribed()
 
         // Make sure the stream moves
@@ -54,20 +56,93 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `inflation process test`() {
-        val tester = SimpleEditorWidget(paperID = 0,
-                                        paperRepo = mockPaperRepo,
-                                        caughtErrorSignal = caughtErrorSignal,
-                                        schedulers = mockSchedulers)
+        val candidate = SimpleEditorWidget(paperID = 0,
+                                           paperRepo = mockPaperRepo,
+                                           caughtErrorSignal = caughtErrorSignal,
+                                           schedulers = mockSchedulers)
 
-        val scrapTester = tester.observeScraps().test()
+        val scrapTester = candidate.observeScraps().test()
 
         // Start widget
-        val lifecycleTest = tester.start().test()
+        val lifecycleTest = candidate.start().test()
         lifecycleTest.assertSubscribed()
 
         // Make sure the stream moves
         moveScheduler()
 
         scrapTester.assertValueCount(mockPaper.getScraps().size)
+    }
+
+    @Test
+    fun `dispose before MODEL is inflated`() {
+        val candidate = SimpleEditorWidget(paperID = 0,
+                                           paperRepo = mockPaperRepo,
+                                           caughtErrorSignal = caughtErrorSignal,
+                                           schedulers = mockSchedulers)
+
+        // Start widget
+        val lifecycleTester = candidate.start().test()
+        lifecycleTester.assertSubscribed()
+        lifecycleTester.dispose()
+
+        val addTester = candidate.observeScraps().test()
+
+        // Make sure the stream moves
+        moveScheduler()
+
+        addTester.assertNoValues()
+    }
+
+    @Test
+    fun `add scrap, should see event and scrap start`() {
+        val candidate = SimpleEditorWidget(paperID = 0,
+                                           paperRepo = mockPaperRepo,
+                                           caughtErrorSignal = caughtErrorSignal,
+                                           schedulers = mockSchedulers)
+        val scrapTest = candidate
+            .observeScraps()
+            .test()
+
+        // Start widget
+        val paper = mockPaper
+        candidate.start().test().assertSubscribed()
+
+        // Make sure the stream moves
+        moveScheduler()
+
+        paper.getScraps().forEachIndexed { i, _ ->
+            scrapTest.assertValueAt(i) { event ->
+                event is AddScrapEvent
+            }
+        }
+    }
+
+    @Test
+    fun `remove scrap, should see event and scrap stop`() {
+        val candidate = SimpleEditorWidget(paperID = 0,
+                                           paperRepo = mockPaperRepo,
+                                           caughtErrorSignal = caughtErrorSignal,
+                                           schedulers = mockSchedulers)
+
+        val scrapTest = candidate
+            .observeScraps()
+            .test()
+
+        // Start widget
+        val paper = mockPaper
+        candidate.start().test().assertSubscribed()
+
+        // Make sure the stream moves
+        moveScheduler()
+
+        // Remove a scrap
+        paper.removeScrap(paper.getScraps()[0])
+
+        // Make sure the stream moves
+        moveScheduler()
+
+        scrapTest.assertValueAt(scrapTest.valueCount() - 1) { event ->
+            event is RemoveScrapEvent
+        }
     }
 }

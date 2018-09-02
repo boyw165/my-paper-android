@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,30 +20,28 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.ui_event.UpdateScrapEvent
-import com.paper.model.Color
-import com.paper.model.sketch.SVGStyle
+import com.paper.domain.DomainConst
+import com.paper.domain.ISchedulerProvider
+import com.paper.model.ITextScrap
 import io.reactivex.Observable
 
-interface ISVGScrapWidget : IBaseScrapWidget {
+class TextScrapWidget(scrap: ITextScrap,
+                      schedulers: ISchedulerProvider)
+    : BaseScrapWidget(scrap,
+                      schedulers),
+      IWidget {
 
-    fun moveTo(x: Float,
-               y: Float,
-               style: Set<SVGStyle> = setOf(SVGStyle.Stroke(color = Color.RED,
-                                                            size = 0.1f,
-                                                            closed = false)))
+    override fun start(): Observable<Boolean> {
+        return autoStop {
+            synchronized(lock) {
+                // DO NOTHING
+            }
+            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
+        }
+    }
 
-    fun lineTo(x: Float,
-               y: Float)
-
-    fun cubicTo(previousControlX: Float,
-                previousControlY: Float,
-                currentControlX: Float,
-                currentControlY: Float,
-                currentEndX: Float,
-                currentEndY: Float)
-
-    fun close()
-
-    fun onDrawSVG(): Observable<UpdateScrapEvent>
+    override fun stop() {
+        super.stop()
+        println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
+    }
 }

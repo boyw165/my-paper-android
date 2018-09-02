@@ -20,9 +20,9 @@ abstract class BaseDomainTest {
 
     companion object {
 
-        const val SHORT_TIMEOUT = 60L
-        const val NORMAL_TIMEOUT = 180L
-        const val LONG_TIMEOUT = 360L
+        const val SHORT_TIMEOUT = 300L
+        const val NORMAL_TIMEOUT = 600L
+        const val LONG_TIMEOUT = 1200L
         const val DEFINITELY_LONG_ENOUGH_TIMEOUT = 1000000L
     }
 
@@ -34,23 +34,20 @@ abstract class BaseDomainTest {
     protected val mockSchedulers: ISchedulerProvider by lazy {
         val mock = Mockito.mock(ISchedulerProvider::class.java)
         Mockito.`when`(mock.main()).thenReturn(testScheduler)
+        Mockito.`when`(mock.ui()).thenReturn(testScheduler)
         Mockito.`when`(mock.computation()).thenReturn(testScheduler)
         Mockito.`when`(mock.io()).thenReturn(testScheduler)
         Mockito.`when`(mock.db()).thenReturn(testScheduler)
         mock
     }
 
-    val mockPaper: IPaper
-        get() {
-            val mock = BasePaper()
+    val mockPaper: IPaper by lazy {
+        val mock = BasePaper()
+        (1..50).forEach {
             mock.addScrap(createRandomScrap())
-            mock.addScrap(createRandomScrap())
-            mock.addScrap(createRandomScrap())
-            mock.addScrap(createRandomScrap())
-            mock.addScrap(createRandomScrap())
-            mock.addScrap(createRandomScrap())
-            return mock
         }
+        mock
+    }
 
     @Mock
     lateinit var mockPaperRepo: IPaperRepo
@@ -74,11 +71,11 @@ abstract class BaseDomainTest {
 
     private val random = Random()
 
-    protected fun rand(from: Int, to: Int) : Int {
+    protected fun rand(from: Int, to: Int): Int {
         return random.nextInt(to - from) + from
     }
 
-    protected fun rand(from: Float) : Float {
+    protected fun rand(from: Float): Float {
         return random.nextFloat() + from
     }
 

@@ -24,10 +24,11 @@ package com.paper.domain
 
 import io.reactivex.Scheduler
 
-// TODO: Use it
 interface ISchedulerProvider {
 
     fun main(): Scheduler
+
+    fun ui(): Scheduler
 
     fun computation(): Scheduler
 

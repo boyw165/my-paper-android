@@ -29,14 +29,14 @@ import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class BaseScrapWidget(private val scrap: IScrap,
+open class BaseScrapWidget(protected val scrap: IScrap,
                            protected val schedulers: ISchedulerProvider)
-    : IBaseScrapWidget {
+    : IWidget {
 
     protected val lock = Any()
 
     private val frameDisposableBag = CompositeDisposable()
-    private val staticDisposableBag = CompositeDisposable()
+    protected val staticDisposableBag = CompositeDisposable()
 
     override fun start(): Observable<Boolean> {
         return autoStop {
@@ -55,7 +55,7 @@ open class BaseScrapWidget(private val scrap: IScrap,
         }
     }
 
-    override fun getID(): UUID {
+    fun getID(): UUID {
         return scrap.getID()
     }
 
@@ -63,53 +63,48 @@ open class BaseScrapWidget(private val scrap: IScrap,
 
     private val frameSignal = PublishSubject.create<Frame>().toSerialized()
 
-    override fun getFrame(): Frame {
+    fun getFrame(): Frame {
         synchronized(lock) {
             return scrap.getFrame()
         }
     }
 
-    override fun observeFrame(): Observable<Frame> {
+    fun observeFrame(): Observable<Frame> {
         return frameSignal
     }
 
-    override fun handleFrameDisplacement(src: Observable<Frame>) {
+    fun handleFrameDisplacement(src: Observable<Frame>) {
         frameDisposableBag.clear()
 
         // Begin of the change
         src.firstElement()
-            .subscribe { delta ->
+            .subscribe { displacement ->
                 // model frame + displacement
-                frameSignal.onNext(getFrame().add(delta))
+                frameSignal.onNext(getFrame().add(displacement))
             }
             .addTo(frameDisposableBag)
 
         // Doing some change
         src.skip(1)
             .skipLast(1)
-            .subscribe { delta ->
+            .subscribe { displacement ->
                 // model frame + displacement
-                frameSignal.onNext(getFrame().add(delta))
+                frameSignal.onNext(getFrame().add(displacement))
             }
             .addTo(frameDisposableBag)
 
         // End of the change
         src.lastElement()
-            .subscribe { delta ->
+            .subscribe { displacement ->
                 synchronized(lock) {
                     // model frame + displacement
-                    frameSignal.onNext(getFrame().add(delta))
+                    frameSignal.onNext(getFrame().add(displacement))
 
                     // Commit to model
                     val current = scrap.getFrame()
-                    scrap.setFrame(current.add(delta))
+                    scrap.setFrame(current.add(displacement))
                 }
             }
             .addTo(frameDisposableBag)
-    }
-
-    protected fun ensureNoLeakedBinding() {
-        if (staticDisposableBag.size() > 0)
-            throw IllegalStateException("Already start a model")
     }
 }

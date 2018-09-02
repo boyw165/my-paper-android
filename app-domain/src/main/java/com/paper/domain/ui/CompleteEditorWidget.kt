@@ -26,11 +26,9 @@ import com.paper.domain.ISchedulerProvider
 import com.paper.domain.data.ToolType
 import com.paper.domain.ui_event.UndoRedoAvailabilityEvent
 import com.paper.domain.ui_event.UpdateEditToolsEvent
-import com.paper.model.IPaper
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
-import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.rxkotlin.Observables
@@ -60,7 +58,7 @@ class CompleteEditorWidget(paperID: Long,
     }
 
     override fun start(): Observable<Boolean> {
-        return inflatePaperJob
+        return super.start()
             .flatMap { done ->
                 if (done) {
                     initUndoWidget()
@@ -145,7 +143,7 @@ class CompleteEditorWidget(paperID: Long,
     // Undo & redo ////////////////////////////////////////////////////////////
 
     private fun initUndoWidget(): Observable<Boolean> {
-        return loadPaperJob
+        return paper
             .flatMapObservable { paper ->
                 undoWidget.inject(paper)
                 undoWidget.start()
@@ -153,10 +151,12 @@ class CompleteEditorWidget(paperID: Long,
     }
 
     fun handleOnClickUndoButton(undoSignal: Observable<Any>) {
-        undoSignal
-            .flatMap {
+        Observables
+            .combineLatest(paper.toObservable(),
+                           undoSignal)
+            .flatMap { (paper, _) ->
                 undoWidget
-                    .undo(paper!!)
+                    .undo(paper)
                     .toObservable()
             }
             .subscribe()
@@ -164,10 +164,12 @@ class CompleteEditorWidget(paperID: Long,
     }
 
     fun handleOnClickRedoButton(undoSignal: Observable<Any>) {
-        undoSignal
-            .flatMap {
+        Observables
+            .combineLatest(paper.toObservable(),
+                           undoSignal)
+            .flatMap { (paper, _) ->
                 undoWidget
-                    .redo(paper!!)
+                    .redo(paper)
                     .toObservable()
             }
             .subscribe()
@@ -232,6 +234,37 @@ class CompleteEditorWidget(paperID: Long,
     }
 
     // Pen Color & size //////////////////////////////////////////////////////
+
+    /**
+     * The current stroke color.
+     */
+    protected var penColor = 0x2C2F3C
+    /**
+     * The current stroke width, where the value is from 0.0 to 1.0.
+     */
+    protected var mPenSize = 0.2f
+    /**
+     * The current view-port scale.
+     */
+    protected var mViewPortScale = Float.NaN
+
+    fun setChosenPenColor(color: Int) {
+        synchronized(lock) {
+            penColor = color
+        }
+    }
+
+    fun setViewPortScale(scale: Float) {
+        synchronized(lock) {
+            mViewPortScale = scale
+        }
+    }
+
+    fun setPenSize(size: Float) {
+        synchronized(lock) {
+            mPenSize = size
+        }
+    }
 
     //    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
     //

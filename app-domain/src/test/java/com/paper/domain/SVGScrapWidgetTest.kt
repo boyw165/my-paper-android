@@ -1,4 +1,6 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,19 +20,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain
 
-import com.paper.model.Frame
-import io.reactivex.Observable
-import java.util.*
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-interface IBaseScrapWidget : IWidget {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class SVGScrapWidgetTest : BaseDomainTest() {
 
-    fun getID(): UUID
-
-    fun getFrame(): Frame
-
-    fun observeFrame(): Observable<Frame>
-
-    fun handleFrameDisplacement(src: Observable<Frame>)
+    @Test
+    fun `sketch given a sequence of points`() {
+    }
 }

@@ -31,11 +31,17 @@ import java.util.*
  */
 data class VectorGraphics(
     val id: UUID = UUID.randomUUID(),
-    val style: Set<SVGStyle> = setOf(SVGStyle.Stroke(color = Color.RED,
-                                                     size = 0.1f,
-                                                     closed = false)),
+    val style: Set<SVGStyle> = DEFAULT_STYLE,
     private val tupleList: MutableList<PointTuple> = mutableListOf())
     : NoObfuscation {
+
+    companion object {
+
+        val DEFAULT_STYLE: Set<SVGStyle> = setOf(
+            SVGStyle.Stroke(color = Color.RED,
+                            size = 0.1f,
+                            closed = false))
+    }
 
     private var mIsHashDirty = true
     private var mHashCode = 0

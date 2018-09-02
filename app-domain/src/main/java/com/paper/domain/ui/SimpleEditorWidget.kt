@@ -1,6 +1,4 @@
-// Copyright Apr 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,45 +20,184 @@
 
 package com.paper.domain.ui
 
+import com.paper.domain.DomainConst
 import com.paper.domain.ISchedulerProvider
-import com.paper.model.IPaper
+import com.paper.domain.ui_event.*
+import com.paper.model.*
 import com.paper.model.repository.IPaperRepo
+import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.Single
-
-// TODO: Use dagger 2 to inject the dependency gracefully
-
-// TODO: Shouldn't depend on any Android package!
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.rxkotlin.addTo
+import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 open class SimpleEditorWidget(protected val paperID: Long,
                               protected val paperRepo: IPaperRepo,
                               protected val caughtErrorSignal: Observer<Throwable>,
-                              schedulers: ISchedulerProvider)
-    : EditorWidget(schedulers = schedulers) {
+                              protected val schedulers: ISchedulerProvider)
+    : IWidget {
+
+    protected val lock = Any()
+
+    protected val penStyleSignal = BehaviorSubject.createDefault(VectorGraphics.DEFAULT_STYLE).toSerialized()
+
+    protected val staticDisposableBag = CompositeDisposable()
+    protected val dynamicDisposableBag = ConcurrentHashMap<BaseScrapWidget, Disposable>()
+
+    // Focus scrap controller
+    @Volatile
+    protected var focusScrapWidget: BaseScrapWidget? = null
+    // Scrap controllers
+    protected val scrapWidgets = ConcurrentHashMap<UUID, BaseScrapWidget>()
 
     override fun start(): Observable<Boolean> {
-        return inflatePaperJob
+        return autoStop {
+                // First widget inflation
+                paper.observeOn(schedulers.main())
+                    .subscribe { paper ->
+                        // Mark initializing
+                        dirtyFlag.markDirty(EditorDirtyFlag.INITIALIZING_CANVAS)
+
+                        paper.getScraps()
+                            .forEach { scrap ->
+                                createScrapWidget(scrap)
+                            }
+
+                        // Mark initialization done
+                        dirtyFlag.markNotDirty(EditorDirtyFlag.INITIALIZING_CANVAS)
+                    }
+                    .addTo(staticDisposableBag)
+
+                // Observe add scrap
+                paper.observeOn(schedulers.main())
+                    .flatMapObservable { paper ->
+                        paper.observeAddScrap()
+                    }
+                    .subscribe { scrap ->
+                        createScrapWidget(scrap)
+                    }
+                    .addTo(staticDisposableBag)
+                // Observe remove scrap
+                paper.observeOn(schedulers.main())
+                    .flatMapObservable { paper ->
+                        paper.observeRemoveScrap()
+                    }
+                    .subscribe { scrap ->
+                        removeWidget(scrap.getID())
+                    }
+                    .addTo(staticDisposableBag)
+
+            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
+        }
     }
 
-    protected val loadPaperJob: Single<IPaper> by lazy {
+    override fun stop() {
+        staticDisposableBag.clear()
+        println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
+    }
+
+    protected val paper: Single<IPaper> by lazy {
         paperRepo
             .getPaperById(paperID)
+            .doOnSubscribe {
+                dirtyFlag.markDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
+            }
+            .doOnSuccess {
+                dirtyFlag.markNotDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
+            }
             .cache()
     }
 
-    protected val inflatePaperJob: Observable<Boolean>
-        get() {
-            return loadPaperJob
-                .doOnSubscribe {
-                    dirtyFlag.markDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
-                }
-                .flatMapObservable { paper ->
-                    dirtyFlag.markNotDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
+    fun observeCanvasSize(): Single<Pair<Float, Float>> {
+        return paper.map { it.getSize() }
+    }
 
-                    inject(paper)
+    // Number of on-going task ////////////////////////////////////////////////
 
-                    super.start()
-                }
+    protected val dirtyFlag = EditorDirtyFlag(EditorDirtyFlag.INITIALIZING_CANVAS)
+
+    open fun onBusy(): Observable<Boolean> {
+        return dirtyFlag
+            .onUpdate()
+            .map { event ->
+                // Ready iff flag is not zero
+                val busy = event.flag != 0
+
+                println("${DomainConst.TAG}: canvas busy=$busy")
+
+                busy
+            }
+    }
+
+    // Scrap manipulation /////////////////////////////////////////////////////
+
+    private val updateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
+
+    fun observeScraps(): Observable<UpdateScrapEvent> {
+        return updateScrapSignal
+    }
+
+    private fun createScrapWidget(scrap: IScrap) {
+        val widget = when (scrap) {
+            is ISVGScrap -> {
+                SVGScrapWidget(
+                    scrap = scrap,
+                    newSVGPenStyle = penStyleSignal,
+                    schedulers = schedulers)
+            }
+            is IImageScrap -> {
+                ImageScrapWidget(
+                    scrap = scrap,
+                    schedulers = schedulers)
+            }
+            is ITextScrap -> {
+                TextScrapWidget(
+                    scrap = scrap,
+                    schedulers = schedulers)
+            }
+            else -> TODO()
         }
+
+        addWidget(widget)
+    }
+
+    private fun addWidget(widget: BaseScrapWidget) {
+        synchronized(lock) {
+            scrapWidgets[widget.getID()] = widget
+
+            // Start the widget
+            dynamicDisposableBag[widget] = widget
+                .start()
+                .subscribe()
+
+            // Signal out
+            updateScrapSignal.onNext(AddScrapEvent(widget))
+        }
+    }
+
+    private fun removeWidget(id: UUID) {
+        synchronized(lock) {
+            scrapWidgets[id]?.let { widget ->
+                scrapWidgets.remove(widget.getID())
+
+                // Stop the scrap
+                dynamicDisposableBag[widget]?.dispose()
+                dynamicDisposableBag.remove(widget)
+
+                // Clear focus
+                if (focusScrapWidget == widget) {
+                    focusScrapWidget = null
+                }
+
+                // Signal out
+                updateScrapSignal.onNext(RemoveScrapEvent(widget))
+            }
+        }
+    }
 }

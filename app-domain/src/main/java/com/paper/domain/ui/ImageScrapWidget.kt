@@ -1,4 +1,4 @@
-// Copyright Feb 2018-present boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,34 +20,28 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.data.DrawingMode
-import com.paper.domain.ui_event.UpdateScrapEvent
-import com.paper.model.IPaper
+import com.paper.domain.DomainConst
+import com.paper.domain.ISchedulerProvider
+import com.paper.model.IImageScrap
 import io.reactivex.Observable
-import io.reactivex.Single
 
-/**
- * The canvas widget (serving as the ViewModel to View).
- */
-interface IEditorWidget : IWidget {
+class ImageScrapWidget(scrap: IImageScrap,
+                       schedulers: ISchedulerProvider)
+    : BaseScrapWidget(scrap,
+                      schedulers),
+      IWidget {
 
-    fun inject(paper: IPaper)
+    override fun start(): Observable<Boolean> {
+        return autoStop {
+            synchronized(lock) {
+                // DO NOTHING
+            }
+            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
+        }
+    }
 
-    fun toPaper(): IPaper
-
-    fun setDrawingMode(mode: DrawingMode)
-
-    fun setChosenPenColor(color: Int)
-
-    fun setViewPortScale(scale: Float)
-
-    fun setPenSize(size: Float)
-
-    fun getCanvasSize(): Single<Pair<Float, Float>>
-
-    fun observeScraps(): Observable<UpdateScrapEvent>
-
-    // Debug //////////////////////////////////////////////////////////////////
-
-    fun observeDebugMessage(): Observable<String>
+    override fun stop() {
+        super.stop()
+        println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
+    }
 }

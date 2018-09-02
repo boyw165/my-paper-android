@@ -30,10 +30,32 @@ import org.mockito.junit.MockitoJUnitRunner
 class CompleteEditorWidgetTest : BaseDomainTest() {
 
     @Test
-    fun `busy test`() {
-    }
-
-    @Test
-    fun `inflation process test`() {
+    fun `sketching, canvas should be busy`() {
+//        val tester = SimpleEditorWidget(schedulers = mockSchedulers)
+//
+//        val busyTest = tester
+//            .onBusy()
+//            .test()
+//
+//        // Start widget
+//        tester.inject(mockPaper)
+//        tester.start().test().assertSubscribed()
+//
+//        // Make sure the stream moves
+//        moveScheduler()
+//
+//        // Sketch (by simulating the gesture interpreter behavior)
+//        val widget = SVGScrapWidget(
+//            scrap = SVGScrap(frame = createRandomFrame()),
+//            schedulers = mockSchedulers)
+//        tester.handleDomainEvent(GroupEditorEvent(
+//            listOf(AddScrapEvent(widget),
+//                   FocusScrapEvent(widget.getID()),
+//                   StartSketchEvent(0f, 0f))))
+//
+//        // Trigger for see sketch event
+//        testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
+//
+//        busyTest.assertValueAt(busyTest.valueCount() - 1, true)
     }
 }
