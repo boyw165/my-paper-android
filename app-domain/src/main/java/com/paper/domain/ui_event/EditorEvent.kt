@@ -48,9 +48,9 @@ abstract class UpdateScrapContentEvent : UpdateScrapEvent()
 
 data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScrapEvent()
 
-data class AddScrapEvent(val scrap: BaseScrapWidget) : UpdateScrapEvent()
+data class AddScrapEvent(val scrapWidget: BaseScrapWidget) : UpdateScrapEvent()
 
-data class RemoveScrapEvent(val scrap: BaseScrapWidget) : UpdateScrapEvent()
+data class RemoveScrapEvent(val scrapWidget: BaseScrapWidget) : UpdateScrapEvent()
 
 object RemoveAllScrapsEvent : UpdateScrapEvent()
 

@@ -30,7 +30,7 @@ import org.mockito.junit.MockitoJUnitRunner
 class CompleteEditorWidgetTest : BaseDomainTest() {
 
     @Test
-    fun `sketching, canvas should be busy`() {
+    fun `sketching, editor should be busy`() {
 //        val tester = SimpleEditorWidget(schedulers = mockSchedulers)
 //
 //        val busyTest = tester

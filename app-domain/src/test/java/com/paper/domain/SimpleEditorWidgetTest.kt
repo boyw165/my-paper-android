@@ -55,27 +55,6 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
     }
 
     @Test
-    fun `see busy if child widget is busy`() {
-        val candidate = SimpleEditorWidget(paperID = 0,
-                                           paperRepo = mockPaperRepo,
-                                           caughtErrorSignal = caughtErrorSignal,
-                                           schedulers = mockSchedulers)
-
-        val busyTest = candidate
-            .observeBusy()
-            .test()
-
-        // Start widget
-        val lifecycleTest = candidate.start().test()
-        lifecycleTest.assertSubscribed()
-
-        // Make sure the stream moves
-        moveScheduler()
-
-        // TODO
-    }
-
-    @Test
     fun `inflation process test`() {
         val candidate = SimpleEditorWidget(paperID = 0,
                                            paperRepo = mockPaperRepo,

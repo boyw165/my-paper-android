@@ -53,8 +53,10 @@ open class SimpleEditorWidget(protected val paperID: Long,
     // Focus scrap controller
     @Volatile
     protected var focusScrapWidget: BaseScrapWidget? = null
-    // Scrap controllers
+
+    // widgets
     protected val scrapWidgets = ConcurrentHashMap<UUID, BaseScrapWidget>()
+    protected val highestZ = AtomicInteger(0)
 
     override fun start(): Observable<Boolean> {
         return autoStop {
@@ -175,6 +177,12 @@ open class SimpleEditorWidget(protected val paperID: Long,
                     schedulers = schedulers)
             }
             else -> TODO()
+        }
+
+        // Update z
+        val z = widget.getFrame().z
+        if (z > highestZ.get()) {
+            highestZ.set(z)
         }
 
         addWidget(widget)

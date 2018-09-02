@@ -26,21 +26,11 @@ import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.IManipulator
 import com.paper.domain.ui_event.EditorEvent
 import io.reactivex.Observable
-import io.reactivex.ObservableTransformer
+import io.reactivex.ObservableSource
 
-class UpdateFrameManipulator()
-    : IManipulator {
+class UpdateFrameManipulator : IManipulator {
 
-    override fun toDomainEvent(): ObservableTransformer<GestureEvent, EditorEvent> {
-        return ObservableTransformer { upstream ->
-            upstream
-                .flatMap { event ->
-                    interpretEvent(event)
-                }
-        }
-    }
-
-    private fun interpretEvent(event: GestureEvent): Observable<out EditorEvent> {
-        TODO()
+    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<EditorEvent> {
+        TODO("not implemented")
     }
 }

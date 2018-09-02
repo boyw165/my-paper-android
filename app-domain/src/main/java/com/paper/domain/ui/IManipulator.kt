@@ -26,8 +26,4 @@ import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui_event.EditorEvent
 import io.reactivex.ObservableTransformer
 
-interface IManipulator {
-
-    // TODO: Input as Observable<GestureEvent>
-    fun toDomainEvent(): ObservableTransformer<GestureEvent, EditorEvent>
-}
+interface IManipulator : ObservableTransformer<GestureEvent, EditorEvent>

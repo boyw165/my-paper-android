@@ -20,10 +20,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.data
+package com.paper.domain.ui
 
-enum class ToolType {
-    ERASER,
-    PEN,
-    LASSO
+enum class EditorMode {
+    FREE_DRAWING,
+    SELECT_TO_DELETE,
+    SELECT_TO_DRAG_AND_DROP
 }
