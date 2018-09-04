@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,19 +20,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.domain.ui_event
 
-import io.reactivex.Scheduler
-
-interface ISchedulerProvider {
-
-    fun main(): Scheduler
-
-    fun ui(): Scheduler
-
-    fun computation(): Scheduler
-
-    fun io(): Scheduler
-
-    fun db(): Scheduler
-}
+data class UndoAvailabilityEvent(val canUndo: Boolean,
+                                 val canRedo: Boolean)

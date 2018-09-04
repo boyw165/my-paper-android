@@ -22,10 +22,12 @@
 
 package com.paper.domain.ui.operation
 
-import com.paper.domain.ui.ICanvasOperation
+import com.paper.model.repository.EditorOperation
 import com.paper.model.IPaper
+import com.paper.model.IScrap
 
-class AddScrapOperation : ICanvasOperation {
+data class AddScrapOperation(private val scrap: IScrap)
+    : EditorOperation() {
 
     override fun undo(target: IPaper) {
         // TODO
@@ -33,9 +35,5 @@ class AddScrapOperation : ICanvasOperation {
 
     override fun redo(target: IPaper) {
         // TODO
-    }
-
-    override fun toString(): String {
-        return javaClass.simpleName
     }
 }

@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present Paper
+//
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,30 +20,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain
 
-import com.paper.domain.DomainConst
-import com.paper.model.ISchedulers
-import com.paper.model.IImageScrap
-import io.reactivex.Observable
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-class ImageScrapWidget(scrap: IImageScrap,
-                       schedulers: ISchedulers)
-    : BaseScrapWidget(scrap,
-                      schedulers),
-      IWidget {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class SketchManipulatorTest : BaseDomainTest() {
 
-    override fun start(): Observable<Boolean> {
-        return autoStop {
-            synchronized(lock) {
-                // DO NOTHING
-            }
-            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
-        }
-    }
-
-    override fun stop() {
-        super.stop()
-        println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
+    @Test
+    fun test() {
     }
 }

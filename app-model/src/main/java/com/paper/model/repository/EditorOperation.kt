@@ -20,13 +20,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.model.repository
 
 import com.paper.model.IPaper
+import java.util.*
 
-interface ICanvasOperation {
+abstract class EditorOperation(val id: UUID = UUID.randomUUID()) {
 
-    fun undo(target: IPaper)
+    abstract fun undo(target: IPaper)
 
-    fun redo(target: IPaper)
+    abstract fun redo(target: IPaper)
 }

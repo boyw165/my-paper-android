@@ -2,7 +2,6 @@ package com.paper.domain
 
 import com.paper.model.*
 import com.paper.model.repository.IPaperRepo
-import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
@@ -31,8 +30,8 @@ abstract class BaseDomainTest {
     protected val caughtErrorSignal = PublishSubject.create<Throwable>().toSerialized()
 
     protected val testScheduler = TestScheduler()
-    protected val mockSchedulers: ISchedulerProvider by lazy {
-        val mock = Mockito.mock(ISchedulerProvider::class.java)
+    protected val mockSchedulers: ISchedulers by lazy {
+        val mock = Mockito.mock(ISchedulers::class.java)
         Mockito.`when`(mock.main()).thenReturn(testScheduler)
         Mockito.`when`(mock.ui()).thenReturn(testScheduler)
         Mockito.`when`(mock.computation()).thenReturn(testScheduler)

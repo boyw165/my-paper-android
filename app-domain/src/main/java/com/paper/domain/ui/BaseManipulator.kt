@@ -23,7 +23,30 @@
 package com.paper.domain.ui
 
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui_event.EditorEvent
+import com.paper.model.repository.EditorOperation
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
 import io.reactivex.ObservableTransformer
+import io.reactivex.disposables.CompositeDisposable
 
-interface IManipulator : ObservableTransformer<GestureEvent, EditorEvent>
+abstract class BaseManipulator : ObservableTransformer<GestureEvent, EditorOperation> {
+
+    protected val disposableBag = CompositeDisposable()
+
+    open fun stop() {
+        disposableBag.dispose()
+    }
+
+    /**
+     * An observable that gives true after labmda runs successfully and automatically
+     * calls [stop] when it gets disposed
+     */
+    protected fun autoStop(lambda: (emitter: ObservableEmitter<EditorOperation>) -> Unit): Observable<EditorOperation> {
+        return Observable.create { emitter ->
+            // Enable auto-stop
+            emitter.setCancellable { stop() }
+            // Run lambda
+            lambda(emitter)
+        }
+    }
+}

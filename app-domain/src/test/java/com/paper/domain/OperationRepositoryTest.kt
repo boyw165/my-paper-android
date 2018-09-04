@@ -22,12 +22,10 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.UndoRepository
+import com.paper.model.repository.OperationRepository
 import com.paper.domain.ui.operation.AddScrapOperation
 import com.paper.model.IPaper
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.addTo
-import io.reactivex.schedulers.TestScheduler
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,18 +34,18 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class UndoRepositoryTest : BaseDomainTest() {
+class OperationRepositoryTest : BaseDomainTest() {
 
     @Test
     fun `put operation and see one record`() {
-        val tester = UndoRepository(fileDir = File("/tmp"),
-                                    schedulers = mockSchedulers)
+        val tester = OperationRepository(logDir = File("/tmp"),
+                                         schedulers = mockSchedulers)
 
         // Setup
         tester.start().test().assertSubscribed()
 
         // Add one particular stroke
-        tester.putOperation(AddScrapOperation())
+        tester.push(AddScrapOperation())
 
         // Make sure the stream moves
         moveScheduler()
@@ -60,8 +58,8 @@ class UndoRepositoryTest : BaseDomainTest() {
     fun `put operation and undo, should see no record`() {
         val mockPaper = Mockito.mock(IPaper::class.java)
 
-        val tester = UndoRepository(fileDir = File("/tmp"),
-                                    schedulers = mockSchedulers)
+        val tester = OperationRepository(logDir = File("/tmp"),
+                                         schedulers = mockSchedulers)
 
         val disposables = CompositeDisposable()
 
@@ -69,7 +67,7 @@ class UndoRepositoryTest : BaseDomainTest() {
         tester.start().subscribe()
 
         // Add one particular stroke
-        tester.putOperation(AddScrapOperation())
+        tester.push(AddScrapOperation())
 
         // Make sure the stream moves
         moveScheduler()

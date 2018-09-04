@@ -23,14 +23,17 @@
 package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.IManipulator
-import com.paper.domain.ui_event.EditorEvent
+import com.paper.domain.ui.BaseManipulator
 import io.reactivex.Observable
 import io.reactivex.ObservableSource
 
-class UpdateFrameManipulator : IManipulator {
+class UpdateFrameManipulator : BaseManipulator {
 
-    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<EditorEvent> {
+    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<Any> {
+        TODO("not implemented")
+    }
+
+    override fun stop() {
         TODO("not implemented")
     }
 }

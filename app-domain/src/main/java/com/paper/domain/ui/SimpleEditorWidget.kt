@@ -21,7 +21,7 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
-import com.paper.domain.ISchedulerProvider
+import com.paper.model.ISchedulers
 import com.paper.domain.ui_event.*
 import com.paper.model.*
 import com.paper.model.repository.IPaperRepo
@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger
 open class SimpleEditorWidget(protected val paperID: Long,
                               protected val paperRepo: IPaperRepo,
                               protected val caughtErrorSignal: Observer<Throwable>,
-                              protected val schedulers: ISchedulerProvider)
+                              protected val schedulers: ISchedulers)
     : IWidget {
 
     protected val lock = Any()

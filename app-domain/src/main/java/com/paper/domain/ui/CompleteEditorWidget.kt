@@ -22,20 +22,31 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.ISchedulerProvider
-import com.paper.domain.data.ToolType
-import com.paper.domain.ui_event.UndoRedoAvailabilityEvent
-import com.paper.domain.ui_event.UpdateEditToolsEvent
+import com.cardinalblue.gesture.rx.DragBeginEvent
+import com.cardinalblue.gesture.rx.DragDoingEvent
+import com.cardinalblue.gesture.rx.DragEndEvent
+import com.cardinalblue.gesture.rx.GestureObservable
+import com.paper.model.ISchedulers
+import com.paper.domain.ui.manipulator.SketchManipulator
+import com.paper.domain.ui_event.AddScrapEvent
+import com.paper.domain.ui_event.UndoAvailabilityEvent
+import com.paper.model.Frame
+import com.paper.model.Point
+import com.paper.model.SVGScrap
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IPaperRepo
 import io.reactivex.Observable
 import io.reactivex.Observer
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Maybes
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
@@ -43,14 +54,16 @@ import java.io.File
 
 class CompleteEditorWidget(paperID: Long,
                            paperRepo: IPaperRepo,
-                           private val undoWidget: UndoRepository,
+                           private val undoWidget: UndoManager,
                            private val penPrefsRepo: ICommonPenPrefsRepo,
                            caughtErrorSignal: Observer<Throwable>,
-                           schedulers: ISchedulerProvider)
+                           schedulers: ISchedulers)
     : SimpleEditorWidget(paperID = paperID,
                          paperRepo = paperRepo,
                          caughtErrorSignal = caughtErrorSignal,
                          schedulers = schedulers) {
+
+    private val drawingDisposableBag = CompositeDisposable()
 
     override fun start(): Observable<Boolean> {
         return super.start()
@@ -70,13 +83,13 @@ class CompleteEditorWidget(paperID: Long,
                     //            .onUpdateEditToolList()
                     //            .observeOn(uiScheduler)
                     //            .subscribe { event ->
-                    //                val toolID = event.toolIDs[event.usingIndex]
+                    //                val toolID = event.mode[event.usingIndex]
                     //
                     //                when (toolID) {
-                    //                    ToolType.ERASER -> {
-                    //                        mCanvasWidget.setDrawingMode(DrawingMode.ERASER)
+                    //                    EditorMode.SELECT_TO_DELETE -> {
+                    //                        mCanvasWidget.setDrawingMode(DrawingMode.SELECT_TO_DELETE)
                     //                    }
-                    //                    ToolType.PEN -> {
+                    //                    EditorMode.FREE_DRAWING -> {
                     //                        mCanvasWidget.setDrawingMode(DrawingMode.SKETCH)
                     //                    }
                     //                    else -> {
@@ -87,11 +100,6 @@ class CompleteEditorWidget(paperID: Long,
                     //            .addTo(staticDisposableBag)
 
                     // Prepare initial tools and select the pen by default.
-                    val tools = getEditToolIDs()
-                    mToolIndex = tools.indexOf(ToolType.PEN)
-                    mEditingTools.onNext(UpdateEditToolsEvent(
-                        toolIDs = tools,
-                        usingIndex = mToolIndex))
 
                     // Prepare initial color tickets
                     //        Observables
@@ -124,6 +132,11 @@ class CompleteEditorWidget(paperID: Long,
             }
     }
 
+    override fun stop() {
+        super.stop()
+        drawingDisposableBag.clear()
+    }
+
     /**
      * Request to stop; It is granted to stop when receiving a true; vice versa.
      */
@@ -138,89 +151,193 @@ class CompleteEditorWidget(paperID: Long,
         }
     }
 
+    override fun observeBusy(): Observable<Boolean> {
+        return Observables
+            .combineLatest(super.observeBusy(),
+                           undoWidget.observeBusy())
+            .map { (selfBusy, undoBusy) ->
+                selfBusy && undoBusy
+            }
+    }
+
+    private fun createSVGScrap(id: UUID,
+                               x: Float,
+                               y: Float): SVGScrap {
+        return SVGScrap(uuid = id,
+                        frame = Frame(x = x,
+                                      y = y,
+                                      scaleX = 1f,
+                                      scaleY = 1f,
+                                      width = 1f,
+                                      height = 1f,
+                                      z = highestZ.get() + 1))
+    }
+
+    // Free drawing ///////////////////////////////////////////////////////////
+
+    fun handleTouch(touchSrc: Observable<GestureObservable>) {
+        Observables
+            .combineLatest(editorModelSignal,
+                           touchSrc)
+            .observeOn(schedulers.main())
+//            .subscribe { (mode, gesture) ->
+//                // Mode determines what to do next
+//                when (mode) {
+//                    EditorMode.FREE_DRAWING -> {
+//                        handleFreeDrawing(gesture)
+//                    }
+//                    else -> TODO()
+//                }
+//            }
+            .flatMap { (mode, gesture) ->
+                val manipulator = when (mode) {
+                    EditorMode.FREE_DRAWING -> SketchManipulator(
+                        editor = this@CompleteEditorWidget,
+                        paper = this.paper,
+                        highestZ = highestZ.get(),
+                        schedulers = schedulers)
+                    else -> TODO()
+                }
+                gesture.compose(manipulator)
+            }
+            .subscribe { operation ->
+                undoWidget.putOperation(operation)
+            }
+            .addTo(staticDisposableBag)
+    }
+
+    private fun handleFreeDrawing(gestureSignal: GestureObservable) {
+        drawingDisposableBag.clear()
+
+        val id = UUID.randomUUID()
+        // Observe widget creation
+        val widgetSignal = observeScraps()
+            .filter { event ->
+                event is AddScrapEvent &&
+                event.scrapWidget.getID() == id
+            }
+            .firstElement()
+            .map { event ->
+                event as AddScrapEvent
+                event.scrapWidget as SVGScrapWidget
+            }
+            .cache()
+        val startX = AtomicReference(0f)
+        val startY = AtomicReference(0f)
+
+        // Begin, add scrap and create corresponding widget
+        Maybes.zip(paper.toMaybe(),
+                   gestureSignal.firstElement())
+            .observeOn(schedulers.main())
+            .subscribe { (paper, event) ->
+                event as DragBeginEvent
+
+                val (x, y) = event.startPointer
+                val scrap = createSVGScrap(id, x, y)
+
+                // Remember start x-y for later point correction
+                startX.set(x)
+                startY.set(y)
+
+                paper.addScrap(scrap)
+            }
+            .addTo(drawingDisposableBag)
+
+        // Delegate to widget
+        widgetSignal
+            .observeOn(schedulers.main())
+            .subscribe { widget ->
+                widget.handleSketch(
+                    gestureSignal
+                        .map { event ->
+                            when (event) {
+                                is DragBeginEvent -> {
+                                    val (x, y) = event.startPointer
+                                    val nx = x - startX.get()
+                                    val ny = y - startY.get()
+
+                                    Point(nx, ny)
+                                }
+                                is DragDoingEvent -> {
+                                    val (x, y) = event.stopPointer
+                                    val nx = x - startX.get()
+                                    val ny = y - startY.get()
+
+                                    Point(nx, ny)
+                                }
+                                is DragEndEvent -> {
+                                    val (x, y) = event.stopPointer
+                                    val nx = x - startX.get()
+                                    val ny = y - startY.get()
+
+                                    Point(nx, ny)
+                                }
+                                else -> TODO()
+                            }
+                        })
+            }
+            .addTo(drawingDisposableBag)
+    }
+
     // Undo & redo ////////////////////////////////////////////////////////////
 
-    fun handleOnClickUndoButton(undoSignal: Observable<Any>) {
+    fun handleUndo(undoSignal: Observable<Any>) {
         Observables
             .combineLatest(paper.toObservable(),
                            undoSignal)
             .flatMap { (paper, _) ->
-                undoWidget
-                    .undo(paper)
-                    .toObservable()
+                undoWidget.undo(paper)
+                    .toObservable<Any>()
             }
             .subscribe()
             .addTo(staticDisposableBag)
     }
 
-    fun handleOnClickRedoButton(undoSignal: Observable<Any>) {
+    fun handleRedo(redoSignal: Observable<Any>) {
         Observables
             .combineLatest(paper.toObservable(),
-                           undoSignal)
+                           redoSignal)
             .flatMap { (paper, _) ->
-                undoWidget
-                    .redo(paper)
-                    .toObservable()
+                undoWidget.redo(paper)
+                    .toObservable<Any>()
             }
             .subscribe()
             .addTo(staticDisposableBag)
     }
 
-    fun observeUndoAvailability(): Observable<UndoRedoAvailabilityEvent> {
+    fun observeUndoAvailability(): Observable<UndoAvailabilityEvent> {
         return Observables.combineLatest(
             observeBusy(),
-            undoWidget.onUpdateUndoRedoCapacity())
+            undoWidget.observeUndoCapacity())
             .map { (busy, event) ->
                 if (busy) {
-                    UndoRedoAvailabilityEvent(canUndo = false,
-                                              canRedo = false)
+                    UndoAvailabilityEvent(canUndo = false,
+                                          canRedo = false)
                 } else {
                     event
                 }
             }
     }
 
-    // Edit tool //////////////////////////////////////////////////////////////
+    // Editor mode ////////////////////////////////////////////////////////////
 
-    private var mToolIndex = -1
-    private val mEditingTools = BehaviorSubject.create<UpdateEditToolsEvent>()
+    private val editorModelSignal = BehaviorSubject.createDefault(EditorMode.FREE_DRAWING)
 
-    private val mUnsupportedToolMsg = PublishSubject.create<Any>()
+    fun handleChangeEditorMode(modeSignal: Observable<EditorMode>) {
+        modeSignal
+            .observeOn(schedulers.main())
+            .subscribe { next ->
+                val now = editorModelSignal.value
 
-    // TODO: Since the tool list (data) and UI click both lead to the
-    // TODO: UI view-model change, merge this two upstream in the new
-    // TODO: design!
-    fun handleClickTool(toolID: ToolType) {
-        val toolIDs = getEditToolIDs()
-        val usingIndex = when (toolID) {
-            ToolType.PEN,
-            ToolType.ERASER -> {
-                toolIDs.indexOf(toolID)
+                if (next != now) {
+                    editorModelSignal.onNext(next)
+                }
             }
-            else -> {
-                mUnsupportedToolMsg.onNext(0)
-                toolIDs.indexOf(ToolType.PEN)
-            }
-        }
-
-        mEditingTools.onNext(UpdateEditToolsEvent(
-            toolIDs = toolIDs,
-            usingIndex = usingIndex))
+            .addTo(staticDisposableBag)
     }
 
-    fun onUpdateEditToolList(): Observable<UpdateEditToolsEvent> {
-        return mEditingTools
-    }
-
-    fun onChooseUnsupportedEditTool(): Observable<Any> {
-        return mUnsupportedToolMsg
-    }
-
-    private fun getEditToolIDs(): List<ToolType> {
-        return listOf(
-            ToolType.ERASER,
-            ToolType.PEN,
-            ToolType.LASSO)
+    fun observeEditorMode(): Observable<EditorMode> {
+        return editorModelSignal
     }
 
     // Pen Color & size //////////////////////////////////////////////////////
@@ -307,9 +424,9 @@ class CompleteEditorWidget(paperID: Long,
 
     // Progress & error & Editor status ///////////////////////////////////////
 
-    private val mUpdateProgressSignal = PublishSubject.create<IntProgressEvent>()
+    private val progressSignal = PublishSubject.create<IntProgressEvent>()
 
     fun onUpdateProgress(): Observable<IntProgressEvent> {
-        return mUpdateProgressSignal
+        return progressSignal
     }
 }

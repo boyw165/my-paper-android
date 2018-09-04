@@ -20,7 +20,7 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.ISchedulerProvider
+import com.paper.model.ISchedulers
 import com.paper.model.Frame
 import com.paper.model.IScrap
 import io.reactivex.Observable
@@ -30,7 +30,7 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 open class BaseScrapWidget(protected val scrap: IScrap,
-                           protected val schedulers: ISchedulerProvider)
+                           protected val schedulers: ISchedulers)
     : IWidget {
 
     protected val lock = Any()

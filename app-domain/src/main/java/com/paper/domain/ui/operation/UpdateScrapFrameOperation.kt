@@ -22,10 +22,10 @@
 
 package com.paper.domain.ui.operation
 
-import com.paper.domain.ui.ICanvasOperation
+import com.paper.model.repository.EditorOperation
 import com.paper.model.IPaper
 
-class UpdateScrapFrameOperation : ICanvasOperation {
+class UpdateScrapFrameOperation : EditorOperation() {
 
     override fun undo(target: IPaper) {
         // TODO

@@ -18,21 +18,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.model.repository
 
-import com.paper.model.IPaper
-import io.reactivex.Observable
+import io.reactivex.Completable
 import io.reactivex.Single
 
-interface ICanvasOperationHistoryRepository : IWidget {
+interface IOperationRepository {
 
-    fun putOperation(operation: ICanvasOperation)
+    fun prepare(): Single<Int>
 
-    fun eraseAll()
+    fun push(operation: EditorOperation): Single<Int>
 
-    fun undo(paper: IPaper): Single<Boolean>
+    /**
+     * @return The remaining record account and the fetched operation.
+     */
+    fun pop(): Single<Pair<Int, EditorOperation>>
 
-    fun redo(paper: IPaper): Single<Boolean>
-
-    fun onBusy(): Observable<Boolean>
+    fun deleteAll(): Completable
 }

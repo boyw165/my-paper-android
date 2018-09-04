@@ -22,11 +22,11 @@
 
 package com.paper.domain.ui.operation
 
-import com.paper.domain.ui.ICanvasOperation
+import com.paper.model.repository.EditorOperation
 import com.paper.model.IPaper
 
-data class GroupOperation(val operations: List<ICanvasOperation>)
-    : ICanvasOperation {
+data class GroupOperation(val operations: List<EditorOperation>)
+    : EditorOperation() {
 
     override fun undo(target: IPaper) {
         // TODO
@@ -34,9 +34,5 @@ data class GroupOperation(val operations: List<ICanvasOperation>)
 
     override fun redo(target: IPaper) {
         // TODO
-    }
-
-    override fun toString(): String {
-        return javaClass.simpleName
     }
 }
