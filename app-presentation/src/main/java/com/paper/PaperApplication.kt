@@ -25,27 +25,23 @@ import android.support.multidex.MultiDexApplication
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.firebase.FirebaseApp
 import com.google.gson.GsonBuilder
-import com.paper.domain.ui.ICanvasOperationRepoProvider
-import com.paper.domain.ISchedulerProvider
+import com.paper.model.ISchedulers
 import com.paper.model.*
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSQLiteImpl
-import com.paper.domain.ui.CanvasOperationRepoFileLRUImpl
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Scheduler
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 
 class PaperApplication : MultiDexApplication(),
-                         ISchedulerProvider,
+                         ISchedulers,
                          IPaperRepoProvider,
-                         ICanvasOperationRepoProvider,
                          IBitmapRepoProvider,
                          IPreferenceServiceProvider {
 
@@ -96,8 +92,14 @@ class PaperApplication : MultiDexApplication(),
             .create()
     }
 
+    private val mainScheduler = SingleScheduler()
+
     override fun main(): Scheduler {
-        return AndroidSchedulers.mainThread()
+        return mainScheduler
+    }
+
+    override fun ui(): Scheduler {
+        TODO("not implemented")
     }
 
     override fun computation(): Scheduler {
@@ -108,10 +110,10 @@ class PaperApplication : MultiDexApplication(),
         return Schedulers.io()
     }
 
-    private val mDbScheduler = SingleScheduler()
+    private val dbScheduler = SingleScheduler()
 
     override fun db(): Scheduler {
-        return mDbScheduler
+        return dbScheduler
     }
 
     private val mPaperRepo by lazy {
@@ -120,7 +122,7 @@ class PaperApplication : MultiDexApplication(),
                             jsonTranslator = mJsonTranslator,
                             fileDir = getExternalFilesDir("media"),
                             prefs = preference,
-                            dbIoScheduler = mDbScheduler)
+                            dbIoScheduler = dbScheduler)
     }
 
     override fun getPaperRepo(): IPaperRepo {

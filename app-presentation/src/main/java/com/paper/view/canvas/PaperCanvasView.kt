@@ -37,10 +37,10 @@ import com.paper.AppConst
 import com.paper.R
 import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
-import com.paper.domain.event.*
+import com.paper.domain.ui_event.*
 import com.paper.domain.util.ProfilerUtils
 import com.paper.domain.util.TransformUtils
-import com.paper.domain.ui.ICanvasWidget
+import com.paper.domain.ui.IEditorWidget
 import com.paper.domain.ui.IBaseScrapWidget
 import com.paper.model.IPreferenceServiceProvider
 import com.paper.model.ModelConst
@@ -71,7 +71,7 @@ import java.util.concurrent.TimeUnit
 
 class PaperCanvasView : TextureView,
                         TextureView.SurfaceTextureListener,
-                        IWidgetView<IPaperCanvasWidget>,
+                        IWidgetView<IEditorWidget>,
                         IPaperContext,
                         IParentView,
                         IWriteThumbnailFileCanvasView,
@@ -81,7 +81,7 @@ class PaperCanvasView : TextureView,
     private val mScrapViews = mutableListOf<IScrapView>()
 
     // Widget.
-    private lateinit var mWidget: ICanvasWidget
+    private lateinit var mWidget: IEditorWidget
     private val mDisposables = CompositeDisposable()
 
     // Dirty flags
@@ -123,7 +123,7 @@ class PaperCanvasView : TextureView,
         surfaceTextureListener = this
     }
 
-    override fun bindWidget(widget: IPaperCanvasWidget) {
+    override fun bindWidget(widget: IEditorWidget) {
         ensureMainThread()
         ensureNoLeakingSubscription()
 
@@ -131,7 +131,7 @@ class PaperCanvasView : TextureView,
 
         // Debug
         mDisposables.add(
-            widget.onPrintDebugMessage()
+            widget.observeDebugMessage()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -168,7 +168,7 @@ class PaperCanvasView : TextureView,
             onReadyToDraw()
                 .switchMap { readyToDraw ->
                     if (readyToDraw) {
-                        widget.onUpdateCanvasSize()
+                        widget.observeCanvasSize()
                             .observeOn(AndroidSchedulers.mainThread())
                             .switchMap { size ->
                                 updateLayoutOrCanvas(size.width, size.height)
@@ -197,7 +197,7 @@ class PaperCanvasView : TextureView,
             onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
-                        widget.onAddScrapWidget()
+                        widget.observeScraps()
                     } else {
                         Observable.never()
                     }
@@ -210,7 +210,7 @@ class PaperCanvasView : TextureView,
             onReadyToDraw()
                 .switchMap { ready ->
                     if (ready) {
-                        widget.onRemoveScrapWidget()
+                        widget.onRemoveScrap()
                             .subscribeOn(AndroidSchedulers.mainThread())
                     } else {
                         Observable.empty()
@@ -325,7 +325,7 @@ class PaperCanvasView : TextureView,
         invalidate()
     }
 
-    private fun removeScrap(widget: IScrapWidget) {
+    private fun removeScrap(widget: IBaseScrapWidget) {
         ensureMainThread()
 
         val scrapView = mScrapViews.firstOrNull { it == widget }
@@ -463,8 +463,8 @@ class PaperCanvasView : TextureView,
             .debounce(150, TimeUnit.MILLISECONDS)
     }
 
-    private fun getPaintMode(penType: PenType): PorterDuffXfermode {
-        return if (penType == PenType.ERASER) mEraserMode else mDrawMode
+    private fun getPaintMode(penType: SVGStyle): PorterDuffXfermode {
+        return if (penType == SVGStyle.ERASER) mEraserMode else mDrawMode
     }
 
     /**
@@ -532,8 +532,8 @@ class PaperCanvasView : TextureView,
 //
 //            // Extract the transform from the canvas matrix.
 //            mTransformHelper.getValues(mCanvasMatrix)
-//            val tx = mTransformHelper.translationX
-//            val ty = mTransformHelper.translationY
+//            val tx = mTransformHelper.x
+//            val ty = mTransformHelper.y
 //            val scaleVP = mTransformHelper.scaleX
 //
 //            // Manually calculate position and size of the background cross/grids
@@ -588,11 +588,11 @@ class PaperCanvasView : TextureView,
 //
 //                            mStrokeDrawables.add(drawable)
 //
-//                            mIsHashDirty = true
+//                            isHashDirty = true
 //
 //                            Observable.just(InvalidationEvent())
 //                        }
-//                        is OnSketchEvent -> {
+//                        is DoSketchEvent -> {
 //                            val nx = event.point.x
 //                            val ny = event.point.y
 //                            val (x, y) = toViewWorld(nx, ny)
@@ -600,7 +600,7 @@ class PaperCanvasView : TextureView,
 //                            val drawable = mStrokeDrawables.last()
 //                            drawable.lineTo(Point(x, y, event.point.time))
 //
-//                            mIsHashDirty = true
+//                            isHashDirty = true
 //
 //                            Observable.just(InvalidationEvent())
 //                        }
@@ -610,21 +610,21 @@ class PaperCanvasView : TextureView,
 //
 //                            Observable.just(InvalidationEvent())
 //                        }
-//                        is AddSketchStrokeEvent -> {
-//                            if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.strokeID }) {
+//                        is AddSvgEvent -> {
+//                            if (-1 == mStrokeDrawables.indexOfFirst { d -> d.id == event.svgID }) {
 //                                val drawable = createSvgDrawable(event)
 //                                mStrokeDrawables.add(drawable)
 //
-//                                mIsHashDirty = true
+//                                isHashDirty = true
 //
 //                                Observable.just(InvalidationEvent())
 //                            } else {
 //                                Observable.just(NullCanvasEvent())
 //                            }
 //                        }
-//                        is RemoveSketchStrokeEvent -> {
+//                        is RemoveSvgEvent -> {
 //                            val i = mStrokeDrawables.indexOfFirst { d ->
-//                                d.id == event.strokeID
+//                                d.id == event.svgID
 //                            }
 //                            if (i >= 0) {
 //                                mStrokeDrawables.removeAt(i)
@@ -632,7 +632,7 @@ class PaperCanvasView : TextureView,
 //                                // Invalidate drawables
 //                                mStrokeDrawables.forEach { d -> d.markUndrew() }
 //
-//                                mIsHashDirty = true
+//                                isHashDirty = true
 //
 //                                Observable.just(
 //                                    EraseCanvasEvent(),
@@ -903,7 +903,7 @@ class PaperCanvasView : TextureView,
             is StartSketchEvent -> {
                 mapM2V(event.penSize)
             }
-            is AddSketchStrokeEvent -> {
+            is AddSvgEvent -> {
                 mapM2V(event.penSize)
             }
             else -> throw IllegalArgumentException("Invalid event")
@@ -1414,21 +1414,21 @@ class PaperCanvasView : TextureView,
             is StartSketchEvent -> {
                 when (mPathInterpolatorID) {
                     resources.getString(R.string.prefs_path_interpolator_cubic_hermite) -> {
-                        SVGHermiteCubicDrawable(id = event.strokeID,
+                        SVGHermiteCubicDrawable(id = event.svg,
                                                 context = this@PaperCanvasView,
                                                 penColor = event.penColor,
                                                 penSize = getScaledPenSize(event),
                                                 porterDuffMode = getPaintMode(event.penType))
                     }
                     resources.getString(R.string.prefs_path_interpolator_cubic_bezier) -> {
-                        SVGCubicBezierDrawable(id = event.strokeID,
+                        SVGCubicBezierDrawable(id = event.svg,
                                                context = this@PaperCanvasView,
                                                penColor = event.penColor,
                                                penSize = getScaledPenSize(event),
                                                porterDuffMode = getPaintMode(event.penType))
                     }
                     resources.getString(R.string.prefs_path_interpolator_linear) -> {
-                        SVGLinearDrawable(id = event.strokeID,
+                        SVGLinearDrawable(id = event.svg,
                                           context = this@PaperCanvasView,
                                           penColor = event.penColor,
                                           penSize = getScaledPenSize(event),
@@ -1438,7 +1438,7 @@ class PaperCanvasView : TextureView,
                 }
             }
             // TODO: Remove this ugly thing, and replace it with drawing event!
-            is AddSketchStrokeEvent -> {
+            is AddSvgEvent -> {
                 when (mPathInterpolatorID) {
                     resources.getString(R.string.prefs_path_interpolator_cubic_hermite) -> {
                         SVGHermiteCubicDrawable(id = event.strokeID,
@@ -1535,7 +1535,7 @@ class PaperCanvasView : TextureView,
 
     private fun ensureNoLeakingSubscription() {
         if (mDisposables.size() > 0) throw IllegalStateException(
-            "Already bind to a widget")
+            "Already start to a widget")
     }
 
     private fun drawBackground(canvas: Canvas,
@@ -1616,7 +1616,7 @@ class PaperCanvasView : TextureView,
             if (mIsHashDirty) {
                 mHashCode = AppConst.EMPTY_HASH
 //                mStrokeDrawables.forEach { d ->
-//                    mHashCode = 31 * mHashCode + d.hashCode()
+//                    cacheHashCode = 31 * cacheHashCode + d.hashCode()
 //                }
                 mScrapViews.forEach { v ->
                     mHashCode = 31 * mHashCode + v.hashCode()

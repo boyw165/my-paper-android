@@ -23,19 +23,19 @@ package com.paper.view.editPanel
 import com.airbnb.epoxy.TypedEpoxyController
 import com.bumptech.glide.RequestManager
 import com.paper.R
-import com.paper.domain.data.ToolType
-import com.paper.domain.event.UpdateEditToolsEvent
+import com.paper.domain.ui.EditorMode
+import com.paper.domain.ui_event.EditorModeEvent
 import com.paper.domain.ui.PaperMenuWidget
 
 class ToolListEpoxyController(imageLoader: RequestManager)
-    : TypedEpoxyController<UpdateEditToolsEvent>() {
+    : TypedEpoxyController<EditorModeEvent>() {
 
     private val mImgLoader = imageLoader
 
-    override fun buildModels(data: UpdateEditToolsEvent) {
-        data.toolIDs.forEachIndexed { i, toolType ->
+    override fun buildModels(data: EditorModeEvent) {
+        data.mode.forEachIndexed { i, toolType ->
             ToolEpoxyViewModel(
-                toolType = toolType,
+                editorMode = toolType,
                 imgLoader = mImgLoader,
                 resourceId = getResourceId(toolType),
                 isUsing = data.usingIndex == i,
@@ -45,11 +45,11 @@ class ToolListEpoxyController(imageLoader: RequestManager)
         }
     }
 
-    private fun getResourceId(toolId: ToolType): Int {
+    private fun getResourceId(toolId: EditorMode): Int {
         return when (toolId) {
-            ToolType.ERASER -> R.drawable.sel_img_e_eraser
-            ToolType.PEN -> R.drawable.sel_img_e_pen
-            ToolType.LASSO -> R.drawable.sel_img_e_scissor
+            EditorMode.SELECT_TO_DELETE -> R.drawable.sel_img_e_eraser
+            EditorMode.FREE_DRAWING -> R.drawable.sel_img_e_pen
+            EditorMode.SELECT_TO_DRAG_AND_DROP -> R.drawable.sel_img_e_scissor
             else -> throw IllegalArgumentException("Unsupported tool ID")
         }
     }

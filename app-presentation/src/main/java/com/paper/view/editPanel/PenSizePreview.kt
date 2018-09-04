@@ -33,7 +33,7 @@ import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
 import android.view.View
 import com.paper.R
-import com.paper.domain.event.UpdatePenSizeEvent
+import com.paper.domain.ui_event.UpdatePenSizeEvent
 import com.paper.model.event.EventLifecycle
 import com.paper.view.canvas.IPaperContext
 import com.paper.view.with

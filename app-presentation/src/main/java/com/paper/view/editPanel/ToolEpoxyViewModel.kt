@@ -25,18 +25,18 @@ import android.widget.ImageView
 import com.airbnb.epoxy.EpoxyModel
 import com.bumptech.glide.RequestManager
 import com.paper.R
-import com.paper.domain.data.ToolType
+import com.paper.domain.ui.EditorMode
 import com.paper.domain.ui.PaperMenuWidget
 
 class ToolEpoxyViewModel(
-    toolType: ToolType,
+    editorMode: EditorMode,
     resourceId: Int,
     imgLoader: RequestManager,
     isUsing: Boolean = false,
     widget: PaperMenuWidget? = null)
     : EpoxyModel<View>() {
 
-    private val mToolID = toolType
+    private val mToolID = editorMode
     private val mImgLoader = imgLoader
     private val mResourceId = resourceId
     private val mIsUsing = isUsing

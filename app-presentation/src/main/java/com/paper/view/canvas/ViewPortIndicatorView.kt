@@ -34,7 +34,7 @@ import com.cardinalblue.gesture.GesturePolicy
 import com.cardinalblue.gesture.IDragGestureListener
 import com.cardinalblue.gesture.MyMotionEvent
 import com.paper.R
-import com.paper.domain.event.*
+import com.paper.domain.ui_event.*
 import com.paper.model.Rect
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers

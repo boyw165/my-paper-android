@@ -24,14 +24,14 @@ import android.graphics.*
 import android.view.MotionEvent
 import com.cardinalblue.gesture.IAllGesturesListener
 import com.paper.AppConst
-import com.paper.domain.event.InitializationEndEvent
-import com.paper.domain.event.OnSketchEvent
-import com.paper.domain.event.StartSketchEvent
-import com.paper.domain.event.StopSketchEvent
+import com.paper.domain.ui_event.InitializationEndEvent
+import com.paper.domain.ui_event.OnSketchEvent
+import com.paper.domain.ui_event.StartSketchEvent
+import com.paper.domain.ui_event.StopSketchEvent
 import com.paper.domain.util.TransformUtils
 import com.paper.domain.ui.IBaseScrapWidget
 import com.paper.model.Point
-import com.paper.model.Transform
+import com.paper.model.Frame
 import com.paper.view.with
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -199,11 +199,11 @@ open class ScrapView(private val renderScheduler: Scheduler)
         }
     }
 
-    private fun onUpdateTransform(xform: Transform) {
-        mX = xform.translationX
-        mY = xform.translationY
+    private fun onUpdateTransform(xform: Frame) {
+        mX = xform.x
+        mY = xform.y
         mScale = xform.scaleX
-        mRotationInRadians = xform.rotationInRadians
+        mRotationInRadians = xform.rotationInDegrees
 
         mIsMatrixDirty = true
 

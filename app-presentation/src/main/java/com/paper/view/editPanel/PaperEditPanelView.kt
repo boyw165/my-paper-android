@@ -30,8 +30,8 @@ import android.widget.Toast
 import com.bumptech.glide.Glide
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.R
-import com.paper.domain.event.CanvasEvent
-import com.paper.domain.event.UpdatePenSizeEvent
+import com.paper.domain.ui_event.CanvasEvent
+import com.paper.domain.ui_event.UpdatePenSizeEvent
 import com.paper.domain.ui.PaperMenuWidget
 import com.paper.model.ModelConst
 import com.paper.model.Rect
@@ -120,7 +120,7 @@ class PaperEditPanelView : ConstraintLayout,
                 })
 
         // Pen size
-//        mDisposables.add(
+//        disposableBag.add(
 //            widget.setPenSize(
 //                SeekBarChangeObservable(mPenSizeView)
 //                    .filter { it.fromUser }

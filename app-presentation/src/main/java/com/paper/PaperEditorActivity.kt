@@ -27,7 +27,7 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.ui.ICanvasOperationRepoProvider
-import com.paper.domain.ISchedulerProvider
+import com.paper.model.ISchedulers
 import com.paper.domain.ui.CompleteEditorWidget
 import com.paper.model.*
 import com.paper.model.event.IntProgressEvent
@@ -99,7 +99,7 @@ class PaperEditorActivity : AppCompatActivity() {
             paperTransformRepo = (application as ICanvasOperationRepoProvider).getPaperTransformRepo(),
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
-            schedulers = (application as ISchedulerProvider))
+            schedulers = (application as ISchedulers))
     }
 
     // Disposables
@@ -203,9 +203,9 @@ class PaperEditorActivity : AppCompatActivity() {
             .addTo(mDisposables)
 
         // Undo & redo buttons
-        mPresenter.handleOnClickUndoButton(RxView.clicks(mBtnUndo))
-        mPresenter.handleOnClickRedoButton(RxView.clicks(mBtnRedo))
-        mPresenter.onUpdateUndoRedoCapacity()
+        mPresenter.handleUndo(RxView.clicks(mBtnUndo))
+        mPresenter.handleRedo(RxView.clicks(mBtnRedo))
+        mPresenter.observeUndoAvailability()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe { event ->
                 mBtnUndo.isEnabled = event.canUndo
