@@ -52,16 +52,16 @@ import java.util.concurrent.atomic.AtomicReference
 
 // TODO: Shouldn't depend on any Android package!
 
-class CompleteEditorWidget(paperID: Long,
-                           paperRepo: IPaperRepo,
-                           private val undoWidget: UndoManager,
-                           private val penPrefsRepo: ICommonPenPrefsRepo,
-                           caughtErrorSignal: Observer<Throwable>,
-                           schedulers: ISchedulers)
-    : SimpleEditorWidget(paperID = paperID,
-                         paperRepo = paperRepo,
-                         caughtErrorSignal = caughtErrorSignal,
-                         schedulers = schedulers) {
+class WhiteboardEditorWidget(paperID: Long,
+                             paperRepo: IPaperRepo,
+                             private val undoWidget: UndoManager,
+                             private val penPrefsRepo: ICommonPenPrefsRepo,
+                             caughtErrorSignal: Observer<Throwable>,
+                             schedulers: ISchedulers)
+    : WhiteboardWidget(paperID = paperID,
+                       paperRepo = paperRepo,
+                       caughtErrorSignal = caughtErrorSignal,
+                       schedulers = schedulers) {
 
     private val drawingDisposableBag = CompositeDisposable()
 
@@ -192,7 +192,7 @@ class CompleteEditorWidget(paperID: Long,
             .flatMap { (mode, gesture) ->
                 val manipulator = when (mode) {
                     EditorMode.FREE_DRAWING -> SketchManipulator(
-                        editor = this@CompleteEditorWidget,
+                        editor = this@WhiteboardEditorWidget,
                         paper = this.paper,
                         highestZ = highestZ.get(),
                         schedulers = schedulers)

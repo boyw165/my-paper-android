@@ -20,14 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.repository
+package com.paper.model.command
 
+import com.paper.model.Frame
 import com.paper.model.IPaper
 import java.util.*
 
-abstract class EditorOperation(val id: UUID = UUID.randomUUID()) {
+class UpdateScrapFrameCommand(override val id: UUID = UUID.randomUUID(),
+                              val scrapID: UUID,
+                              val frameDelta: Frame)
+    : WhiteboardCommand(id = id) {
 
-    abstract fun undo(target: IPaper)
+    override fun undo(target: IPaper) {
+        // TODO
+    }
 
-    abstract fun redo(target: IPaper)
+    override fun redo(target: IPaper) {
+        // TODO
+    }
 }

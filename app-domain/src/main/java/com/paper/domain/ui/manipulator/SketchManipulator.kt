@@ -24,10 +24,9 @@ package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.*
 import com.paper.model.ISchedulers
-import com.paper.domain.ui.BaseManipulator
-import com.paper.model.repository.EditorOperation
+import com.paper.model.command.WhiteboardCommand
 import com.paper.domain.ui.SVGScrapWidget
-import com.paper.domain.ui.SimpleEditorWidget
+import com.paper.domain.ui.WhiteboardWidget
 import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.model.Frame
 import com.paper.model.IPaper
@@ -41,13 +40,13 @@ import io.reactivex.rxkotlin.addTo
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
-class SketchManipulator(private val editor: SimpleEditorWidget,
+class SketchManipulator(private val editor: WhiteboardWidget,
                         private val paper: Single<IPaper>,
                         private val highestZ: Int,
                         private val schedulers: ISchedulers)
     : BaseManipulator() {
 
-    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<EditorOperation> {
+    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
         if (upstream !is DragGestureObservable) return Observable.empty()
 
         return autoStop { emitter ->
@@ -115,16 +114,16 @@ class SketchManipulator(private val editor: SimpleEditorWidget,
             }
 
             // Delegate to widget
-            widgetSignal
-                .observeOn(schedulers.main())
-                .flatMap { widget ->
-                    widget.handleSketch(pointSrc)
-                }
-                .subscribe { operation ->
-                    // Pass result operation
-                    emitter.onNext(operation)
-                }
-                .addTo(disposableBag)
+//            widgetSignal
+//                .observeOn(schedulers.main())
+//                .flatMap { widget ->
+//                    widget.handleSketch(pointSrc)
+//                }
+//                .subscribe { operation ->
+//                    // Pass result operation
+//                    emitter.onNext(operation)
+//                }
+//                .addTo(disposableBag)
         }
     }
 

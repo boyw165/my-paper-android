@@ -27,9 +27,12 @@ import com.google.firebase.FirebaseApp
 import com.google.gson.GsonBuilder
 import com.paper.model.ISchedulers
 import com.paper.model.*
+import com.paper.model.command.WhiteboardCommand
+import com.paper.model.command.WhiteboardCommandJSONTranslator
 import com.paper.model.repository.IBitmapRepository
 import com.paper.model.repository.IPaperRepo
 import com.paper.model.repository.PaperRepoSQLiteImpl
+import com.paper.model.repository.json.FrameJSONTranslator
 import com.paper.model.repository.json.PaperJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
@@ -81,14 +84,18 @@ class PaperApplication : MultiDexApplication(),
 
     // Repository and scheduler ///////////////////////////////////////////////
 
-    private val mJsonTranslator by lazy {
+    private val jsonTranslator by lazy {
         GsonBuilder()
             .registerTypeAdapter(BasePaper::class.java,
                                  PaperJSONTranslator())
             .registerTypeAdapter(BaseScrap::class.java,
                                  ScrapJSONTranslator())
+            .registerTypeAdapter(Frame::class.java,
+                                 FrameJSONTranslator())
             .registerTypeAdapter(VectorGraphics::class.java,
                                  VectorGraphicsJSONTranslator())
+            .registerTypeAdapter(WhiteboardCommand::class.java,
+                                 WhiteboardCommandJSONTranslator())
             .create()
     }
 
@@ -119,7 +126,7 @@ class PaperApplication : MultiDexApplication(),
     private val mPaperRepo by lazy {
         PaperRepoSQLiteImpl(authority = packageName,
                             resolver = contentResolver,
-                            jsonTranslator = mJsonTranslator,
+                            jsonTranslator = jsonTranslator,
                             fileDir = getExternalFilesDir("media"),
                             prefs = preference,
                             dbIoScheduler = dbScheduler)

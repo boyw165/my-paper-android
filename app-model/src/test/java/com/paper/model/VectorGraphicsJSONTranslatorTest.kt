@@ -20,8 +20,7 @@
 
 package com.paper.model
 
-import com.google.gson.GsonBuilder
-import com.paper.model.repository.json.VectorGraphicsJSONTranslator
+import com.paper.model.repository.json.VectorGraphicsJSONTranslator.Companion.POINT_SEPARATOR
 import com.paper.model.sketch.SVGStyle.Fill
 import com.paper.model.sketch.SVGStyle.Stroke
 import com.paper.model.sketch.VectorGraphics
@@ -30,15 +29,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
-@RunWith(MockitoJUnitRunner::class)
-class VectorGraphicsJSONTranslatorTest {
-
-    private val pointSeparator = VectorGraphicsJSONTranslator.POINT_SEPARATOR
-    private val translator by lazy {
-        GsonBuilder()
-            .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
-            .create()
-    }
+@RunWith(MockitoJUnitRunner.Silent::class)
+class VectorGraphicsJSONTranslatorTest : BaseModelTest() {
 
     @Test
     fun `serialize style`() {
@@ -47,7 +39,7 @@ class VectorGraphicsJSONTranslatorTest {
                                                            Stroke(size = 1.5f,
                                                                   color = Color.GREEN,
                                                                   closed = true)))
-        val jsonString = translator.toJson(graphics)
+        val jsonString = jsonTranslator.toJson(graphics)
 
         System.out.println("JSON = $jsonString")
 
@@ -58,7 +50,7 @@ class VectorGraphicsJSONTranslatorTest {
 
     @Test
     fun `deserialize style`() {
-        val svg = translator.fromJson("{\"style\":{\"fill\":[\"#FFFF0000\",1],\"stroke\":[\"#FF00FF00\",1.5,true]}}", VectorGraphics::class.java)
+        val svg = jsonTranslator.fromJson("{\"style\":{\"fill\":[\"#FFFF0000\",1],\"stroke\":[\"#FF00FF00\",1.5,true]}}", VectorGraphics::class.java)
 
         svg.style.forEach { s ->
             when (s) {
@@ -84,11 +76,11 @@ class VectorGraphicsJSONTranslatorTest {
                                                                   closed = true)),
                                       tupleList = mutableListOf(LinearPointTuple(0f, 0f),
                                                                 LinearPointTuple(1f, 1f)))
-        val jsonString = translator.toJson(graphics)
+        val jsonString = jsonTranslator.toJson(graphics)
 
         System.out.println("JSON = $jsonString")
 
-        Assert.assertTrue(jsonString, jsonString.contains("\"path\":\"0.0,0.0${pointSeparator}1.0,1.0\""))
+        Assert.assertTrue(jsonString, jsonString.contains("\"path\":\"0.0,0.0${POINT_SEPARATOR}1.0,1.0\""))
     }
 
     @Test
@@ -102,20 +94,20 @@ class VectorGraphicsJSONTranslatorTest {
                                                                 CubicPointTuple(1f, 1f,
                                                                                 2f, 2f,
                                                                                 3f, 3f)))
-        val jsonString = translator.toJson(graphics)
+        val jsonString = jsonTranslator.toJson(graphics)
 
         System.out.println("JSON = $jsonString")
 
         Assert.assertTrue(jsonString, jsonString.contains("\"path\":\"" +
-                                                          "0.0,0.0$pointSeparator" +
+                                                          "0.0,0.0$POINT_SEPARATOR" +
                                                           "1.0,1.0,2.0,2.0,3.0,3.0" +
                                                           "\""))
     }
 
     @Test
     fun `deserialize cubic path`() {
-        val svg = translator.fromJson("{\"path\":\"" +
-                                      "0.1,0.2$pointSeparator" +
+        val svg = jsonTranslator.fromJson("{\"path\":\"" +
+                                      "0.1,0.2$POINT_SEPARATOR" +
                                       "1.1,1.2,2.1,2.2,3.1,3.2" +
                                       "\"}", VectorGraphics::class.java)
 

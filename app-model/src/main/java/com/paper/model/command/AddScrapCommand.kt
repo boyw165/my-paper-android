@@ -20,14 +20,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.operation
+package com.paper.model.command
 
-import com.paper.model.repository.EditorOperation
+import com.paper.model.BaseScrap
 import com.paper.model.IPaper
-import com.paper.model.IScrap
+import java.util.*
 
-data class AddScrapOperation(private val scrap: IScrap)
-    : EditorOperation() {
+data class AddScrapCommand(override val id: UUID = UUID.randomUUID(),
+                           val scrap: BaseScrap)
+    : WhiteboardCommand(id = id) {
 
     override fun undo(target: IPaper) {
         // TODO

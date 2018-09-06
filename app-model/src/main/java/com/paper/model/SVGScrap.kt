@@ -29,13 +29,12 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
                     frame: Frame = Frame(),
                     private val graphicsList: MutableList<VectorGraphics> = mutableListOf())
     : BaseScrap(uuid = uuid,
-                frame = frame),
-      ISVGScrap {
+                frame = frame) {
 
     private val addSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
     private val removeSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
 
-    override fun setSVGs(other: List<VectorGraphics>) {
+    fun setSVGs(other: List<VectorGraphics>) {
         synchronized(lock) {
             val removed = graphicsList.toList()
             graphicsList.clear()
@@ -51,13 +50,13 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
         }
     }
 
-    override fun getSVGs(): List<VectorGraphics> {
+    fun getSVGs(): List<VectorGraphics> {
         synchronized(lock) {
             return graphicsList.toList()
         }
     }
 
-    override fun addSVG(svg: VectorGraphics) {
+    fun addSVG(svg: VectorGraphics) {
         synchronized(lock) {
             graphicsList.add(svg)
 
@@ -66,7 +65,7 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
         }
     }
 
-    override fun removeSVG(svg: VectorGraphics) {
+    fun removeSVG(svg: VectorGraphics) {
         synchronized(lock) {
             graphicsList.remove(svg)
 
@@ -75,17 +74,17 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
         }
     }
 
-    override fun observeAddSVG(): Observable<VectorGraphics> {
+    fun observeAddSVG(): Observable<VectorGraphics> {
         return addSVGSignal
     }
 
-    override fun observeRemoveSVG(): Observable<VectorGraphics> {
+    fun observeRemoveSVG(): Observable<VectorGraphics> {
         return removeSVGSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): IScrap {
+    override fun copy(): BaseScrap {
         return SVGScrap(uuid = UUID.randomUUID(),
                         frame = getFrame(),
                         graphicsList = getSVGs().toMutableList())

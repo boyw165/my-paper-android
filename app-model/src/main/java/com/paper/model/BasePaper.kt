@@ -33,7 +33,7 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
                      private var height: Float = 512f,
                      private val viewPort: Rect = Rect(0f, 0f, 0f, 0f),
                      private var thumbnail: Triple<URI, Int, Int> = Triple(URI("file:///null"), 0, 0),
-                     private var scraps: MutableList<IScrap> = mutableListOf())
+                     private var scraps: MutableList<BaseScrap> = mutableListOf())
     : IPaper,
       NoObfuscation {
 
@@ -125,35 +125,35 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    override fun getScraps(): List<IScrap> {
+    override fun getScraps(): List<BaseScrap> {
         synchronized(lock) {
             // Must clone the list in case concurrent modification
             return scraps.toList()
         }
     }
 
-    override fun addScrap(scrap: IScrap) {
+    override fun addScrap(scrap: BaseScrap) {
         synchronized(lock) {
             scraps.add(scrap)
             addScrapSignal.onNext(scrap)
         }
     }
 
-    override fun removeScrap(scrap: IScrap) {
+    override fun removeScrap(scrap: BaseScrap) {
         synchronized(lock) {
             scraps.remove(scrap)
             removeScrapSignal.onNext(scrap)
         }
     }
 
-    private val addScrapSignal = PublishSubject.create<IScrap>().toSerialized()
-    private val removeScrapSignal = PublishSubject.create<IScrap>().toSerialized()
+    private val addScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
+    private val removeScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
 
-    override fun observeAddScrap(): Observable<IScrap> {
+    override fun observeAddScrap(): Observable<BaseScrap> {
         return addScrapSignal
     }
 
-    override fun observeRemoveScrap(): Observable<IScrap> {
+    override fun observeRemoveScrap(): Observable<BaseScrap> {
         return removeScrapSignal
     }
 
@@ -161,7 +161,7 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
 
     override fun copy(): IPaper {
         return synchronized(lock) {
-            val copyScraps = mutableListOf<IScrap>()
+            val copyScraps = mutableListOf<BaseScrap>()
             scraps.forEach { copyScraps.add(it.copy()) }
 
             BasePaper(id = id,

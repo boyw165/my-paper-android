@@ -26,26 +26,25 @@ import java.util.*
 
 open class BaseScrap(private val uuid: UUID = UUID.randomUUID(),
                      private var frame: Frame = Frame())
-    : IScrap,
-      NoObfuscation {
+    : NoObfuscation {
 
     protected val lock = Any()
 
     protected var isHashDirty = true
     protected var cacheHashCode = 0
 
-    override fun getID(): UUID {
+    fun getID(): UUID {
         return uuid
     }
 
-    override fun setFrame(frame: Frame) {
+    fun setFrame(frame: Frame) {
         synchronized(lock) {
             this.frame = frame
             frameSignal.onNext(frame)
         }
     }
 
-    override fun getFrame(): Frame {
+    fun getFrame(): Frame {
         synchronized(lock) {
             return frame.copy()
         }
@@ -53,13 +52,13 @@ open class BaseScrap(private val uuid: UUID = UUID.randomUUID(),
 
     private val frameSignal = PublishSubject.create<Frame>().toSerialized()
 
-    override fun observeFrame(): Observable<Frame> {
+    fun observeFrame(): Observable<Frame> {
         return frameSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): IScrap {
+    open fun copy(): BaseScrap {
         return BaseScrap(uuid = UUID.randomUUID(),
                          frame = frame.copy())
     }

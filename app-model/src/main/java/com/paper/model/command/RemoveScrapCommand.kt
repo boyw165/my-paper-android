@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,20 +20,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.command
 
-import io.reactivex.Observable
+import com.paper.model.BaseScrap
+import com.paper.model.IPaper
 import java.util.*
 
-interface IScrap {
+class RemoveScrapCommand(override val id: UUID = UUID.randomUUID(),
+                         val scrap: BaseScrap)
+    : WhiteboardCommand(id = id) {
 
-    fun getID(): UUID
+    override fun undo(target: IPaper) {
+        // TODO
+    }
 
-    fun setFrame(frame: Frame)
-
-    fun getFrame(): Frame
-
-    fun observeFrame(): Observable<Frame>
-
-    fun copy(): IScrap
+    override fun redo(target: IPaper) {
+        // TODO
+    }
 }

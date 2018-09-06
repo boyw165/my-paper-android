@@ -34,7 +34,7 @@ class SVGScrapTest : BaseModelTest() {
     @Test
     fun `copy, ID should be different`() {
         val tester1 = createRandomSVGScrap()
-        val tester2 = tester1.copy() as ISVGScrap
+        val tester2 = tester1.copy() as SVGScrap
         tester2.setFrame(Frame(100f, 100f))
         tester2.setSVGs(listOf(VectorGraphics()))
 

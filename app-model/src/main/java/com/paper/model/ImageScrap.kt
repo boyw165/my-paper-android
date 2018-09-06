@@ -29,31 +29,30 @@ open class ImageScrap(uuid: UUID = UUID.randomUUID(),
                       frame: Frame = Frame(),
                       private var imageURL: URL)
     : BaseScrap(uuid = uuid,
-                frame = frame),
-      IImageScrap {
+                frame = frame) {
 
     private val urlSignal = PublishSubject.create<URL>().toSerialized()
 
-    override fun getURL(): URL {
+    fun getURL(): URL {
         synchronized(lock) {
             return imageURL
         }
     }
 
-    override fun setURL(url: URL) {
+    fun setURL(url: URL) {
         synchronized(lock) {
             imageURL = url
             urlSignal.onNext(url)
         }
     }
 
-    override fun observeURL(): Observable<URL> {
+    fun observeURL(): Observable<URL> {
         return urlSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): IScrap {
+    override fun copy(): BaseScrap {
         return ImageScrap(uuid = UUID.randomUUID(),
                           frame = getFrame(),
                           imageURL = getURL())

@@ -57,13 +57,13 @@ interface IPaper {
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    fun getScraps(): List<IScrap>
+    fun getScraps(): List<BaseScrap>
 
-    fun addScrap(scrap: IScrap)
+    fun addScrap(scrap: BaseScrap)
 
-    fun removeScrap(scrap: IScrap)
+    fun removeScrap(scrap: BaseScrap)
 
-    fun observeAddScrap(): Observable<IScrap>
+    fun observeAddScrap(): Observable<BaseScrap>
 
-    fun observeRemoveScrap(): Observable<IScrap>
+    fun observeRemoveScrap(): Observable<BaseScrap>
 }

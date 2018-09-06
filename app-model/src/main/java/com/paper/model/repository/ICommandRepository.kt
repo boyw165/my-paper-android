@@ -20,19 +20,28 @@
 
 package com.paper.model.repository
 
+import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Completable
 import io.reactivex.Single
 
-interface IOperationRepository {
+interface ICommandRepository {
 
+    /**
+     * Get command size from the journal file
+     */
     fun prepare(): Single<Int>
 
-    fun push(operation: EditorOperation): Single<Int>
+    /**
+     * Add a [WhiteboardCommand] to the top of the stack.
+     */
+    fun push(command: WhiteboardCommand): Single<Int>
 
     /**
      * @return The remaining record account and the fetched operation.
      */
-    fun pop(): Single<Pair<Int, EditorOperation>>
+    fun pop(): Single<Pair<Int, WhiteboardCommand>>
 
     fun deleteAll(): Completable
+
+    fun purgeGarbageCommands(): Completable
 }

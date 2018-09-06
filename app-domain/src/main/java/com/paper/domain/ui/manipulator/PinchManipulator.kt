@@ -1,6 +1,6 @@
-// Copyright Aug 2018-present Paper
+// Copyright Aug 2018-present CardinalBlue
 //
-// Author: boyw165@gmail.com
+// Author: boy@cardinalblue.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,18 +22,42 @@
 
 package com.paper.domain.ui.manipulator
 
+import com.cardinalblue.gesture.rx.DragGestureObservable
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.BaseManipulator
+import com.paper.domain.ui.BaseScrapWidget
+import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
 import io.reactivex.ObservableSource
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 
-class UpdateFrameManipulator : BaseManipulator {
+class PinchManipulator(private val widget: BaseScrapWidget) : BaseManipulator() {
 
-    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<Any> {
-        TODO("not implemented")
-    }
+    private val disposablesBag = CompositeDisposable()
 
-    override fun stop() {
-        TODO("not implemented")
+    override fun apply(touchSequence: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
+        if (touchSequence is DragGestureObservable) return Observable.empty()
+
+        return autoStop { emitter ->
+            // Any except the end
+            touchSequence
+                .skipLast(1)
+                .subscribe { event ->
+                    // TODO
+                }
+                .addTo(disposablesBag)
+
+            // End
+            touchSequence
+                .lastElement()
+                .subscribe { event ->
+                    // TODO
+
+                    // Produce collage command
+//                    emitter.onNext()
+                    emitter.onComplete()
+                }
+                .addTo(disposablesBag)
+        }
     }
 }

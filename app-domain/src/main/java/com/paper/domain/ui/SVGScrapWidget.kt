@@ -22,12 +22,12 @@ package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
 import com.paper.model.ISchedulers
-import com.paper.domain.ui.operation.AddScrapOperation
+import com.paper.model.command.AddScrapCommand
 import com.paper.domain.ui_event.SketchCubicToEvent
 import com.paper.domain.ui_event.SketchMoveToEvent
 import com.paper.domain.ui_event.UpdateSVGEvent
 import com.paper.model.*
-import com.paper.model.repository.EditorOperation
+import com.paper.model.command.WhiteboardCommand
 import com.paper.model.sketch.SVGStyle
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Maybe
@@ -37,14 +37,14 @@ import io.reactivex.rxkotlin.Maybes
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 
-class SVGScrapWidget(scrap: ISVGScrap,
-                     private val newSVGPenStyle: Observable<Set<SVGStyle>>,
-                     schedulers: ISchedulers)
+open class SVGScrapWidget(scrap: SVGScrap,
+                          private val newSVGPenStyle: Observable<Set<SVGStyle>>,
+                          schedulers: ISchedulers)
     : BaseScrapWidget(scrap,
                       schedulers),
       IWidget {
 
-    private val svgScrap: ISVGScrap get() = scrap as ISVGScrap
+    private val svgScrap: SVGScrap get() = scrap as SVGScrap
     private val sketchDisposableBag = CompositeDisposable()
 
     override fun start(): Observable<Boolean> {
@@ -85,74 +85,69 @@ class SVGScrapWidget(scrap: ISVGScrap,
         }
     }
 
-    fun handleSketch(src: Observable<Point>): Maybe<EditorOperation> {
-        return Maybe.create { emitter ->
-            sketchDisposableBag.clear()
+    fun handleSketch(src: Observable<Point>) {
+        sketchDisposableBag.clear()
 
-            // Cache SVG
-            lateinit var svg: VectorGraphics
+        // Cache SVG
+        lateinit var svg: VectorGraphics
 
-            // Begin
-            Maybes.zip(newSVGPenStyle.lastElement(),
-                       src.firstElement())
-                .subscribe { (style, point) ->
-                    // Mark drawing
-                    dirtyFlag.markDirty(ScrapDirtyFlag.GENERAL_BUSY)
+        // Begin
+        Maybes.zip(newSVGPenStyle.lastElement(),
+                   src.firstElement())
+            .subscribe { (style, point) ->
+                // Mark drawing
+                dirtyFlag.markDirty(ScrapDirtyFlag.GENERAL_BUSY)
 
-                    svg = VectorGraphics(style = style)
-                    svg.addTuple(LinearPointTuple(point.x,
-                                                  point.y))
+                svg = VectorGraphics(style = style)
+                svg.addTuple(LinearPointTuple(point.x,
+                                              point.y))
 
-                    svgSignal.onNext(SketchMoveToEvent(point.x,
-                                                       point.y,
-                                                       style))
-                }
-                .addTo(sketchDisposableBag)
+                svgSignal.onNext(SketchMoveToEvent(point.x,
+                                                   point.y,
+                                                   style))
+            }
+            .addTo(sketchDisposableBag)
 
-            // Doing
-            src.skip(1)
-                .skipLast(1)
-                .subscribe { point ->
-                    val pointTuple = calculateNextCubicPointTuple(svg.getTupleList(),
-                                                                  point)
+        // Doing
+        src.skip(1)
+            .skipLast(1)
+            .subscribe { point ->
+                val pointTuple = calculateNextCubicPointTuple(svg.getTupleList(),
+                                                              point)
 
-                    svg.addTuple(pointTuple)
+                svg.addTuple(pointTuple)
 
-                    svgSignal.onNext(SketchCubicToEvent(pointTuple.prevControlX,
-                                                        pointTuple.prevControlY,
-                                                        pointTuple.currentControlX,
-                                                        pointTuple.currentControlY,
-                                                        pointTuple.currentEndX,
-                                                        pointTuple.currentEndY))
-                }
-                .addTo(sketchDisposableBag)
+                svgSignal.onNext(SketchCubicToEvent(pointTuple.prevControlX,
+                                                    pointTuple.prevControlY,
+                                                    pointTuple.currentControlX,
+                                                    pointTuple.currentControlY,
+                                                    pointTuple.currentEndX,
+                                                    pointTuple.currentEndY))
+            }
+            .addTo(sketchDisposableBag)
 
-            // End
-            src.lastElement()
-                .subscribe { point ->
-                    val pointTuple = calculateNextCubicPointTuple(svg.getTupleList(),
-                                                                  point)
+        // End
+        src.lastElement()
+            .subscribe { point ->
+                val pointTuple = calculateNextCubicPointTuple(svg.getTupleList(),
+                                                              point)
 
-                    svg.addTuple(pointTuple)
+                svg.addTuple(pointTuple)
 
-                    svgSignal.onNext(SketchCubicToEvent(pointTuple.prevControlX,
-                                                        pointTuple.prevControlY,
-                                                        pointTuple.currentControlX,
-                                                        pointTuple.currentControlY,
-                                                        pointTuple.currentEndX,
-                                                        pointTuple.currentEndY))
+                svgSignal.onNext(SketchCubicToEvent(pointTuple.prevControlX,
+                                                    pointTuple.prevControlY,
+                                                    pointTuple.currentControlX,
+                                                    pointTuple.currentControlY,
+                                                    pointTuple.currentEndX,
+                                                    pointTuple.currentEndY))
 
-                    // Commit to model
-                    svgScrap.addSVG(svg)
+                // Commit to model
+                svgScrap.addSVG(svg)
 
-                    // Mark not drawing
-                    dirtyFlag.markNotDirty(ScrapDirtyFlag.GENERAL_BUSY)
-
-                    // Produce operation
-                    emitter.onSuccess(AddScrapOperation(svgScrap))
-                }
-                .addTo(sketchDisposableBag)
-        }
+                // Mark not drawing
+                dirtyFlag.markNotDirty(ScrapDirtyFlag.GENERAL_BUSY)
+            }
+            .addTo(sketchDisposableBag)
     }
 
     private fun calculateNextCubicPointTuple(now: List<PointTuple>,

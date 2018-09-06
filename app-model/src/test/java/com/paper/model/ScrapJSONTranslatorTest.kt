@@ -32,15 +32,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
-@RunWith(MockitoJUnitRunner::class)
-class ScrapJSONTranslatorTest {
-
-    private val translator by lazy {
-        GsonBuilder()
-            .registerTypeAdapter(BaseScrap::class.java, ScrapJSONTranslator())
-            .registerTypeAdapter(VectorGraphics::class.java, VectorGraphicsJSONTranslator())
-            .create()
-    }
+@RunWith(MockitoJUnitRunner.Silent::class)
+class ScrapJSONTranslatorTest : BaseModelTest() {
 
     @Test
     fun `serialize svg scrap with empty path tuple list`() {
@@ -55,7 +48,7 @@ class ScrapJSONTranslatorTest {
                           z = ModelConst.MOST_BOTTOM_Z))
         val uuid = model.getID()
 
-        val jsonText = translator.toJson(model, BaseScrap::class.java)
+        val jsonText = jsonTranslator.toJson(model, BaseScrap::class.java)
         System.out.println("JSON = $jsonText")
 
         Assert.assertTrue(jsonText.contains("\"uuid\":\"$uuid\""))
@@ -75,7 +68,7 @@ class ScrapJSONTranslatorTest {
 
     @Test
     fun `deserialize svg scrap with empty tuple list`() {
-        val model = translator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", BaseScrap::class.java)
+        val model = jsonTranslator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", BaseScrap::class.java)
 
         Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getID().toString())
 

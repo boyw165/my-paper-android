@@ -33,7 +33,7 @@ class TextScrapTest : BaseModelTest() {
     @Test
     fun `copy, ID should be different`() {
         val tester1 = createRandomTextScrap()
-        val tester2 = tester1.copy() as ITextScrap
+        val tester2 = tester1.copy() as TextScrap
         tester2.setFrame(Frame(100f, 100f))
         tester2.setText("zoo")
 

@@ -25,16 +25,19 @@ package com.paper.domain.ui
 import com.paper.domain.ui_event.UndoAvailabilityEvent
 import com.paper.model.IPaper
 import com.paper.model.ISchedulers
-import com.paper.model.repository.EditorOperation
-import com.paper.model.repository.IOperationRepository
+import com.paper.model.command.WhiteboardCommand
+import com.paper.model.repository.ICommandRepository
 import io.reactivex.Completable
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Singles
+import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import io.useful.dirtyflag.DirtyFlag
-import java.util.*
 
-class UndoManager(private val repository: IOperationRepository,
+class UndoManager(private val undoRepo: ICommandRepository,
+                  private val redoRepo: ICommandRepository,
                   private val schedulers: ISchedulers)
     : IWidget {
 
@@ -48,17 +51,26 @@ class UndoManager(private val repository: IOperationRepository,
 
     override fun start(): Observable<Boolean> {
         return autoStop {
-            repository.prepare()
-                .andThen {
+            val preparation = Singles
+                .zip(undoRepo.prepare(),
+                     redoRepo.prepare())
+                .cache()
+
+            preparation
+                .subscribe { (undoSize, redoSize) ->
+                    notifyUndoAvailability(undoSize, redoSize)
+                }
+                .addTo(disposables)
+            preparation
+                .flatMapObservable {
                     putOperationSignal
                         .flatMap { op ->
-                            repository.push(op)
-                                .doOnComplete {
-                                    capacitySignal.onNext(
-                                        UndoAvailabilityEvent(canUndo = undoKeys.size > 0,
-                                                              canRedo = redoKeys.size > 0))
+                            Singles.zip(undoRepo.push(op),
+                                        redoRepo.deleteAll().toSingleDefault(true))
+                                .doOnSuccess { (undoSize, _) ->
+                                    notifyUndoAvailability(undoSize, 0)
                                 }
-                                .toObservable<Any>()
+                                .toObservable()
                         }
                 }
                 .subscribe()
@@ -68,6 +80,12 @@ class UndoManager(private val repository: IOperationRepository,
 
     override fun stop() {
         disposables.clear()
+    }
+
+    private fun notifyUndoAvailability(undoSize: Int, redoSize: Int) {
+        capacitySignal.onNext(
+            UndoAvailabilityEvent(canUndo = undoSize > 0,
+                                  canRedo = redoSize > 0))
     }
 
     // Number of on-going task ////////////////////////////////////////////////
@@ -87,36 +105,31 @@ class UndoManager(private val repository: IOperationRepository,
 
     // Undo & redo ////////////////////////////////////////////////////////////
 
-    private val undoKeys = Stack<EditorOperation>()
-    private val redoKeys = Stack<EditorOperation>()
     private val capacitySignal = PublishSubject.create<UndoAvailabilityEvent>()
+    private val putOperationSignal = PublishSubject.create<WhiteboardCommand>().toSerialized()
 
-    val undoSize: Int
-        get() = synchronized(lock) { undoKeys.size }
-
-    val redoSize: Int
-        get() = synchronized(lock) { redoKeys.size }
-
-    private val putOperationSignal = PublishSubject.create<EditorOperation>().toSerialized()
-
-    fun putOperation(operation: EditorOperation) {
+    fun putOperation(operation: WhiteboardCommand) {
         putOperationSignal.onNext(operation)
     }
 
     fun undo(paper: IPaper): Completable {
         return Completable.fromSingle(
-            repository.pop()
+            undoRepo.pop()
                 .doOnSubscribe {
                     // Mark busy
                     busySignal.markDirty(BUSY)
                 }
                 .observeOn(schedulers.main())
-                .doOnSuccess { operation ->
-                    operation.undo(paper)
+                .flatMap { (undoSize, command) ->
+                    // Execute command
+                    command.undo(paper)
 
-                    capacitySignal.onNext(
-                        UndoAvailabilityEvent(canUndo = undoKeys.size > 0,
-                                              canRedo = redoKeys.size > 0))
+                    // Push command to the redo repository
+                    Singles.zip(Single.just(undoSize),
+                                redoRepo.push(command))
+                }
+                .doOnSuccess { (undoSize, redoSize) ->
+                    notifyUndoAvailability(undoSize, redoSize)
 
                     // Mark not busy
                     busySignal.markNotDirty(BUSY)
@@ -125,18 +138,22 @@ class UndoManager(private val repository: IOperationRepository,
 
     fun redo(paper: IPaper): Completable {
         return Completable.fromSingle(
-            repository.pop()
+            redoRepo.pop()
                 .doOnSubscribe {
                     // Mark busy
                     busySignal.markDirty(BUSY)
                 }
                 .observeOn(schedulers.main())
-                .doOnSuccess { operation ->
-                    operation.redo(paper)
+                .flatMap { (redoSize, command) ->
+                    // Execute command
+                    command.redo(paper)
 
-                    capacitySignal.onNext(
-                        UndoAvailabilityEvent(canUndo = undoKeys.size > 0,
-                                              canRedo = redoKeys.size > 0))
+                    // Push command to the undo repository
+                    Singles.zip(Single.just(redoSize),
+                                undoRepo.push(command))
+                }
+                .doOnSuccess { (undoSize, redoSize) ->
+                    notifyUndoAvailability(undoSize, redoSize)
 
                     // Mark not busy
                     busySignal.markNotDirty(BUSY)

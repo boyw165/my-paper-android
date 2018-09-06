@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present Paper
+// Copyright Aug 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,22 +20,33 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.operation
+package com.paper.domain.ui.manipulator
 
-import com.paper.model.repository.EditorOperation
-import com.paper.model.IPaper
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Observable
+import io.reactivex.ObservableEmitter
+import io.reactivex.ObservableTransformer
+import io.reactivex.disposables.CompositeDisposable
 
-class UpdateScrapFrameOperation : EditorOperation() {
+abstract class BaseManipulator : ObservableTransformer<GestureEvent, WhiteboardCommand> {
 
-    override fun undo(target: IPaper) {
-        // TODO
+    protected val disposableBag = CompositeDisposable()
+
+    open fun stop() {
+        disposableBag.dispose()
     }
 
-    override fun redo(target: IPaper) {
-        // TODO
-    }
-
-    override fun toString(): String {
-        return javaClass.simpleName
+    /**
+     * An observable that gives true after labmda runs successfully and automatically
+     * calls [stop] when it gets disposed
+     */
+    protected fun autoStop(lambda: (emitter: ObservableEmitter<WhiteboardCommand>) -> Unit): Observable<WhiteboardCommand> {
+        return Observable.create { emitter ->
+            // Enable auto-stop
+            emitter.setCancellable { stop() }
+            // Run lambda
+            lambda(emitter)
+        }
     }
 }

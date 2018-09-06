@@ -23,7 +23,6 @@ package com.paper.model.repository.json
 import com.google.gson.*
 import com.paper.model.*
 import com.paper.model.sketch.VectorGraphics
-import java.lang.UnsupportedOperationException
 import java.lang.reflect.Type
 import java.util.*
 
@@ -50,7 +49,7 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
         root.addProperty("rotationInDegrees", frame.rotationInDegrees)
 
         when (src) {
-            is ISVGScrap -> {
+            is SVGScrap -> {
                 // If it is a VectorGraphics scrap ...
                 root.addProperty("type", ScrapType.SVG)
 
@@ -61,6 +60,7 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
 
                 root.add("svg", svgJSON)
             }
+            else -> TODO()
         }
 
         return root
@@ -97,7 +97,7 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
                          frame = frame,
                          graphicsList = svgList)
             }
-            else -> throw UnsupportedOperationException()
+            else -> TODO()
         }
 
         return model

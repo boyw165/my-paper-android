@@ -32,6 +32,10 @@ interface IWidget {
      */
     fun start(): Observable<Boolean>
 
+    /**
+     * Stop the widget, where it would automatically execute if you return [autoStop]
+     * in the [start] method.
+     */
     fun stop()
 
     /**

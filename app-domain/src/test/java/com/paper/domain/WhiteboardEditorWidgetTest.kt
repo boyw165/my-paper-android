@@ -27,11 +27,11 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class CompleteEditorWidgetTest : BaseDomainTest() {
+class WhiteboardEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `sketching, editor should be busy`() {
-//        val tester = SimpleEditorWidget(schedulers = mockSchedulers)
+//        val tester = WhiteboardWidget(schedulers = mockSchedulers)
 //
 //        val busyTest = tester
 //            .onBusy()

@@ -22,10 +22,10 @@ package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
 import com.paper.model.ISchedulers
-import com.paper.model.ITextScrap
+import com.paper.model.TextScrap
 import io.reactivex.Observable
 
-class TextScrapWidget(scrap: ITextScrap,
+class TextScrapWidget(scrap: TextScrap,
                       schedulers: ISchedulers)
     : BaseScrapWidget(scrap,
                       schedulers),

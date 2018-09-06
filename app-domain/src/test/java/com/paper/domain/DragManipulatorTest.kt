@@ -20,33 +20,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain
 
-import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.model.repository.EditorOperation
-import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
-import io.reactivex.ObservableTransformer
-import io.reactivex.disposables.CompositeDisposable
+import com.paper.domain.ui.manipulator.DragManipulator
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.internal.verification.Times
+import org.mockito.junit.MockitoJUnitRunner
 
-abstract class BaseManipulator : ObservableTransformer<GestureEvent, EditorOperation> {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class DragManipulatorTest : BaseDomainTest() {
 
-    protected val disposableBag = CompositeDisposable()
+    @Test
+    fun `given a drag sequence, must see model commit once`() {
+        val widget = createMockSVGScrapWidget()
+        val candidate = DragManipulator(widget)
 
-    open fun stop() {
-        disposableBag.dispose()
-    }
+        val tester = mockDragSequence
+            .compose(candidate)
+            .test()
 
-    /**
-     * An observable that gives true after labmda runs successfully and automatically
-     * calls [stop] when it gets disposed
-     */
-    protected fun autoStop(lambda: (emitter: ObservableEmitter<EditorOperation>) -> Unit): Observable<EditorOperation> {
-        return Observable.create { emitter ->
-            // Enable auto-stop
-            emitter.setCancellable { stop() }
-            // Run lambda
-            lambda(emitter)
-        }
+        tester.assertComplete()
+        Mockito.verify(widget, Times(1)).setFrame(mockDragEndFrame)
     }
 }

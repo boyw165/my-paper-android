@@ -20,24 +20,36 @@
 
 package com.paper.domain.ui
 
-import com.paper.model.ISchedulers
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.ui.manipulator.DragManipulator
+import com.paper.model.BaseScrap
 import com.paper.model.Frame
-import com.paper.model.IScrap
+import com.paper.model.ISchedulers
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 
-open class BaseScrapWidget(protected val scrap: IScrap,
+open class BaseScrapWidget(protected val scrap: BaseScrap,
                            protected val schedulers: ISchedulers)
     : IWidget {
+
+    companion object {
+
+        @JvmStatic
+        val GENERAL_BUSY = 1
+
+        @JvmStatic
+        val EMPTY_FRAME_DISPLACEMENT = Frame()
+    }
 
     protected val lock = Any()
 
     protected val dirtyFlag = ScrapDirtyFlag(0)
 
-    private val frameDisposableBag = CompositeDisposable()
+    private val touchSequenceDisposableBag = CompositeDisposable()
     protected val staticDisposableBag = CompositeDisposable()
 
     override fun start(): Observable<Boolean> {
@@ -53,61 +65,56 @@ open class BaseScrapWidget(protected val scrap: IScrap,
     override fun stop() {
         synchronized(lock) {
             staticDisposableBag.clear()
-            frameDisposableBag.clear()
+            touchSequenceDisposableBag.clear()
         }
     }
 
-    fun getID(): UUID {
+    open fun getID(): UUID {
         return scrap.getID()
     }
 
     // Frame //////////////////////////////////////////////////////////////////
 
+    private val frameDisplacement = AtomicReference(EMPTY_FRAME_DISPLACEMENT)
     private val frameSignal = PublishSubject.create<Frame>().toSerialized()
 
-    fun getFrame(): Frame {
-        synchronized(lock) {
-            return scrap.getFrame()
+    open fun getFrame(): Frame {
+        return synchronized(lock) {
+            val actual = scrap.getFrame()
+            val displacement = frameDisplacement.get()
+            actual.add(displacement)
         }
+    }
+
+    open fun setFrame(frame: Frame) {
+        synchronized(lock) {
+            frameDisplacement.set(EMPTY_FRAME_DISPLACEMENT)
+            scrap.setFrame(frame)
+        }
+    }
+
+    open fun setFrameDisplacement(displacement: Frame) {
+        synchronized(lock) {
+            frameDisplacement.set(displacement)
+
+            // Signal out
+            val actual = scrap.getFrame()
+            frameSignal.onNext(actual.add(displacement))
+        }
+    }
+
+    open fun handleTouchSequence(touchSequence: Observable<GestureEvent>) {
+        touchSequenceDisposableBag.clear()
+
+        touchSequence
+            // TODO: Manipulator coordinator
+            .compose(DragManipulator(widget = this))
+            .subscribe()
+            .addTo(touchSequenceDisposableBag)
     }
 
     fun observeFrame(): Observable<Frame> {
         return frameSignal
-    }
-
-    fun handleFrameDisplacement(src: Observable<Frame>) {
-        frameDisposableBag.clear()
-
-        // Begin of the change
-        src.firstElement()
-            .subscribe { displacement ->
-                // model frame + displacement
-                frameSignal.onNext(getFrame().add(displacement))
-            }
-            .addTo(frameDisposableBag)
-
-        // Doing some change
-        src.skip(1)
-            .skipLast(1)
-            .subscribe { displacement ->
-                // model frame + displacement
-                frameSignal.onNext(getFrame().add(displacement))
-            }
-            .addTo(frameDisposableBag)
-
-        // End of the change
-        src.lastElement()
-            .subscribe { displacement ->
-                synchronized(lock) {
-                    // model frame + displacement
-                    frameSignal.onNext(getFrame().add(displacement))
-
-                    // Commit to model
-                    val current = scrap.getFrame()
-                    scrap.setFrame(current.add(displacement))
-                }
-            }
-            .addTo(frameDisposableBag)
     }
 
     // Busy ///////////////////////////////////////////////////////////////////

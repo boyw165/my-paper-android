@@ -22,7 +22,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.SimpleEditorWidget
+import com.paper.domain.ui.WhiteboardWidget
 import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.domain.ui_event.RemoveScrapEvent
 import org.junit.Test
@@ -30,14 +30,14 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SimpleEditorWidgetTest : BaseDomainTest() {
+class WhiteboardWidgetTest : BaseDomainTest() {
 
     @Test
     fun `see busy at the first and free at the end`() {
-        val candidate = SimpleEditorWidget(paperID = 0,
-                                           paperRepo = mockPaperRepo,
-                                           caughtErrorSignal = caughtErrorSignal,
-                                           schedulers = mockSchedulers)
+        val candidate = WhiteboardWidget(paperID = 0,
+                                         paperRepo = mockPaperRepo,
+                                         caughtErrorSignal = caughtErrorSignal,
+                                         schedulers = mockSchedulers)
 
         val busyTest = candidate
             .observeBusy()
@@ -56,10 +56,10 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `inflation process test`() {
-        val candidate = SimpleEditorWidget(paperID = 0,
-                                           paperRepo = mockPaperRepo,
-                                           caughtErrorSignal = caughtErrorSignal,
-                                           schedulers = mockSchedulers)
+        val candidate = WhiteboardWidget(paperID = 0,
+                                         paperRepo = mockPaperRepo,
+                                         caughtErrorSignal = caughtErrorSignal,
+                                         schedulers = mockSchedulers)
 
         val scrapTester = candidate.observeScraps().test()
 
@@ -75,10 +75,10 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `dispose before MODEL is inflated`() {
-        val candidate = SimpleEditorWidget(paperID = 0,
-                                           paperRepo = mockPaperRepo,
-                                           caughtErrorSignal = caughtErrorSignal,
-                                           schedulers = mockSchedulers)
+        val candidate = WhiteboardWidget(paperID = 0,
+                                         paperRepo = mockPaperRepo,
+                                         caughtErrorSignal = caughtErrorSignal,
+                                         schedulers = mockSchedulers)
 
         // Start widget
         val lifecycleTester = candidate.start().test()
@@ -95,10 +95,10 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `add scrap, should see event and scrap start`() {
-        val candidate = SimpleEditorWidget(paperID = 0,
-                                           paperRepo = mockPaperRepo,
-                                           caughtErrorSignal = caughtErrorSignal,
-                                           schedulers = mockSchedulers)
+        val candidate = WhiteboardWidget(paperID = 0,
+                                         paperRepo = mockPaperRepo,
+                                         caughtErrorSignal = caughtErrorSignal,
+                                         schedulers = mockSchedulers)
         val scrapTest = candidate
             .observeScraps()
             .test()
@@ -119,10 +119,10 @@ class SimpleEditorWidgetTest : BaseDomainTest() {
 
     @Test
     fun `remove scrap, should see event and scrap stop`() {
-        val candidate = SimpleEditorWidget(paperID = 0,
-                                           paperRepo = mockPaperRepo,
-                                           caughtErrorSignal = caughtErrorSignal,
-                                           schedulers = mockSchedulers)
+        val candidate = WhiteboardWidget(paperID = 0,
+                                         paperRepo = mockPaperRepo,
+                                         caughtErrorSignal = caughtErrorSignal,
+                                         schedulers = mockSchedulers)
 
         val scrapTest = candidate
             .observeScraps()

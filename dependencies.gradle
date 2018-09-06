@@ -14,6 +14,7 @@ ext {
     RETROFIT_VER = "2.1.0"
     OKHTTP_VER = '3.0.1'
     BUTTER_KNIFE_VER = '8.5.1'
+    ROOM_VER = '1.1.1'
 
     dep = [
             // Google Support Library.

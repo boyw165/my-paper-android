@@ -28,31 +28,30 @@ open class TextScrap(uuid: UUID = UUID.randomUUID(),
                      frame: Frame = Frame(),
                      private var text: String)
     : BaseScrap(uuid = uuid,
-                frame = frame),
-      ITextScrap {
+                frame = frame) {
 
     private val textSignal = PublishSubject.create<String>().toSerialized()
 
-    override fun getText(): String {
+    fun getText(): String {
         synchronized(lock) {
             return text
         }
     }
 
-    override fun setText(text: String) {
+    fun setText(text: String) {
         synchronized(lock) {
             this.text = text
             textSignal.onNext(text)
         }
     }
 
-    override fun observeText(): Observable<String> {
+    fun observeText(): Observable<String> {
         return textSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): IScrap {
+    override fun copy(): BaseScrap {
         return TextScrap(uuid = UUID.randomUUID(),
                          frame = getFrame(),
                          text = getText())

@@ -1,7 +1,14 @@
 package com.paper.domain
 
+import com.cardinalblue.gesture.ShadowMotionEvent
+import com.cardinalblue.gesture.rx.DragBeginEvent
+import com.cardinalblue.gesture.rx.DragDoingEvent
+import com.cardinalblue.gesture.rx.DragEndEvent
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.ui.SVGScrapWidget
 import com.paper.model.*
 import com.paper.model.repository.IPaperRepo
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
@@ -23,13 +30,23 @@ abstract class BaseDomainTest {
         const val NORMAL_TIMEOUT = 600L
         const val LONG_TIMEOUT = 1200L
         const val DEFINITELY_LONG_ENOUGH_TIMEOUT = 1000000L
+
+        @JvmStatic
+        val EMPTY_SHADOW_EVENT = ShadowMotionEvent(maskedAction = 0,
+                                                   downFocusX = 0f,
+                                                   downFocusY = 0f,
+                                                   downXs = floatArrayOf(0f),
+                                                   downYs = floatArrayOf(0f))
+
+        @JvmStatic
+        val DEFAULT_FRAME = Frame()
     }
 
     protected val disposableBag = CompositeDisposable()
 
     protected val caughtErrorSignal = PublishSubject.create<Throwable>().toSerialized()
 
-    protected val testScheduler = TestScheduler()
+    private val testScheduler = TestScheduler()
     protected val mockSchedulers: ISchedulers by lazy {
         val mock = Mockito.mock(ISchedulers::class.java)
         Mockito.`when`(mock.main()).thenReturn(testScheduler)
@@ -68,6 +85,8 @@ abstract class BaseDomainTest {
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
     }
 
+    // Scrap or widget ////////////////////////////////////////////////////////
+
     private val random = Random()
 
     protected fun rand(from: Int, to: Int): Int {
@@ -90,25 +109,40 @@ abstract class BaseDomainTest {
                      z = rand(0, 1000))
     }
 
-    protected fun createBaseScrapBy(frame: Frame): IScrap {
+    protected fun createBaseScrapBy(frame: Frame): BaseScrap {
         return BaseScrap(frame = frame)
     }
 
-    protected fun createRandomSVGScrap(): ISVGScrap {
+    protected fun createRandomSVGScrap(): SVGScrap {
         return SVGScrap(frame = createRandomFrame())
     }
 
-    protected fun createRandomImageScrap(): IImageScrap {
+    protected fun createRandomSVGScrapWidget(): SVGScrapWidget {
+        return SVGScrapWidget(scrap = createRandomSVGScrap(),
+                              newSVGPenStyle = Observable.empty(),
+                              schedulers = mockSchedulers)
+    }
+
+    protected fun createMockSVGScrapWidget(): SVGScrapWidget {
+        val mock = Mockito.mock(SVGScrapWidget::class.java)
+
+        Mockito.`when`(mock.getID()).thenReturn(UUID.randomUUID())
+        Mockito.`when`(mock.getFrame()).thenReturn(DEFAULT_FRAME)
+
+        return mock
+    }
+
+    protected fun createRandomImageScrap(): ImageScrap {
         return ImageScrap(frame = createRandomFrame(),
                           imageURL = URL("http://foo.com/foo.png"))
     }
 
-    protected fun createRandomTextScrap(): ITextScrap {
+    protected fun createRandomTextScrap(): TextScrap {
         return TextScrap(frame = createRandomFrame(),
                          text = "foo")
     }
 
-    protected fun createRandomScrap(): IScrap {
+    protected fun createRandomScrap(): BaseScrap {
         val random = rand(0, 2)
 
         return when (random) {
@@ -117,5 +151,45 @@ abstract class BaseDomainTest {
             2 -> createRandomTextScrap()
             else -> throw IllegalStateException()
         }
+    }
+
+    // Touch sequence /////////////////////////////////////////////////////////
+
+    protected val mockDragSequence: Observable<GestureEvent> by lazy {
+        Observable.fromArray<GestureEvent>(
+            DragBeginEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                           target = null,
+                           context = null,
+                           startPointer = Pair(0f, 0f)),
+            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                           target = null,
+                           context = null,
+                           startPointer = Pair(0f, 0f),
+                           stopPointer = Pair(20f, 0f)),
+            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                           target = null,
+                           context = null,
+                           startPointer = Pair(0f, 0f),
+                           stopPointer = Pair(40f, 0f)),
+            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                           target = null,
+                           context = null,
+                           startPointer = Pair(0f, 0f),
+                           stopPointer = Pair(60f, 0f)),
+            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                           target = null,
+                           context = null,
+                           startPointer = Pair(0f, 0f),
+                           stopPointer = Pair(80f, 0f)),
+            DragEndEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                         target = null,
+                         context = null,
+                         startPointer = Pair(0f, 0f),
+                         stopPointer = Pair(100f, 0f)))
+    }
+
+    protected val mockDragEndFrame by lazy {
+        DEFAULT_FRAME.add(Frame(x = 100f,
+                                y = 0f))
     }
 }

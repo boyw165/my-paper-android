@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,15 +20,20 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.command
 
-import io.reactivex.Observable
+import com.paper.model.IPaper
+import java.util.*
 
-interface ITextScrap : IScrap {
+data class GroupCommand(override val id: UUID = UUID.randomUUID(),
+                        val operations: List<WhiteboardCommand>)
+    : WhiteboardCommand(id = id) {
 
-    fun getText(): String
+    override fun undo(target: IPaper) {
+        // TODO
+    }
 
-    fun setText(text: String)
-
-    fun observeText(): Observable<String>
+    override fun redo(target: IPaper) {
+        // TODO
+    }
 }

@@ -22,12 +22,52 @@
 
 package com.paper.model
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.paper.model.command.WhiteboardCommand
+import com.paper.model.command.WhiteboardCommandJSONTranslator
+import com.paper.model.repository.json.FrameJSONTranslator
+import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.schedulers.TestScheduler
+import org.mockito.Mockito
 import java.lang.IllegalStateException
 import java.net.URL
 import java.util.*
 
 abstract class BaseModelTest {
+
+    private val testScheduler = TestScheduler()
+    protected val mockSchedulers: ISchedulers by lazy {
+        val mock = Mockito.mock(ISchedulers::class.java)
+        Mockito.`when`(mock.main()).thenReturn(testScheduler)
+        Mockito.`when`(mock.ui()).thenReturn(testScheduler)
+        Mockito.`when`(mock.computation()).thenReturn(testScheduler)
+        Mockito.`when`(mock.io()).thenReturn(testScheduler)
+        Mockito.`when`(mock.db()).thenReturn(testScheduler)
+        mock
+    }
+
+    protected fun moveScheduler() {
+        testScheduler.triggerActions()
+    }
+
+    protected val jsonTranslator: Gson by lazy {
+        GsonBuilder()
+            .registerTypeAdapter(BasePaper::class.java,
+                                 PaperJSONTranslator())
+            .registerTypeAdapter(BaseScrap::class.java,
+                                 ScrapJSONTranslator())
+            .registerTypeAdapter(Frame::class.java,
+                                 FrameJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java,
+                                 VectorGraphicsJSONTranslator())
+            .registerTypeAdapter(WhiteboardCommand::class.java,
+                                 WhiteboardCommandJSONTranslator())
+            .create()
+    }
 
     private val random = Random()
 
@@ -58,7 +98,7 @@ abstract class BaseModelTest {
                                                         CubicPointTuple(50f, 50f, 50f, 50f, 40f, 20f)))
     }
 
-    protected fun createRandomSVGScrap(): ISVGScrap {
+    protected fun createRandomSVGScrap(): SVGScrap {
         return SVGScrap(frame = createRandomFrame(),
                         graphicsList = mutableListOf(createRandomSVG(),
                                                      createRandomSVG(),
@@ -68,17 +108,17 @@ abstract class BaseModelTest {
                                                      createRandomSVG()))
     }
 
-    protected fun createRandomImageScrap(): IImageScrap {
+    protected fun createRandomImageScrap(): ImageScrap {
         return ImageScrap(frame = createRandomFrame(),
                           imageURL = URL("http://foo.com/foo.png"))
     }
 
-    protected fun createRandomTextScrap(): ITextScrap {
+    protected fun createRandomTextScrap(): TextScrap {
         return TextScrap(frame = createRandomFrame(),
                          text = "foo")
     }
 
-    protected fun createRandomScrap(): IScrap {
+    protected fun createRandomScrap(): BaseScrap {
         val random = rand(0, 2)
 
         return when (random) {

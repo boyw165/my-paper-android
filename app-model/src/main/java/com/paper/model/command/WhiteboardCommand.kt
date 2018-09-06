@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Apr 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,22 +20,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.model.command
 
-import com.paper.model.sketch.VectorGraphics
-import io.reactivex.Observable
+import com.paper.model.IPaper
+import com.paper.model.NoObfuscation
+import java.util.*
 
-interface ISVGScrap : IScrap {
+abstract class WhiteboardCommand(open val id: UUID = UUID.randomUUID())
+    : NoObfuscation {
 
-    fun setSVGs(other: List<VectorGraphics>)
+    abstract fun undo(target: IPaper)
 
-    fun getSVGs(): List<VectorGraphics>
-
-    fun addSVG(svg: VectorGraphics)
-
-    fun removeSVG(svg: VectorGraphics)
-
-    fun observeAddSVG(): Observable<VectorGraphics>
-
-    fun observeRemoveSVG(): Observable<VectorGraphics>
+    abstract fun redo(target: IPaper)
 }

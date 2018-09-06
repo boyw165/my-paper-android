@@ -37,10 +37,10 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-open class SimpleEditorWidget(protected val paperID: Long,
-                              protected val paperRepo: IPaperRepo,
-                              protected val caughtErrorSignal: Observer<Throwable>,
-                              protected val schedulers: ISchedulers)
+open class WhiteboardWidget(protected val paperID: Long,
+                            protected val paperRepo: IPaperRepo,
+                            protected val caughtErrorSignal: Observer<Throwable>,
+                            protected val schedulers: ISchedulers)
     : IWidget {
 
     protected val lock = Any()
@@ -158,20 +158,20 @@ open class SimpleEditorWidget(protected val paperID: Long,
         return updateScrapSignal
     }
 
-    private fun createScrapWidget(scrap: IScrap) {
+    private fun createScrapWidget(scrap: BaseScrap) {
         val widget = when (scrap) {
-            is ISVGScrap -> {
+            is SVGScrap -> {
                 SVGScrapWidget(
                     scrap = scrap,
                     newSVGPenStyle = penStyleSignal,
                     schedulers = schedulers)
             }
-            is IImageScrap -> {
+            is ImageScrap -> {
                 ImageScrapWidget(
                     scrap = scrap,
                     schedulers = schedulers)
             }
-            is ITextScrap -> {
+            is TextScrap -> {
                 TextScrapWidget(
                     scrap = scrap,
                     schedulers = schedulers)

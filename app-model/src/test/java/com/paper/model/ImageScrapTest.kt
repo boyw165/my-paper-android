@@ -22,7 +22,6 @@
 
 package com.paper.model
 
-import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +34,7 @@ class ImageScrapTest : BaseModelTest() {
     @Test
     fun `copy, ID should be different`() {
         val tester1 = createRandomImageScrap()
-        val tester2 = tester1.copy() as IImageScrap
+        val tester2 = tester1.copy() as ImageScrap
         tester2.setFrame(Frame(100f, 100f))
         tester2.setURL(URL("http://zoo.com/zoo.png"))
 

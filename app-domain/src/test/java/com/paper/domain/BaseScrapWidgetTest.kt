@@ -22,9 +22,6 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.BaseScrapWidget
-import com.paper.model.Frame
-import io.reactivex.Observable
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
@@ -32,52 +29,8 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner.Silent::class)
 class BaseScrapWidgetTest : BaseDomainTest() {
 
-    companion object {
-
-        val DefaultFrame = Frame(x = 100f,
-                                 y = 100f,
-                                 width = 100f,
-                                 height = 100f,
-                                 scaleX = 1f,
-                                 scaleY = 1f,
-                                 rotationInDegrees = 0f,
-                                 z = 0)
-    }
-
     @Test
-    fun `update frame with a sequence of displacement`() {
-        val candidate = BaseScrapWidget(scrap = createBaseScrapBy(DefaultFrame),
-                                        schedulers = mockSchedulers)
-        // Start widget
-        candidate.start().test().assertSubscribed()
+    fun `set frame, should clear displacement`() {
 
-        val frameObserverTester = candidate.observeFrame().test()
-
-        // Move toward to positive direction of the x axis
-        candidate.handleFrameDisplacement(
-            Observable.fromArray(Frame(x = 1f,
-                                       y = 1f),
-                                 Frame(x = 2f,
-                                       y = 1f),
-                                 Frame(x = 3f,
-                                       y = 1f),
-                                 Frame(x = 4f,
-                                       y = 1f)))
-
-        // Make sure the stream moves
-        moveScheduler()
-
-        // The observer must see the sequence
-        frameObserverTester.assertValues(
-            DefaultFrame.add(Frame(x = 1f,
-                                   y = 1f)),
-            DefaultFrame.add(Frame(x = 2f,
-                                   y = 1f)),
-            DefaultFrame.add(Frame(x = 3f,
-                                   y = 1f)),
-            DefaultFrame.add(Frame(x = 4f,
-                                   y = 1f)),
-            DefaultFrame.add(Frame(x = 4f,
-                                   y = 1f)))
     }
 }

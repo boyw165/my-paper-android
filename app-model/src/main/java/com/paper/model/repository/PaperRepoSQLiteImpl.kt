@@ -465,7 +465,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
         values.put(PaperTable.COL_THUMB_HEIGHT, thumbHeight)
 
         // The rest part of Paper is converted to JSON
-        val json = jsonTranslator.toJson(paper)
+        val json = jsonTranslator.toJson(paper, BasePaper::class.java)
         values.put(PaperTable.COL_DATA, json)
 
         return values
