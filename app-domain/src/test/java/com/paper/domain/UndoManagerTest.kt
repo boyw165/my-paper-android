@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Sep 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -22,26 +22,62 @@
 
 package com.paper.domain
 
+import com.paper.domain.ui.UndoManager
+import com.paper.model.repository.CommandRepository
+import com.paper.model.repository.ICommandRepository
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
+import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SketchManipulatorTest : BaseDomainTest() {
+class UndoManagerTest : BaseDomainTest() {
+
+    companion object {
+        const val LOG_DIR = "/tmp/command_test"
+    }
+
+    private val undoRepo: ICommandRepository by lazy {
+        CommandRepository(logDir = File(LOG_DIR),
+                          logJournalFileName = "_undoJournal",
+                          jsonTranslator = jsonTranslator,
+                          capacity = 3,
+                          schedulers = mockSchedulers)
+    }
+    private val redoRepo: ICommandRepository by lazy {
+        CommandRepository(logDir = File(LOG_DIR),
+                          logJournalFileName = "_redoJournal",
+                          jsonTranslator = jsonTranslator,
+                          capacity = 3,
+                          schedulers = mockSchedulers)
+    }
 
     @Before
     override fun setup() {
         super.setup()
+        removeLogDir()
     }
 
     @After
     override fun clean() {
-        super.clean()
+        removeLogDir()
     }
 
     @Test
     fun test() {
+        val candidate = UndoManager(undoRepo = undoRepo,
+                                    redoRepo = redoRepo,
+                                    schedulers = mockSchedulers)
+        // Start widget
+        candidate.start().test().assertSubscribed()
+
+        // TODO
+    }
+
+    private fun removeLogDir() {
+        val file = File(LOG_DIR)
+        file.deleteRecursively()
     }
 }

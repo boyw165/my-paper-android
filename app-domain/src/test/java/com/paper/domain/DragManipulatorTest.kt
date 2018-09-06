@@ -24,12 +24,24 @@ package com.paper.domain
 
 import com.paper.domain.ui.manipulator.DragManipulator
 import com.paper.model.command.UpdateScrapFrameCommand
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
 class DragManipulatorTest : BaseDomainTest() {
+
+    @Before
+    override fun setup() {
+        super.setup()
+    }
+
+    @After
+    override fun clean() {
+        super.clean()
+    }
 
     @Test
     fun `given a drag sequence, must see one command at the end`() {

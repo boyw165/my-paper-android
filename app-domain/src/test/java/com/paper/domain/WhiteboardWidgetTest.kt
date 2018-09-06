@@ -25,12 +25,24 @@ package com.paper.domain
 import com.paper.domain.ui.WhiteboardWidget
 import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.domain.ui_event.RemoveScrapEvent
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
 class WhiteboardWidgetTest : BaseDomainTest() {
+
+    @Before
+    override fun setup() {
+        super.setup()
+    }
+
+    @After
+    override fun clean() {
+        super.clean()
+    }
 
     @Test
     fun `see busy at the first and free at the end`() {

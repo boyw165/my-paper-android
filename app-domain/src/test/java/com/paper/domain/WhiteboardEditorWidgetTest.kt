@@ -22,12 +22,24 @@
 
 package com.paper.domain
 
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
 class WhiteboardEditorWidgetTest : BaseDomainTest() {
+
+    @Before
+    override fun setup() {
+        super.setup()
+    }
+
+    @After
+    override fun clean() {
+        super.clean()
+    }
 
     @Test
     fun `sketching, editor should be busy`() {

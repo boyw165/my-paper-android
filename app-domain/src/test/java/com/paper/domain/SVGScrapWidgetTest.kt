@@ -22,12 +22,24 @@
 
 package com.paper.domain
 
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
 class SVGScrapWidgetTest : BaseDomainTest() {
+
+    @Before
+    override fun setup() {
+        super.setup()
+    }
+
+    @After
+    override fun clean() {
+        super.clean()
+    }
 
     @Test
     fun `sketch given a sequence of points`() {

@@ -5,16 +5,23 @@ import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.paper.domain.ui.SVGScrapWidget
 import com.paper.model.*
+import com.paper.model.command.WhiteboardCommand
+import com.paper.model.command.WhiteboardCommandJSONTranslator
 import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.json.FrameJSONTranslator
+import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.ScrapJSONTranslator
+import com.paper.model.repository.json.VectorGraphicsJSONTranslator
+import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
-import org.junit.After
-import org.junit.Before
 import org.mockito.Mock
 import org.mockito.Mockito
 import java.lang.IllegalStateException
@@ -68,16 +75,29 @@ abstract class BaseDomainTest {
     @Mock
     lateinit var mockPaperRepo: IPaperRepo
 
-    @Before
-    fun setup() {
+    protected val jsonTranslator: Gson by lazy {
+        GsonBuilder()
+            .registerTypeAdapter(BasePaper::class.java,
+                                 PaperJSONTranslator())
+            .registerTypeAdapter(BaseScrap::class.java,
+                                 ScrapJSONTranslator())
+            .registerTypeAdapter(Frame::class.java,
+                                 FrameJSONTranslator())
+            .registerTypeAdapter(VectorGraphics::class.java,
+                                 VectorGraphicsJSONTranslator())
+            .registerTypeAdapter(WhiteboardCommand::class.java,
+                                 WhiteboardCommandJSONTranslator())
+            .create()
+    }
+
+    open fun setup() {
         Mockito.`when`(mockPaperRepo.getPaperById(Mockito.anyLong()))
             .thenReturn(
                 Single.just(mockPaper)
                     .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
     }
 
-    @After
-    fun stop() {
+    open fun clean() {
         disposableBag.clear()
     }
 
