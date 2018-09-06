@@ -30,7 +30,7 @@ data class AddScrapCommand(override val id: UUID = UUID.randomUUID(),
                            val scrap: BaseScrap)
     : WhiteboardCommand(id = id) {
 
-    override fun undo(target: IPaper) {
+    override fun doo(target: IPaper) {
         // TODO
     }
 

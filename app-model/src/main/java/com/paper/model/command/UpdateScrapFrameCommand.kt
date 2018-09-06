@@ -28,14 +28,22 @@ import java.util.*
 
 class UpdateScrapFrameCommand(override val id: UUID = UUID.randomUUID(),
                               val scrapID: UUID,
-                              val frameDelta: Frame)
+                              val toFrame: Frame)
     : WhiteboardCommand(id = id) {
 
-    override fun undo(target: IPaper) {
-        // TODO
+    private lateinit var fromFrame: Frame
+
+    override fun doo(target: IPaper) {
+        val scrap = target.getScrapByID(id)
+
+        fromFrame = scrap.getFrame()
+
+        scrap.setFrame(toFrame)
     }
 
     override fun redo(target: IPaper) {
-        // TODO
+        val scrap = target.getScrapByID(id)
+
+        scrap.setFrame(fromFrame)
     }
 }

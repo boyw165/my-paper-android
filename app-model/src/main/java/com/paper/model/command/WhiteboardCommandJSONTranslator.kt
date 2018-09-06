@@ -61,7 +61,7 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
                 json.addProperty(KEY_COMMAND_ID, command.id.toString())
                 json.addProperty(KEY_SCRAP_ID, command.scrapID.toString())
 
-                val frameJson = context.serialize(command.frameDelta, Frame::class.java)
+                val frameJson = context.serialize(command.toFrame, Frame::class.java)
                 json.add(KEY_SCRAP_FRAME_DELTA, frameJson)
             }
         }
@@ -93,7 +93,7 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
                 val frameJson = json.asJsonObject[KEY_SCRAP_FRAME_DELTA]
                 UpdateScrapFrameCommand(id = commandID,
                                         scrapID = scrapID,
-                                        frameDelta = context.deserialize(frameJson, Frame::class.java))
+                                        toFrame = context.deserialize(frameJson, Frame::class.java))
             }
             else -> TODO()
         }

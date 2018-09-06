@@ -188,8 +188,8 @@ abstract class BaseDomainTest {
                          stopPointer = Pair(100f, 0f)))
     }
 
-    protected val mockDragEndFrame by lazy {
-        DEFAULT_FRAME.add(Frame(x = 100f,
-                                y = 0f))
+    protected val mockDragEndDisplacement by lazy {
+        Frame(x = 100f,
+              y = 0f)
     }
 }

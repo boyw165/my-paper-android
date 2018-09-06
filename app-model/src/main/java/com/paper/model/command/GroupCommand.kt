@@ -29,7 +29,7 @@ data class GroupCommand(override val id: UUID = UUID.randomUUID(),
                         val operations: List<WhiteboardCommand>)
     : WhiteboardCommand(id = id) {
 
-    override fun undo(target: IPaper) {
+    override fun doo(target: IPaper) {
         // TODO
     }
 

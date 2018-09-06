@@ -22,6 +22,7 @@
 
 package com.paper.domain.ui.manipulator
 
+import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
@@ -47,15 +48,18 @@ class DragManipulator(private val widget: BaseScrapWidget) : BaseManipulator() {
             touchSequence
                 .skipLast(1)
                 .subscribe { event ->
-                    if (event !is DragDoingEvent) {
+                    if (!(event is DragBeginEvent ||
+                          event is DragDoingEvent)) {
                         emitter.onComplete()
                         return@subscribe
                     }
 
-                    val displacement = Frame(
-                        x = event.stopPointer.first - event.startPointer.first,
-                        y = event.stopPointer.second - event.startPointer.first)
-                    widget.setFrameDisplacement(displacement)
+                    if (event is DragDoingEvent) {
+                        val displacement = Frame(
+                            x = event.stopPointer.first - event.startPointer.first,
+                            y = event.stopPointer.second - event.startPointer.first)
+                        widget.setFrameDisplacement(displacement)
+                    }
                 }
                 .addTo(disposablesBag)
 
@@ -73,13 +77,10 @@ class DragManipulator(private val widget: BaseScrapWidget) : BaseManipulator() {
                         y = event.stopPointer.second - event.startPointer.first)
                     widget.setFrameDisplacement(displacement)
 
-                    // Override widget as well as commit to model
-                    widget.setFrame(startFrame.add(displacement))
-
                     // Produce collage command
                     emitter.onNext(UpdateScrapFrameCommand(
                         scrapID = widget.getID(),
-                        frameDelta = displacement))
+                        toFrame = startFrame.add(displacement)))
                     emitter.onComplete()
                 }
                 .addTo(disposablesBag)

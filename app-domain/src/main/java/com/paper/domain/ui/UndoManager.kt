@@ -122,7 +122,7 @@ class UndoManager(private val undoRepo: ICommandRepository,
                 .observeOn(schedulers.main())
                 .flatMap { (undoSize, command) ->
                     // Execute command
-                    command.undo(paper)
+                    command.doo(paper)
 
                     // Push command to the redo repository
                     Singles.zip(Single.just(undoSize),
@@ -148,7 +148,7 @@ class UndoManager(private val undoRepo: ICommandRepository,
                     // Execute command
                     command.redo(paper)
 
-                    // Push command to the undo repository
+                    // Push command to the doo repository
                     Singles.zip(Single.just(redoSize),
                                 undoRepo.push(command))
                 }

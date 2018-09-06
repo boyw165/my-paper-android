@@ -132,6 +132,12 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
         }
     }
 
+    override fun getScrapByID(id: UUID): BaseScrap {
+        return synchronized(lock) {
+            scraps.first { it.getID() == id }
+        }
+    }
+
     override fun addScrap(scrap: BaseScrap) {
         synchronized(lock) {
             scraps.add(scrap)

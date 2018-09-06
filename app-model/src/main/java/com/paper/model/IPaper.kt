@@ -59,6 +59,8 @@ interface IPaper {
 
     fun getScraps(): List<BaseScrap>
 
+    fun getScrapByID(id: UUID): BaseScrap
+
     fun addScrap(scrap: BaseScrap)
 
     fun removeScrap(scrap: BaseScrap)

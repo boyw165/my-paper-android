@@ -56,6 +56,11 @@ open class BaseScrapWidget(protected val scrap: BaseScrap,
         return autoStop {
             scrap.observeFrame()
                 .subscribe { frame ->
+                    // Clear displacement
+                    synchronized(lock) {
+                        frameDisplacement.set(EMPTY_FRAME_DISPLACEMENT)
+                    }
+                    // Signal out
                     frameSignal.onNext(frame)
                 }
                 .addTo(staticDisposableBag)
@@ -83,13 +88,6 @@ open class BaseScrapWidget(protected val scrap: BaseScrap,
             val actual = scrap.getFrame()
             val displacement = frameDisplacement.get()
             actual.add(displacement)
-        }
-    }
-
-    open fun setFrame(frame: Frame) {
-        synchronized(lock) {
-            frameDisplacement.set(EMPTY_FRAME_DISPLACEMENT)
-            scrap.setFrame(frame)
         }
     }
 
