@@ -55,7 +55,7 @@ import kotlin.collections.HashMap
 class PaperRepoSQLiteImpl(private val authority: String,
                           private val resolver: ContentResolver,
                           private val jsonTranslator: Gson,
-                          private val fileDir: File,
+                          private val bmpCacheDir: File,
                           private val prefs: IPreferenceService,
                           private val dbIoScheduler: Scheduler)
     : IPaperRepo,
@@ -64,7 +64,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
     /**
      * Observer observing the database change.
      */
-    private val mObserver by lazy {
+    private val contentObserver by lazy {
         object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri) {
                 super.onChange(selfChange, uri)
@@ -73,15 +73,15 @@ class PaperRepoSQLiteImpl(private val authority: String,
                     CHANGE_ADD,
                     CHANGE_REMOVE,
                     CHANGE_UPDATE -> {
-                        if (!mPaperListRefreshSignal.hasObservers()) return
+                        if (!paperListRefreshSignal.hasObservers()) return
 
                         getPapersSingleImpl(true)
                             .subscribe(
                                 { papers ->
-                                    mPaperListRefreshSignal.onNext(papers)
+                                    paperListRefreshSignal.onNext(papers)
                                 },
                                 { err ->
-                                    mPaperListRefreshSignal.onError(err)
+                                    paperListRefreshSignal.onError(err)
                                 })
                     }
                 }
@@ -92,8 +92,8 @@ class PaperRepoSQLiteImpl(private val authority: String,
     /**
      * A signal to put paper in the database.
      */
-    private val mPutSignal = PublishSubject.create<Pair<IPaper, SingleSubject<UpdateDatabaseEvent>>>()
-    private val mDisposables = CompositeDisposable()
+    private val putSignal = PublishSubject.create<Pair<IPaper, SingleSubject<UpdateDatabaseEvent>>>()
+    private val disposableBag = CompositeDisposable()
 
     init {
         val uri: Uri = Uri.Builder()
@@ -101,11 +101,11 @@ class PaperRepoSQLiteImpl(private val authority: String,
             .authority(this.authority)
             .path("paper")
             .build()
-        this.resolver.registerContentObserver(uri, true, mObserver)
+        this.resolver.registerContentObserver(uri, true, contentObserver)
 
         // Database writes
-        mDisposables.add(
-            mPutSignal
+        disposableBag.add(
+            putSignal
                 .debounce(150, TimeUnit.MILLISECONDS, this.dbIoScheduler)
                 // Writes operation should be atomic and not stoppable, thus
                 // guarantees the database integrity.
@@ -120,18 +120,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
                 .subscribe())
     }
 
-    private var mTmpPaperWidth: Float = 297f
-    private var mTmpPaperHeight: Float = 210f
-
-    override fun setTmpPaperSize(width: Float,
-                                 height: Float): Single<Boolean> {
-        mTmpPaperWidth = width
-        mTmpPaperHeight = height
-
-        return Single.just(true)
-    }
-
-    private val mPaperListRefreshSignal = PublishSubject.create<List<IPaper>>().toSerialized()
+    private val paperListRefreshSignal = PublishSubject.create<List<IPaper>>().toSerialized()
 
     /**
      * Get paper list.
@@ -143,7 +132,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
     override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
         return Observable.merge(
             getPapersSingleImpl(isSnapshot).toObservable(),
-            mPaperListRefreshSignal)
+            paperListRefreshSignal)
     }
 
     private fun getPapersSingleImpl(isSnapshot: Boolean): Single<List<IPaper>> {
@@ -288,7 +277,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
 
         val doneSignal = SingleSubject.create<UpdateDatabaseEvent>()
 
-        mPutSignal.onNext(Pair(paper, doneSignal))
+        putSignal.onNext(Pair(paper, doneSignal))
 
         return doneSignal
     }
@@ -405,24 +394,24 @@ class PaperRepoSQLiteImpl(private val authority: String,
             .subscribeOn(this.dbIoScheduler)
     }
 
-    private val mBitmapMap = HashMap<Int, File>()
+    private val bitmapJournal = HashMap<Int, File>()
 
     override fun putBitmap(key: Int, bmp: Bitmap): Single<File> {
         return Single
             .fromCallable {
-                if (!fileDir.exists()) {
-                    fileDir.mkdir()
+                if (!bmpCacheDir.exists()) {
+                    bmpCacheDir.mkdir()
                 }
 
                 // TODO: Use LruCache?
-                val bmpFile = File(fileDir, "$key.png")
+                val bmpFile = File(bmpCacheDir, "$key.png")
 
                 FileOutputStream(bmpFile).use { out ->
                     bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
                 }
 
                 // TODO: Save the journal file somewhere
-                mBitmapMap[key] = bmpFile
+                bitmapJournal[key] = bmpFile
 
                 println("${ModelConst.TAG}: put Bitmap to cache (key=$key, file=$bmpFile")
 
@@ -432,7 +421,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
     }
 
     override fun getBitmap(key: Int): Single<Bitmap> {
-        val file = mBitmapMap[key] ?: File(fileDir, "$key.png")
+        val file = bitmapJournal[key] ?: File(bmpCacheDir, "$key.png")
 
         return Single
                 .fromCallable {

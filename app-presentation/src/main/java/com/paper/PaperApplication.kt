@@ -127,7 +127,7 @@ class PaperApplication : MultiDexApplication(),
         PaperRepoSQLiteImpl(authority = packageName,
                             resolver = contentResolver,
                             jsonTranslator = jsonTranslator,
-                            fileDir = getExternalFilesDir("media"),
+                            bmpCacheDir = getExternalFilesDir("media"),
                             prefs = preference,
                             dbIoScheduler = dbScheduler)
     }

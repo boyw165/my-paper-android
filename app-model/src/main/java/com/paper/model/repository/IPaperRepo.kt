@@ -21,8 +21,6 @@ import io.reactivex.Single
 
 interface IPaperRepo {
 
-    fun setTmpPaperSize(width: Float, height: Float): Single<Boolean>
-
     /**
      * Get all papers, and return a stoppable concurrent [Observable] instance.
      * Remaining the subscription to the returned observable lets the observer
