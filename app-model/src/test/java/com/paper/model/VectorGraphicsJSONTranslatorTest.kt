@@ -39,7 +39,7 @@ class VectorGraphicsJSONTranslatorTest : BaseModelTest() {
                                                            Stroke(size = 1.5f,
                                                                   color = Color.GREEN,
                                                                   closed = true)))
-        val jsonString = jsonTranslator.toJson(graphics)
+        val jsonString = jsonTranslator.toJson(graphics, VectorGraphics::class.java)
 
         System.out.println("JSON = $jsonString")
 
@@ -76,7 +76,7 @@ class VectorGraphicsJSONTranslatorTest : BaseModelTest() {
                                                                   closed = true)),
                                       tupleList = mutableListOf(LinearPointTuple(0f, 0f),
                                                                 LinearPointTuple(1f, 1f)))
-        val jsonString = jsonTranslator.toJson(graphics)
+        val jsonString = jsonTranslator.toJson(graphics, VectorGraphics::class.java)
 
         System.out.println("JSON = $jsonString")
 
@@ -94,7 +94,7 @@ class VectorGraphicsJSONTranslatorTest : BaseModelTest() {
                                                                 CubicPointTuple(1f, 1f,
                                                                                 2f, 2f,
                                                                                 3f, 3f)))
-        val jsonString = jsonTranslator.toJson(graphics)
+        val jsonString = jsonTranslator.toJson(graphics, VectorGraphics::class.java)
 
         System.out.println("JSON = $jsonString")
 

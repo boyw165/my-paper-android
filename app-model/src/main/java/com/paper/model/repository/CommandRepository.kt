@@ -52,18 +52,9 @@ class CommandRepository(private val logDir: File,
         return Single
             .fromCallable {
                 synchronized(lock) {
-                    val exist = if (!logJournalFile.exists()) {
-                        logJournalFile.mkdirs()
-                        logJournalFile.createNewFile()
-                    } else false
-
                     logJournal.clear()
-                    if (exist) {
-                        logJournal.addAll(journalFromFile())
-                        logJournal.size
-                    } else {
-                        0
-                    }
+                    logJournal.addAll(journalFromFile())
+                    logJournal.size
                 }
             }
             .subscribeOn(schedulers.io())
@@ -75,9 +66,15 @@ class CommandRepository(private val logDir: File,
                 synchronized(lock) {
                     println("${ModelConst.TAG}: put $command to transformation repo (file impl)")
 
+                    ensureJournalFileExist()
+
                     // Serialize command
-                    val commandText = jsonTranslator.toJson(command)
-                    val commandFile = File(logDir, command.id.toString())
+                    val commandText = jsonTranslator.toJson(command, WhiteboardCommand::class.java)
+                    val commandFile = File(logDir, "${command.id}.json")
+                    if (!commandFile.exists()) {
+                        commandFile.parentFile.mkdirs()
+                        commandFile.createNewFile()
+                    }
                     commandFile.writeText(commandText, charset = Charsets.UTF_8)
 
                     // Update journal and constraint the capacity
@@ -118,23 +115,16 @@ class CommandRepository(private val logDir: File,
     }
 
     private fun journalFromFile(): List<UUID> {
-        // Make sure the journal present
-        if (!logJournalFile.exists()) {
-            logJournalFile.mkdirs()
-            logJournalFile.createNewFile()
-        }
+        ensureJournalFileExist()
 
         return logJournalFile.readText()
             .split(SEPARATOR)
+            .filter { it.isNotEmpty() }
             .map { UUID.fromString(it) }
     }
 
     private fun journalToFile() {
-        // Make sure the journal present
-        if (!logJournalFile.exists()) {
-            logJournalFile.mkdirs()
-            logJournalFile.createNewFile()
-        }
+        ensureJournalFileExist()
 
         val builder = StringBuilder()
         logJournal.forEachIndexed { i, uuid ->
@@ -150,13 +140,7 @@ class CommandRepository(private val logDir: File,
     override fun deleteAll(): Completable {
         return Completable
             .fromCallable {
-                if (logDir.exists()) {
-                    logDir.delete()
-                }
-
-                logJournalFile.mkdirs()
-                logJournalFile.createNewFile()
-
+                logDir.deleteRecursively()
                 logJournal.clear()
             }
             .subscribeOn(schedulers.io())
@@ -164,5 +148,12 @@ class CommandRepository(private val logDir: File,
 
     override fun purgeGarbageCommands(): Completable {
         TODO("not implemented")
+    }
+
+    private fun ensureJournalFileExist() {
+        if (!logJournalFile.exists()) {
+            logJournalFile.parentFile.mkdirs()
+            logJournalFile.createNewFile()
+        }
     }
 }

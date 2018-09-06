@@ -24,6 +24,7 @@ package com.paper.model
 
 import com.paper.model.command.AddScrapCommand
 import com.paper.model.repository.CommandRepository
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
@@ -35,6 +36,12 @@ class CommandRepositoryTest : BaseModelTest() {
     companion object {
         const val LOG_DIR = "/tmp/command_test"
         const val LOG_JOURNAL_FILE = "_journal"
+    }
+
+    @Before
+    fun setup() {
+        val journalFile = File(LOG_DIR, LOG_JOURNAL_FILE)
+        journalFile.deleteRecursively()
     }
 
     @Test

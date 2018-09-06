@@ -38,14 +38,16 @@ class FrameJSONTranslatorTest {
 
     @Test
     fun `serialize frame`() {
-        val jsonString = translator.toJson(Frame(x = 123f,
-                                                 y = 456f,
-                                                 width = 7f,
-                                                 height = 8f,
-                                                 z = 1,
-                                                 scaleX = 1f,
-                                                 scaleY = 1f,
-                                                 rotationInDegrees = 30f))
+        val jsonString = translator.toJson(
+            Frame(x = 123f,
+                  y = 456f,
+                  width = 7f,
+                  height = 8f,
+                  z = 1,
+                  scaleX = 1f,
+                  scaleY = 1f,
+                  rotationInDegrees = 30f),
+            Frame::class.java)
 
         System.out.println("JSON = $jsonString")
 

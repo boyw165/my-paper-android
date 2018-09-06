@@ -147,7 +147,7 @@ class CommonPenPrefsRepoFileImpl(dir: File,
                             colors = colors,
                             chosenColor = chosenColor,
                             penSize = penSize)
-                        mGson.toJson(data)
+                        mGson.toJson(data, PrefsData::class.java)
                     }
                     .subscribeOn(mIoScheduler)
                     .toObservable()

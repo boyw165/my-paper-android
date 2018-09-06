@@ -27,6 +27,7 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.ui.ICanvasOperationRepoProvider
+import com.paper.domain.ui.UndoManager
 import com.paper.model.ISchedulers
 import com.paper.domain.ui.WhiteboardEditorWidget
 import com.paper.model.*
@@ -96,7 +97,9 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mPresenter by lazy {
         WhiteboardEditorWidget(
             paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
-            paperTransformRepo = (application as ICanvasOperationRepoProvider).getPaperTransformRepo(),
+            undoWidget = UndoManager(undoRepo = ,
+                                     redoRepo = ,
+                                     schedulers = this@PaperEditorActivity),
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
             schedulers = (application as ISchedulers))
