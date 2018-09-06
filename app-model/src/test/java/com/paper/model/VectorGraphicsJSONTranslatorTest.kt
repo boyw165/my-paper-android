@@ -92,7 +92,7 @@ class VectorGraphicsJSONTranslatorTest : BaseModelTest() {
                                                                   closed = true)),
                                       tupleList = mutableListOf(LinearPointTuple(0f, 0f),
                                                                 CubicPointTuple(1f, 1f,
-                                                                                2f, 2f,
+                                                                                -2f, -2f,
                                                                                 3f, 3f)))
         val jsonString = jsonTranslator.toJson(graphics, VectorGraphics::class.java)
 
@@ -100,7 +100,7 @@ class VectorGraphicsJSONTranslatorTest : BaseModelTest() {
 
         Assert.assertTrue(jsonString, jsonString.contains("\"path\":\"" +
                                                           "0.0,0.0$POINT_SEPARATOR" +
-                                                          "1.0,1.0,2.0,2.0,3.0,3.0" +
+                                                          "1.0,1.0,-2.0,-2.0,3.0,3.0" +
                                                           "\""))
     }
 

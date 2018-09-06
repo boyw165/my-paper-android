@@ -32,7 +32,8 @@ class VectorGraphicsJSONTranslator : JsonSerializer<VectorGraphics>,
                                      JsonDeserializer<VectorGraphics> {
 
     companion object {
-        const val POINT_SEPARATOR = "-"
+        // Note: JSON library might encode ASCII with unicode
+        const val POINT_SEPARATOR = " "
     }
 
     override fun serialize(src: VectorGraphics,

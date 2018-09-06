@@ -95,8 +95,10 @@ class CommandRepository(private val logDir: File,
         return Single
             .fromCallable {
                 synchronized(lock) {
+                    ensureJournalFileExist()
+
                     val commandID = logJournal.pop()
-                    val commandFile = File(logDir, commandID.toString())
+                    val commandFile = File(logDir, "$commandID.json")
                     val commandText = commandFile.readText(Charsets.UTF_8)
 
                     // Inflate command from file

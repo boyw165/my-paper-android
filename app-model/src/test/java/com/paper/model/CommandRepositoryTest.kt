@@ -49,11 +49,7 @@ class CommandRepositoryTest : BaseModelTest() {
         val journalFile = File(LOG_DIR, LOG_JOURNAL_FILE)
         journalFile.delete()
 
-        val candidate = CommandRepository(logDir = File(LOG_DIR),
-                                          logJournalFileName = LOG_JOURNAL_FILE,
-                                          jsonTranslator = jsonTranslator,
-                                          capacity = 3,
-                                          schedulers = mockSchedulers)
+        val candidate = initCandidate()
 
         // Add one particular stroke
         val tester = candidate.prepare().test()
@@ -67,16 +63,10 @@ class CommandRepositoryTest : BaseModelTest() {
 
     @Test
     fun `put operation and see one record`() {
-        val candidate = CommandRepository(logDir = File(LOG_DIR),
-                                          logJournalFileName = LOG_JOURNAL_FILE,
-                                          jsonTranslator = jsonTranslator,
-                                          capacity = 3,
-                                          schedulers = mockSchedulers)
+        val candidate = initCandidate()
 
+        // Add one command
         val scrap = createRandomSVGScrap()
-
-        // Add one particular stroke
-        candidate.deleteAll()
         val tester = candidate.push(AddScrapCommand(scrap = scrap)).test()
 
         // Make sure the stream moves
@@ -86,35 +76,30 @@ class CommandRepositoryTest : BaseModelTest() {
         tester.assertValue(1)
     }
 
-//    @Test
-//    fun `put operation and undo, should see no record`() {
-//        val mockPaper = Mockito.mock(IPaper::class.java)
-//
-//        val tester = CommandRepository(logDir = File("/tmp"),
-//                                       schedulers = mockSchedulers)
-//
-//        val disposables = CompositeDisposable()
-//
-//        // Setup
-//        tester.start().subscribe()
-//
-//        // Add one particular stroke
-//        tester.push(AddScrapCommand())
-//
-//        // Make sure the stream moves
-//        moveScheduler()
-//
-//        // Undo immediately
-//        tester.undo(mockPaper)
-//            .subscribe()
-//            .addTo(disposables)
-//
-//        // Make sure the stream moves
-//        moveScheduler()
-//
-//        // Must see one record!
-//        Assert.assertEquals(1, tester.redoSize)
-//
-//        disposables.clear()
-//    }
+    @Test
+    fun `put operation and undo, should see no record`() {
+        val candidate = initCandidate()
+
+        // Add one command
+        val scrap = createRandomSVGScrap()
+        candidate.push(AddScrapCommand(scrap = scrap)).subscribe()
+
+        // Make sure the stream moves
+        moveScheduler()
+
+        val tester = candidate.pop().test()
+        // Make sure the stream moves
+        moveScheduler()
+        tester.assertValue { (size, _) ->
+            size == 0
+        }
+    }
+
+    private fun initCandidate(): CommandRepository {
+        return CommandRepository(logDir = File(LOG_DIR),
+                                 logJournalFileName = LOG_JOURNAL_FILE,
+                                 jsonTranslator = jsonTranslator,
+                                 capacity = 3,
+                                 schedulers = mockSchedulers)
+    }
 }
