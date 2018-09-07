@@ -21,7 +21,7 @@
 package com.paper.view.gallery
 
 import com.airbnb.epoxy.TypedEpoxyController
-import com.paper.model.IPaper
+import com.paper.model.Whiteboard
 
 class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryViewModel>>() {
 
@@ -32,7 +32,7 @@ class GalleryItemEpoxyController : TypedEpoxyController<List<GalleryViewModel>>(
         }
     }
 
-    fun getPaperFromAdapterPosition(position: Int): IPaper? {
+    fun getPaperFromAdapterPosition(position: Int): Whiteboard? {
         val actualData = currentData ?: return null
         val actualItem = actualData[position]
 

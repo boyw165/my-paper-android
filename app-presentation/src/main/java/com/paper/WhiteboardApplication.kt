@@ -30,10 +30,10 @@ import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
 import com.paper.model.repository.IBitmapRepository
-import com.paper.model.repository.IPaperRepo
-import com.paper.model.repository.PaperRepoSQLiteImpl
+import com.paper.model.repository.IWhiteboardRepository
+import com.paper.model.repository.WhiteboardRepoSQLite
 import com.paper.model.repository.json.FrameJSONTranslator
-import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
@@ -42,11 +42,11 @@ import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 
-class PaperApplication : MultiDexApplication(),
-                         ISchedulers,
-                         IPaperRepoProvider,
-                         IBitmapRepoProvider,
-                         IPreferenceServiceProvider {
+class WhiteboardApplication : MultiDexApplication(),
+                              ISchedulers,
+                              IWhiteboardRepoProvider,
+                              IBitmapRepoProvider,
+                              IPreferenceServiceProvider {
 
     override fun onCreate() {
         super.onCreate()
@@ -86,9 +86,9 @@ class PaperApplication : MultiDexApplication(),
 
     private val jsonTranslator by lazy {
         GsonBuilder()
-            .registerTypeAdapter(BasePaper::class.java,
-                                 PaperJSONTranslator())
-            .registerTypeAdapter(BaseScrap::class.java,
+            .registerTypeAdapter(Whiteboard::class.java,
+                                 WhiteboardJSONTranslator())
+            .registerTypeAdapter(Scrap::class.java,
                                  ScrapJSONTranslator())
             .registerTypeAdapter(Frame::class.java,
                                  FrameJSONTranslator())
@@ -124,15 +124,15 @@ class PaperApplication : MultiDexApplication(),
     }
 
     private val mPaperRepo by lazy {
-        PaperRepoSQLiteImpl(authority = packageName,
-                            resolver = contentResolver,
-                            jsonTranslator = jsonTranslator,
-                            bmpCacheDir = getExternalFilesDir("media"),
-                            prefs = preference,
-                            dbIoScheduler = dbScheduler)
+        WhiteboardRepoSQLite(authority = packageName,
+                             resolver = contentResolver,
+                             jsonTranslator = jsonTranslator,
+                             bmpCacheDir = getExternalFilesDir("media"),
+                             prefs = preference,
+                             dbIoScheduler = dbScheduler)
     }
 
-    override fun getPaperRepo(): IPaperRepo {
+    override fun getWhiteboardRepo(): IWhiteboardRepository {
         return mPaperRepo
     }
 
@@ -152,7 +152,7 @@ class PaperApplication : MultiDexApplication(),
 
     private val mPrefsScheduler = SingleScheduler()
     override val preference by lazy {
-        PreferenceAndroidImpl(context = this@PaperApplication,
+        PreferenceAndroidImpl(context = this@WhiteboardApplication,
                               workerScheduler = mPrefsScheduler)
     }
 }

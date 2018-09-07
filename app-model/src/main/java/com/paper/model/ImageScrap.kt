@@ -28,8 +28,8 @@ import java.util.*
 open class ImageScrap(uuid: UUID = UUID.randomUUID(),
                       frame: Frame = Frame(),
                       private var imageURL: URL)
-    : BaseScrap(uuid = uuid,
-                frame = frame) {
+    : Scrap(uuid = uuid,
+            frame = frame) {
 
     private val urlSignal = PublishSubject.create<URL>().toSerialized()
 
@@ -52,7 +52,7 @@ open class ImageScrap(uuid: UUID = UUID.randomUUID(),
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): BaseScrap {
+    override fun copy(): Scrap {
         return ImageScrap(uuid = UUID.randomUUID(),
                           frame = getFrame(),
                           imageURL = getURL())

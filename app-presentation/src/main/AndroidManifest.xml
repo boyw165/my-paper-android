@@ -15,7 +15,7 @@
         android:value="text"/>
 
     <application
-        android:name=".PaperApplication"
+        android:name=".WhiteboardApplication"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/icon_launcher"

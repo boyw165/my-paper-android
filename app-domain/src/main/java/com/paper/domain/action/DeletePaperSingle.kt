@@ -22,7 +22,7 @@
 
 package com.paper.domain.action
 
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.IWhiteboardRepository
 import io.reactivex.Observer
 import io.reactivex.Single
 import io.reactivex.SingleObserver
@@ -43,7 +43,7 @@ import io.reactivex.disposables.Disposable
  * progress signal.
  */
 class DeletePaperSingle(paperID: Long,
-                        paperRepo: IPaperRepo,
+                        paperRepo: IWhiteboardRepository,
                         errorSignal: Observer<Throwable>? = null)
     : Single<Boolean>() {
 
@@ -54,7 +54,7 @@ class DeletePaperSingle(paperID: Long,
 
     override fun subscribeActual(observer: SingleObserver<in Boolean>) {
         val actualSrc = mPaperRepo
-            .deletePaperById(id = mPaperID)
+            .deleteBoardById(id = mPaperID)
             .toObservable()
             .publish()
         val actualDisposable = actualSrc

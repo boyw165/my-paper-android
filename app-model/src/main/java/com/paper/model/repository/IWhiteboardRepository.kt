@@ -14,34 +14,34 @@
 
 package com.paper.model.repository
 
-import com.paper.model.IPaper
+import com.paper.model.Whiteboard
 import com.paper.model.event.UpdateDatabaseEvent
 import io.reactivex.Observable
 import io.reactivex.Single
 
-interface IPaperRepo {
+interface IWhiteboardRepository {
 
     /**
      * Get all papers, and return a stoppable concurrent [Observable] instance.
      * Remaining the subscription to the returned observable lets the observer
      * get notified if there is any new update.
      */
-    fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>>
+    fun getBoards(isSnapshot: Boolean): Observable<List<Whiteboard>>
 
     /**
      * Get specific paper by ID, and return a stoppable concurrent [Single]
      * instance.
      */
-    fun getPaperById(id: Long): Single<IPaper>
+    fun getBoardById(id: Long): Single<Whiteboard>
 
     /**
      * Put the paper to repository, and return a non-stoppable [Single], which
      * means event you destroy the reactive graph, the writes operation is
      * eventually executed, and you're just not interested to the result.
      */
-    fun putPaper(paper: IPaper): Single<UpdateDatabaseEvent>
+    fun putBoard(board: Whiteboard): Single<UpdateDatabaseEvent>
 
-    fun duplicatePaperById(id: Long): Single<IPaper>
+    fun duplicateBoardById(id: Long): Single<Whiteboard>
 
-    fun deletePaperById(id: Long): Single<UpdateDatabaseEvent>
+    fun deleteBoardById(id: Long): Single<UpdateDatabaseEvent>
 }

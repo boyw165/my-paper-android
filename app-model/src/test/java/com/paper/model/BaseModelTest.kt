@@ -27,7 +27,7 @@ import com.google.gson.GsonBuilder
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
 import com.paper.model.repository.json.FrameJSONTranslator
-import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
@@ -56,9 +56,9 @@ abstract class BaseModelTest {
 
     protected val jsonTranslator: Gson by lazy {
         GsonBuilder()
-            .registerTypeAdapter(BasePaper::class.java,
-                                 PaperJSONTranslator())
-            .registerTypeAdapter(BaseScrap::class.java,
+            .registerTypeAdapter(Whiteboard::class.java,
+                                 WhiteboardJSONTranslator())
+            .registerTypeAdapter(Scrap::class.java,
                                  ScrapJSONTranslator())
             .registerTypeAdapter(Frame::class.java,
                                  FrameJSONTranslator())
@@ -118,7 +118,7 @@ abstract class BaseModelTest {
                          text = "foo")
     }
 
-    protected fun createRandomScrap(): BaseScrap {
+    protected fun createRandomScrap(): Scrap {
         val random = rand(0, 2)
 
         return when (random) {

@@ -28,11 +28,11 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class BaseScrapTest : BaseModelTest() {
+class ScrapTest : BaseModelTest() {
 
     @Test
     fun `copy, ID should be different`() {
-        val tester1 = BaseScrap()
+        val tester1 = Scrap()
         val tester2 = tester1.copy()
         tester2.setFrame(Frame(x = 100f, y = 200f))
 
@@ -42,7 +42,7 @@ class BaseScrapTest : BaseModelTest() {
 
     @Test
     fun `set frame`() {
-        val scrap = BaseScrap()
+        val scrap = Scrap()
 
         scrap.setFrame(Frame(x = 100f, y = 200f))
 
@@ -52,7 +52,7 @@ class BaseScrapTest : BaseModelTest() {
 
     @Test
     fun `observe frame`() {
-        val scrap = BaseScrap()
+        val scrap = Scrap()
 
         val frameTestObserver = scrap.observeFrame().test()
         scrap.setFrame(Frame(x = 100f, y = 200f))

@@ -23,7 +23,7 @@
 package com.paper.domain.ui
 
 import com.paper.domain.ui_event.UndoAvailabilityEvent
-import com.paper.model.IPaper
+import com.paper.model.Whiteboard
 import com.paper.model.ISchedulers
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.repository.ICommandRepository
@@ -112,7 +112,7 @@ class UndoManager(private val undoRepo: ICommandRepository,
         putOperationSignal.onNext(operation)
     }
 
-    fun undo(paper: IPaper): Completable {
+    fun undo(paper: Whiteboard): Completable {
         return Completable.fromSingle(
             undoRepo.pop()
                 .doOnSubscribe {
@@ -136,7 +136,7 @@ class UndoManager(private val undoRepo: ICommandRepository,
                 })
     }
 
-    fun redo(paper: IPaper): Completable {
+    fun redo(paper: Whiteboard): Completable {
         return Completable.fromSingle(
             redoRepo.pop()
                 .doOnSubscribe {

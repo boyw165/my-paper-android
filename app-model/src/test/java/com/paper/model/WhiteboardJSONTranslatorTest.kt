@@ -22,26 +22,21 @@
 
 package com.paper.model
 
-import com.google.gson.GsonBuilder
-import com.paper.model.repository.json.PaperJSONTranslator
-import com.paper.model.repository.json.ScrapJSONTranslator
-import com.paper.model.repository.json.VectorGraphicsJSONTranslator
-import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class PaperJSONTranslatorTest : BaseModelTest() {
+class WhiteboardJSONTranslatorTest : BaseModelTest() {
 
     @Test
     fun `serialize paper without scraps`() {
-        val model: IPaper = BasePaper()
+        val model = Whiteboard()
         model.setSize(Pair(360f, 480f))
         model.setViewPort(Rect(100f, 100f, 360f, 480f))
 
-        val jsonString = jsonTranslator.toJson(model, BasePaper::class.java)
+        val jsonString = jsonTranslator.toJson(model, Whiteboard::class.java)
 
         Assert.assertTrue(jsonString.contains("\"width\":360.0"))
         Assert.assertTrue(jsonString.contains("\"height\":480.0"))
@@ -52,7 +47,7 @@ class PaperJSONTranslatorTest : BaseModelTest() {
 
     @Test
     fun `deserialize paper without scraps`() {
-        val model = jsonTranslator.fromJson<BasePaper>("{\"width\":360.0,\"height\":480.0,\"view-port\":[100.0,100.0,260.0,380.0],\"scraps\":[]}", BasePaper::class.java)
+        val model = jsonTranslator.fromJson<Whiteboard>("{\"width\":360.0,\"height\":480.0,\"view-port\":[100.0,100.0,260.0,380.0],\"scraps\":[]}", Whiteboard::class.java)
 
         val (width, height) = model.getSize()
         Assert.assertEquals(360f, width)

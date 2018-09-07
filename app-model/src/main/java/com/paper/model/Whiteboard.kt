@@ -25,23 +25,22 @@ import io.reactivex.subjects.PublishSubject
 import java.net.URI
 import java.util.*
 
-open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
-                     private val uuid: UUID = UUID.randomUUID(),
-                     private val createdAt: Long = 0L,
-                     private var modifiedAt: Long = 0L,
-                     private var width: Float = 512f,
-                     private var height: Float = 512f,
-                     private val viewPort: Rect = Rect(0f, 0f, 0f, 0f),
-                     private var thumbnail: Triple<URI, Int, Int> = Triple(URI("file:///null"), 0, 0),
-                     private var scraps: MutableList<BaseScrap> = mutableListOf())
-    : IPaper,
-      NoObfuscation {
+open class Whiteboard(private var id: Long = ModelConst.TEMP_ID,
+                      private val uuid: UUID = UUID.randomUUID(),
+                      private val createdAt: Long = 0L,
+                      private var modifiedAt: Long = 0L,
+                      private var width: Float = 512f,
+                      private var height: Float = 512f,
+                      private val viewPort: Rect = Rect(0f, 0f, 0f, 0f),
+                      private var thumbnail: Triple<URI, Int, Int> = Triple(ModelConst.NULL_FILE, 0, 0),
+                      private var scraps: MutableList<Scrap> = mutableListOf())
+    : NoObfuscation {
 
     private val lock = Any()
 
     // General ////////////////////////////////////////////////////////////////
 
-    override fun getID(): Long {
+    fun getID(): Long {
         return id
     }
 
@@ -49,33 +48,33 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
         this.id = id
     }
 
-    override fun getUUID(): UUID {
+    fun getUUID(): UUID {
         return uuid
     }
 
-    override fun getCreatedAt(): Long {
+    fun getCreatedAt(): Long {
         return createdAt
     }
 
-    override fun getModifiedAt(): Long {
+    fun getModifiedAt(): Long {
         synchronized(lock) {
             return modifiedAt
         }
     }
 
-    override fun setModifiedAt(time: Long) {
+    fun setModifiedAt(time: Long) {
         synchronized(lock) {
             modifiedAt = time
         }
     }
 
-    override fun getSize(): Pair<Float, Float> {
+    fun getSize(): Pair<Float, Float> {
         synchronized(lock) {
             return Pair(width, height)
         }
     }
 
-    override fun setSize(size: Pair<Float, Float>) {
+    fun setSize(size: Pair<Float, Float>) {
         synchronized(lock) {
             val (width, height) = size
             this.width = width
@@ -83,13 +82,13 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
         }
     }
 
-    override fun getViewPort(): Rect {
+    fun getViewPort(): Rect {
         synchronized(lock) {
             return viewPort.copy()
         }
     }
 
-    override fun setViewPort(rect: Rect) {
+    fun setViewPort(rect: Rect) {
         synchronized(lock) {
             viewPort.set(rect)
         }
@@ -97,21 +96,21 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
 
     // Caption & tags /////////////////////////////////////////////////////////
 
-    override fun getCaption(): String {
+    fun getCaption(): String {
         return ""
     }
 
-    override fun getTags(): List<String> {
+    fun getTags(): List<String> {
         return emptyList()
     }
 
     // Thumbnail //////////////////////////////////////////////////////////////
 
-    override fun getThumbnail(): URI {
+    fun getThumbnail(): URI {
         return thumbnail.first
     }
 
-    override fun setThumbnail(file: URI,
+    fun setThumbnail(file: URI,
                               width: Int,
                               height: Int) {
         synchronized(lock) {
@@ -119,66 +118,66 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
         }
     }
 
-    override fun getThumbnailSize(): Pair<Int, Int> {
+    fun getThumbnailSize(): Pair<Int, Int> {
         return Pair(thumbnail.second, thumbnail.third)
     }
 
     // Scraps /////////////////////////////////////////////////////////////////
 
-    override fun getScraps(): List<BaseScrap> {
+    fun getScraps(): List<Scrap> {
         synchronized(lock) {
             // Must clone the list in case concurrent modification
             return scraps.toList()
         }
     }
 
-    override fun getScrapByID(id: UUID): BaseScrap {
+    fun getScrapByID(id: UUID): Scrap {
         return synchronized(lock) {
             scraps.first { it.getID() == id }
         }
     }
 
-    override fun addScrap(scrap: BaseScrap) {
+    fun addScrap(scrap: Scrap) {
         synchronized(lock) {
             scraps.add(scrap)
             addScrapSignal.onNext(scrap)
         }
     }
 
-    override fun removeScrap(scrap: BaseScrap) {
+    fun removeScrap(scrap: Scrap) {
         synchronized(lock) {
             scraps.remove(scrap)
             removeScrapSignal.onNext(scrap)
         }
     }
 
-    private val addScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
-    private val removeScrapSignal = PublishSubject.create<BaseScrap>().toSerialized()
+    private val addScrapSignal = PublishSubject.create<Scrap>().toSerialized()
+    private val removeScrapSignal = PublishSubject.create<Scrap>().toSerialized()
 
-    override fun observeAddScrap(): Observable<BaseScrap> {
+    fun observeAddScrap(): Observable<Scrap> {
         return addScrapSignal
     }
 
-    override fun observeRemoveScrap(): Observable<BaseScrap> {
+    fun observeRemoveScrap(): Observable<Scrap> {
         return removeScrapSignal
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
 
-    override fun copy(): IPaper {
+    fun copy(): Whiteboard {
         return synchronized(lock) {
-            val copyScraps = mutableListOf<BaseScrap>()
+            val copyScraps = mutableListOf<Scrap>()
             scraps.forEach { copyScraps.add(it.copy()) }
 
-            BasePaper(id = id,
-                      uuid = uuid,
-                      createdAt = createdAt,
-                      modifiedAt = modifiedAt,
-                      width = width,
-                      height = height,
-                      viewPort = viewPort.copy(),
-                      thumbnail = thumbnail.copy(),
-                      scraps = copyScraps)
+            Whiteboard(id = id,
+                       uuid = uuid,
+                       createdAt = createdAt,
+                       modifiedAt = modifiedAt,
+                       width = width,
+                       height = height,
+                       viewPort = viewPort.copy(),
+                       thumbnail = thumbnail.copy(),
+                       scraps = copyScraps)
         }
     }
 
@@ -186,7 +185,7 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as BasePaper
+        other as Whiteboard
 
         if (getID() != other.getID()) return false
         if (getUUID() != other.getUUID()) return false
@@ -206,9 +205,7 @@ open class BasePaper(private var id: Long = ModelConst.TEMP_ID,
         result = 31 * result + getCreatedAt().hashCode()
         result = 31 * result + getModifiedAt().hashCode()
         result = 31 * result + getSize().hashCode()
-        getThumbnail()?.let {
-            result = 31 * result + it.hashCode()
-        }
+        result = 31 * result + getThumbnail().hashCode()
         result = 31 * result + getThumbnailSize().hashCode()
         result = 31 * result + getScraps().hashCode()
         return result

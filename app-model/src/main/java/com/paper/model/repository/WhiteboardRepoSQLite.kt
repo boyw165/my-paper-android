@@ -31,8 +31,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
-import com.paper.model.BasePaper
-import com.paper.model.IPaper
+import com.paper.model.Whiteboard
 import com.paper.model.IPreferenceService
 import com.paper.model.ModelConst
 import com.paper.model.event.UpdateDatabaseEvent
@@ -52,13 +51,13 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 
-class PaperRepoSQLiteImpl(private val authority: String,
-                          private val resolver: ContentResolver,
-                          private val jsonTranslator: Gson,
-                          private val bmpCacheDir: File,
-                          private val prefs: IPreferenceService,
-                          private val dbIoScheduler: Scheduler)
-    : IPaperRepo,
+class WhiteboardRepoSQLite(private val authority: String,
+                           private val resolver: ContentResolver,
+                           private val jsonTranslator: Gson,
+                           private val bmpCacheDir: File,
+                           private val prefs: IPreferenceService,
+                           private val dbIoScheduler: Scheduler)
+    : IWhiteboardRepository,
       IBitmapRepository {
 
     /**
@@ -92,7 +91,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
     /**
      * A signal to put paper in the database.
      */
-    private val putSignal = PublishSubject.create<Pair<IPaper, SingleSubject<UpdateDatabaseEvent>>>()
+    private val putSignal = PublishSubject.create<Pair<Whiteboard, SingleSubject<UpdateDatabaseEvent>>>()
     private val disposableBag = CompositeDisposable()
 
     init {
@@ -120,7 +119,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
                 .subscribe())
     }
 
-    private val paperListRefreshSignal = PublishSubject.create<List<IPaper>>().toSerialized()
+    private val paperListRefreshSignal = PublishSubject.create<List<Whiteboard>>().toSerialized()
 
     /**
      * Get paper list.
@@ -129,15 +128,15 @@ class PaperRepoSQLiteImpl(private val authority: String,
      *                   time-consuming. True to ready part only matter with
      *                   thumbnails; False is fully read.
      */
-    override fun getPapers(isSnapshot: Boolean): Observable<List<IPaper>> {
+    override fun getBoards(isSnapshot: Boolean): Observable<List<Whiteboard>> {
         return Observable.merge(
             getPapersSingleImpl(isSnapshot).toObservable(),
             paperListRefreshSignal)
     }
 
-    private fun getPapersSingleImpl(isSnapshot: Boolean): Single<List<IPaper>> {
+    private fun getPapersSingleImpl(isSnapshot: Boolean): Single<List<Whiteboard>> {
         return Single
-            .create { observer: SingleEmitter<List<IPaper>> ->
+            .create { observer: SingleEmitter<List<Whiteboard>> ->
                 var cursor: Cursor? = null
 
                 try {
@@ -169,7 +168,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
                     // TODO: https://github.com/Kotlin/anko/wiki/Anko-SQLite
 
                     // Translate cursor.
-                    val papers = mutableListOf<IPaper>()
+                    val papers = mutableListOf<Whiteboard>()
                     if (cursor.moveToFirst() &&
                         !observer.isDisposed) {
                         do {
@@ -202,21 +201,21 @@ class PaperRepoSQLiteImpl(private val authority: String,
     /**
      * Read full structure of the paper by ID.
      */
-    override fun getPaperById(id: Long): Single<IPaper> {
+    override fun getBoardById(id: Long): Single<Whiteboard> {
         return if (id == ModelConst.TEMP_ID) {
             Single
                 .fromCallable {
                     val timestamp = getCurrentTime()
-                    val newPaper = BasePaper(
+                    val newPaper = Whiteboard(
                         createdAt = timestamp)
                     newPaper.setModifiedAt(timestamp)
 
-                    return@fromCallable newPaper as IPaper
+                    return@fromCallable newPaper
                 }
                 .subscribeOn(this.dbIoScheduler)
         } else {
             Single
-                .create { observer: SingleEmitter<IPaper> ->
+                .create { observer: SingleEmitter<Whiteboard> ->
                     val uri = Uri.Builder()
                         .scheme("content")
                         .authority(authority)
@@ -262,7 +261,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
         }
     }
 
-    override fun putPaper(paper: IPaper): Single<UpdateDatabaseEvent> {
+    override fun putBoard(board: Whiteboard): Single<UpdateDatabaseEvent> {
 //        val requestConstraint = Constraints.Builder()
 //            .setRequiresStorageNotLow(true)
 //            .build()
@@ -277,12 +276,12 @@ class PaperRepoSQLiteImpl(private val authority: String,
 
         val doneSignal = SingleSubject.create<UpdateDatabaseEvent>()
 
-        putSignal.onNext(Pair(paper, doneSignal))
+        putSignal.onNext(Pair(board, doneSignal))
 
         return doneSignal
     }
 
-    private fun putPaperImpl(paper: IPaper): Single<UpdateDatabaseEvent> {
+    private fun putPaperImpl(paper: Whiteboard): Single<UpdateDatabaseEvent> {
         return Single
             .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
                 val id = paper.getID()
@@ -304,11 +303,9 @@ class PaperRepoSQLiteImpl(private val authority: String,
                         if (newURI != null) {
                             // Remember the ID
                             val newID = newURI.lastPathSegment.toLong()
-                            prefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, newID).blockingGet()
+                            prefs.putLong(ModelConst.PREFS_BROWSE_WHITEBOARD_ID, newID).blockingGet()
 
-                            if (paper is BasePaper) {
-                                paper.setID(newID)
-                            }
+                            paper.setID(newID)
 
                             if (!emitter.isDisposed) {
                                 println("${ModelConst.TAG}: put paper (id=$newID) successfully")
@@ -360,11 +357,11 @@ class PaperRepoSQLiteImpl(private val authority: String,
             .subscribeOn(this.dbIoScheduler)
     }
 
-    override fun duplicatePaperById(id: Long): Single<IPaper> {
+    override fun duplicateBoardById(id: Long): Single<Whiteboard> {
         TODO("not implemented")
     }
 
-    override fun deletePaperById(id: Long): Single<UpdateDatabaseEvent> {
+    override fun deleteBoardById(id: Long): Single<UpdateDatabaseEvent> {
         return Single
             .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
                 val uri = Uri.Builder()
@@ -439,7 +436,7 @@ class PaperRepoSQLiteImpl(private val authority: String,
 
     private fun getCurrentTime(): Long = System.currentTimeMillis() / 1000
 
-    private fun convertPaperToValues(paper: IPaper): ContentValues {
+    private fun convertPaperToValues(paper: Whiteboard): ContentValues {
         val values = ContentValues()
 
         values.put(PaperTable.COL_UUID, paper.getUUID().toString())
@@ -454,15 +451,15 @@ class PaperRepoSQLiteImpl(private val authority: String,
         values.put(PaperTable.COL_THUMB_HEIGHT, thumbHeight)
 
         // The rest part of Paper is converted to JSON
-        val json = jsonTranslator.toJson(paper, BasePaper::class.java)
+        val json = jsonTranslator.toJson(paper, Whiteboard::class.java)
         values.put(PaperTable.COL_DATA, json)
 
         return values
     }
 
     private fun convertCursorToPaper(cursor: Cursor,
-                                     fullyRead: Boolean): IPaper {
-        val paper: IPaper = BasePaper(
+                                     fullyRead: Boolean): Whiteboard {
+        val paper = Whiteboard(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
             uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)))
@@ -477,9 +474,9 @@ class PaperRepoSQLiteImpl(private val authority: String,
         paper.setThumbnail(URI(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_URI))), thumbWidth, thumbHeight)
 
         if (fullyRead) {
-            val paperDetail: IPaper = jsonTranslator.fromJson(
+            val paperDetail = jsonTranslator.fromJson(
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
-                BasePaper::class.java)
+                Whiteboard::class.java)
 
             // Canvas size
             paper.setSize(paperDetail.getSize())

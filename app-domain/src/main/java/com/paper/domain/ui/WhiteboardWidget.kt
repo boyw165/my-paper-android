@@ -21,10 +21,11 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
-import com.paper.model.ISchedulers
-import com.paper.domain.ui_event.*
+import com.paper.domain.ui_event.AddScrapEvent
+import com.paper.domain.ui_event.RemoveScrapEvent
+import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.*
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.IWhiteboardRepository
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.Observer
@@ -38,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 open class WhiteboardWidget(protected val paperID: Long,
-                            protected val paperRepo: IPaperRepo,
+                            protected val paperRepo: IWhiteboardRepository,
                             protected val caughtErrorSignal: Observer<Throwable>,
                             protected val schedulers: ISchedulers)
     : IWidget {
@@ -48,14 +49,14 @@ open class WhiteboardWidget(protected val paperID: Long,
     protected val penStyleSignal = BehaviorSubject.createDefault(VectorGraphics.DEFAULT_STYLE).toSerialized()
 
     protected val staticDisposableBag = CompositeDisposable()
-    protected val dynamicDisposableBag = ConcurrentHashMap<BaseScrapWidget, CompositeDisposable>()
+    protected val dynamicDisposableBag = ConcurrentHashMap<ScrapWidget, CompositeDisposable>()
 
     // Focus scrap controller
     @Volatile
-    protected var focusScrapWidget: BaseScrapWidget? = null
+    protected var focusScrapWidget: ScrapWidget? = null
 
     // widgets
-    protected val scrapWidgets = ConcurrentHashMap<UUID, BaseScrapWidget>()
+    protected val scrapWidgets = ConcurrentHashMap<UUID, ScrapWidget>()
     protected val highestZ = AtomicInteger(0)
 
     override fun start(): Observable<Boolean> {
@@ -104,9 +105,9 @@ open class WhiteboardWidget(protected val paperID: Long,
         println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
     }
 
-    protected val paper: Single<IPaper> by lazy {
+    protected val paper: Single<Whiteboard> by lazy {
         paperRepo
-            .getPaperById(paperID)
+            .getBoardById(paperID)
             .doOnSubscribe {
                 dirtyFlag.markDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
             }
@@ -158,7 +159,7 @@ open class WhiteboardWidget(protected val paperID: Long,
         return updateScrapSignal
     }
 
-    private fun createScrapWidget(scrap: BaseScrap) {
+    private fun createScrapWidget(scrap: Scrap) {
         val widget = when (scrap) {
             is SVGScrap -> {
                 SVGScrapWidget(
@@ -188,7 +189,7 @@ open class WhiteboardWidget(protected val paperID: Long,
         addWidget(widget)
     }
 
-    private fun addWidget(widget: BaseScrapWidget) {
+    private fun addWidget(widget: ScrapWidget) {
         synchronized(lock) {
             scrapWidgets[widget.getID()] = widget
 

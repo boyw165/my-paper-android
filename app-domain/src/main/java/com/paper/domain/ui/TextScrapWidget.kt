@@ -27,8 +27,8 @@ import io.reactivex.Observable
 
 class TextScrapWidget(scrap: TextScrap,
                       schedulers: ISchedulers)
-    : BaseScrapWidget(scrap,
-                      schedulers),
+    : ScrapWidget(scrap,
+                  schedulers),
       IWidget {
 
     override fun start(): Observable<Boolean> {

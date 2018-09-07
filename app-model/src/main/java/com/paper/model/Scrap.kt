@@ -24,8 +24,8 @@ import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class BaseScrap(private val uuid: UUID = UUID.randomUUID(),
-                     private var frame: Frame = Frame())
+open class Scrap(private val uuid: UUID = UUID.randomUUID(),
+                 private var frame: Frame = Frame())
     : NoObfuscation {
 
     protected val lock = Any()
@@ -58,16 +58,16 @@ open class BaseScrap(private val uuid: UUID = UUID.randomUUID(),
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    open fun copy(): BaseScrap {
-        return BaseScrap(uuid = UUID.randomUUID(),
-                         frame = frame.copy())
+    open fun copy(): Scrap {
+        return Scrap(uuid = UUID.randomUUID(),
+                     frame = frame.copy())
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as BaseScrap
+        other as Scrap
 
         val frame = synchronized(lock) { frame }
         val otherFrame = other.getFrame()

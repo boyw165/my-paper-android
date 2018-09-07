@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class BaseScrapWidgetTest : BaseDomainTest() {
+class ScrapWidgetTest : BaseDomainTest() {
 
     @Test
     fun `set frame, should clear displacement`() {

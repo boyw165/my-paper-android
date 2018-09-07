@@ -20,9 +20,9 @@
 
 package com.paper.model
 
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.IWhiteboardRepository
 
-interface IPaperRepoProvider {
+interface IWhiteboardRepoProvider {
 
-    fun getPaperRepo(): IPaperRepo
+    fun getWhiteboardRepo(): IWhiteboardRepository
 }

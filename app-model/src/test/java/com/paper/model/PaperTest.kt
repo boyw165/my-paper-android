@@ -34,13 +34,13 @@ class PaperTest : BaseModelTest() {
 
     @Test
     fun `basic copy`() {
-        val tester1 = BasePaper(id = 1,
-                                uuid = UUID.randomUUID(),
-                                createdAt = 100L,
-                                modifiedAt = 200L,
-                                width = 500f,
-                                height = 500f,
-                                viewPort = Rect(0f, 0f, 500f, 500f))
+        val tester1 = Whiteboard(id = 1,
+                                 uuid = UUID.randomUUID(),
+                                 createdAt = 100L,
+                                 modifiedAt = 200L,
+                                 width = 500f,
+                                 height = 500f,
+                                 viewPort = Rect(0f, 0f, 500f, 500f))
         val tester2 = tester1.copy()
         tester2.setSize(Pair(300f, 300f))
         tester2.setViewPort(Rect(125f, 125f, 250f, 250f))
@@ -55,16 +55,16 @@ class PaperTest : BaseModelTest() {
 
     @Test
     fun `scraps copy`() {
-        val tester1 = BasePaper()
+        val tester1 = Whiteboard()
         val tester2 = tester1.copy()
-        tester2.addScrap(BaseScrap())
+        tester2.addScrap(Scrap())
 
         Assert.assertNotEquals(tester2.getScraps(), tester1.getScraps())
     }
 
     @Test
     fun `observe add scrap`() {
-        val tester = BasePaper()
+        val tester = Whiteboard()
 
         val addTestObserver = tester.observeAddScrap().test()
 
@@ -77,9 +77,9 @@ class PaperTest : BaseModelTest() {
 
     @Test
     fun `observe remove scrap`() {
-        val tester = BasePaper(scraps = mutableListOf(createRandomScrap(),
-                                                      createRandomScrap(),
-                                                      createRandomScrap()))
+        val tester = Whiteboard(scraps = mutableListOf(createRandomScrap(),
+                                                       createRandomScrap(),
+                                                       createRandomScrap()))
 
         val removeTestObserver = tester.observeRemoveScrap().test()
 

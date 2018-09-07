@@ -40,9 +40,9 @@ import com.facebook.ads.AdListener
 import com.facebook.ads.NativeAd
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.action.DeletePaperSingle
-import com.paper.model.IPaper
-import com.paper.model.IPaperRepoProvider
+import com.paper.model.Whiteboard
 import com.paper.model.IPreferenceServiceProvider
+import com.paper.model.IWhiteboardRepoProvider
 import com.paper.model.ModelConst
 import com.paper.model.event.IntProgressEvent
 import com.paper.view.HorizontalCentricItemDecoration
@@ -86,9 +86,9 @@ class PaperGalleryActivity : AppCompatActivity() {
         GalleryItemEpoxyController()
     }
 
-    private val mPaperSnapshots = mutableListOf<IPaper>()
+    private val mPaperSnapshots = mutableListOf<Whiteboard>()
 
-    private val mRepo by lazy { (application as IPaperRepoProvider).getPaperRepo() }
+    private val mRepo by lazy { (application as IWhiteboardRepoProvider).getWhiteboardRepo() }
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mPermissions by lazy { RxPermissions(this) }
 
@@ -143,7 +143,7 @@ class PaperGalleryActivity : AppCompatActivity() {
         super.onResume()
 
         val savedIDSrc = mPrefs
-            .getLong(ModelConst.PREFS_BROWSE_PAPER_ID, ModelConst.INVALID_ID)
+            .getLong(ModelConst.PREFS_BROWSE_WHITEBOARD_ID, ModelConst.INVALID_ID)
             .publish()
 
         // Click settings button
@@ -211,7 +211,7 @@ class PaperGalleryActivity : AppCompatActivity() {
             mSavedPaperIdSignal
                 .debounce(350, TimeUnit.MILLISECONDS)
                 .flatMap { savedID ->
-                    mPrefs.putLong(ModelConst.PREFS_BROWSE_PAPER_ID, savedID)
+                    mPrefs.putLong(ModelConst.PREFS_BROWSE_WHITEBOARD_ID, savedID)
                         .toObservable()
                 }
                 .subscribe())
@@ -295,7 +295,7 @@ class PaperGalleryActivity : AppCompatActivity() {
             .observeOn(Schedulers.io())
             .switchMap {
                 // Note: Any database update will emit new result
-                mRepo.getPapers(isSnapshot = true)
+                mRepo.getBoards(isSnapshot = true)
                     .doOnNext { papers ->
                         // Hold the paper snapshots.
                         mPaperSnapshots.clear()

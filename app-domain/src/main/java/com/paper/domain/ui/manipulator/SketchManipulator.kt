@@ -22,35 +22,37 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.*
-import com.paper.model.ISchedulers
-import com.paper.model.command.WhiteboardCommand
+import com.cardinalblue.gesture.rx.DragBeginEvent
+import com.cardinalblue.gesture.rx.DragDoingEvent
+import com.cardinalblue.gesture.rx.DragEndEvent
+import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.SVGScrapWidget
 import com.paper.domain.ui.WhiteboardWidget
 import com.paper.domain.ui_event.AddScrapEvent
-import com.paper.model.Frame
-import com.paper.model.IPaper
-import com.paper.model.Point
-import com.paper.model.SVGScrap
+import com.paper.model.*
+import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
 import io.reactivex.ObservableSource
 import io.reactivex.Single
-import io.reactivex.rxkotlin.Maybes
+import io.reactivex.rxkotlin.Observables
+import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.addTo
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
 class SketchManipulator(private val editor: WhiteboardWidget,
-                        private val paper: Single<IPaper>,
+                        private val paper: Single<Whiteboard>,
                         private val highestZ: Int,
                         private val schedulers: ISchedulers)
     : BaseManipulator() {
 
-    override fun apply(upstream: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
-        if (upstream !is DragGestureObservable) return Observable.empty()
-
+    override fun apply(touchSequence: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
         return autoStop { emitter ->
             disposableBag.clear()
+
+            // TODO: 1. Add widget to whiteboard widget
+            // TODO: 2. Add point to widget sketch displacement
+            // TODO: 3. Produce add-scrap-command
 
             val id = UUID.randomUUID()
             // Observe widget creation
@@ -68,11 +70,19 @@ class SketchManipulator(private val editor: WhiteboardWidget,
             val startX = AtomicReference(0f)
             val startY = AtomicReference(0f)
 
+            // First touch
+            val firstTouch = touchSequence.firstOrError()
+
             // Begin, add scrap and create corresponding widget
-            Maybes.zip(paper.toMaybe(),
-                       upstream.firstElement())
+            Singles.zip(paper,
+                        firstTouch)
                 .observeOn(schedulers.main())
                 .subscribe { (paper, event) ->
+                    if (!(event is DragBeginEvent ||
+                          event is DragDoingEvent)) {
+                        emitter.onComplete()
+                    }
+
                     event as DragBeginEvent
 
                     val (x, y) = event.startPointer
@@ -86,7 +96,8 @@ class SketchManipulator(private val editor: WhiteboardWidget,
                 }
                 .addTo(disposableBag)
 
-            val pointSrc = upstream.map { event ->
+            // Normalized touch sequence
+            val nTouchSequence = touchSequence.map { event ->
                 when (event) {
                     is DragBeginEvent -> {
                         val (x, y) = event.startPointer
@@ -113,17 +124,16 @@ class SketchManipulator(private val editor: WhiteboardWidget,
                 }
             }
 
-            // Delegate to widget
-//            widgetSignal
-//                .observeOn(schedulers.main())
-//                .flatMap { widget ->
-//                    widget.handleSketch(pointSrc)
-//                }
-//                .subscribe { operation ->
-//                    // Pass result operation
-//                    emitter.onNext(operation)
-//                }
-//                .addTo(disposableBag)
+            Observables.combineLatest(widgetSignal.toObservable(),
+                                      nTouchSequence)
+                .observeOn(schedulers.main())
+                .subscribe { (widget, p) ->
+                    widget.addPointToSketchDisplacement(p)
+
+                    // Produce command
+                    // TODO
+                }
+                .addTo(disposableBag)
         }
     }
 

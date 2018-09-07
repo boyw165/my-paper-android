@@ -28,8 +28,8 @@ import java.util.*
 open class SVGScrap(uuid: UUID = UUID.randomUUID(),
                     frame: Frame = Frame(),
                     private val graphicsList: MutableList<VectorGraphics> = mutableListOf())
-    : BaseScrap(uuid = uuid,
-                frame = frame) {
+    : Scrap(uuid = uuid,
+            frame = frame) {
 
     private val addSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
     private val removeSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
@@ -84,7 +84,7 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): BaseScrap {
+    override fun copy(): Scrap {
         return SVGScrap(uuid = UUID.randomUUID(),
                         frame = getFrame(),
                         graphicsList = getSVGs().toMutableList())

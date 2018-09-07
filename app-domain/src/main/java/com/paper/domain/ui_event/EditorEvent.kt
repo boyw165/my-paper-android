@@ -22,7 +22,7 @@
 
 package com.paper.domain.ui_event
 
-import com.paper.domain.ui.BaseScrapWidget
+import com.paper.domain.ui.ScrapWidget
 import com.paper.model.Frame
 import com.paper.model.Rect
 import com.paper.model.sketch.SVGStyle
@@ -48,9 +48,9 @@ abstract class UpdateScrapContentEvent : UpdateScrapEvent()
 
 data class GroupUpdateScrapEvent(val events: List<UpdateScrapEvent>) : UpdateScrapEvent()
 
-data class AddScrapEvent(val scrapWidget: BaseScrapWidget) : UpdateScrapEvent()
+data class AddScrapEvent(val scrapWidget: ScrapWidget) : UpdateScrapEvent()
 
-data class RemoveScrapEvent(val scrapWidget: BaseScrapWidget) : UpdateScrapEvent()
+data class RemoveScrapEvent(val scrapWidget: ScrapWidget) : UpdateScrapEvent()
 
 object RemoveAllScrapsEvent : UpdateScrapEvent()
 

@@ -21,19 +21,18 @@
 package com.paper.model.repository.json
 
 import com.google.gson.*
-import com.paper.model.BaseScrap
-import com.paper.model.IPaper
-import com.paper.model.BasePaper
+import com.paper.model.Whiteboard
+import com.paper.model.Scrap
 import com.paper.model.Rect
 import java.lang.reflect.Type
 
 /**
  * Part of paper is stored as JSON.
  */
-class PaperJSONTranslator : JsonSerializer<IPaper>,
-                            JsonDeserializer<IPaper> {
+class WhiteboardJSONTranslator : JsonSerializer<Whiteboard>,
+                                 JsonDeserializer<Whiteboard> {
 
-    override fun serialize(src: IPaper,
+    override fun serialize(src: Whiteboard,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -54,7 +53,7 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
 
         // Scraps
         val scrapJson = JsonArray()
-        src.getScraps().forEach { scrapJson.add(context.serialize(it, BaseScrap::class.java)) }
+        src.getScraps().forEach { scrapJson.add(context.serialize(it, Scrap::class.java)) }
         root.add("scraps", scrapJson)
 
         return root
@@ -62,9 +61,9 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): IPaper {
+                             context: JsonDeserializationContext): Whiteboard {
         val root = json.asJsonObject
-        val paperDetails = BasePaper()
+        val paperDetails = Whiteboard()
 
         // Canvas size
         val width = root["width"].asFloat
@@ -85,7 +84,7 @@ class PaperJSONTranslator : JsonSerializer<IPaper>,
         if (root.has("scraps")) {
             root["scraps"].asJsonArray.forEach {
                 paperDetails.addScrap(context.deserialize(
-                    it, BaseScrap::class.java))
+                    it, Scrap::class.java))
             }
         }
 

@@ -25,7 +25,7 @@ package com.paper.view.gallery
 import com.airbnb.epoxy.EpoxyHolder
 import com.airbnb.epoxy.EpoxyModelWithHolder
 import com.facebook.ads.NativeAd
-import com.paper.model.IPaper
+import com.paper.model.Whiteboard
 import io.reactivex.Observer
 
 sealed class GalleryViewModel {
@@ -41,7 +41,7 @@ data class CreatePaperViewModel(private val clickSignal: Observer<Any>) : Galler
     }
 }
 
-data class PaperThumbViewModel(val paper: IPaper,
+data class PaperThumbViewModel(val paper: Whiteboard,
                                val clickSignal: Observer<Long>) : GalleryViewModel() {
 
     override fun getEpoxyModel(): EpoxyModelWithHolder<EpoxyHolder> {

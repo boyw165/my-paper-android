@@ -26,10 +26,10 @@ import com.paper.model.sketch.VectorGraphics
 import java.lang.reflect.Type
 import java.util.*
 
-class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
-                            JsonDeserializer<BaseScrap> {
+class ScrapJSONTranslator : JsonSerializer<Scrap>,
+                            JsonDeserializer<Scrap> {
 
-    override fun serialize(src: BaseScrap,
+    override fun serialize(src: Scrap,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
@@ -68,7 +68,7 @@ class ScrapJSONTranslator : JsonSerializer<BaseScrap>,
 
     override fun deserialize(json: JsonElement,
                              typeOfT: Type,
-                             context: JsonDeserializationContext): BaseScrap {
+                             context: JsonDeserializationContext): Scrap {
         val root = json.asJsonObject
         val id = UUID.fromString(root.get("uuid").asString)
         val type = root["type"].asString

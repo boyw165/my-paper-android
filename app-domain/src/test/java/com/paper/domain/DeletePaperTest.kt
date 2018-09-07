@@ -24,7 +24,7 @@ package com.paper.domain
 
 import com.paper.domain.action.DeletePaperSingle
 import com.paper.model.event.UpdateDatabaseEvent
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.IWhiteboardRepository
 import io.reactivex.Single
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
@@ -39,9 +39,9 @@ class DeletePaperTest {
     @Test
     fun `get exception if error from repo`() {
         val error = RuntimeException("Mocked repo!")
-        val mockRepo = Mockito.mock(IPaperRepo::class.java)
+        val mockRepo = Mockito.mock(IWhiteboardRepository::class.java)
         Mockito
-            .`when`(mockRepo.deletePaperById(Mockito.anyLong()))
+            .`when`(mockRepo.deleteBoardById(Mockito.anyLong()))
             .thenReturn(Single.error(error))
 
         val errorSignal = PublishSubject.create<Throwable>()
@@ -66,9 +66,9 @@ class DeletePaperTest {
     @Test
     fun `get true if repo works`() {
         val mockID = 5L
-        val mockRepo = Mockito.mock(IPaperRepo::class.java)
+        val mockRepo = Mockito.mock(IWhiteboardRepository::class.java)
         Mockito
-            .`when`(mockRepo.deletePaperById(Mockito.anyLong()))
+            .`when`(mockRepo.deleteBoardById(Mockito.anyLong()))
             .thenReturn(Single.just(UpdateDatabaseEvent(
                 successful = true,
                 id = mockID)))

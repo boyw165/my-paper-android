@@ -26,7 +26,7 @@ import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.BaseScrapWidget
+import com.paper.domain.ui.ScrapWidget
 import com.paper.model.Frame
 import com.paper.model.command.UpdateScrapFrameCommand
 import com.paper.model.command.WhiteboardCommand
@@ -35,7 +35,7 @@ import io.reactivex.ObservableSource
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 
-class DragManipulator(private val widget: BaseScrapWidget) : BaseManipulator() {
+class DragManipulator(private val widget: ScrapWidget) : BaseManipulator() {
 
     private val disposablesBag = CompositeDisposable()
 

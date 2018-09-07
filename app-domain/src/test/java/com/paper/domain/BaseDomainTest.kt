@@ -11,9 +11,9 @@ import com.paper.domain.ui.SVGScrapWidget
 import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.IWhiteboardRepository
 import com.paper.model.repository.json.FrameJSONTranslator
-import com.paper.model.repository.json.PaperJSONTranslator
+import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
@@ -64,8 +64,8 @@ abstract class BaseDomainTest {
         mock
     }
 
-    val mockPaper: IPaper by lazy {
-        val mock = BasePaper()
+    val mockPaper by lazy {
+        val mock = Whiteboard()
         (1..50).forEach {
             mock.addScrap(createRandomScrap())
         }
@@ -73,13 +73,13 @@ abstract class BaseDomainTest {
     }
 
     @Mock
-    lateinit var mockPaperRepo: IPaperRepo
+    lateinit var mockPaperRepo: IWhiteboardRepository
 
     protected val jsonTranslator: Gson by lazy {
         GsonBuilder()
-            .registerTypeAdapter(BasePaper::class.java,
-                                 PaperJSONTranslator())
-            .registerTypeAdapter(BaseScrap::class.java,
+            .registerTypeAdapter(Whiteboard::class.java,
+                                 WhiteboardJSONTranslator())
+            .registerTypeAdapter(Scrap::class.java,
                                  ScrapJSONTranslator())
             .registerTypeAdapter(Frame::class.java,
                                  FrameJSONTranslator())
@@ -91,7 +91,7 @@ abstract class BaseDomainTest {
     }
 
     open fun setup() {
-        Mockito.`when`(mockPaperRepo.getPaperById(Mockito.anyLong()))
+        Mockito.`when`(mockPaperRepo.getBoardById(Mockito.anyLong()))
             .thenReturn(
                 Single.just(mockPaper)
                     .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
@@ -129,8 +129,8 @@ abstract class BaseDomainTest {
                      z = rand(0, 1000))
     }
 
-    protected fun createBaseScrapBy(frame: Frame): BaseScrap {
-        return BaseScrap(frame = frame)
+    protected fun createBaseScrapBy(frame: Frame): Scrap {
+        return Scrap(frame = frame)
     }
 
     protected fun createRandomSVGScrap(): SVGScrap {
@@ -162,7 +162,7 @@ abstract class BaseDomainTest {
                          text = "foo")
     }
 
-    protected fun createRandomScrap(): BaseScrap {
+    protected fun createRandomScrap(): Scrap {
         val random = rand(0, 2)
 
         return when (random) {

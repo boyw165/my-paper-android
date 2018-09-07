@@ -22,7 +22,7 @@ package com.paper.domain.ui
 
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.manipulator.DragManipulator
-import com.paper.model.BaseScrap
+import com.paper.model.Scrap
 import com.paper.model.Frame
 import com.paper.model.ISchedulers
 import io.reactivex.Observable
@@ -32,8 +32,8 @@ import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
-open class BaseScrapWidget(protected val scrap: BaseScrap,
-                           protected val schedulers: ISchedulers)
+open class ScrapWidget(protected val scrap: Scrap,
+                       protected val schedulers: ISchedulers)
     : IWidget {
 
     companion object {

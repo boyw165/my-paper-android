@@ -24,14 +24,14 @@ package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.DragGestureObservable
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.BaseScrapWidget
+import com.paper.domain.ui.ScrapWidget
 import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
 import io.reactivex.ObservableSource
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 
-class PinchManipulator(private val widget: BaseScrapWidget) : BaseManipulator() {
+class PinchManipulator(private val widget: ScrapWidget) : BaseManipulator() {
 
     private val disposablesBag = CompositeDisposable()
 

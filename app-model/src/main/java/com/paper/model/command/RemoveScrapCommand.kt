@@ -22,19 +22,19 @@
 
 package com.paper.model.command
 
-import com.paper.model.BaseScrap
-import com.paper.model.IPaper
+import com.paper.model.Whiteboard
+import com.paper.model.Scrap
 import java.util.*
 
 class RemoveScrapCommand(override val id: UUID = UUID.randomUUID(),
-                         val scrap: BaseScrap)
+                         val scrap: Scrap)
     : WhiteboardCommand(id = id) {
 
-    override fun doo(target: IPaper) {
+    override fun doo(target: Whiteboard) {
         // TODO
     }
 
-    override fun redo(target: IPaper) {
+    override fun redo(target: Whiteboard) {
         // TODO
     }
 }

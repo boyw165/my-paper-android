@@ -96,7 +96,7 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mPrefs by lazy { (application as IPreferenceServiceProvider).preference }
     private val mPresenter by lazy {
         WhiteboardEditorWidget(
-            paperRepo = (application as IPaperRepoProvider).getPaperRepo(),
+            paperRepo = (application as IWhiteboardRepoProvider).getWhiteboardRepo(),
             undoWidget = UndoManager(undoRepo = ,
                                      redoRepo = ,
                                      schedulers = this@PaperEditorActivity),

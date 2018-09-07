@@ -27,8 +27,8 @@ import java.util.*
 open class TextScrap(uuid: UUID = UUID.randomUUID(),
                      frame: Frame = Frame(),
                      private var text: String)
-    : BaseScrap(uuid = uuid,
-                frame = frame) {
+    : Scrap(uuid = uuid,
+            frame = frame) {
 
     private val textSignal = PublishSubject.create<String>().toSerialized()
 
@@ -51,7 +51,7 @@ open class TextScrap(uuid: UUID = UUID.randomUUID(),
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
-    override fun copy(): BaseScrap {
+    override fun copy(): Scrap {
         return TextScrap(uuid = UUID.randomUUID(),
                          frame = getFrame(),
                          text = getText())

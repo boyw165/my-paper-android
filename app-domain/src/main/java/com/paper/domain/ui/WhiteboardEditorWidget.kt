@@ -35,7 +35,7 @@ import com.paper.model.Point
 import com.paper.model.SVGScrap
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
-import com.paper.model.repository.IPaperRepo
+import com.paper.model.repository.IWhiteboardRepository
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference
 // TODO: Shouldn't depend on any Android package!
 
 class WhiteboardEditorWidget(paperID: Long,
-                             paperRepo: IPaperRepo,
+                             paperRepo: IWhiteboardRepository,
                              private val undoWidget: UndoManager,
                              private val penPrefsRepo: ICommonPenPrefsRepo,
                              caughtErrorSignal: Observer<Throwable>,
@@ -204,79 +204,6 @@ class WhiteboardEditorWidget(paperID: Long,
                 undoWidget.putOperation(operation)
             }
             .addTo(staticDisposableBag)
-    }
-
-    private fun handleFreeDrawing(gestureSignal: GestureObservable) {
-        drawingDisposableBag.clear()
-
-        val id = UUID.randomUUID()
-        // Observe widget creation
-        val widgetSignal = observeScraps()
-            .filter { event ->
-                event is AddScrapEvent &&
-                event.scrapWidget.getID() == id
-            }
-            .firstElement()
-            .map { event ->
-                event as AddScrapEvent
-                event.scrapWidget as SVGScrapWidget
-            }
-            .cache()
-        val startX = AtomicReference(0f)
-        val startY = AtomicReference(0f)
-
-        // Begin, add scrap and create corresponding widget
-        Maybes.zip(paper.toMaybe(),
-                   gestureSignal.firstElement())
-            .observeOn(schedulers.main())
-            .subscribe { (paper, event) ->
-                event as DragBeginEvent
-
-                val (x, y) = event.startPointer
-                val scrap = createSVGScrap(id, x, y)
-
-                // Remember start x-y for later point correction
-                startX.set(x)
-                startY.set(y)
-
-                paper.addScrap(scrap)
-            }
-            .addTo(drawingDisposableBag)
-
-        // Delegate to widget
-        widgetSignal
-            .observeOn(schedulers.main())
-            .subscribe { widget ->
-                widget.handleSketch(
-                    gestureSignal
-                        .map { event ->
-                            when (event) {
-                                is DragBeginEvent -> {
-                                    val (x, y) = event.startPointer
-                                    val nx = x - startX.get()
-                                    val ny = y - startY.get()
-
-                                    Point(nx, ny)
-                                }
-                                is DragDoingEvent -> {
-                                    val (x, y) = event.stopPointer
-                                    val nx = x - startX.get()
-                                    val ny = y - startY.get()
-
-                                    Point(nx, ny)
-                                }
-                                is DragEndEvent -> {
-                                    val (x, y) = event.stopPointer
-                                    val nx = x - startX.get()
-                                    val ny = y - startY.get()
-
-                                    Point(nx, ny)
-                                }
-                                else -> TODO()
-                            }
-                        })
-            }
-            .addTo(drawingDisposableBag)
     }
 
     // Undo & redo ////////////////////////////////////////////////////////////

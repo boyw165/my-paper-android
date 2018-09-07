@@ -20,22 +20,31 @@
 
 package com.paper.model
 
+import java.net.URI
+
 object ModelConst {
 
-    const val TAG = "paper model"
+    @JvmStatic
+    val TAG = "whiteboard model"
 
-    const val TEMP_ID = -1L
-    const val INVALID_ID = Long.MAX_VALUE
+    @JvmStatic
+    val TEMP_ID = -1L
+    @JvmStatic
+    val INVALID_ID = Long.MAX_VALUE
 
-    const val MOST_TOP_Z = Int.MAX_VALUE
-    const val MOST_BOTTOM_Z = Int.MIN_VALUE
+    @JvmStatic
+    val NULL_FILE = URI("file:///null")
 
-    val SIZE_OF_A_FOUR_LANDSCAPE = Pair(297f, 210f)
-    val SIZE_OF_A_FOUR_PORTRAIT = Pair(210f, 297f)
-    val SIZE_OF_A_FOUR_SQUARE = Pair(210f, 210f)
+    @JvmStatic
+    val MOST_TOP_Z = Int.MAX_VALUE
+    @JvmStatic
+    val MOST_BOTTOM_Z = Int.MIN_VALUE
 
-    const val MIN_PEN_SIZE = 1f
-    const val MAX_PEN_SIZE = 60f
+    @JvmStatic
+    val MIN_PEN_SIZE = 1f
+    @JvmStatic
+    val MAX_PEN_SIZE = 60f
 
-    const val PREFS_BROWSE_PAPER_ID = "prefs_browse_paper_id"
+    @JvmStatic
+    val PREFS_BROWSE_WHITEBOARD_ID = "prefs_browse_whiteboard_id"
 }
