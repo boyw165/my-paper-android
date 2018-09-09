@@ -22,7 +22,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.UndoManager
+import com.paper.domain.ui.UndoWidget
 import com.paper.model.repository.CommandRepository
 import com.paper.model.repository.ICommandRepository
 import org.junit.After
@@ -33,7 +33,7 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class UndoManagerTest : BaseDomainTest() {
+class UndoWidgetTest : BaseDomainTest() {
 
     companion object {
         const val LOG_DIR = "/tmp/command_test"
@@ -67,9 +67,9 @@ class UndoManagerTest : BaseDomainTest() {
 
     @Test
     fun test() {
-        val candidate = UndoManager(undoRepo = undoRepo,
-                                    redoRepo = redoRepo,
-                                    schedulers = mockSchedulers)
+        val candidate = UndoWidget(undoRepo = undoRepo,
+                                   redoRepo = redoRepo,
+                                   schedulers = mockSchedulers)
         // Start widget
         candidate.start().test().assertSubscribed()
 

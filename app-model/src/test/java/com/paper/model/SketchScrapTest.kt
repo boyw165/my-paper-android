@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present Paper
+// Copyright May 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,21 +20,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.command
+package com.paper.model
 
-import com.paper.model.Whiteboard
-import com.paper.model.Scrap
-import java.util.*
+import com.paper.model.sketch.VectorGraphics
+import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
-                           val scrap: Scrap)
-    : WhiteboardCommand(commandID = commandID) {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class SketchScrapTest : BaseModelTest() {
 
-    override fun doo(target: Whiteboard) {
-        // TODO
+    @Test
+    fun `copy, ID should be different`() {
+        val tester1 = createRandomSVGScrap()
+        val tester2 = tester1.copy() as SketchScrap
+        tester2.setFrame(Frame(100f, 100f))
+        tester2.setSVG(VectorGraphics())
+
+        Assert.assertNotEquals(tester2, tester1)
+        Assert.assertNotEquals(tester2.getID(), tester1.getID())
+        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
     }
 
-    override fun undo(target: Whiteboard) {
-        // TODO
+    @Test
+    fun `observe add svg`() {
+        val tester = createRandomSVGScrap()
+
+        val addTestObserver = tester.observeSVG().test()
+
+        tester.setSVG(createRandomSVG())
+        tester.setSVG(createRandomSVG())
+        tester.setSVG(createRandomSVG())
+
+        addTestObserver.assertValueCount(3)
     }
 }
+

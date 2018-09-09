@@ -24,7 +24,7 @@ package com.paper.model
 
 object ScrapType {
 
-    const val SVG = "svg"
+    const val SKETCH = "sketch"
     const val TEXT = "text"
     const val IMAGE = "image"
     const val VIDEO = "video"

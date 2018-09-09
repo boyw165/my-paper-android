@@ -24,8 +24,10 @@ package com.paper.domain.ui_event
 
 import com.paper.domain.ui.ScrapWidget
 import com.paper.model.Frame
+import com.paper.model.PointTuple
 import com.paper.model.Rect
 import com.paper.model.sketch.SVGStyle
+import com.paper.model.sketch.VectorGraphics
 import java.util.*
 
 sealed class EditorEvent
@@ -64,21 +66,6 @@ object ClearHighlightEvent : UpdateScrapEvent()
 
 data class UpdateScrapFrameEvent(val scrapID: UUID,
                                  val frame: Frame) : UpdateScrapEvent()
-
-// Draw ///////////////////////////////////////////////////////////////////////
-
-abstract class UpdateSVGEvent : UpdateScrapContentEvent()
-
-data class SketchMoveToEvent(val x: Float,
-                             val y: Float,
-                             val style: Set<SVGStyle>) : UpdateSVGEvent()
-
-data class SketchCubicToEvent(val previousControlX: Float,
-                              val previousControlY: Float,
-                              val currentControlX: Float,
-                              val currentControlY: Float,
-                              val currentEndX: Float,
-                              val currentEndY: Float) : UpdateSVGEvent()
 
 // View-port //////////////////////////////////////////////////////////////////
 

@@ -1,6 +1,6 @@
-// Copyright Apr 2018-present Paper
+// Copyright Sep 2018-present SodaLabs
 //
-// Author: boyw165@gmail.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,21 +20,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.command
+package com.paper.domain
 
-import com.paper.model.Whiteboard
-import com.paper.model.Scrap
-import java.util.*
+import com.paper.domain.store.WhiteboardStore
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
-                           val scrap: Scrap)
-    : WhiteboardCommand(commandID = commandID) {
+@RunWith(MockitoJUnitRunner.Silent::class)
+class WhiteboardStoreTest : BaseDomainTest() {
 
-    override fun doo(target: Whiteboard) {
-        // TODO
+    @Before
+    override fun setup() {
+        super.setup()
     }
 
-    override fun undo(target: Whiteboard) {
-        // TODO
+    @After
+    override fun clean() {
+        super.clean()
+    }
+
+    @Test
+    fun `observe busy, should see busy first and not busy at the end`() {
+        val candidate = WhiteboardStore(whiteboardID = RANDOM_WHITEBOARD_ID,
+                                        whiteboardRepo = mockWhiteboardRepo,
+                                        schedulers = mockSchedulers)
+        val tester = candidate.observeBusy().test()
+
+        // Start
+        candidate.start().test().assertSubscribed()
+        moveScheduler()
+
+        tester.assertValueAt(0, true)
+        tester.assertValueAt(tester.valueCount() - 1, false)
     }
 }

@@ -49,16 +49,12 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
         root.addProperty("rotationInDegrees", frame.rotationInDegrees)
 
         when (src) {
-            is SVGScrap -> {
+            is SketchScrap -> {
                 // If it is a VectorGraphics scrap ...
-                root.addProperty("type", ScrapType.SVG)
+                root.addProperty("type", ScrapType.SKETCH)
 
-                val svgJSON = JsonArray()
-                val svgs = src.getSVGs()
-
-                svgs.forEach { svgJSON.add(context.serialize(it, VectorGraphics::class.java)) }
-
-                root.add("svg", svgJSON)
+                val svg = src.getSVG()
+                root.add("svg", context.serialize(svg, VectorGraphics::class.java))
             }
             else -> TODO()
         }
@@ -84,18 +80,14 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
                           if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z)
 
         val model = when (type) {
-            ScrapType.SVG -> {
+            ScrapType.SKETCH -> {
                 // Must have a "svg" property
-                val sketchJson = root["svg"].asJsonArray
-                val svgList = mutableListOf<VectorGraphics>()
-                sketchJson.forEach {
-                    svgList.add(context.deserialize(
-                        it, VectorGraphics::class.java))
-                }
+                val sketchJson = root["svg"]
+                val svg = context.deserialize<VectorGraphics>(sketchJson, VectorGraphics::class.java)
 
-                SVGScrap(uuid = id,
-                         frame = frame,
-                         graphicsList = svgList)
+                SketchScrap(uuid = id,
+                            frame = frame,
+                            svg = svg)
             }
             else -> TODO()
         }

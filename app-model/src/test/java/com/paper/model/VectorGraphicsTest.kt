@@ -48,17 +48,10 @@ class VectorGraphicsTest {
 
     @Test
     fun `add path, hash code should change`() {
-        val stroke = VectorGraphics()
+        val stroke1 = VectorGraphics()
+        val stroke2 = stroke1.addTuple(LinearPointTuple(0f, 0f))
 
-        stroke.addTuple(LinearPointTuple(0f, 0f))
-
-        val hashCode1 = stroke.hashCode()
-
-        stroke.addTuple(LinearPointTuple(1f, 1f))
-
-        val hashCode2 = stroke.hashCode()
-
-        Assert.assertNotEquals(hashCode2, hashCode1)
+        Assert.assertNotEquals(stroke2.hashCode(), stroke1.hashCode())
     }
 }
 

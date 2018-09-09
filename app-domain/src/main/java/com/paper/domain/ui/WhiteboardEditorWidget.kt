@@ -22,46 +22,35 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.DragBeginEvent
-import com.cardinalblue.gesture.rx.DragDoingEvent
-import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureObservable
-import com.paper.model.ISchedulers
+import com.paper.domain.store.WhiteboardStore
 import com.paper.domain.ui.manipulator.SketchManipulator
-import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.domain.ui_event.UndoAvailabilityEvent
-import com.paper.model.Frame
-import com.paper.model.Point
-import com.paper.model.SVGScrap
+import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
-import com.paper.model.repository.IWhiteboardRepository
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.Maybes
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import java.io.File
-import java.util.*
-import java.util.concurrent.atomic.AtomicReference
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
 // TODO: Shouldn't depend on any Android package!
 
-class WhiteboardEditorWidget(paperID: Long,
-                             paperRepo: IWhiteboardRepository,
-                             private val undoWidget: UndoManager,
+class WhiteboardEditorWidget(whiteboardStore: WhiteboardStore,
+                             private val undoWidget: UndoWidget,
                              private val penPrefsRepo: ICommonPenPrefsRepo,
                              caughtErrorSignal: Observer<Throwable>,
                              schedulers: ISchedulers)
-    : WhiteboardWidget(paperID = paperID,
-                       paperRepo = paperRepo,
+    : WhiteboardWidget(whiteboardStore = whiteboardStore,
                        caughtErrorSignal = caughtErrorSignal,
-                       schedulers = schedulers) {
+                       schedulers = schedulers),
+      IWhiteboardEditorWidget {
 
     private val drawingDisposableBag = CompositeDisposable()
 
@@ -69,14 +58,14 @@ class WhiteboardEditorWidget(paperID: Long,
         return super.start()
             .flatMap { done ->
                 if (done) {
-                    paper.observeOn(schedulers.main())
-                        .flatMapObservable {
+                    whiteboard.observeOn(schedulers.main())
+                        .flatMapObservable { whiteboard ->
                             undoWidget.start()
                         }
                         .subscribe()
                         .addTo(staticDisposableBag)
 
-                    // Following are all about the edit panel outputs to paper widget:
+                    // Following are all about the edit panel outputs to whiteboard widget:
 
                     // Choose what drawing tool
                     //        mEditPanelWidget
@@ -160,79 +149,57 @@ class WhiteboardEditorWidget(paperID: Long,
             }
     }
 
-    private fun createSVGScrap(id: UUID,
-                               x: Float,
-                               y: Float): SVGScrap {
-        return SVGScrap(uuid = id,
-                        frame = Frame(x = x,
-                                      y = y,
-                                      scaleX = 1f,
-                                      scaleY = 1f,
-                                      width = 1f,
-                                      height = 1f,
-                                      z = highestZ.get() + 1))
-    }
-
     // Free drawing ///////////////////////////////////////////////////////////
 
-    fun handleTouch(touchSrc: Observable<GestureObservable>) {
+    override fun handleTouch(gestureSequence: Observable<GestureObservable>) {
         Observables
             .combineLatest(editorModelSignal,
-                           touchSrc)
+                           gestureSequence)
             .observeOn(schedulers.main())
-//            .subscribe { (mode, gesture) ->
-//                // Mode determines what to do next
-//                when (mode) {
-//                    EditorMode.FREE_DRAWING -> {
-//                        handleFreeDrawing(gesture)
-//                    }
-//                    else -> TODO()
-//                }
-//            }
-            .flatMap { (mode, gesture) ->
-                val manipulator = when (mode) {
-                    EditorMode.FREE_DRAWING -> SketchManipulator(
-                        editor = this@WhiteboardEditorWidget,
-                        paper = this.paper,
-                        highestZ = highestZ.get(),
-                        schedulers = schedulers)
+            .flatMapCompletable { (mode, touchSequence) ->
+                when (mode) {
+                    EditorMode.FREE_DRAWING -> {
+                        SketchManipulator(editor = this@WhiteboardEditorWidget,
+                                          highestZ = highestZ.get(),
+                                          whiteboardStore = whiteboardStore,
+                                          undoWidget = undoWidget,
+                                          schedulers = schedulers)
+                            .apply(touchSequence)
+                    }
                     else -> TODO()
                 }
-                gesture.compose(manipulator)
-            }
-            .subscribe { operation ->
-                undoWidget.putOperation(operation)
-            }
-            .addTo(staticDisposableBag)
-    }
-
-    // Undo & redo ////////////////////////////////////////////////////////////
-
-    fun handleUndo(undoSignal: Observable<Any>) {
-        Observables
-            .combineLatest(paper.toObservable(),
-                           undoSignal)
-            .flatMap { (paper, _) ->
-                undoWidget.undo(paper)
-                    .toObservable<Any>()
             }
             .subscribe()
             .addTo(staticDisposableBag)
     }
 
-    fun handleRedo(redoSignal: Observable<Any>) {
-        Observables
-            .combineLatest(paper.toObservable(),
-                           redoSignal)
-            .flatMap { (paper, _) ->
-                undoWidget.redo(paper)
-                    .toObservable<Any>()
+    // Undo & undo ////////////////////////////////////////////////////////////
+
+    override fun handleUndo(undoSignal: Observable<Any>) {
+        undoSignal
+            .flatMap {
+                undoWidget.undo()
+                    .toObservable()
             }
-            .subscribe()
+            .subscribe { command ->
+                whiteboardStore.offerCommandUndo(command)
+            }
             .addTo(staticDisposableBag)
     }
 
-    fun observeUndoAvailability(): Observable<UndoAvailabilityEvent> {
+    override fun handleRedo(redoSignal: Observable<Any>) {
+        redoSignal
+            .flatMap {
+                undoWidget.redo()
+                    .toObservable()
+            }
+            .subscribe { command ->
+                whiteboardStore.offerCommandDoo(command)
+            }
+            .addTo(staticDisposableBag)
+    }
+
+    override fun observeUndoAvailability(): Observable<UndoAvailabilityEvent> {
         return Observables.combineLatest(
             observeBusy(),
             undoWidget.observeUndoCapacity())

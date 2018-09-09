@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present Paper
+// Copyright Sep 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,28 +20,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain
+package com.paper.domain.ui
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.mockito.junit.MockitoJUnitRunner
+import com.paper.domain.ui_event.UndoAvailabilityEvent
+import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Observable
+import io.reactivex.Single
 
-@RunWith(MockitoJUnitRunner.Silent::class)
-class SVGScrapWidgetTest : BaseDomainTest() {
+interface IUndoWidget : IWidget {
 
-    @Before
-    override fun setup() {
-        super.setup()
-    }
+    /**
+     * A busy state of this widget.
+     */
+    fun observeBusy(): Observable<Boolean>
 
-    @After
-    override fun clean() {
-        super.clean()
-    }
+    fun putOperation(command: WhiteboardCommand)
 
-    @Test
-    fun `sketch given a sequence of points`() {
-    }
+    fun undo(): Single<WhiteboardCommand>
+
+    fun redo(): Single<WhiteboardCommand>
+
+    fun observeUndoCapacity(): Observable<UndoAvailabilityEvent>
 }

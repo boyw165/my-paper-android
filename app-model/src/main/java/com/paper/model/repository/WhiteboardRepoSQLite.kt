@@ -241,7 +241,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                         null,
                         // sort order:
                         null)
-                    if (cursor.count == 0) throw IllegalArgumentException("Cannot find paper, id=$id")
+                    if (cursor.count == 0) throw IllegalArgumentException("Cannot find paper, commandID=$id")
                     if (cursor.count > 1) throw IllegalStateException("Multiple paper id=%id conflict")
                     if (observer.isDisposed) return@create
 
@@ -308,7 +308,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                             paper.setID(newID)
 
                             if (!emitter.isDisposed) {
-                                println("${ModelConst.TAG}: put paper (id=$newID) successfully")
+                                println("${ModelConst.TAG}: put paper (commandID=$newID) successfully")
 
                                 emitter.onSuccess(UpdateDatabaseEvent(
                                     successful = true,
@@ -337,7 +337,7 @@ class WhiteboardRepoSQLite(private val authority: String,
 
                         if (0 < resolver.update(uri, values, null, null)) {
                             if (!emitter.isDisposed) {
-                                println("${ModelConst.TAG}: put paper (id=$id) successfully")
+                                println("${ModelConst.TAG}: put paper (commandID=$id) successfully")
 
                                 emitter.onSuccess(UpdateDatabaseEvent(
                                     successful = true,
@@ -347,7 +347,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                             // Notify an update just happens
                             resolver.notifyChange(Uri.parse("$uri/$CHANGE_UPDATE"), null)
                         } else {
-                            emitter.onError(NoSuchElementException("Cannot find paper with id=$id"))
+                            emitter.onError(NoSuchElementException("Cannot find paper with commandID=$id"))
                         }
                     } catch (err: Throwable) {
                         emitter.onError(err)
@@ -382,7 +382,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                         // Notify a deletion just happens
                         resolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
                     } else {
-                        emitter.onError(NoSuchElementException("Cannot delete paper with id=$id"))
+                        emitter.onError(NoSuchElementException("Cannot delete paper with commandID=$id"))
                     }
                 } catch (err: Throwable) {
                     emitter.onError(err)

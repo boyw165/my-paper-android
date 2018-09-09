@@ -7,7 +7,12 @@ import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.paper.domain.ui.SVGScrapWidget
+import com.nhaarman.mockitokotlin2.any
+import com.paper.domain.store.IWhiteboardStore
+import com.paper.domain.ui.*
+import com.paper.domain.ui_event.AddScrapEvent
+import com.paper.domain.ui_event.RemoveScrapEvent
+import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
@@ -33,10 +38,14 @@ abstract class BaseDomainTest {
 
     companion object {
 
-        const val SHORT_TIMEOUT = 300L
-        const val NORMAL_TIMEOUT = 600L
-        const val LONG_TIMEOUT = 1200L
-        const val DEFINITELY_LONG_ENOUGH_TIMEOUT = 1000000L
+        @JvmStatic
+        val SHORT_TIMEOUT = 300L
+        @JvmStatic
+        val NORMAL_TIMEOUT = 600L
+        @JvmStatic
+        val LONG_TIMEOUT = 1200L
+        @JvmStatic
+        val DEFINITELY_LONG_ENOUGH_TIMEOUT = 1000000L
 
         @JvmStatic
         val EMPTY_SHADOW_EVENT = ShadowMotionEvent(maskedAction = 0,
@@ -44,6 +53,9 @@ abstract class BaseDomainTest {
                                                    downFocusY = 0f,
                                                    downXs = floatArrayOf(0f),
                                                    downYs = floatArrayOf(0f))
+
+        @JvmStatic
+        val RANDOM_WHITEBOARD_ID = 0L
 
         @JvmStatic
         val DEFAULT_FRAME = Frame()
@@ -64,7 +76,7 @@ abstract class BaseDomainTest {
         mock
     }
 
-    val mockPaper by lazy {
+    val mockWhiteboard by lazy {
         val mock = Whiteboard()
         (1..50).forEach {
             mock.addScrap(createRandomScrap())
@@ -73,7 +85,24 @@ abstract class BaseDomainTest {
     }
 
     @Mock
-    lateinit var mockPaperRepo: IWhiteboardRepository
+    lateinit var mockWhiteboardRepo: IWhiteboardRepository
+    protected val mockWhiteboardStore: IWhiteboardStore by lazy {
+        val field = Mockito.mock(IWhiteboardStore::class.java)
+
+        Mockito.`when`(field.start()).thenReturn(Observable.never())
+        Mockito.`when`(field.whiteboard()).thenReturn(Single.just(mockWhiteboard))
+        Mockito.`when`(field.observeBusy()).thenReturn(Observable.just(false))
+
+        field
+    }
+    protected val mockWhiteboardEditor: IWhiteboardEditorWidget by lazy {
+        val field = Mockito.mock(IWhiteboardEditorWidget::class.java)
+
+        Mockito.`when`(field.start()).thenReturn(Observable.never())
+        Mockito.`when`(field.observeBusy()).thenReturn(Observable.just(false))
+
+        field
+    }
 
     protected val jsonTranslator: Gson by lazy {
         GsonBuilder()
@@ -91,9 +120,9 @@ abstract class BaseDomainTest {
     }
 
     open fun setup() {
-        Mockito.`when`(mockPaperRepo.getBoardById(Mockito.anyLong()))
+        Mockito.`when`(mockWhiteboardRepo.getBoardById(Mockito.anyLong()))
             .thenReturn(
-                Single.just(mockPaper)
+                Single.just(mockWhiteboard)
                     .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
     }
 
@@ -129,22 +158,29 @@ abstract class BaseDomainTest {
                      z = rand(0, 1000))
     }
 
+    protected fun createRandomSVG(): VectorGraphics {
+        return VectorGraphics(tupleList = mutableListOf(LinearPointTuple(0f, 0f),
+                                                        CubicPointTuple(10f, 10f, 10f, 10f, 20f, 0f),
+                                                        CubicPointTuple(-30f, -30f, -30f, -30f, 40f, 0f),
+                                                        CubicPointTuple(50f, 50f, 50f, 50f, 40f, 20f)))
+    }
+
     protected fun createBaseScrapBy(frame: Frame): Scrap {
         return Scrap(frame = frame)
     }
 
-    protected fun createRandomSVGScrap(): SVGScrap {
-        return SVGScrap(frame = createRandomFrame())
+    protected fun createRandomSVGScrap(): SketchScrap {
+        return SketchScrap(frame = createRandomFrame(),
+                           svg = createRandomSVG())
     }
 
-    protected fun createRandomSVGScrapWidget(): SVGScrapWidget {
-        return SVGScrapWidget(scrap = createRandomSVGScrap(),
-                              newSVGPenStyle = Observable.empty(),
-                              schedulers = mockSchedulers)
+    protected fun createRandomSVGScrapWidget(): SketchScrapWidget {
+        return SketchScrapWidget(scrap = createRandomSVGScrap(),
+                                 schedulers = mockSchedulers)
     }
 
-    protected fun createMockSVGScrapWidget(): SVGScrapWidget {
-        val mock = Mockito.mock(SVGScrapWidget::class.java)
+    protected fun createMockSVGScrapWidget(): SketchScrapWidget {
+        val mock = Mockito.mock(SketchScrapWidget::class.java)
 
         Mockito.`when`(mock.getID()).thenReturn(UUID.randomUUID())
         Mockito.`when`(mock.getFrame()).thenReturn(DEFAULT_FRAME)

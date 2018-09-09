@@ -21,11 +21,11 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
+import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.domain.ui_event.RemoveScrapEvent
 import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.*
-import com.paper.model.repository.IWhiteboardRepository
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.Observer
@@ -38,11 +38,10 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-open class WhiteboardWidget(protected val paperID: Long,
-                            protected val paperRepo: IWhiteboardRepository,
+open class WhiteboardWidget(protected val whiteboardStore: IWhiteboardStore,
                             protected val caughtErrorSignal: Observer<Throwable>,
                             protected val schedulers: ISchedulers)
-    : IWidget {
+    : IWhiteboardWidget {
 
     protected val lock = Any()
 
@@ -61,40 +60,57 @@ open class WhiteboardWidget(protected val paperID: Long,
 
     override fun start(): Observable<Boolean> {
         return autoStop {
-                // First widget inflation
-                paper.observeOn(schedulers.main())
-                    .subscribe { paper ->
-                        // Mark initializing
-                        dirtyFlag.markDirty(EditorDirtyFlag.INITIALIZING)
+            whiteboardStore.start()
+                .subscribe()
+                .addTo(staticDisposableBag)
 
-                        paper.getScraps()
-                            .forEach { scrap ->
-                                createScrapWidget(scrap)
+            // First widget inflation
+            whiteboard.observeOn(schedulers.main())
+                .subscribe { paper ->
+                    // Mark initializing
+                    dirtyFlag.markDirty(EditorDirtyFlag.INITIALIZING)
+
+                    paper.getScraps()
+                        .forEach { scrap ->
+                            val widget = ScrapWidgetFactory.createScrapWidget(
+                                scrap,
+                                schedulers)
+
+                            // Update z
+                            val z = widget.getFrame().z
+                            if (z > highestZ.get()) {
+                                highestZ.set(z)
                             }
 
-                        // Mark initialization done
-                        dirtyFlag.markNotDirty(EditorDirtyFlag.INITIALIZING)
-                    }
-                    .addTo(staticDisposableBag)
+                            addWidget(widget)
+                        }
 
-                // Observe add scrap
-                paper.observeOn(schedulers.main())
-                    .flatMapObservable { paper ->
-                        paper.observeAddScrap()
-                    }
-                    .subscribe { scrap ->
-                        createScrapWidget(scrap)
-                    }
-                    .addTo(staticDisposableBag)
-                // Observe remove scrap
-                paper.observeOn(schedulers.main())
-                    .flatMapObservable { paper ->
-                        paper.observeRemoveScrap()
-                    }
-                    .subscribe { scrap ->
-                        removeWidget(scrap.getID())
-                    }
-                    .addTo(staticDisposableBag)
+                    // Mark initialization done
+                    dirtyFlag.markNotDirty(EditorDirtyFlag.INITIALIZING)
+                }
+                .addTo(staticDisposableBag)
+
+            // Observe add scrap
+            whiteboard.observeOn(schedulers.main())
+                .flatMapObservable { paper ->
+                    paper.observeAddScrap()
+                }
+                .subscribe { scrap ->
+                    val widget = ScrapWidgetFactory.createScrapWidget(
+                        scrap,
+                        schedulers)
+                    addWidget(widget)
+                }
+                .addTo(staticDisposableBag)
+            // Observe remove scrap
+            whiteboard.observeOn(schedulers.main())
+                .flatMapObservable { paper ->
+                    paper.observeRemoveScrap()
+                }
+                .subscribe { scrap ->
+                    removeWidget(scrap.getID())
+                }
+                .addTo(staticDisposableBag)
 
             println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
         }
@@ -105,20 +121,12 @@ open class WhiteboardWidget(protected val paperID: Long,
         println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
     }
 
-    protected val paper: Single<Whiteboard> by lazy {
-        paperRepo
-            .getBoardById(paperID)
-            .doOnSubscribe {
-                dirtyFlag.markDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
-            }
-            .doOnSuccess {
-                dirtyFlag.markNotDirty(EditorDirtyFlag.READ_PAPER_FROM_REPO)
-            }
-            .cache()
+    protected val whiteboard: Single<Whiteboard> by lazy {
+        whiteboardStore.whiteboard()
     }
 
     fun observeCanvasSize(): Single<Pair<Float, Float>> {
-        return paper.map { it.getSize() }
+        return whiteboard.map { it.getSize() }
     }
 
     // Number of on-going task ////////////////////////////////////////////////
@@ -126,7 +134,18 @@ open class WhiteboardWidget(protected val paperID: Long,
     private val childBusyCount = AtomicInteger(0)
     private val dirtyFlag = EditorDirtyFlag(EditorDirtyFlag.INITIALIZING)
 
-    open fun observeBusy(): Observable<Boolean> {
+    override fun observeBusy(): Observable<Boolean> {
+        return Observable
+            .combineLatest(listOf(observeSelfBusy(),
+                                  whiteboardStore.observeBusy())
+                          ) { busyArray: Array<in Boolean> ->
+                var overallBusy = false
+                busyArray.forEach { overallBusy = overallBusy || it as Boolean }
+                overallBusy
+            }
+    }
+
+    private fun observeSelfBusy(): Observable<Boolean> {
         return dirtyFlag
             .onUpdate()
             .map { event ->
@@ -137,7 +156,11 @@ open class WhiteboardWidget(protected val paperID: Long,
                         if (childBusy) {
                             childBusyCount.incrementAndGet()
                         } else {
-                            childBusyCount.decrementAndGet()
+                            // Most of the child is initially NOT busy, therefore
+                            // we need to constraint the count low to zero.
+                            if (childBusyCount.get() > 0) {
+                                childBusyCount.decrementAndGet()
+                            }
                         }
                     }
                 }
@@ -155,45 +178,22 @@ open class WhiteboardWidget(protected val paperID: Long,
 
     private val updateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
 
-    fun observeScraps(): Observable<UpdateScrapEvent> {
+    override fun observeScraps(): Observable<UpdateScrapEvent> {
         return updateScrapSignal
     }
 
-    private fun createScrapWidget(scrap: Scrap) {
-        val widget = when (scrap) {
-            is SVGScrap -> {
-                SVGScrapWidget(
-                    scrap = scrap,
-                    newSVGPenStyle = penStyleSignal,
-                    schedulers = schedulers)
-            }
-            is ImageScrap -> {
-                ImageScrapWidget(
-                    scrap = scrap,
-                    schedulers = schedulers)
-            }
-            is TextScrap -> {
-                TextScrapWidget(
-                    scrap = scrap,
-                    schedulers = schedulers)
-            }
-            else -> TODO()
-        }
-
-        // Update z
-        val z = widget.getFrame().z
-        if (z > highestZ.get()) {
-            highestZ.set(z)
-        }
-
-        addWidget(widget)
-    }
-
-    private fun addWidget(widget: ScrapWidget) {
+    override fun addWidget(widget: ScrapWidget) {
         synchronized(lock) {
-            scrapWidgets[widget.getID()] = widget
+            if (scrapWidgets[widget.getID()] != null) return
+
+            // Update z
+            val z = widget.getFrame().z
+            if (z > highestZ.get()) {
+                highestZ.set(z)
+            }
 
             val widgetDisposableBag = CompositeDisposable()
+            scrapWidgets[widget.getID()] = widget
 
             // Observe the widget busy state
             widget.observeBusy()
@@ -216,7 +216,7 @@ open class WhiteboardWidget(protected val paperID: Long,
         }
     }
 
-    private fun removeWidget(id: UUID) {
+    override fun removeWidget(id: UUID) {
         synchronized(lock) {
             scrapWidgets[id]?.let { widget ->
                 scrapWidgets.remove(widget.getID())

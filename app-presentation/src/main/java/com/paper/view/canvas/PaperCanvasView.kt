@@ -39,7 +39,7 @@ import com.paper.domain.DomainConst
 import com.paper.domain.data.GestureRecord
 import com.paper.domain.ui_event.*
 import com.paper.domain.util.ProfilerUtils
-import com.paper.domain.util.TransformUtils
+import com.paper.TransformUtils
 import com.paper.domain.ui.IEditorWidget
 import com.paper.domain.ui.IBaseScrapWidget
 import com.paper.model.IPreferenceServiceProvider
@@ -701,7 +701,7 @@ class PaperCanvasView : TextureView,
 //                                ProfilerUtils.with("draw thumbnail") {
 //                                    // Draw sketch and scraps on thumbnail Bitmap
 //                                    // TODO: Both scraps and sketch need to explicitly define the z-order
-//                                    // TODO: so that the paper knows how to render them in the correct
+//                                    // TODO: so that the whiteboard knows how to render them in the correct
 //                                    // TODO: order.
 //                                    canvas.with { c ->
 //                                        c.clipRect(0f, 0f, width.toFloat(), height.toFloat())
@@ -839,7 +839,7 @@ class PaperCanvasView : TextureView,
     override fun writeFileToSystemMediaStore(): Maybe<String> {
         // Create the file snapshot
         val pictureDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val bmpFile = File(pictureDir, "paper-${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.US).format(Date())}.png")
+        val bmpFile = File(pictureDir, "whiteboard-${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.US).format(Date())}.png")
 
         // TODO: Check if the canvas is pixel wisely empty
         return Maybe

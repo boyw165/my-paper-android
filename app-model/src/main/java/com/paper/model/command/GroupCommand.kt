@@ -25,15 +25,15 @@ package com.paper.model.command
 import com.paper.model.Whiteboard
 import java.util.*
 
-data class GroupCommand(override val id: UUID = UUID.randomUUID(),
+data class GroupCommand(override val commandID: UUID = UUID.randomUUID(),
                         val operations: List<WhiteboardCommand>)
-    : WhiteboardCommand(id = id) {
+    : WhiteboardCommand(commandID = commandID) {
 
     override fun doo(target: Whiteboard) {
         // TODO
     }
 
-    override fun redo(target: Whiteboard) {
+    override fun undo(target: Whiteboard) {
         // TODO
     }
 }

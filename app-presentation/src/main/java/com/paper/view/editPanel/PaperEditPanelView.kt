@@ -44,7 +44,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 
 /**
- * The editing panel for the paper editor. See [R.layout.view_paper_edit_panel] for layout.
+ * The editing panel for the whiteboard editor. See [R.layout.view_paper_edit_panel] for layout.
  */
 class PaperEditPanelView : ConstraintLayout,
                            IWidgetView<PaperMenuWidget> {

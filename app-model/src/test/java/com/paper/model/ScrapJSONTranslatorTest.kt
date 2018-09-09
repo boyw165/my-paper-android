@@ -23,6 +23,7 @@
 
 package com.paper.model
 
+import com.paper.model.sketch.VectorGraphics
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,7 +34,7 @@ class ScrapJSONTranslatorTest : BaseModelTest() {
 
     @Test
     fun `serialize svg scrap with empty path tuple list`() {
-        val model = SVGScrap(
+        val model = SketchScrap(
             frame = Frame(x = 100f,
                           y = 200f,
                           width = 360f,
@@ -41,14 +42,15 @@ class ScrapJSONTranslatorTest : BaseModelTest() {
                           scaleX = 0.1f,
                           scaleY = 0.2f,
                           rotationInDegrees = 30f,
-                          z = ModelConst.MOST_BOTTOM_Z))
+                          z = ModelConst.MOST_BOTTOM_Z),
+            svg = VectorGraphics())
         val uuid = model.getID()
 
         val jsonText = jsonTranslator.toJson(model, Scrap::class.java)
         System.out.println("JSON = $jsonText")
 
         Assert.assertTrue(jsonText.contains("\"uuid\":\"$uuid\""))
-        Assert.assertTrue(jsonText.contains("\"type\":\"svg\""))
+        Assert.assertTrue(jsonText.contains("\"type\":\"${ScrapType.SKETCH}\""))
 
         Assert.assertTrue(jsonText.contains("\"x\":100.0"))
         Assert.assertTrue(jsonText.contains("\"y\":200.0"))
@@ -59,12 +61,12 @@ class ScrapJSONTranslatorTest : BaseModelTest() {
         Assert.assertTrue(jsonText.contains("\"scaleY\":0.2"))
         Assert.assertTrue(jsonText.contains("\"rotationInDegrees\":30.0"))
 
-        Assert.assertTrue(jsonText.contains("\"svg\":[]"))
+        Assert.assertTrue(jsonText.contains("\"path\":\"\""))
     }
 
     @Test
     fun `deserialize svg scrap with empty tuple list`() {
-        val model = jsonTranslator.fromJson<SVGScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"svg\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":[]}", Scrap::class.java)
+        val model = jsonTranslator.fromJson<SketchScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"${ScrapType.SKETCH}\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":{\"style\":{\"stroke\":[\"#FFFF0000\",0.1,false]},\"path\":\"\"}}", Scrap::class.java)
 
         Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getID().toString())
 

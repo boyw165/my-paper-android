@@ -70,7 +70,7 @@ class CommandRepository(private val logDir: File,
 
                     // Serialize command
                     val commandText = jsonTranslator.toJson(command, WhiteboardCommand::class.java)
-                    val commandFile = File(logDir, "${command.id}.json")
+                    val commandFile = File(logDir, "${command.commandID}.json")
                     if (!commandFile.exists()) {
                         commandFile.parentFile.mkdirs()
                         commandFile.createNewFile()
@@ -78,7 +78,7 @@ class CommandRepository(private val logDir: File,
                     commandFile.writeText(commandText, charset = Charsets.UTF_8)
 
                     // Update journal and constraint the capacity
-                    logJournal.push(command.id)
+                    logJournal.push(command.commandID)
                     if (logJournal.size > capacity) {
                         logJournal.removeFirst()
                     }

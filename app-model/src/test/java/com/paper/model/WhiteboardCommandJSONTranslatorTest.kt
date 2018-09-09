@@ -45,17 +45,17 @@ class WhiteboardCommandJSONTranslatorTest : BaseModelTest() {
         System.out.println(jsonText)
 
         Assert.assertTrue(jsonText.contains("\"$KEY_SIGNATURE\":\"AddScrapCommand\""))
-        Assert.assertTrue(jsonText.contains("\"$KEY_COMMAND_ID\":\"${command.id}\""))
+        Assert.assertTrue(jsonText.contains("\"$KEY_COMMAND_ID\":\"${command.commandID}\""))
     }
 
     @Test
     fun `deserialize "AddScrapCommand" with svg scrap`() {
-        val jsonText = "{\"signature\":\"AddScrapCommand\",\"command_id\":\"5320dc29-7ceb-4b45-8b47-51bcf25caf2b\",\"scrap\":{\"uuid\":\"bfa87067-4546-478c-881c-24550390116c\",\"x\":0.24998796,\"y\":0.5076229,\"width\":180.0,\"height\":227.0,\"z\":496,\"scaleX\":2.0,\"scaleY\":2.0,\"rotationInDegrees\":67.0,\"type\":\"svg\",\"svg\":[]}}"
+        val jsonText = "{\"signature\":\"AddScrapCommand\",\"command_id\":\"5320dc29-7ceb-4b45-8b47-51bcf25caf2b\",\"scrap\":{\"uuid\":\"bfa87067-4546-478c-881c-24550390116c\",\"x\":0.24998796,\"y\":0.5076229,\"width\":180.0,\"height\":227.0,\"z\":496,\"scaleX\":2.0,\"scaleY\":2.0,\"rotationInDegrees\":67.0,\"type\":\"${ScrapType.SKETCH}\",\"svg\":{}}}"
 
         val candidate = jsonTranslator
         val command = candidate.fromJson<WhiteboardCommand>(jsonText, WhiteboardCommand::class.java)
 
         Assert.assertTrue(command is AddScrapCommand)
-        Assert.assertEquals(UUID.fromString("5320dc29-7ceb-4b45-8b47-51bcf25caf2b"), command.id)
+        Assert.assertEquals(UUID.fromString("5320dc29-7ceb-4b45-8b47-51bcf25caf2b"), command.commandID)
     }
 }

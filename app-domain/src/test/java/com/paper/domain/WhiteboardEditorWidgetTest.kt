@@ -50,14 +50,14 @@ class WhiteboardEditorWidgetTest : BaseDomainTest() {
 //            .test()
 //
 //        // Start widget
-//        tester.inject(mockPaper)
+//        tester.inject(mockWhiteboard)
 //        tester.start().test().assertSubscribed()
 //
 //        // Make sure the stream moves
 //        moveScheduler()
 //
 //        // Sketch (by simulating the gesture interpreter behavior)
-//        val widget = SVGScrapWidget(
+//        val widget = SketchScrapWidget(
 //            scrap = SVGScrap(frame = createRandomFrame()),
 //            schedulers = mockSchedulers)
 //        tester.handleDomainEvent(GroupEditorEvent(

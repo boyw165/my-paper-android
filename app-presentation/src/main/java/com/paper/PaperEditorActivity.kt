@@ -27,7 +27,7 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.ui.ICanvasOperationRepoProvider
-import com.paper.domain.ui.UndoManager
+import com.paper.domain.ui.UndoWidget
 import com.paper.model.ISchedulers
 import com.paper.domain.ui.WhiteboardEditorWidget
 import com.paper.model.*
@@ -78,7 +78,7 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mBtnClose by lazy { findViewById<View>(R.id.btn_close) }
     private val mClickSysBackSignal = PublishSubject.create<Any>().toSerialized()
 
-    // Undo & redo buttons
+    // Undo & undo buttons
     private val mBtnUndo by lazy { findViewById<View>(R.id.btn_undo) }
     private val mBtnRedo by lazy { findViewById<View>(R.id.btn_redo) }
 
@@ -97,9 +97,9 @@ class PaperEditorActivity : AppCompatActivity() {
     private val mPresenter by lazy {
         WhiteboardEditorWidget(
             paperRepo = (application as IWhiteboardRepoProvider).getWhiteboardRepo(),
-            undoWidget = UndoManager(undoRepo = ,
-                                     redoRepo = ,
-                                     schedulers = this@PaperEditorActivity),
+            undoWidget = UndoWidget(undoRepo =,
+                                    redoRepo =,
+                                    schedulers = this@PaperEditorActivity),
             penPrefs = CommonPenPrefsRepoFileImpl(getExternalFilesDir(packageName)),
             caughtErrorSignal = mErrorSignal,
             schedulers = (application as ISchedulers))
@@ -205,7 +205,7 @@ class PaperEditorActivity : AppCompatActivity() {
                            colorSrc = mMenuView.onUpdatePenColor())
             .addTo(mDisposables)
 
-        // Undo & redo buttons
+        // Undo & undo buttons
         mPresenter.handleUndo(RxView.clicks(mBtnUndo))
         mPresenter.handleRedo(RxView.clicks(mBtnRedo))
         mPresenter.observeUndoAvailability()
@@ -246,7 +246,7 @@ class PaperEditorActivity : AppCompatActivity() {
 //            .handleDelete(RxView.clicks(mBtnDelete))
 //            .addTo(disposableBag)
 
-        // Load paper and establish the binding
+        // Load whiteboard and establish the binding
         // FIXME: save-restore
         val paperIdSrc = if (savedState == null) {
             Observable.just(intent.getLongExtra(AppConst.PARAMS_PAPER_ID, ModelConst.TEMP_ID))

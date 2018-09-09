@@ -28,7 +28,7 @@ import com.paper.domain.ui_event.InitializationEndEvent
 import com.paper.domain.ui_event.OnSketchEvent
 import com.paper.domain.ui_event.StartSketchEvent
 import com.paper.domain.ui_event.StopSketchEvent
-import com.paper.domain.util.TransformUtils
+import com.paper.TransformUtils
 import com.paper.domain.ui.IBaseScrapWidget
 import com.paper.model.Point
 import com.paper.model.Frame

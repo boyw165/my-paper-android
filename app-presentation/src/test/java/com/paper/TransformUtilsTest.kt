@@ -23,15 +23,12 @@
 package com.paper
 
 import android.graphics.PointF
-import android.support.test.runner.AndroidJUnit4
-
-import com.paper.domain.util.TransformUtils
-
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.junit.MockitoJUnitRunner
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(MockitoJUnitRunner.Silent::class)
 class TransformUtilsTest {
 
     @Test

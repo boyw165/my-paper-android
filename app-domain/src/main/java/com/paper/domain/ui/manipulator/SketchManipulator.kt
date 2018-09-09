@@ -26,127 +26,146 @@ import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.SVGScrapWidget
-import com.paper.domain.ui.WhiteboardWidget
-import com.paper.domain.ui_event.AddScrapEvent
+import com.paper.domain.store.IWhiteboardStore
+import com.paper.domain.ui.*
 import com.paper.model.*
-import com.paper.model.command.WhiteboardCommand
+import com.paper.model.command.AddScrapCommand
+import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Completable
+import io.reactivex.CompletableEmitter
 import io.reactivex.Observable
-import io.reactivex.ObservableSource
-import io.reactivex.Single
-import io.reactivex.rxkotlin.Observables
-import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.addTo
 import java.util.*
-import java.util.concurrent.atomic.AtomicReference
 
-class SketchManipulator(private val editor: WhiteboardWidget,
-                        private val paper: Single<Whiteboard>,
+class SketchManipulator(private val editor: IWhiteboardEditorWidget,
                         private val highestZ: Int,
-                        private val schedulers: ISchedulers)
-    : BaseManipulator() {
+                        whiteboardStore: IWhiteboardStore,
+                        private val undoWidget: IUndoWidget?,
+                        schedulers: ISchedulers)
+    : Manipulator(whiteboardStore = whiteboardStore,
+                  schedulers = schedulers) {
 
-    override fun apply(touchSequence: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
-        return autoStop { emitter ->
-            disposableBag.clear()
+    @Volatile
+    private lateinit var scrap: SketchScrap
+    @Volatile
+    private lateinit var scrapWidget: SketchScrapWidget
 
-            // TODO: 1. Add widget to whiteboard widget
-            // TODO: 2. Add point to widget sketch displacement
-            // TODO: 3. Produce add-scrap-command
+    @Volatile
+    private lateinit var svgDisplacement: VectorGraphics
+    @Volatile
+    private lateinit var startPoint: Point
+    @Volatile
+    private lateinit var lastPoint: Point
 
-            val id = UUID.randomUUID()
-            // Observe widget creation
-            val widgetSignal = editor.observeScraps()
-                .filter { event ->
-                    event is AddScrapEvent &&
-                    event.scrapWidget.getID() == id
-                }
-                .firstElement()
-                .map { event ->
-                    event as AddScrapEvent
-                    event.scrapWidget as SVGScrapWidget
-                }
-                .cache()
-            val startX = AtomicReference(0f)
-            val startY = AtomicReference(0f)
+    override fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
+                                       completer: CompletableEmitter) {
+        touchSequence
+            .take(1)
+            .observeOn(schedulers.main())
+            .subscribe { event ->
+                event as DragBeginEvent
 
-            // First touch
-            val firstTouch = touchSequence.firstOrError()
+                startPoint = Point(event.startPointer.first,
+                                   event.startPointer.second)
+                lastPoint = startPoint
 
-            // Begin, add scrap and create corresponding widget
-            Singles.zip(paper,
-                        firstTouch)
-                .observeOn(schedulers.main())
-                .subscribe { (paper, event) ->
-                    if (!(event is DragBeginEvent ||
-                          event is DragDoingEvent)) {
-                        emitter.onComplete()
-                    }
+                val (s, w) = addTemporarySketchWidget(event.startPointer.first,
+                                                      event.startPointer.second)
+                scrap = s
+                scrapWidget = w
+                // Mark widget busy
+                scrapWidget.markBusy()
 
-                    event as DragBeginEvent
+                // Sketch displacement
+                svgDisplacement = w.getSVG()
 
-                    val (x, y) = event.startPointer
-                    val scrap = createSVGScrap(id, x, y)
+                // Most importantly, add widget
+                editor.addWidget(scrapWidget)
+            }
+            .addTo(disposableBag)
 
-                    // Remember start x-y for later point correction
-                    startX.set(x)
-                    startY.set(y)
-
-                    paper.addScrap(scrap)
-                }
-                .addTo(disposableBag)
-
-            // Normalized touch sequence
-            val nTouchSequence = touchSequence.map { event ->
-                when (event) {
-                    is DragBeginEvent -> {
-                        val (x, y) = event.startPointer
-                        val nx = x - startX.get()
-                        val ny = y - startY.get()
-
-                        Point(nx, ny)
-                    }
+        touchSequence
+            .skip(1)
+            .observeOn(schedulers.main())
+            .subscribe { event ->
+                val p = when (event) {
                     is DragDoingEvent -> {
                         val (x, y) = event.stopPointer
-                        val nx = x - startX.get()
-                        val ny = y - startY.get()
+                        val nx = x - startPoint.x
+                        val ny = y - startPoint.y
 
                         Point(nx, ny)
                     }
                     is DragEndEvent -> {
                         val (x, y) = event.stopPointer
-                        val nx = x - startX.get()
-                        val ny = y - startY.get()
+                        val nx = x - startPoint.x
+                        val ny = y - startPoint.y
 
                         Point(nx, ny)
                     }
                     else -> TODO()
                 }
+                val tupleCopy = svgDisplacement.getTupleList()
+                    .toMutableList()
+                tupleCopy.add(CubicPointTuple(prevControlX = p.x,
+                                              prevControlY = p.y,
+                                              currentControlX = lastPoint.x,
+                                              currentControlY = lastPoint.y,
+                                              currentEndX = p.x,
+                                              currentEndY = p.y))
+                val newDisplacement = svgDisplacement.copy(tupleList = tupleCopy)
+                svgDisplacement = newDisplacement
+
+                scrapWidget.setDisplacement(newDisplacement)
             }
+            .addTo(disposableBag)
 
-            Observables.combineLatest(widgetSignal.toObservable(),
-                                      nTouchSequence)
-                .observeOn(schedulers.main())
-                .subscribe { (widget, p) ->
-                    widget.addPointToSketchDisplacement(p)
+        Completable.fromObservable(touchSequence)
+            .observeOn(schedulers.main())
+            .subscribe {
+                // Prepare command with updated MODEL
+                scrap.setSVG(svgDisplacement)
+                val command = AddScrapCommand(scrap = scrap)
 
-                    // Produce command
-                    // TODO
-                }
-                .addTo(disposableBag)
-        }
+                // Offer command
+                undoWidget?.putOperation(command)
+                whiteboardStore.offerCommandDoo(command)
+
+                // Mark widget available
+                scrapWidget.markNotBusy()
+
+                // Complete the job
+                completer.onComplete()
+            }
+            .addTo(disposableBag)
     }
 
     private fun createSVGScrap(id: UUID,
                                x: Float,
-                               y: Float): SVGScrap {
-        return SVGScrap(uuid = id,
-                        frame = Frame(x = x,
-                                      y = y,
-                                      scaleX = 1f,
-                                      scaleY = 1f,
-                                      width = 1f,
-                                      height = 1f,
-                                      z = highestZ + 1))
+                               y: Float): SketchScrap {
+        return SketchScrap(uuid = id,
+                           frame = Frame(x = x,
+                                         y = y,
+                                         scaleX = 1f,
+                                         scaleY = 1f,
+                                         width = 1f,
+                                         height = 1f,
+                                         z = highestZ + 1),
+                           svg = VectorGraphics(style = VectorGraphics.DEFAULT_STYLE,
+                                                tupleList = mutableListOf(LinearPointTuple(0f, 0f))))
+    }
+
+    private fun addTemporarySketchWidget(x: Float,
+                                         y: Float): Pair<SketchScrap, SketchScrapWidget> {
+        val id = UUID.randomUUID()
+        val scrap = createSVGScrap(id = id,
+                                   x = x,
+                                   y = y)
+        val widget = ScrapWidgetFactory.createScrapWidget(
+            scrap,
+            schedulers)
+        editor.addWidget(widget)
+
+        return Pair(scrap, widget as SketchScrapWidget)
     }
 }

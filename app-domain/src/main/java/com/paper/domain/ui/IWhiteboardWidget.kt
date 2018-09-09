@@ -20,21 +20,19 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.command
+package com.paper.domain.ui
 
-import com.paper.model.Whiteboard
-import com.paper.model.Scrap
+import com.paper.domain.ui_event.UpdateScrapEvent
+import io.reactivex.Observable
 import java.util.*
 
-data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
-                           val scrap: Scrap)
-    : WhiteboardCommand(commandID = commandID) {
+interface IWhiteboardWidget : IWidget {
 
-    override fun doo(target: Whiteboard) {
-        // TODO
-    }
+    fun observeBusy(): Observable<Boolean>
 
-    override fun undo(target: Whiteboard) {
-        // TODO
-    }
+    fun observeScraps(): Observable<UpdateScrapEvent>
+
+    fun addWidget(widget: ScrapWidget)
+
+    fun removeWidget(id: UUID)
 }

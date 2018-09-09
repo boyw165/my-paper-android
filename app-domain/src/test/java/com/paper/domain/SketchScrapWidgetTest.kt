@@ -1,4 +1,4 @@
-// Copyright May 2018-present Paper
+// Copyright Aug 2018-present Paper
 //
 // Author: boyw165@gmail.com
 //
@@ -20,53 +20,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model
+package com.paper.domain
 
-import com.paper.model.sketch.VectorGraphics
-import org.junit.Assert
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SVGScrapTest : BaseModelTest() {
+class SketchScrapWidgetTest : BaseDomainTest() {
 
-    @Test
-    fun `copy, ID should be different`() {
-        val tester1 = createRandomSVGScrap()
-        val tester2 = tester1.copy() as SVGScrap
-        tester2.setFrame(Frame(100f, 100f))
-        tester2.setSVGs(listOf(VectorGraphics()))
+    @Before
+    override fun setup() {
+        super.setup()
+    }
 
-        Assert.assertNotEquals(tester2, tester1)
-        Assert.assertNotEquals(tester2.getID(), tester1.getID())
-        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
-        Assert.assertNotEquals(tester2.getSVGs().size, tester1.getSVGs().size)
+    @After
+    override fun clean() {
+        super.clean()
     }
 
     @Test
-    fun `observe add svg`() {
-        val tester = createRandomSVGScrap()
-
-        val addTestObserver = tester.observeAddSVG().test()
-
-        tester.addSVG(createRandomSVG())
-        tester.addSVG(createRandomSVG())
-        tester.addSVG(createRandomSVG())
-
-        addTestObserver.assertValueCount(3)
-    }
-
-    @Test
-    fun `observe remove svg`() {
-        val tester = createRandomSVGScrap()
-
-        val removeTestObserver = tester.observeRemoveSVG().test()
-
-        tester.removeSVG(tester.getSVGs()[0])
-        tester.removeSVG(tester.getSVGs()[0])
-
-        removeTestObserver.assertValueCount(2)
+    fun `sketch given a sequence of points`() {
     }
 }
-

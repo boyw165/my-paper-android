@@ -29,7 +29,6 @@ import android.view.View
 import android.widget.Toast
 import com.jakewharton.rxbinding2.view.RxView
 import com.paper.domain.ISystemTime
-import com.paper.domain.util.UniformPoissonDiskSampler
 import com.paper.view.collisionSimulation.CollisionSystem
 import com.paper.view.collisionSimulation.CollisionSystemView
 import com.paper.view.collisionSimulation.Particle

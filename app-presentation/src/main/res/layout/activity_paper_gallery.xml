@@ -47,7 +47,7 @@
         app:orientation="horizontal"
         tools:listitem="@layout/gallery_item_of_paper_thumbnail"/>
 
-    <!-- Create a new paper -->
+    <!-- Create a new whiteboard -->
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/btn_new"
         android:layout_width="64dp"
@@ -61,7 +61,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:srcCompat="@drawable/sel_icon_add"/>
 
-    <!-- Delete paper -->
+    <!-- Delete whiteboard -->
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/btn_delete"
         android:layout_width="48dp"

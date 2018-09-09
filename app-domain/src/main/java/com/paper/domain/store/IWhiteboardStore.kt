@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present Paper
+// Copyright Sep 2018-present Whiteboard
 //
 // Author: boyw165@gmail.com
 //
@@ -20,21 +20,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.command
+package com.paper.domain.store
 
+import com.paper.domain.ui.ILifecycleAware
 import com.paper.model.Whiteboard
-import com.paper.model.Scrap
-import java.util.*
+import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Observable
+import io.reactivex.Single
 
-data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
-                           val scrap: Scrap)
-    : WhiteboardCommand(commandID = commandID) {
+interface IWhiteboardStore : ILifecycleAware {
 
-    override fun doo(target: Whiteboard) {
-        // TODO
-    }
+    fun whiteboard(): Single<Whiteboard>
 
-    override fun undo(target: Whiteboard) {
-        // TODO
-    }
+    fun offerCommandDoo(command: WhiteboardCommand)
+
+    fun offerCommandUndo(command: WhiteboardCommand)
+
+    fun observeBusy(): Observable<Boolean>
 }

@@ -48,17 +48,17 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
         when (command) {
             is AddScrapCommand -> {
                 json.addProperty(KEY_SIGNATURE, "AddScrapCommand")
-                json.addProperty(KEY_COMMAND_ID, command.id.toString())
+                json.addProperty(KEY_COMMAND_ID, command.commandID.toString())
                 json.add(KEY_SCRAP, context.serialize(command.scrap, Scrap::class.java))
             }
             is RemoveScrapCommand -> {
                 json.addProperty(KEY_SIGNATURE, "RemoveScrapCommand")
-                json.addProperty(KEY_COMMAND_ID, command.id.toString())
+                json.addProperty(KEY_COMMAND_ID, command.commandID.toString())
                 json.add(KEY_SCRAP, context.serialize(command.scrap, Scrap::class.java))
             }
             is UpdateScrapFrameCommand -> {
                 json.addProperty(KEY_SIGNATURE, "UpdateScrapFrameCommand")
-                json.addProperty(KEY_COMMAND_ID, command.id.toString())
+                json.addProperty(KEY_COMMAND_ID, command.commandID.toString())
                 json.addProperty(KEY_SCRAP_ID, command.scrapID.toString())
 
                 val frameJson = context.serialize(command.toFrame, Frame::class.java)
@@ -78,20 +78,20 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
             "AddScrapCommand" -> {
                 val commandID = UUID.fromString(json.asJsonObject[KEY_COMMAND_ID].asString)
                 val scrapJson = json.asJsonObject[KEY_SCRAP]
-                AddScrapCommand(id = commandID,
+                AddScrapCommand(commandID = commandID,
                                 scrap = context.deserialize(scrapJson, Scrap::class.java))
             }
             "RemoveScrapCommand" -> {
                 val commandID = UUID.fromString(json.asJsonObject[KEY_COMMAND_ID].asString)
                 val scrapJson = json.asJsonObject[KEY_SCRAP]
-                RemoveScrapCommand(id = commandID,
+                RemoveScrapCommand(commandID = commandID,
                                    scrap = context.deserialize(scrapJson, Scrap::class.java))
             }
             "UpdateScrapFrameCommand" -> {
                 val commandID = UUID.fromString(json.asJsonObject[KEY_COMMAND_ID].asString)
                 val scrapID = UUID.fromString(json.asJsonObject[KEY_SCRAP_ID].asString)
                 val frameJson = json.asJsonObject[KEY_SCRAP_FRAME_DELTA]
-                UpdateScrapFrameCommand(id = commandID,
+                UpdateScrapFrameCommand(commandID = commandID,
                                         scrapID = scrapID,
                                         toFrame = context.deserialize(frameJson, Frame::class.java))
             }

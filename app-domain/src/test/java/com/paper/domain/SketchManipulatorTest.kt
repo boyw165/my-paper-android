@@ -22,10 +22,17 @@
 
 package com.paper.domain
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argWhere
+import com.paper.domain.ui.manipulator.DragManipulator
+import com.paper.domain.ui.manipulator.SketchManipulator
+import com.paper.model.command.AddScrapCommand
+import io.reactivex.Observable
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
@@ -42,6 +49,23 @@ class SketchManipulatorTest : BaseDomainTest() {
     }
 
     @Test
-    fun test() {
+    fun `given a drag sequence, must see one command at the end`() {
+        val candidate = SketchManipulator(editor = mockWhiteboardEditor,
+                                          highestZ = 0,
+                                          whiteboardStore = mockWhiteboardStore,
+                                          undoWidget = null,
+                                          schedulers = mockSchedulers)
+
+        val tester = Observable.just(mockDragSequence)
+            .flatMapCompletable(candidate)
+            .test()
+
+        moveScheduler()
+
+        tester.assertComplete()
+        Mockito.verify(mockWhiteboardStore)
+            .offerCommandDoo(argWhere { command ->
+                command is AddScrapCommand
+            })
     }
 }

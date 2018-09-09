@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package com.paper.domain.util
+package com.paper
 
 import android.graphics.Matrix
 import android.graphics.PointF
@@ -243,7 +243,7 @@ class TransformUtils {
             transform[DELTA_Y] = stopPivotY - startPivotY
             // Calculate the rotation degree.
             transform[DELTA_RADIANS] = if (startVecX == 0f && startVecY == 0f &&
-                                                                                          stopVecX == 0f && stopVecY == 0f) {
+                                                                              stopVecX == 0f && stopVecY == 0f) {
                 0f
             } else {
                 (Math.atan2(stopVecY.toDouble(), stopVecX.toDouble()) -

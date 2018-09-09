@@ -52,7 +52,7 @@ android {
             keyAlias project.findProperty('keyAlias') ?: System.getenv('SIGNING_KEY_ALIAS')
             keyPassword project.findProperty('keyPassword') ?: System.getenv('SIGNING_KEY_PASSWORD')
             storeFile new File(project.findProperty('storeFile') ?:
-                    System.getenv('HOME') + '/Developer/my-keystore/paper.keystore')
+                    System.getenv('HOME') + '/Developer/my-keystore/whiteboard.keystore')
             storePassword project.findProperty('storePassword') ?: System.getenv('SIGNING_KEY_STORE_PASSWORD')
         }
     }

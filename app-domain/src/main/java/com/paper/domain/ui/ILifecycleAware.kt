@@ -1,6 +1,4 @@
-// Copyright Aug 2018-present Paper
-//
-// Author: boyw165@gmail.com
+// Copyright Mar 2018-present boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,33 +18,38 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.manipulator
+package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
-import io.reactivex.ObservableTransformer
-import io.reactivex.disposables.CompositeDisposable
 
-abstract class BaseManipulator : ObservableTransformer<GestureEvent, WhiteboardCommand> {
+interface ILifecycleAware {
 
-    protected val disposableBag = CompositeDisposable()
+    /**
+     * Start the widget and caller is responsible for completing the subscription.
+     *
+     * @return An observable that gives true if initialization is successful, and
+     * call [stop] when it gets disposed.
+     */
+    fun start(): Observable<Boolean>
 
-    open fun stop() {
-        disposableBag.dispose()
-    }
+    /**
+     * Stop the widget, where it would automatically execute if you return [autoStop]
+     * in the [start] method.
+     */
+    fun stop()
 
     /**
      * An observable that gives true after labmda runs successfully and automatically
      * calls [stop] when it gets disposed
      */
-    protected fun autoStop(lambda: (emitter: ObservableEmitter<WhiteboardCommand>) -> Unit): Observable<WhiteboardCommand> {
+    fun ILifecycleAware.autoStop(lambda: () -> Unit): Observable<Boolean> {
         return Observable.create { emitter ->
             // Enable auto-stop
             emitter.setCancellable { stop() }
             // Run lambda
-            lambda(emitter)
+            lambda()
+            // Tell downstream it completes
+            emitter.onNext(true)
         }
     }
 }

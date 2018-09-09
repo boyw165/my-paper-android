@@ -1,6 +1,6 @@
-// Copyright Aug 2018-present CardinalBlue
+// Copyright Aug 2018-present Paper
 //
-// Author: boy@cardinalblue.com
+// Author: boyw165@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -24,21 +24,31 @@ package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui.IUndoWidget
-import com.paper.domain.ui.ScrapWidget
 import com.paper.model.ISchedulers
+import io.reactivex.Completable
 import io.reactivex.CompletableEmitter
+import io.reactivex.CompletableSource
 import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.functions.Function
 
-class PinchManipulator(private val scrapWidget: ScrapWidget,
-                       whiteboardStore: IWhiteboardStore,
-                       private val undoWidget: IUndoWidget?,
-                       schedulers: ISchedulers)
-    : Manipulator(whiteboardStore = whiteboardStore,
-                  schedulers = schedulers) {
+abstract class Manipulator(protected val whiteboardStore: IWhiteboardStore,
+                           protected val schedulers: ISchedulers)
+    : Function<Observable<in GestureEvent>, CompletableSource> {
 
-    override fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
-                                       completer: CompletableEmitter) {
-        TODO("not implemented")
+    protected val disposableBag = CompositeDisposable()
+
+    final override fun apply(touchSequence: Observable<in GestureEvent>): CompletableSource {
+        return Completable.create { emitter ->
+            // Enable auto stop
+            emitter.setCancellable {
+                disposableBag.dispose()
+            }
+
+            onHandleTouchSequence(touchSequence, emitter)
+        }
     }
+
+    abstract fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
+                                       completer: CompletableEmitter)
 }

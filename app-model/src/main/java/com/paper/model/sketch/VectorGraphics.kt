@@ -32,7 +32,7 @@ import java.util.*
 data class VectorGraphics(
     val id: UUID = UUID.randomUUID(),
     val style: Set<SVGStyle> = DEFAULT_STYLE,
-    private val tupleList: MutableList<PointTuple> = mutableListOf())
+    private val tupleList: List<PointTuple> = listOf())
     : NoObfuscation {
 
     companion object {
@@ -49,14 +49,7 @@ data class VectorGraphics(
     /**
      * The upright rectangle just covering all the points.
      */
-    private val mBound = Rect(java.lang.Float.MAX_VALUE,
-                              java.lang.Float.MAX_VALUE,
-                              java.lang.Float.MIN_VALUE,
-                              java.lang.Float.MIN_VALUE)
-    /**
-     * The upright rectangle just covering all the points.
-     */
-    val bound get() = Rect(mBound.left, mBound.top, mBound.right, mBound.bottom)
+    private val bound = calculateBound()
 
     /**
      * A stroke essentially is a list of points.
@@ -75,50 +68,25 @@ data class VectorGraphics(
     }
 
     fun addTuple(p: PointTuple): VectorGraphics {
-        // Calculate new boundary.
-        calculateBound(p)
+        val tupleCopy = tupleList.toMutableList()
+        tupleCopy.add(p)
 
-        tupleList.add(p)
-
-        // Flag hash code dirty
-        mIsHashDirty = true
-
-        return this
-    }
-
-    fun setTupleList(PointList: List<PointTuple>): VectorGraphics {
-        tupleList.clear()
-        tupleList.addAll(PointList)
-
-        // Calculate new boundary.
-        tupleList.forEach { calculateBound(it) }
-
-        // Flag hash code dirty
-        mIsHashDirty = true
-
-        return this
+        return copy(tupleList = tupleCopy)
     }
 
     fun offset(offsetX: Float,
-               offsetY: Float) {
-        val src = tupleList.toList()
-
-        tupleList.clear()
-        src.forEach {
-            tupleList.add(it.offset(offsetX, offsetY))
-            calculateBound(it)
-        }
-
-        // Flag hash code dirty
-        mIsHashDirty = true
+               offsetY: Float): VectorGraphics {
+        val tupleCopy = tupleList.map { it.offset(offsetX, offsetY) }
+        return copy(tupleList = tupleCopy)
     }
 
-    private fun calculateBound(p: PointTuple) {
+    private fun calculateBound(): Rect {
         // TODO: Bezier curve has different way to calculate boundary
-//        mBound.left = Math.min(mBound.left, p.currentEnd.x)
-//        mBound.top = Math.min(mBound.top, p.currentEnd.y)
-//        mBound.right = Math.max(mBound.right, p.currentEnd.x)
-//        mBound.bottom = Math.max(mBound.bottom, p.currentEnd.y)
+//        bound.left = Math.min(bound.left, p.currentEnd.x)
+//        bound.top = Math.min(bound.top, p.currentEnd.y)
+//        bound.right = Math.max(bound.right, p.currentEnd.x)
+//        bound.bottom = Math.max(bound.bottom, p.currentEnd.y)
+        return Rect(0f, 0f, 0f, 0f)
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////

@@ -20,22 +20,45 @@
 
 package com.paper.domain
 
+import com.paper.model.Frame
+
 object DomainConst {
 
     // Common /////////////////////////////////////////////////////////////////
 
-    const val TAG = "paper domain"
+    @JvmStatic
+    val TAG = "whiteboard domain"
 
-    // Paper editor ///////////////////////////////////////////////////////////
+    @JvmStatic
+    val BUSY = 1.shl(0)
 
-    const val BASE_THUMBNAIL_WIDTH = 640f
-    const val BASE_THUMBNAIL_HEIGHT = 480f
+    // Whiteboard /////////////////////////////////////////////////////////////
 
-    const val BASE_HD_WIDTH = 1920f
-    const val BASE_HD_HEIGHT = 1080f
+    @JvmStatic
+    val EMPTY_FRAME_DISPLACEMENT = Frame(x = 0f,
+                                         y = 0f,
+                                         width = 0f,
+                                         height = 0f,
+                                         scaleX = 0f,
+                                         scaleY = 0f,
+                                         rotationInDegrees = 0f,
+                                         z = 0)
 
-    const val VIEW_PORT_MIN_SCALE = 32f
+    @JvmStatic
+    val BASE_THUMBNAIL_WIDTH = 640f
+    @JvmStatic
+    val BASE_THUMBNAIL_HEIGHT = 480f
 
-    const val COLLECT_PATH_WINDOW_MS = 66L
-    const val COLLECT_STROKES_TIMEOUT_MS = 850L
+    @JvmStatic
+    val BASE_HD_WIDTH = 1920f
+    @JvmStatic
+    val BASE_HD_HEIGHT = 1080f
+
+    @JvmStatic
+    val VIEW_PORT_MIN_SCALE = 32f
+
+    @JvmStatic
+    val COLLECT_PATH_WINDOW_MS = 66L
+    @JvmStatic
+    val COLLECT_STROKES_TIMEOUT_MS = 850L
 }

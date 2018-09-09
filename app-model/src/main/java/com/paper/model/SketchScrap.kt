@@ -25,83 +25,53 @@ import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 
-open class SVGScrap(uuid: UUID = UUID.randomUUID(),
-                    frame: Frame = Frame(),
-                    private val graphicsList: MutableList<VectorGraphics> = mutableListOf())
+open class SketchScrap(uuid: UUID = UUID.randomUUID(),
+                       frame: Frame = Frame(),
+                       private var svg: VectorGraphics)
     : Scrap(uuid = uuid,
             frame = frame) {
 
-    private val addSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
-    private val removeSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
+    private val updateSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
 
-    fun setSVGs(other: List<VectorGraphics>) {
+    fun setSVG(other: VectorGraphics) {
         synchronized(lock) {
-            val removed = graphicsList.toList()
-            graphicsList.clear()
-            graphicsList.addAll(other)
+            svg = other
 
             // Signal out
-            removed.forEach { svg ->
-                removeSVGSignal.onNext(svg)
-            }
-            other.forEach { svg ->
-                addSVGSignal.onNext(svg)
-            }
+            updateSVGSignal.onNext(svg)
         }
     }
 
-    fun getSVGs(): List<VectorGraphics> {
+    fun getSVG(): VectorGraphics {
         synchronized(lock) {
-            return graphicsList.toList()
+            return svg
         }
     }
 
-    fun addSVG(svg: VectorGraphics) {
-        synchronized(lock) {
-            graphicsList.add(svg)
-
-            // Signal out
-            addSVGSignal.onNext(svg)
-        }
-    }
-
-    fun removeSVG(svg: VectorGraphics) {
-        synchronized(lock) {
-            graphicsList.remove(svg)
-
-            // Signal out
-            removeSVGSignal.onNext(svg)
-        }
-    }
-
-    fun observeAddSVG(): Observable<VectorGraphics> {
-        return addSVGSignal
-    }
-
-    fun observeRemoveSVG(): Observable<VectorGraphics> {
-        return removeSVGSignal
+    fun observeSVG(): Observable<VectorGraphics> {
+        return updateSVGSignal
     }
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): Scrap {
-        return SVGScrap(uuid = UUID.randomUUID(),
-                        frame = getFrame(),
-                        graphicsList = getSVGs().toMutableList())
+        return SketchScrap(uuid = UUID.randomUUID(),
+                           frame = getFrame(),
+                           svg = getSVG())
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SVGScrap
+        other as SketchScrap
 
         if (!super.equals(other)) return false
 
-        val svgs = synchronized(lock) { graphicsList.toList() }
-        val otherSVGs = other.getSVGs()
+        val svg = getSVG()
+        val otherSVGs = other.getSVG()
 
-        if (svgs.hashCode() != otherSVGs.hashCode()) return false
+        if (svg.hashCode() != otherSVGs.hashCode()) return false
 
         return true
     }
@@ -112,7 +82,7 @@ open class SVGScrap(uuid: UUID = UUID.randomUUID(),
             var hashCode = super.hashCode()
             // FIXME: There is a very short moment in between super.hashCode()
             // FIXME: and the following code such that isHashDirty is false
-            hashCode = 31 * hashCode + getSVGs().hashCode()
+            hashCode = 31 * hashCode + getSVG().hashCode()
 
             synchronized(lock) {
                 this.isHashDirty = false

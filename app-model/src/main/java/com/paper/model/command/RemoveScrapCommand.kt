@@ -26,15 +26,15 @@ import com.paper.model.Whiteboard
 import com.paper.model.Scrap
 import java.util.*
 
-class RemoveScrapCommand(override val id: UUID = UUID.randomUUID(),
+class RemoveScrapCommand(override val commandID: UUID = UUID.randomUUID(),
                          val scrap: Scrap)
-    : WhiteboardCommand(id = id) {
+    : WhiteboardCommand(commandID = commandID) {
 
     override fun doo(target: Whiteboard) {
         // TODO
     }
 
-    override fun redo(target: Whiteboard) {
+    override fun undo(target: Whiteboard) {
         // TODO
     }
 }

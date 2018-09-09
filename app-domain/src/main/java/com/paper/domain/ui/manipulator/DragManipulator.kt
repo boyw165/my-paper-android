@@ -22,68 +22,65 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
-import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.store.IWhiteboardStore
+import com.paper.domain.ui.IUndoWidget
 import com.paper.domain.ui.ScrapWidget
 import com.paper.model.Frame
+import com.paper.model.ISchedulers
 import com.paper.model.command.UpdateScrapFrameCommand
-import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Completable
+import io.reactivex.CompletableEmitter
 import io.reactivex.Observable
-import io.reactivex.ObservableSource
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import java.util.concurrent.atomic.AtomicReference
 
-class DragManipulator(private val widget: ScrapWidget) : BaseManipulator() {
+class DragManipulator(private val scrapWidget: ScrapWidget,
+                      whiteboardStore: IWhiteboardStore,
+                      private val undoWidget: IUndoWidget?,
+                      schedulers: ISchedulers)
+    : Manipulator(whiteboardStore = whiteboardStore,
+                  schedulers = schedulers) {
 
-    private val disposablesBag = CompositeDisposable()
+    private val startFrame = scrapWidget.getFrame()
+    private val displacement = AtomicReference<Frame>()
 
-    override fun apply(touchSequence: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
-        return autoStop { emitter ->
-            val startFrame = widget.getFrame()
+    override fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
+                                       completer: CompletableEmitter) {
+        touchSequence
+            .take(1)
+            .observeOn(schedulers.main())
+            .subscribe {
+                scrapWidget.markBusy()
+            }
+            .addTo(disposableBag)
 
-            // Begin
-            // Any except the end
-            touchSequence
-                .skipLast(1)
-                .subscribe { event ->
-                    if (!(event is DragBeginEvent ||
-                          event is DragDoingEvent)) {
-                        emitter.onComplete()
-                        return@subscribe
-                    }
-
-                    if (event is DragDoingEvent) {
-                        val displacement = Frame(
-                            x = event.stopPointer.first - event.startPointer.first,
-                            y = event.stopPointer.second - event.startPointer.first)
-                        widget.setFrameDisplacement(displacement)
-                    }
-                }
-                .addTo(disposablesBag)
-
-            // End
-            touchSequence
-                .lastElement()
-                .subscribe { event ->
-                    if (event !is DragEndEvent) {
-                        emitter.onComplete()
-                        return@subscribe
-                    }
-
-                    val displacement = Frame(
+        touchSequence
+            .observeOn(schedulers.main())
+            .subscribe { event ->
+                if (event is DragDoingEvent) {
+                    displacement.set(Frame(
                         x = event.stopPointer.first - event.startPointer.first,
-                        y = event.stopPointer.second - event.startPointer.first)
-                    widget.setFrameDisplacement(displacement)
-
-                    // Produce collage command
-                    emitter.onNext(UpdateScrapFrameCommand(
-                        scrapID = widget.getID(),
-                        toFrame = startFrame.add(displacement)))
-                    emitter.onComplete()
+                        y = event.stopPointer.second - event.startPointer.first))
+                    scrapWidget.setFrameDisplacement(displacement.get())
                 }
-                .addTo(disposablesBag)
-        }
+            }
+            .addTo(disposableBag)
+
+        Completable.fromObservable(touchSequence)
+            .observeOn(schedulers.main())
+            .subscribe {
+                val command = UpdateScrapFrameCommand(
+                    scrapID = scrapWidget.getID(),
+                    toFrame = startFrame.add(displacement.get()))
+
+                // Offer command
+                undoWidget?.putOperation(command)
+                whiteboardStore.offerCommandDoo(command)
+
+                // Complete job
+                completer.onComplete()
+            }
     }
 }

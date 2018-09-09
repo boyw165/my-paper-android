@@ -156,7 +156,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                                    Toast.LENGTH_SHORT).show()
                 })
 
-        // Button of new paper.
+        // Button of new whiteboard.
         mDisposables.add(
             onClickNewPaper()
                 .switchMap {
@@ -176,7 +176,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     if (!done) return@subscribe
                     openPaperInEditor(ModelConst.TEMP_ID)
                 })
-        // Button of existing paper.
+        // Button of existing whiteboard.
         mDisposables.add(
             onClickPaper()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -184,7 +184,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     mSavedPaperIdSignal.onNext(id)
                     openPaperInEditor(id)
                 })
-        // Button of delete paper.
+        // Button of delete whiteboard.
         mDisposables.add(
             onClickDeletePaper()
                 .flatMap { savedIDSrc }
@@ -271,7 +271,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                     }
                 }
 
-                // ADs items (if paper exists)
+                // ADs items (if whiteboard exists)
                 val adsItems = if (newViewModelBundle.type == NativeAds) {
                     newViewModelBundle.items
                 } else {
@@ -297,7 +297,7 @@ class PaperGalleryActivity : AppCompatActivity() {
                 // Note: Any database update will emit new result
                 mRepo.getBoards(isSnapshot = true)
                     .doOnNext { papers ->
-                        // Hold the paper snapshots.
+                        // Hold the whiteboard snapshots.
                         mPaperSnapshots.clear()
                         mPaperSnapshots.addAll(papers)
                     }

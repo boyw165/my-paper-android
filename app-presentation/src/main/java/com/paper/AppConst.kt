@@ -22,7 +22,7 @@ package com.paper
 
 object AppConst {
 
-    const val TAG = "paper presentation"
+    const val TAG = "whiteboard presentation"
 
     const val PARAMS_PAPER_ID = "params_paper_id"
 

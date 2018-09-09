@@ -23,23 +23,23 @@
 package com.paper.domain.ui
 
 import com.paper.domain.ui_event.UndoAvailabilityEvent
-import com.paper.model.Whiteboard
 import com.paper.model.ISchedulers
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.repository.ICommandRepository
-import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.functions.Consumer
 import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 import io.useful.dirtyflag.DirtyFlag
 
-class UndoManager(private val undoRepo: ICommandRepository,
-                  private val redoRepo: ICommandRepository,
-                  private val schedulers: ISchedulers)
-    : IWidget {
+class UndoWidget(private val undoRepo: ICommandRepository,
+                 private val redoRepo: ICommandRepository,
+                 private val schedulers: ISchedulers)
+    : IUndoWidget {
 
     companion object {
         const val BUSY = 1
@@ -95,7 +95,7 @@ class UndoManager(private val undoRepo: ICommandRepository,
     /**
      * A busy state of this widget.
      */
-    fun observeBusy(): Observable<Boolean> {
+    override fun observeBusy(): Observable<Boolean> {
         return busySignal
             .onUpdate()
             .map { event ->
@@ -103,64 +103,60 @@ class UndoManager(private val undoRepo: ICommandRepository,
             }
     }
 
-    // Undo & redo ////////////////////////////////////////////////////////////
+    // Undo & undo ////////////////////////////////////////////////////////////
 
     private val capacitySignal = PublishSubject.create<UndoAvailabilityEvent>()
     private val putOperationSignal = PublishSubject.create<WhiteboardCommand>().toSerialized()
 
-    fun putOperation(operation: WhiteboardCommand) {
-        putOperationSignal.onNext(operation)
+    override fun putOperation(command: WhiteboardCommand) {
+        putOperationSignal.onNext(command)
     }
 
-    fun undo(paper: Whiteboard): Completable {
-        return Completable.fromSingle(
-            undoRepo.pop()
-                .doOnSubscribe {
-                    // Mark busy
-                    busySignal.markDirty(BUSY)
-                }
-                .observeOn(schedulers.main())
-                .flatMap { (undoSize, command) ->
-                    // Execute command
-                    command.doo(paper)
-
-                    // Push command to the redo repository
-                    Singles.zip(Single.just(undoSize),
-                                redoRepo.push(command))
-                }
-                .doOnSuccess { (undoSize, redoSize) ->
-                    notifyUndoAvailability(undoSize, redoSize)
-
-                    // Mark not busy
-                    busySignal.markNotDirty(BUSY)
-                })
+    override fun undo(): Single<WhiteboardCommand> {
+        return undoRepo.pop()
+            .doOnSubscribe(onStartUndoOrRedo)
+            .observeOn(schedulers.main())
+            .flatMap { (undoSize, command) ->
+                // Push command to the undo repository
+                Singles.zip(Single.just(undoSize), // undo size
+                            redoRepo.push(command), // undo size
+                            Single.just(command)) // command
+            }
+            .doOnSuccess(onSuccessUndoOrRedo)
+            .map { (_, _, command) ->
+                command
+            }
     }
 
-    fun redo(paper: Whiteboard): Completable {
-        return Completable.fromSingle(
-            redoRepo.pop()
-                .doOnSubscribe {
-                    // Mark busy
-                    busySignal.markDirty(BUSY)
-                }
-                .observeOn(schedulers.main())
-                .flatMap { (redoSize, command) ->
-                    // Execute command
-                    command.redo(paper)
-
-                    // Push command to the doo repository
-                    Singles.zip(Single.just(redoSize),
-                                undoRepo.push(command))
-                }
-                .doOnSuccess { (undoSize, redoSize) ->
-                    notifyUndoAvailability(undoSize, redoSize)
-
-                    // Mark not busy
-                    busySignal.markNotDirty(BUSY)
-                })
+    override fun redo(): Single<WhiteboardCommand> {
+        return redoRepo.pop()
+            .doOnSubscribe(onStartUndoOrRedo)
+            .observeOn(schedulers.main())
+            .flatMap { (redoSize, command) ->
+                // Push command to the doo repository
+                Singles.zip(Single.just(redoSize), // undo size
+                            undoRepo.push(command), // undo size
+                            Single.just(command)) // command
+            }
+            .doOnSuccess(onSuccessUndoOrRedo)
+            .map { (_, _, command) ->
+                command
+            }
     }
 
-    fun observeUndoCapacity(): Observable<UndoAvailabilityEvent> {
+    override fun observeUndoCapacity(): Observable<UndoAvailabilityEvent> {
         return capacitySignal
+    }
+
+    private val onStartUndoOrRedo: Consumer<in Disposable> = Consumer {
+        // Mark busy
+        busySignal.markDirty(BUSY)
+    }
+
+    private val onSuccessUndoOrRedo: Consumer<Triple<Int, Int, WhiteboardCommand>> = Consumer { (undoSize, redoSize, _) ->
+        notifyUndoAvailability(undoSize, redoSize)
+
+        // Mark not busy
+        busySignal.markNotDirty(BUSY)
     }
 }

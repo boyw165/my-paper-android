@@ -45,7 +45,7 @@ class PaperSizeDialogFragment : DialogFragment() {
     }
 
     /**
-     * The list of set of item view, paper width, and paper height.
+     * The list of set of item view, whiteboard width, and whiteboard height.
      */
     private val mSizeOption by lazy {
         listOf(Triple(mDialogView.findViewById<View>(R.id.item_a_four_landscape),

@@ -20,11 +20,11 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.manipulator.DragManipulator
-import com.paper.model.Scrap
+import com.cardinalblue.gesture.rx.GestureObservable
+import com.paper.domain.DomainConst
 import com.paper.model.Frame
 import com.paper.model.ISchedulers
+import com.paper.model.Scrap
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
@@ -36,20 +36,8 @@ open class ScrapWidget(protected val scrap: Scrap,
                        protected val schedulers: ISchedulers)
     : IWidget {
 
-    companion object {
-
-        @JvmStatic
-        val GENERAL_BUSY = 1
-
-        @JvmStatic
-        val EMPTY_FRAME_DISPLACEMENT = Frame()
-    }
-
     protected val lock = Any()
 
-    protected val dirtyFlag = ScrapDirtyFlag(0)
-
-    private val touchSequenceDisposableBag = CompositeDisposable()
     protected val staticDisposableBag = CompositeDisposable()
 
     override fun start(): Observable<Boolean> {
@@ -58,7 +46,7 @@ open class ScrapWidget(protected val scrap: Scrap,
                 .subscribe { frame ->
                     // Clear displacement
                     synchronized(lock) {
-                        frameDisplacement.set(EMPTY_FRAME_DISPLACEMENT)
+                        frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
                     }
                     // Signal out
                     frameSignal.onNext(frame)
@@ -70,7 +58,6 @@ open class ScrapWidget(protected val scrap: Scrap,
     override fun stop() {
         synchronized(lock) {
             staticDisposableBag.clear()
-            touchSequenceDisposableBag.clear()
         }
     }
 
@@ -80,7 +67,7 @@ open class ScrapWidget(protected val scrap: Scrap,
 
     // Frame //////////////////////////////////////////////////////////////////
 
-    private val frameDisplacement = AtomicReference(EMPTY_FRAME_DISPLACEMENT)
+    private val frameDisplacement = AtomicReference(DomainConst.EMPTY_FRAME_DISPLACEMENT)
     private val frameSignal = PublishSubject.create<Frame>().toSerialized()
 
     open fun getFrame(): Frame {
@@ -101,14 +88,15 @@ open class ScrapWidget(protected val scrap: Scrap,
         }
     }
 
-    open fun handleTouchSequence(touchSequence: Observable<GestureEvent>) {
-        touchSequenceDisposableBag.clear()
-
-        touchSequence
-            // TODO: Manipulator coordinator
-            .compose(DragManipulator(widget = this))
-            .subscribe()
-            .addTo(touchSequenceDisposableBag)
+    open fun handleTouchSequence(gestureSequence: Observable<GestureObservable>) {
+//        gestureSequence
+//            .observeOn(schedulers.main())
+//            .flatMapCompletable(DragManipulator(scrapWidget = this@ScrapWidget,
+//                                                whiteboardStore = ,
+//                                                undoWidget = ,
+//                                                schedulers = schedulers), true)
+//            .subscribe()
+//            .addTo(staticDisposableBag)
     }
 
     fun observeFrame(): Observable<Frame> {
@@ -116,6 +104,16 @@ open class ScrapWidget(protected val scrap: Scrap,
     }
 
     // Busy ///////////////////////////////////////////////////////////////////
+
+    private val dirtyFlag = ScrapDirtyFlag(0)
+
+    fun markBusy() {
+        dirtyFlag.markDirty(DomainConst.BUSY)
+    }
+
+    fun markNotBusy() {
+        dirtyFlag.markNotDirty(DomainConst.BUSY)
+    }
 
     fun observeBusy(): Observable<Boolean> {
         return dirtyFlag

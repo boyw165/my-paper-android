@@ -26,10 +26,10 @@ import com.paper.model.Whiteboard
 import com.paper.model.NoObfuscation
 import java.util.*
 
-abstract class WhiteboardCommand(open val id: UUID = UUID.randomUUID())
+abstract class WhiteboardCommand(open val commandID: UUID = UUID.randomUUID())
     : NoObfuscation {
 
     abstract fun doo(target: Whiteboard)
 
-    abstract fun redo(target: Whiteboard)
+    abstract fun undo(target: Whiteboard)
 }

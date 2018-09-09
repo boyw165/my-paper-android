@@ -1,6 +1,6 @@
-// Copyright Apr 2018-present Paper
+// Copyright Sep 2018-present SodaLabs
 //
-// Author: boyw165@gmail.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,21 +20,31 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.command
+package com.paper.domain.ui
 
-import com.paper.model.Whiteboard
-import com.paper.model.Scrap
-import java.util.*
+import com.paper.model.*
 
-data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
-                           val scrap: Scrap)
-    : WhiteboardCommand(commandID = commandID) {
+object ScrapWidgetFactory {
 
-    override fun doo(target: Whiteboard) {
-        // TODO
-    }
-
-    override fun undo(target: Whiteboard) {
-        // TODO
+    fun createScrapWidget(scrap: Scrap,
+                          schedulers: ISchedulers): ScrapWidget {
+        return when (scrap) {
+            is SketchScrap -> {
+                SketchScrapWidget(
+                    scrap = scrap,
+                    schedulers = schedulers)
+            }
+            is ImageScrap -> {
+                ImageScrapWidget(
+                    scrap = scrap,
+                    schedulers = schedulers)
+            }
+            is TextScrap -> {
+                TextScrapWidget(
+                    scrap = scrap,
+                    schedulers = schedulers)
+            }
+            else -> TODO()
+        }
     }
 }

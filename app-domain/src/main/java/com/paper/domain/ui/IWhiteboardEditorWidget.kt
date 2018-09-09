@@ -20,21 +20,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.model.command
+package com.paper.domain.ui
 
-import com.paper.model.Whiteboard
-import com.paper.model.Scrap
-import java.util.*
+import com.cardinalblue.gesture.rx.GestureObservable
+import com.paper.domain.ui_event.UndoAvailabilityEvent
+import io.reactivex.Observable
 
-data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
-                           val scrap: Scrap)
-    : WhiteboardCommand(commandID = commandID) {
+// TODO: Use dagger 2 to inject the dependency gracefully
 
-    override fun doo(target: Whiteboard) {
-        // TODO
-    }
+// TODO: Shouldn't depend on any Android package!
 
-    override fun undo(target: Whiteboard) {
-        // TODO
-    }
+interface IWhiteboardEditorWidget : IWhiteboardWidget {
+
+    fun handleTouch(gestureSequence: Observable<GestureObservable>)
+
+    fun handleUndo(undoSignal: Observable<Any>)
+
+    fun handleRedo(redoSignal: Observable<Any>)
+
+    fun observeUndoAvailability(): Observable<UndoAvailabilityEvent>
 }

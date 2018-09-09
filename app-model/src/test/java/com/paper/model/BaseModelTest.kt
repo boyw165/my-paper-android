@@ -98,14 +98,9 @@ abstract class BaseModelTest {
                                                         CubicPointTuple(50f, 50f, 50f, 50f, 40f, 20f)))
     }
 
-    protected fun createRandomSVGScrap(): SVGScrap {
-        return SVGScrap(frame = createRandomFrame(),
-                        graphicsList = mutableListOf(createRandomSVG(),
-                                                     createRandomSVG(),
-                                                     createRandomSVG(),
-                                                     createRandomSVG(),
-                                                     createRandomSVG(),
-                                                     createRandomSVG()))
+    protected fun createRandomSVGScrap(): SketchScrap {
+        return SketchScrap(frame = createRandomFrame(),
+                           svg = createRandomSVG())
     }
 
     protected fun createRandomImageScrap(): ImageScrap {
