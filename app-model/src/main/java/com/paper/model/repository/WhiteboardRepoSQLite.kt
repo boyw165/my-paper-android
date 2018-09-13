@@ -33,6 +33,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.paper.model.Whiteboard
 import com.paper.model.IPreferenceService
+import com.paper.model.ISchedulers
 import com.paper.model.ModelConst
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.sqlite.PaperTable
@@ -56,7 +57,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                            private val jsonTranslator: Gson,
                            private val bmpCacheDir: File,
                            private val prefs: IPreferenceService,
-                           private val dbIoScheduler: Scheduler)
+                           private val schedulers: ISchedulers)
     : IWhiteboardRepository,
       IBitmapRepository {
 
@@ -105,7 +106,7 @@ class WhiteboardRepoSQLite(private val authority: String,
         // Database writes
         disposableBag.add(
             putSignal
-                .debounce(150, TimeUnit.MILLISECONDS, this.dbIoScheduler)
+                .debounce(150, TimeUnit.MILLISECONDS, schedulers.db())
                 // Writes operation should be atomic and not stoppable, thus
                 // guarantees the database integrity.
                 .flatMap { (paper, doneSignal) ->
@@ -115,7 +116,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                         }
                         .toObservable()
                 }
-                .observeOn(this.dbIoScheduler)
+                .observeOn(schedulers.db())
                 .subscribe())
     }
 
@@ -195,7 +196,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                     cursor?.close()
                 }
             }
-            .subscribeOn(this.dbIoScheduler)
+            .subscribeOn(schedulers.db())
     }
 
     /**
@@ -212,7 +213,7 @@ class WhiteboardRepoSQLite(private val authority: String,
 
                     return@fromCallable newPaper
                 }
-                .subscribeOn(this.dbIoScheduler)
+                .subscribeOn(schedulers.db())
         } else {
             Single
                 .create { observer: SingleEmitter<Whiteboard> ->
@@ -257,7 +258,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                         }
                     }
                 }
-                .subscribeOn(this.dbIoScheduler)
+                .subscribeOn(schedulers.db())
         }
     }
 
@@ -354,7 +355,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                     }
                 }
             }
-            .subscribeOn(this.dbIoScheduler)
+            .subscribeOn(schedulers.db())
     }
 
     override fun duplicateBoardById(id: Long): Single<Whiteboard> {
@@ -388,7 +389,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                     emitter.onError(err)
                 }
             }
-            .subscribeOn(this.dbIoScheduler)
+            .subscribeOn(schedulers.db())
     }
 
     private val bitmapJournal = HashMap<Int, File>()
@@ -414,7 +415,7 @@ class WhiteboardRepoSQLite(private val authority: String,
 
                 return@fromCallable bmpFile
             }
-            .subscribeOn(this.dbIoScheduler)
+            .subscribeOn(schedulers.db())
     }
 
     override fun getBitmap(key: Int): Single<Bitmap> {
@@ -428,7 +429,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                         throw FileNotFoundException("cannot find the Bitmap")
                     }
                 }
-                .subscribeOn(this.dbIoScheduler)
+                .subscribeOn(schedulers.db())
     }
 
     ///////////////////////////////////////////////////////////////////////////

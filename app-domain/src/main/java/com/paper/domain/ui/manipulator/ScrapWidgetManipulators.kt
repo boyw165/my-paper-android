@@ -1,6 +1,6 @@
-// Copyright Aug 2018-present CardinalBlue
+// Copyright Aug 2018-present SodaLabs
 //
-// Author: boy@cardinalblue.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,23 +22,32 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.IUndoWidget
 import com.paper.domain.ui.ScrapWidget
 import com.paper.model.ISchedulers
-import io.reactivex.CompletableEmitter
-import io.reactivex.Observable
+import com.paper.model.command.GroupCommand
+import com.paper.model.command.WhiteboardCommand
 
-class PinchManipulator(private val scrapWidget: ScrapWidget,
-                       whiteboardStore: IWhiteboardStore,
-                       private val undoWidget: IUndoWidget?,
-                       schedulers: ISchedulers)
-    : Manipulator(whiteboardStore = whiteboardStore,
-                  schedulers = schedulers) {
+class ScrapWidgetManipulators(scrapWidget: ScrapWidget,
+                              whiteboardStore: IWhiteboardStore?,
+                              undoWidget: IUndoWidget?,
+                              schedulers: ISchedulers)
+    : ManipulatorCoordinator(scrapWidget = scrapWidget,
+                             whiteboardStore = whiteboardStore,
+                             undoWidget = undoWidget,
+                             schedulers = schedulers) {
 
-    override fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
-                                       completer: CompletableEmitter) {
-        TODO("not implemented")
+    override fun onTouchBegin() {
+        // DO NOTHING?
+    }
+
+    override fun offerManipulators(): List<Manipulator> {
+        return listOf(DragManipulator(scrapWidget = scrapWidget,
+                                      schedulers = schedulers))
+    }
+
+    override fun onTouchEnd(commandCollection: List<WhiteboardCommand>): WhiteboardCommand {
+        return GroupCommand(commands = commandCollection)
     }
 }

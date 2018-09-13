@@ -127,9 +127,7 @@ dependencies {
 //    implementation rootProject.ext.dep.firebaseMLCustomModel
 
     // Dependency Injection.
-    implementation rootProject.ext.dep.dagger2
-//    implementation rootProject.ext.dep.dagger2Support
-    kapt rootProject.ext.dep.dagger2Compiler
+    implementation rootProject.ext.dep.koinCore
 
     // JSON.
     implementation rootProject.ext.dep.gson
@@ -170,6 +168,8 @@ dependencies {
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit
     testImplementation rootProject.ext.dep.testMockito
+    testImplementation rootProject.ext.dep.testMockitoKotlin
+    testImplementation rootProject.ext.dep.koinTest
 
     // Instrumentation tests.
     androidTestImplementation rootProject.ext.dep.testRunner

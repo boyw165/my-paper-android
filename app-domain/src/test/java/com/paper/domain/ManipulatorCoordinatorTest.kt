@@ -22,12 +22,9 @@
 
 package com.paper.domain
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argWhere
 import com.paper.domain.ui.manipulator.DragManipulator
-import com.paper.domain.ui.manipulator.SketchManipulator
-import com.paper.model.command.AddScrapCommand
-import io.reactivex.Observable
+import com.paper.domain.ui.manipulator.ManipulatorCoordinator
+import com.paper.model.command.UpdateScrapFrameCommand
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -36,7 +33,7 @@ import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SketchManipulatorTest : BaseDomainTest() {
+class ManipulatorCoordinatorTest : BaseDomainTest() {
 
     @Before
     override fun setup() {
@@ -50,20 +47,24 @@ class SketchManipulatorTest : BaseDomainTest() {
 
     @Test
     fun `given a drag sequence, must see one command at the end`() {
-        val candidate = SketchManipulator(editor = mockWhiteboardEditor,
-                                          highestZ = 0,
-                                          schedulers = mockSchedulers)
-
-        val tester = mockDragSequence
-            .compose(candidate)
-            .test()
-
-        moveScheduler()
-
-        tester.assertComplete()
-        tester.assertValueCount(1)
-        tester.assertValueAt(0) { command ->
-            command is AddScrapCommand
-        }
+//        val candidate = Mockito.mock(ManipulatorCoordinator::class.java)
+//
+//        val tester = mockDragSequence
+//            .compose(candidate)
+//            .test()
+//
+//        moveScheduler()
+//
+//        tester.assertComplete()
+//        tester.assertValueCount(1)
+//        tester.assertValue { command ->
+//            command is UpdateScrapFrameCommand &&
+//            command.scrapID == widget.getID() &&
+//            command.toFrame == widgetStartFrame.add(mockDragEndDisplacement)
+//        }
     }
+
+    // Clazz //////////////////////////////////////////////////////////////////
+
+
 }

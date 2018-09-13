@@ -26,6 +26,7 @@ import com.paper.model.*
 
 object ScrapWidgetFactory {
 
+    @JvmStatic
     fun createScrapWidget(scrap: Scrap,
                           schedulers: ISchedulers): ScrapWidget {
         return when (scrap) {

@@ -7,12 +7,8 @@ import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.nhaarman.mockitokotlin2.any
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.*
-import com.paper.domain.ui_event.AddScrapEvent
-import com.paper.domain.ui_event.RemoveScrapEvent
-import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
@@ -27,7 +23,8 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
-import org.mockito.Mock
+import org.koin.dsl.module.module
+import org.koin.standalone.StandAloneContext.startKoin
 import org.mockito.Mockito
 import java.lang.IllegalStateException
 import java.net.URL
@@ -76,16 +73,24 @@ abstract class BaseDomainTest {
         mock
     }
 
-    val mockWhiteboard by lazy {
+    val mockWhiteboard: Whiteboard get() {
         val mock = Whiteboard()
         (1..50).forEach {
             mock.addScrap(createRandomScrap())
         }
-        mock
+        return mock
     }
 
-    @Mock
-    lateinit var mockWhiteboardRepo: IWhiteboardRepository
+    protected val mockWhiteboardRepo: IWhiteboardRepository by lazy {
+        val field = Mockito.mock(IWhiteboardRepository::class.java)
+
+        Mockito.`when`(field.getBoardById(Mockito.anyLong()))
+            .thenReturn(
+                Single.just(mockWhiteboard)
+                    .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
+
+        field
+    }
     protected val mockWhiteboardStore: IWhiteboardStore by lazy {
         val field = Mockito.mock(IWhiteboardStore::class.java)
 
@@ -119,11 +124,25 @@ abstract class BaseDomainTest {
             .create()
     }
 
+    private val testModule = module {
+        factory { mockSchedulers }
+        factory { jsonTranslator }
+        factory { mockWhiteboard }
+        factory { mockWhiteboardRepo }
+        factory { mockWhiteboardStore }
+        factory { mockWhiteboardEditor }
+        factory<Observable<Throwable>> { caughtErrorSignal }
+    }
+
     open fun setup() {
+        startKoin(listOf(testModule))
+
         Mockito.`when`(mockWhiteboardRepo.getBoardById(Mockito.anyLong()))
             .thenReturn(
                 Single.just(mockWhiteboard)
                     .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
+
+
     }
 
     open fun clean() {
@@ -133,8 +152,6 @@ abstract class BaseDomainTest {
     protected fun moveScheduler() {
         testScheduler.advanceTimeBy(DEFINITELY_LONG_ENOUGH_TIMEOUT, TimeUnit.MILLISECONDS)
     }
-
-    // Scrap or widget ////////////////////////////////////////////////////////
 
     private val random = Random()
 
@@ -146,16 +163,22 @@ abstract class BaseDomainTest {
         return random.nextFloat() + from
     }
 
+    // Scrap //////////////////////////////////////////////////////////////////
+
     protected fun createRandomFrame(): Frame {
         val scale = rand(1, 5).toFloat()
-        return Frame(x = rand(0f),
-                     y = rand(0f),
+        return Frame(x = rand(0, 500).toFloat(),
+                     y = rand(0, 500).toFloat(),
                      width = rand(0, 500).toFloat(),
                      height = rand(0, 500).toFloat(),
                      scaleX = scale,
                      scaleY = scale,
                      rotationInDegrees = rand(0, 360).toFloat(),
                      z = rand(0, 1000))
+    }
+
+    protected fun createBaseScrapBy(frame: Frame): Scrap {
+        return Scrap(frame = frame)
     }
 
     protected fun createRandomSVG(): VectorGraphics {
@@ -165,27 +188,20 @@ abstract class BaseDomainTest {
                                                         CubicPointTuple(50f, 50f, 50f, 50f, 40f, 20f)))
     }
 
-    protected fun createBaseScrapBy(frame: Frame): Scrap {
-        return Scrap(frame = frame)
+    protected fun createRandomScrap(): Scrap {
+        val random = rand(0, 2)
+
+        return when (random) {
+            0 -> createRandomSketchScrap()
+            1 -> createRandomImageScrap()
+            2 -> createRandomTextScrap()
+            else -> throw IllegalStateException()
+        }
     }
 
-    protected fun createRandomSVGScrap(): SketchScrap {
+    protected fun createRandomSketchScrap(): SketchScrap {
         return SketchScrap(frame = createRandomFrame(),
                            svg = createRandomSVG())
-    }
-
-    protected fun createRandomSVGScrapWidget(): SketchScrapWidget {
-        return SketchScrapWidget(scrap = createRandomSVGScrap(),
-                                 schedulers = mockSchedulers)
-    }
-
-    protected fun createMockSVGScrapWidget(): SketchScrapWidget {
-        val mock = Mockito.mock(SketchScrapWidget::class.java)
-
-        Mockito.`when`(mock.getID()).thenReturn(UUID.randomUUID())
-        Mockito.`when`(mock.getFrame()).thenReturn(DEFAULT_FRAME)
-
-        return mock
     }
 
     protected fun createRandomImageScrap(): ImageScrap {
@@ -198,15 +214,32 @@ abstract class BaseDomainTest {
                          text = "foo")
     }
 
-    protected fun createRandomScrap(): Scrap {
+    // Widget /////////////////////////////////////////////////////////////////
+
+    protected fun createRandomScrapWidget(): ScrapWidget {
         val random = rand(0, 2)
 
         return when (random) {
-            0 -> createRandomSVGScrap()
-            1 -> createRandomImageScrap()
-            2 -> createRandomTextScrap()
+            0 -> createRandomSketchScrapWidget()
+            1 -> createRandomImageScrapWidget()
+            2 -> createRandomTextScrapWidget()
             else -> throw IllegalStateException()
         }
+    }
+
+    protected fun createRandomSketchScrapWidget(): SketchScrapWidget {
+        return SketchScrapWidget(scrap = createRandomSketchScrap(),
+                                 schedulers = mockSchedulers)
+    }
+
+    protected fun createRandomImageScrapWidget(): ImageScrapWidget {
+        return ImageScrapWidget(scrap = createRandomImageScrap(),
+                                schedulers = mockSchedulers)
+    }
+
+    protected fun createRandomTextScrapWidget(): TextScrapWidget {
+        return TextScrapWidget(scrap = createRandomTextScrap(),
+                               schedulers = mockSchedulers)
     }
 
     // Touch sequence /////////////////////////////////////////////////////////

@@ -33,6 +33,9 @@ dependencies {
     // Google Support Library.
     api rootProject.ext.dep.supportAppcompatV7
 
+    // DI
+    api rootProject.ext.dep.koinCore
+
     // Kotlin.
     api rootProject.ext.dep.kotlinStdlibJdk7
     // RxKotlin.
@@ -53,6 +56,8 @@ dependencies {
     testImplementation rootProject.ext.dep.testJunit
     testImplementation rootProject.ext.dep.testMockito
     testImplementation rootProject.ext.dep.testMockitoKotlin
+    testImplementation rootProject.ext.dep.koinCore
+    testImplementation rootProject.ext.dep.koinTest
 
     // Instrumentation tests.
     androidTestImplementation rootProject.ext.dep.testEspressoCore

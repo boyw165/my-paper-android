@@ -108,7 +108,7 @@ class UndoWidget(private val undoRepo: ICommandRepository,
     private val capacitySignal = PublishSubject.create<UndoAvailabilityEvent>()
     private val putOperationSignal = PublishSubject.create<WhiteboardCommand>().toSerialized()
 
-    override fun putOperation(command: WhiteboardCommand) {
+    override fun offerCommand(command: WhiteboardCommand) {
         putOperationSignal.onNext(command)
     }
 

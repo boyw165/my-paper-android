@@ -1,6 +1,6 @@
-// Copyright Aug 2018-present Paper
+// Copyright Aug 2018-present SodaLabs
 //
-// Author: boyw165@gmail.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -22,65 +22,66 @@
 
 package com.paper.domain.ui.manipulator
 
+import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
+import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui.IUndoWidget
 import com.paper.domain.ui.ScrapWidget
 import com.paper.model.Frame
 import com.paper.model.ISchedulers
 import com.paper.model.command.UpdateScrapFrameCommand
-import io.reactivex.Completable
-import io.reactivex.CompletableEmitter
-import io.reactivex.Observable
-import io.reactivex.rxkotlin.addTo
+import com.paper.model.command.WhiteboardCommand
 import java.util.concurrent.atomic.AtomicReference
 
 class DragManipulator(private val scrapWidget: ScrapWidget,
-                      whiteboardStore: IWhiteboardStore,
-                      private val undoWidget: IUndoWidget?,
                       schedulers: ISchedulers)
-    : Manipulator(whiteboardStore = whiteboardStore,
-                  schedulers = schedulers) {
+    : Manipulator(schedulers = schedulers) {
 
-    private val startFrame = scrapWidget.getFrame()
+    private val startFrame = AtomicReference<Frame>()
     private val displacement = AtomicReference<Frame>()
 
-    override fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
-                                       completer: CompletableEmitter) {
-        touchSequence
-            .take(1)
-            .observeOn(schedulers.main())
-            .subscribe {
-                scrapWidget.markBusy()
-            }
-            .addTo(disposableBag)
+    override fun isMyBusiness(event: GestureEvent): Boolean {
+        return event is DragBeginEvent ||
+               event is DragDoingEvent
+    }
 
-        touchSequence
-            .observeOn(schedulers.main())
-            .subscribe { event ->
-                if (event is DragDoingEvent) {
-                    displacement.set(Frame(
-                        x = event.stopPointer.first - event.startPointer.first,
-                        y = event.stopPointer.second - event.startPointer.first))
-                    scrapWidget.setFrameDisplacement(displacement.get())
-                }
-            }
-            .addTo(disposableBag)
+    override fun onFirst(event: GestureEvent) {
+        scrapWidget.markBusy()
 
-        Completable.fromObservable(touchSequence)
-            .observeOn(schedulers.main())
-            .subscribe {
-                val command = UpdateScrapFrameCommand(
-                    scrapID = scrapWidget.getID(),
-                    toFrame = startFrame.add(displacement.get()))
+        startFrame.set(scrapWidget.getFrame())
+    }
 
-                // Offer command
-                undoWidget?.putOperation(command)
-                whiteboardStore.offerCommandDoo(command)
+    override fun onInBetweenFirstAndLast(event: GestureEvent) {
+        updateDisplacement(event)
+    }
 
-                // Complete job
-                completer.onComplete()
-            }
+    override fun onLast(event: GestureEvent): WhiteboardCommand {
+        updateDisplacement(event)
+        scrapWidget.markNotBusy()
+
+        val startFrame = this.startFrame.get()
+
+        // Offer command
+        return UpdateScrapFrameCommand(
+            scrapID = scrapWidget.getID(),
+            toFrame = startFrame.add(displacement.get()))
+    }
+
+    private fun updateDisplacement(event: GestureEvent) {
+        val nextDisplacement = when (event) {
+            is DragDoingEvent -> Frame(
+                x = event.stopPointer.first - event.startPointer.first,
+                y = event.stopPointer.second - event.startPointer.first)
+            is DragEndEvent -> Frame(
+                x = event.stopPointer.first - event.startPointer.first,
+                y = event.stopPointer.second - event.startPointer.first)
+            else -> displacement.get()
+        }
+
+        displacement.set(nextDisplacement)
+        scrapWidget.setFrameDisplacement(displacement.get())
+        if (event is DragDoingEvent ||
+            event is DragEndEvent) {
+        }
     }
 }

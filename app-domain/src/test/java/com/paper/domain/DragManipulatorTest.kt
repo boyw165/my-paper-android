@@ -22,16 +22,12 @@
 
 package com.paper.domain
 
-import com.nhaarman.mockitokotlin2.argThat
-import com.nhaarman.mockitokotlin2.argWhere
 import com.paper.domain.ui.manipulator.DragManipulator
 import com.paper.model.command.UpdateScrapFrameCommand
-import io.reactivex.Observable
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
@@ -49,23 +45,24 @@ class DragManipulatorTest : BaseDomainTest() {
 
     @Test
     fun `given a drag sequence, must see one command at the end`() {
-        val widget = createRandomSVGScrapWidget()
+        val widget = createRandomScrapWidget()
+        val widgetStartFrame = widget.getFrame()
+        println(widgetStartFrame)
         val candidate = DragManipulator(scrapWidget = widget,
-                                        whiteboardStore = mockWhiteboardStore,
-                                        undoWidget = null,
                                         schedulers = mockSchedulers)
 
-        val tester = Observable.just(mockDragSequence)
-            .flatMapCompletable(candidate)
+        val tester = mockDragSequence
+            .compose(candidate)
             .test()
 
         moveScheduler()
-        tester.assertComplete()
 
-        Mockito.verify(mockWhiteboardStore)
-            .offerCommandDoo(argWhere { command ->
-                command is UpdateScrapFrameCommand &&
-                command.scrapID == widget.getID()
-            })
+        tester.assertComplete()
+        tester.assertValueCount(1)
+        tester.assertValue { command ->
+            command is UpdateScrapFrameCommand &&
+            command.scrapID == widget.getID() &&
+            command.toFrame == widgetStartFrame.add(mockDragEndDisplacement)
+        }
     }
 }

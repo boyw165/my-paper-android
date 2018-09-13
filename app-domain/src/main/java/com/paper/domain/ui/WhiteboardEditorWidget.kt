@@ -24,7 +24,6 @@ package com.paper.domain.ui
 
 import com.cardinalblue.gesture.rx.GestureObservable
 import com.paper.domain.store.WhiteboardStore
-import com.paper.domain.ui.manipulator.SketchManipulator
 import com.paper.domain.ui_event.UndoAvailabilityEvent
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
@@ -152,25 +151,25 @@ class WhiteboardEditorWidget(whiteboardStore: WhiteboardStore,
     // Free drawing ///////////////////////////////////////////////////////////
 
     override fun handleTouch(gestureSequence: Observable<GestureObservable>) {
-        Observables
-            .combineLatest(editorModelSignal,
-                           gestureSequence)
-            .observeOn(schedulers.main())
-            .flatMapCompletable { (mode, touchSequence) ->
-                when (mode) {
-                    EditorMode.FREE_DRAWING -> {
-                        SketchManipulator(editor = this@WhiteboardEditorWidget,
-                                          highestZ = highestZ.get(),
-                                          whiteboardStore = whiteboardStore,
-                                          undoWidget = undoWidget,
-                                          schedulers = schedulers)
-                            .apply(touchSequence)
-                    }
-                    else -> TODO()
-                }
-            }
-            .subscribe()
-            .addTo(staticDisposableBag)
+//        Observables
+//            .combineLatest(editorModelSignal,
+//                           gestureSequence)
+//            .observeOn(schedulers.main())
+//            .flatMapCompletable { (mode, touchSequence) ->
+//                when (mode) {
+//                    EditorMode.FREE_DRAWING -> {
+//                        SketchManipulator(editor = this@WhiteboardEditorWidget,
+//                                          highestZ = highestZ.get(),
+//                                          whiteboardStore = whiteboardStore,
+//                                          undoWidget = undoWidget,
+//                                          schedulers = schedulers)
+//                            .apply(touchSequence)
+//                    }
+//                    else -> TODO()
+//                }
+//            }
+//            .subscribe()
+//            .addTo(staticDisposableBag)
     }
 
     // Undo & undo ////////////////////////////////////////////////////////////

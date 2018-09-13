@@ -101,6 +101,11 @@ ext {
             butterKnifeCompiler       : "com.jakewharton:butterknife-compiler:${BUTTER_KNIFE_VER}",
             butterKnifeGradlePlugin   : 'com.jakewharton:butterknife-gradle-plugin:8.6.0',
             // Dependency Injection.
+            koinCore                  : 'org.koin:koin-core:1.0.0-RC-2',
+            koinTest                  : 'org.koin:koin-test:1.0.0-RC-2',
+            koinAndroid               : 'org.koin:koin-android:1.0.0-RC-2',
+            koinAndroidScope          : 'org.koin:koin-android-scope:1.0.0-RC-2',
+            koinAndroidAAC            : 'org.koin:koin-android-viewmodel:1.0.0-RC-2',
             dagger2                   : "com.google.dagger:dagger:${DAGGER2_VER}",
             dagger2Support            : "com.google.dagger:dagger-android-support:${DAGGER2_VER}",
             dagger2Compiler           : "com.google.dagger:dagger-compiler:${DAGGER2_VER}",

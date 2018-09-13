@@ -1,6 +1,6 @@
-// Copyright Aug 2018-present Paper
+// Copyright Aug 2018-present CardinalBlue
 //
-// Author: boyw165@gmail.com
+// Author: boy@cardinalblue.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -23,32 +23,85 @@
 package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.store.IWhiteboardStore
+import com.paper.domain.DomainConst
 import com.paper.model.ISchedulers
-import io.reactivex.Completable
-import io.reactivex.CompletableEmitter
-import io.reactivex.CompletableSource
+import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
+import io.reactivex.ObservableSource
+import io.reactivex.ObservableTransformer
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.functions.Function
+import io.reactivex.rxkotlin.addTo
+import java.util.concurrent.atomic.AtomicBoolean
 
-abstract class Manipulator(protected val whiteboardStore: IWhiteboardStore,
-                           protected val schedulers: ISchedulers)
-    : Function<Observable<in GestureEvent>, CompletableSource> {
+abstract class Manipulator(protected val schedulers: ISchedulers)
+    : ObservableTransformer<GestureEvent, WhiteboardCommand> {
 
     protected val disposableBag = CompositeDisposable()
 
-    final override fun apply(touchSequence: Observable<in GestureEvent>): CompletableSource {
-        return Completable.create { emitter ->
-            // Enable auto stop
+    final override fun apply(touchSequence: Observable<GestureEvent>): ObservableSource<WhiteboardCommand> {
+        return Observable.create<WhiteboardCommand> { emitter ->
+            // Enable auto stop when downstream asks terminating
             emitter.setCancellable {
                 disposableBag.dispose()
             }
 
-            onHandleTouchSequence(touchSequence, emitter)
+            val handleIt = AtomicBoolean(false)
+            val sharedTouchSequence = touchSequence.publish()
+
+            // Start
+            sharedTouchSequence
+                .firstElement()
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    handleIt.set(isMyBusiness(event))
+
+                    if (handleIt.get()) {
+                        println("${DomainConst.TAG}: ${javaClass.simpleName} starts")
+                        onFirst(event)
+                    } else {
+                        emitter.onComplete()
+                    }
+                }
+                .addTo(disposableBag)
+
+            // Rest except first and last
+            sharedTouchSequence
+                .skip(1)
+                .skipLast(1)
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    if (handleIt.get()) {
+                        onInBetweenFirstAndLast(event)
+                    }
+                }
+                .addTo(disposableBag)
+
+            sharedTouchSequence
+                .lastElement()
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    if (handleIt.get()) {
+                        val c = onLast(event)
+                        println("${DomainConst.TAG}: ${javaClass.simpleName} stops")
+
+                        emitter.onNext(c)
+                        emitter.onComplete()
+                    }
+                }
+                .addTo(disposableBag)
+
+            // Activate the upstream
+            sharedTouchSequence
+                .connect()
+                .addTo(disposableBag)
         }
     }
 
-    abstract fun onHandleTouchSequence(touchSequence: Observable<in GestureEvent>,
-                                       completer: CompletableEmitter)
+    protected abstract fun isMyBusiness(event: GestureEvent): Boolean
+
+    protected abstract fun onFirst(event: GestureEvent)
+
+    protected abstract fun onInBetweenFirstAndLast(event: GestureEvent)
+
+    protected abstract fun onLast(event: GestureEvent): WhiteboardCommand
 }

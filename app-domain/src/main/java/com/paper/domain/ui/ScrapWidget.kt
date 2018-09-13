@@ -20,8 +20,11 @@
 
 package com.paper.domain.ui
 
+import android.location.SettingInjectorService
 import com.cardinalblue.gesture.rx.GestureObservable
 import com.paper.domain.DomainConst
+import com.paper.domain.store.WhiteboardStore
+import com.paper.domain.ui.manipulator.DragManipulator
 import com.paper.model.Frame
 import com.paper.model.ISchedulers
 import com.paper.model.Scrap
@@ -29,6 +32,7 @@ import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
+import org.koin.core.KoinContext
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -88,12 +92,16 @@ open class ScrapWidget(protected val scrap: Scrap,
         }
     }
 
+//    val store: WhiteboardStore by inject {
+//
+//    }
+
     open fun handleTouchSequence(gestureSequence: Observable<GestureObservable>) {
 //        gestureSequence
 //            .observeOn(schedulers.main())
 //            .flatMapCompletable(DragManipulator(scrapWidget = this@ScrapWidget,
-//                                                whiteboardStore = ,
-//                                                undoWidget = ,
+//                                                whiteboardStore =,
+//                                                undoWidget =,
 //                                                schedulers = schedulers), true)
 //            .subscribe()
 //            .addTo(staticDisposableBag)

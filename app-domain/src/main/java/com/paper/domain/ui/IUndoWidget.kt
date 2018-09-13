@@ -34,7 +34,7 @@ interface IUndoWidget : IWidget {
      */
     fun observeBusy(): Observable<Boolean>
 
-    fun putOperation(command: WhiteboardCommand)
+    fun offerCommand(command: WhiteboardCommand)
 
     fun undo(): Single<WhiteboardCommand>
 

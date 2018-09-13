@@ -26,14 +26,14 @@ import com.paper.model.Whiteboard
 import java.util.*
 
 data class GroupCommand(override val commandID: UUID = UUID.randomUUID(),
-                        val operations: List<WhiteboardCommand>)
+                        val commands: List<WhiteboardCommand>)
     : WhiteboardCommand(commandID = commandID) {
 
     override fun doo(target: Whiteboard) {
-        // TODO
+        commands.forEach { it.doo(target) }
     }
 
     override fun undo(target: Whiteboard) {
-        // TODO
+        commands.asReversed().forEach { it.undo(target) }
     }
 }
