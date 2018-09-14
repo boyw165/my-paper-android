@@ -22,7 +22,11 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureObservable
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.store.IWhiteboardStore
+import com.paper.domain.ui.manipulator.EditorWidgetManipulator
+import com.paper.domain.ui.manipulator.ScrapWidgetManipulator
+import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
@@ -39,19 +43,48 @@ import java.io.File
 // TODO: Shouldn't depend on any Android package!
 
 class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
-                             private val undoWidget: IUndoWidget,
+                             override val undoWidget: IUndoWidget,
                              private val penPrefsRepo: ICommonPenPrefsRepo,
                              private val schedulers: ISchedulers)
     : IWhiteboardEditorWidget {
 
     private val lock = Any()
 
-    private val drawingDisposableBag = CompositeDisposable()
+    override val whiteboardStore: IWhiteboardStore get() {
+        return whiteboardWidget.whiteboardStore
+    }
+
+    // User touch
+    private val gestureSequenceSignal = PublishSubject.create<Observable<Observable<GestureEvent>>>()
+        .toSerialized()
     private val staticDisposableBag = CompositeDisposable()
 
     override fun start() {
-        whiteboardWidget.start()
-        undoWidget.start()
+        // Watch scrap widget addition and assign the manipulator
+        whiteboardWidget
+            .observeScraps()
+            .subscribe { event ->
+                when (event) {
+                    is AddScrapEvent -> {
+                        val widget = event.scrapWidget
+                        widget.userTouchManipulator = ScrapWidgetManipulator(
+                            scrapWidget = widget,
+                            schedulers = schedulers)
+                    }
+                }
+            }
+            .addTo(staticDisposableBag)
+
+        // User touch
+        gestureSequenceSignal
+            .switchMapCompletable { gestureSequence ->
+                EditorWidgetManipulator(whiteboardWidgetContext = whiteboardWidget,
+                                        editorWidgetContext = this@WhiteboardEditorWidget,
+                                        schedulers = schedulers)
+                    .apply(gestureSequence)
+            }
+            .subscribe()
+            .addTo(staticDisposableBag)
 
         // Following are all about the edit panel outputs to whiteboard widget:
 
@@ -101,13 +134,16 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
 //                mPenSizeSignal.onNext(penSize)
 //            }
 //            .addTo(staticDisposableBag)
+
+        whiteboardWidget.start()
+        undoWidget.start()
     }
 
     override fun stop() {
         whiteboardWidget.stop()
         undoWidget.stop()
 
-        drawingDisposableBag.clear()
+        staticDisposableBag.clear()
     }
 
     /**
@@ -133,28 +169,8 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
             }
     }
 
-    // Free drawing ///////////////////////////////////////////////////////////
-
-    override fun handleTouch(gestureSequence: Observable<GestureObservable>) {
-//        Observables
-//            .combineLatest(editorModelSignal,
-//                           gestureSequence)
-//            .observeOn(schedulers.main())
-//            .flatMapCompletable { (mode, touchSequence) ->
-//                when (mode) {
-//                    EditorMode.FREE_DRAWING -> {
-//                        SketchManipulator(editor = this@WhiteboardEditorWidget,
-//                                          highestZ = highestZ.get(),
-//                                          whiteboardStore = whiteboardStore,
-//                                          undoWidget = undoWidget,
-//                                          schedulers = schedulers)
-//                            .apply(touchSequence)
-//                    }
-//                    else -> TODO()
-//                }
-//            }
-//            .subscribe()
-//            .addTo(staticDisposableBag)
+    override fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
+        gestureSequenceSignal.onNext(gestureSequence)
     }
 
     // Undo & undo ////////////////////////////////////////////////////////////
@@ -166,9 +182,7 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
                     .toObservable()
             }
             .subscribe { command ->
-                whiteboardWidget
-                    .whiteboardStore
-                    .offerCommandUndo(command)
+                whiteboardStore.offerCommandUndo(command)
             }
             .addTo(staticDisposableBag)
     }
@@ -180,9 +194,7 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
                     .toObservable()
             }
             .subscribe { command ->
-                whiteboardWidget
-                    .whiteboardStore
-                    .offerCommandDoo(command)
+                whiteboardStore.offerCommandDoo(command)
             }
             .addTo(staticDisposableBag)
     }

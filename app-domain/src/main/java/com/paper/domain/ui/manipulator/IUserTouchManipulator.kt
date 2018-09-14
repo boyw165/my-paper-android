@@ -1,6 +1,6 @@
-// Copyright Apr 2018-present Paper
+// Copyright Sep 2018-present SodaLabs
 //
-// Author: boyw165@gmail.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,24 +20,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain.ui.manipulator
 
-import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui_event.UpdateScrapEvent
+import com.cardinalblue.gesture.rx.GestureEvent
+import io.reactivex.Completable
 import io.reactivex.Observable
-import java.util.*
 
-interface IWhiteboardWidget : IWidget {
+interface IUserTouchManipulator {
 
-    val busy: Observable<Boolean>
-
-    val whiteboardStore: IWhiteboardStore
-
-    val highestZ: Int
-
-    fun observeScraps(): Observable<UpdateScrapEvent>
-
-    fun addWidget(widget: ScrapWidget)
-
-    fun removeWidget(id: UUID)
+    fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable
 }

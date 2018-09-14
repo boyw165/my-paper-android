@@ -26,7 +26,6 @@ import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.domain.ui_event.RemoveScrapEvent
 import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.ISchedulers
-import com.paper.model.Whiteboard
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -50,7 +49,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
     // widgets
     private val scrapWidgets = ConcurrentHashMap<UUID, ScrapWidget>()
-    private val highestZ = AtomicInteger(0)
+    override var highestZ: Int = 0
 
     override fun start() {
         whiteboardStore.start()
@@ -71,8 +70,8 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
                         // Update z
                         val z = widget.getFrame().z
-                        if (z > highestZ.get()) {
-                            highestZ.set(z)
+                        if (z > highestZ) {
+                            highestZ = z
                         }
 
                         addWidget(widget)
@@ -191,8 +190,8 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
             // Update z
             val z = widget.getFrame().z
-            if (z > highestZ.get()) {
-                highestZ.set(z)
+            if (z > highestZ) {
+                highestZ = z
             }
 
             val widgetDisposableBag = CompositeDisposable()

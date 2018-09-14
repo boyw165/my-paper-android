@@ -22,7 +22,8 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureObservable
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.store.IWhiteboardStore
 import io.reactivex.Observable
 
 // TODO: Use dagger 2 to inject the dependency gracefully
@@ -33,11 +34,15 @@ interface IWhiteboardEditorWidget : IWidget {
 
     val busy: Observable<Boolean>
 
+    val whiteboardStore: IWhiteboardStore
+
+    val undoWidget: IUndoWidget
+
     val canUndo: Observable<Boolean>
 
     val canRedo: Observable<Boolean>
 
-    fun handleTouch(gestureSequence: Observable<GestureObservable>)
+    fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>)
 
     fun handleUndo(undoSignal: Observable<Any>)
 

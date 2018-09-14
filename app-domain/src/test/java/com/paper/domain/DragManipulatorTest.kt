@@ -51,8 +51,8 @@ class DragManipulatorTest : BaseDomainTest() {
         val candidate = DragManipulator(scrapWidget = widget,
                                         schedulers = mockSchedulers)
 
-        val tester = mockDragSequence
-            .compose(candidate)
+        val tester = candidate
+            .apply(mockDragSequence)
             .test()
 
         moveScheduler()

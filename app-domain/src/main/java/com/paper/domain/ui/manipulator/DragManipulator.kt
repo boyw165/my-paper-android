@@ -31,40 +31,66 @@ import com.paper.model.Frame
 import com.paper.model.ISchedulers
 import com.paper.model.command.UpdateScrapFrameCommand
 import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Completable
+import io.reactivex.Maybe
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import java.util.concurrent.atomic.AtomicReference
 
 class DragManipulator(private val scrapWidget: ScrapWidget,
-                      schedulers: ISchedulers)
-    : Manipulator(schedulers = schedulers) {
+                      private val schedulers: ISchedulers)
+    : IUserTouchCommandOutManipulator {
 
     private val startFrame = AtomicReference<Frame>()
     private val displacement = AtomicReference<Frame>()
 
-    override fun isMyBusiness(event: GestureEvent): Boolean {
-        return event is DragBeginEvent ||
-               event is DragDoingEvent
-    }
+    override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
+        return Maybe.create { emitter ->
+            val sharedTouchSequence = touchSequence.publish()
+            val disposableBag = CompositeDisposable()
 
-    override fun onFirst(event: GestureEvent) {
-        scrapWidget.markBusy()
+            emitter.setCancellable { disposableBag.dispose() }
 
-        startFrame.set(scrapWidget.getFrame())
-    }
+            sharedTouchSequence
+                .firstElement()
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    if (!(event is DragBeginEvent ||
+                          event is DragDoingEvent)) {
+                        emitter.onComplete()
+                    }
 
-    override fun onInBetweenFirstAndLast(event: GestureEvent) {
-        updateDisplacement(event)
-    }
+                    scrapWidget.markBusy()
 
-    override fun onLast(event: GestureEvent): WhiteboardCommand {
-        updateDisplacement(event)
-        scrapWidget.markNotBusy()
+                    startFrame.set(scrapWidget.getFrame())
+                }
+                .addTo(disposableBag)
 
-        val startFrame = this.startFrame.get()
+            sharedTouchSequence
+                .skip(1)
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    updateDisplacement(event)
+                }
+                .addTo(disposableBag)
 
-        // Offer command
-        return UpdateScrapFrameCommand(
-            scrapID = scrapWidget.getID(),
-            toFrame = startFrame.add(displacement.get()))
+            Completable.fromObservable(sharedTouchSequence)
+                .observeOn(schedulers.main())
+                .subscribe {
+                    scrapWidget.markNotBusy()
+
+                    val startFrame = this.startFrame.get()
+
+                    // Offer command
+                    emitter.onSuccess(UpdateScrapFrameCommand(
+                        scrapID = scrapWidget.getID(),
+                        toFrame = startFrame.add(displacement.get())))
+                }
+                .addTo(disposableBag)
+
+            sharedTouchSequence.connect()
+        }
     }
 
     private fun updateDisplacement(event: GestureEvent) {

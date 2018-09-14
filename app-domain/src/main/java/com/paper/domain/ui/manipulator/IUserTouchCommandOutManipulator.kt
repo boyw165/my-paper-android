@@ -1,4 +1,4 @@
-// Copyright Aug 2018-present SodaLabs
+// Copyright Sep 2018-present SodaLabs
 //
 // Author: tc@sodalabs.co
 //
@@ -22,32 +22,12 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui.IUndoWidget
-import com.paper.domain.ui.ScrapWidget
-import com.paper.model.ISchedulers
-import com.paper.model.command.GroupCommand
+import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Maybe
+import io.reactivex.Observable
 
-class ScrapWidgetManipulators(scrapWidget: ScrapWidget,
-                              whiteboardStore: IWhiteboardStore?,
-                              undoWidget: IUndoWidget?,
-                              schedulers: ISchedulers)
-    : ManipulatorCoordinator(scrapWidget = scrapWidget,
-                             whiteboardStore = whiteboardStore,
-                             undoWidget = undoWidget,
-                             schedulers = schedulers) {
+interface IUserTouchCommandOutManipulator {
 
-    override fun onTouchBegin() {
-        // DO NOTHING?
-    }
-
-    override fun offerManipulators(): List<Manipulator> {
-        return listOf(DragManipulator(scrapWidget = scrapWidget,
-                                      schedulers = schedulers))
-    }
-
-    override fun onTouchEnd(commandCollection: List<WhiteboardCommand>): WhiteboardCommand {
-        return GroupCommand(commands = commandCollection)
-    }
+    fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand>
 }

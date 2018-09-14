@@ -26,7 +26,6 @@ import com.cardinalblue.gesture.rx.DragBeginEvent
 import com.cardinalblue.gesture.rx.DragDoingEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
-import com.paper.domain.ui.IWhiteboardEditorWidget
 import com.paper.domain.ui.IWhiteboardWidget
 import com.paper.domain.ui.ScrapWidgetFactory
 import com.paper.domain.ui.SketchScrapWidget
@@ -34,12 +33,17 @@ import com.paper.model.*
 import com.paper.model.command.AddScrapCommand
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Completable
+import io.reactivex.Maybe
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import java.util.*
 
-class SketchManipulator(private val editor: IWhiteboardWidget,
+class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                         private val highestZ: Int,
-                        schedulers: ISchedulers)
-    : Manipulator(schedulers = schedulers) {
+                        private val schedulers: ISchedulers)
+    : IUserTouchCommandOutManipulator {
 
     @Volatile
     private lateinit var scrap: SketchScrap
@@ -53,80 +57,100 @@ class SketchManipulator(private val editor: IWhiteboardWidget,
     @Volatile
     private lateinit var lastPoint: Point
 
-    override fun isMyBusiness(event: GestureEvent): Boolean {
-        return event is DragBeginEvent ||
-               event is DragDoingEvent
-    }
+    override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
+        return Maybe.create { emitter ->
+            val sharedTouchSequence = touchSequence.publish()
+            val disposableBag = CompositeDisposable()
 
-    override fun onFirst(event: GestureEvent) {
-        event as DragBeginEvent
+            emitter.setCancellable { disposableBag.dispose() }
 
-        startPoint = Point(event.startPointer.first,
-                           event.startPointer.second)
-        lastPoint = startPoint
+            sharedTouchSequence
+                .firstElement()
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    if (!(event is DragBeginEvent ||
+                          event is DragDoingEvent)) {
+                        emitter.onComplete()
+                    }
 
-        val (s, w) = addTemporarySketchWidget(event.startPointer.first,
-                                              event.startPointer.second)
-        scrap = s
-        scrapWidget = w
-        // Mark widget busy
-        scrapWidget.markBusy()
+                    event as DragBeginEvent
 
-        // Sketch displacement
-        svgDisplacement = w.getSVG()
+                    startPoint = Point(event.startPointer.first,
+                                       event.startPointer.second)
+                    lastPoint = startPoint
 
-        // Most importantly, add widget
-        editor.addWidget(scrapWidget)
-    }
+                    val (s, w) = createSketchScrapWidget(event.startPointer.first,
+                                                         event.startPointer.second)
+                    scrap = s
+                    scrapWidget = w
+                    // Mark widget busy
+                    scrapWidget.markBusy()
 
-    override fun onInBetweenFirstAndLast(event: GestureEvent) {
-        val p = when (event) {
-            is DragDoingEvent -> {
-                val (x, y) = event.stopPointer
-                val nx = x - startPoint.x
-                val ny = y - startPoint.y
+                    // Sketch displacement
+                    svgDisplacement = w.getSVG()
 
-                Point(nx, ny)
-            }
-            is DragEndEvent -> {
-                val (x, y) = event.stopPointer
-                val nx = x - startPoint.x
-                val ny = y - startPoint.y
+                    // Most importantly, add widget
+                    whiteboardWidget.addWidget(scrapWidget)
+                }
+                .addTo(disposableBag)
 
-                Point(nx, ny)
-            }
-            else -> TODO()
+            sharedTouchSequence
+                .skip(1)
+                .observeOn(schedulers.main())
+                .subscribe { event ->
+                    val p = when (event) {
+                        is DragDoingEvent -> {
+                            val (x, y) = event.stopPointer
+                            val nx = x - startPoint.x
+                            val ny = y - startPoint.y
+
+                            Point(nx, ny)
+                        }
+                        is DragEndEvent -> {
+                            val (x, y) = event.stopPointer
+                            val nx = x - startPoint.x
+                            val ny = y - startPoint.y
+
+                            Point(nx, ny)
+                        }
+                        else -> TODO()
+                    }
+                    val tupleCopy = svgDisplacement.getTupleList()
+                        .toMutableList()
+                    tupleCopy.add(CubicPointTuple(prevControlX = p.x,
+                                                  prevControlY = p.y,
+                                                  currentControlX = lastPoint.x,
+                                                  currentControlY = lastPoint.y,
+                                                  currentEndX = p.x,
+                                                  currentEndY = p.y))
+                    val newDisplacement = svgDisplacement.copy(tupleList = tupleCopy)
+                    svgDisplacement = newDisplacement
+
+                    scrapWidget.setDisplacement(newDisplacement)
+                }
+                .addTo(disposableBag)
+
+            Completable.fromObservable(sharedTouchSequence)
+                .observeOn(schedulers.main())
+                .subscribe {
+                    // Prepare command with updated MODEL
+                    scrap.setSVG(svgDisplacement)
+
+                    // Mark widget available
+                    scrapWidget.markNotBusy()
+
+                    // Offer command
+                    emitter.onSuccess(AddScrapCommand(scrap = scrap))
+                }
+                .addTo(disposableBag)
+
+            sharedTouchSequence.connect()
         }
-        val tupleCopy = svgDisplacement.getTupleList()
-            .toMutableList()
-        tupleCopy.add(CubicPointTuple(prevControlX = p.x,
-                                      prevControlY = p.y,
-                                      currentControlX = lastPoint.x,
-                                      currentControlY = lastPoint.y,
-                                      currentEndX = p.x,
-                                      currentEndY = p.y))
-        val newDisplacement = svgDisplacement.copy(tupleList = tupleCopy)
-        svgDisplacement = newDisplacement
-
-        scrapWidget.setDisplacement(newDisplacement)
     }
 
-    override fun onLast(event: GestureEvent): WhiteboardCommand {
-        // Prepare command with updated MODEL
-        scrap.setSVG(svgDisplacement)
-        val command = AddScrapCommand(scrap = scrap)
-
-
-        // Mark widget available
-        scrapWidget.markNotBusy()
-
-        // Offer command
-        return command
-    }
-
-    private fun createSVGScrap(id: UUID,
-                               x: Float,
-                               y: Float): SketchScrap {
+    private fun createSketchScrap(id: UUID,
+                                  x: Float,
+                                  y: Float): SketchScrap {
         return SketchScrap(uuid = id,
                            frame = Frame(x = x,
                                          y = y,
@@ -139,16 +163,16 @@ class SketchManipulator(private val editor: IWhiteboardWidget,
                                                 tupleList = mutableListOf(LinearPointTuple(0f, 0f))))
     }
 
-    private fun addTemporarySketchWidget(x: Float,
-                                         y: Float): Pair<SketchScrap, SketchScrapWidget> {
+    private fun createSketchScrapWidget(x: Float,
+                                        y: Float): Pair<SketchScrap, SketchScrapWidget> {
         val id = UUID.randomUUID()
-        val scrap = createSVGScrap(id = id,
-                                   x = x,
-                                   y = y)
+        val scrap = createSketchScrap(id = id,
+                                      x = x,
+                                      y = y)
         val widget = ScrapWidgetFactory.createScrapWidget(
             scrap,
             schedulers)
-        editor.addWidget(widget)
+        whiteboardWidget.addWidget(widget)
 
         return Pair(scrap, widget as SketchScrapWidget)
     }

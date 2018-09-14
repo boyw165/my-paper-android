@@ -1,6 +1,6 @@
-// Copyright Apr 2018-present Paper
+// Copyright Aug 2018-present SodaLabs
 //
-// Author: boyw165@gmail.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,24 +20,30 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.domain.ui.manipulator
 
-import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui_event.UpdateScrapEvent
+import com.cardinalblue.gesture.rx.GestureEvent
+import com.paper.domain.ui.IWhiteboardEditorWidget
+import com.paper.domain.ui.ScrapWidget
+import com.paper.model.ISchedulers
+import io.reactivex.Completable
 import io.reactivex.Observable
-import java.util.*
 
-interface IWhiteboardWidget : IWidget {
+/**
+ * The manipulator which is mainly used by [ScrapWidget].
+ */
+class ScrapWidgetManipulator(private val scrapWidget: ScrapWidget,
+                             private val schedulers: ISchedulers)
+    : IUserTouchManipulator {
 
-    val busy: Observable<Boolean>
-
-    val whiteboardStore: IWhiteboardStore
-
-    val highestZ: Int
-
-    fun observeScraps(): Observable<UpdateScrapEvent>
-
-    fun addWidget(widget: ScrapWidget)
-
-    fun removeWidget(id: UUID)
+    override fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable {
+        return gestureSequence
+            .flatMapCompletable { touchSequence ->
+                Completable.fromObservable(
+                    DragManipulator(scrapWidget = scrapWidget,
+                                    schedulers = schedulers)
+                        .apply(touchSequence)
+                        .toObservable())
+            }
+    }
 }

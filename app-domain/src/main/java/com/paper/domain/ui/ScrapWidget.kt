@@ -20,19 +20,18 @@
 
 package com.paper.domain.ui
 
-import android.location.SettingInjectorService
-import com.cardinalblue.gesture.rx.GestureObservable
+import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.DomainConst
-import com.paper.domain.store.WhiteboardStore
-import com.paper.domain.ui.manipulator.DragManipulator
+import com.paper.domain.ui.manipulator.IUserTouchManipulator
 import com.paper.model.Frame
 import com.paper.model.ISchedulers
 import com.paper.model.Scrap
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
-import org.koin.core.KoinContext
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -42,9 +41,23 @@ open class ScrapWidget(protected val scrap: Scrap,
 
     protected val lock = Any()
 
+    // User touch
+    var userTouchManipulator: IUserTouchManipulator? = null
+        get() {
+            throw IllegalAccessException()
+        }
+        set(value) {
+            synchronized(lock) {
+                field = value
+            }
+        }
+    private val gestureSequenceSignal = PublishSubject.create<Observable<Observable<GestureEvent>>>()
+        .toSerialized()
+
     protected val staticDisposableBag = CompositeDisposable()
 
     override fun start() {
+        // Frame
         scrap.observeFrame()
             .subscribe { frame ->
                 // Clear displacement
@@ -53,6 +66,21 @@ open class ScrapWidget(protected val scrap: Scrap,
                 }
                 // Signal out
                 frameSignal.onNext(frame)
+            }
+            .addTo(staticDisposableBag)
+
+        // User touch
+        gestureSequenceSignal
+            .switchMapCompletable { gestureSequence ->
+                println("${DomainConst.TAG}: A new gesture sequence is given")
+
+                synchronized(lock) {
+                    userTouchManipulator?.apply(gestureSequence) ?:
+                    Completable.complete()
+                }
+            }
+            .subscribe {
+                println("${DomainConst.TAG}: The gesture sequence is finished")
             }
             .addTo(staticDisposableBag)
     }
@@ -68,7 +96,7 @@ open class ScrapWidget(protected val scrap: Scrap,
     // Frame //////////////////////////////////////////////////////////////////
 
     private val frameDisplacement = AtomicReference(DomainConst.EMPTY_FRAME_DISPLACEMENT)
-    private val frameSignal = PublishSubject.create<Frame>().toSerialized()
+    private val frameSignal = BehaviorSubject.create<Frame>().toSerialized()
 
     open fun getFrame(): Frame {
         return synchronized(lock) {
@@ -88,23 +116,10 @@ open class ScrapWidget(protected val scrap: Scrap,
         }
     }
 
-//    val store: WhiteboardStore by inject {
-//
-//    }
+    val frame: Observable<Frame> = frameSignal.hide()
 
-    open fun handleTouchSequence(gestureSequence: Observable<GestureObservable>) {
-//        gestureSequence
-//            .observeOn(schedulers.main())
-//            .flatMapCompletable(DragManipulator(scrapWidget = this@ScrapWidget,
-//                                                whiteboardStore =,
-//                                                undoWidget =,
-//                                                schedulers = schedulers), true)
-//            .subscribe()
-//            .addTo(staticDisposableBag)
-    }
-
-    fun observeFrame(): Observable<Frame> {
-        return frameSignal
+    open fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
+        gestureSequenceSignal.onNext(gestureSequence)
     }
 
     // Busy ///////////////////////////////////////////////////////////////////
