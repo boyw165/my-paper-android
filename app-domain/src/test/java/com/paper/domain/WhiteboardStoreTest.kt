@@ -32,25 +32,31 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner.Silent::class)
 class WhiteboardStoreTest : BaseDomainTest() {
 
+    private val candidate by lazy {
+        WhiteboardStore(whiteboardID = RANDOM_WHITEBOARD_ID,
+                        whiteboardRepo = mockWhiteboardRepo,
+                        schedulers = mockSchedulers)
+    }
+
     @Before
     override fun setup() {
         super.setup()
+
+        candidate.start()
     }
 
     @After
     override fun clean() {
         super.clean()
+
+        candidate.stop()
     }
 
     @Test
     fun `observe busy, should see busy first and not busy at the end`() {
-        val candidate = WhiteboardStore(whiteboardID = RANDOM_WHITEBOARD_ID,
-                                        whiteboardRepo = mockWhiteboardRepo,
-                                        schedulers = mockSchedulers)
-        val tester = candidate.observeBusy().test()
+        val tester = candidate.busy.test()
 
         // Start
-        candidate.start().test().assertSubscribed()
         moveScheduler()
 
         tester.assertValueAt(0, true)

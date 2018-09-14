@@ -94,17 +94,22 @@ abstract class BaseDomainTest {
     protected val mockWhiteboardStore: IWhiteboardStore by lazy {
         val field = Mockito.mock(IWhiteboardStore::class.java)
 
-        Mockito.`when`(field.start()).thenReturn(Observable.never())
-        Mockito.`when`(field.whiteboard()).thenReturn(Single.just(mockWhiteboard))
-        Mockito.`when`(field.observeBusy()).thenReturn(Observable.just(false))
+        Mockito.`when`(field.whiteboard).thenReturn(Single.just(mockWhiteboard))
+        Mockito.`when`(field.busy).thenReturn(Observable.just(false))
 
         field
     }
-    protected val mockWhiteboardEditor: IWhiteboardEditorWidget by lazy {
+    protected val mockWhiteboardWidget: IWhiteboardWidget by lazy {
+        val field = Mockito.mock(IWhiteboardWidget::class.java)
+
+        Mockito.`when`(field.busy).thenReturn(Observable.just(false))
+
+        field
+    }
+    protected val mockWhiteboardEditorWidget: IWhiteboardEditorWidget by lazy {
         val field = Mockito.mock(IWhiteboardEditorWidget::class.java)
 
-        Mockito.`when`(field.start()).thenReturn(Observable.never())
-        Mockito.`when`(field.observeBusy()).thenReturn(Observable.just(false))
+        Mockito.`when`(field.busy).thenReturn(Observable.just(false))
 
         field
     }
@@ -130,12 +135,12 @@ abstract class BaseDomainTest {
         factory { mockWhiteboard }
         factory { mockWhiteboardRepo }
         factory { mockWhiteboardStore }
-        factory { mockWhiteboardEditor }
+        factory { mockWhiteboardEditorWidget }
         factory<Observable<Throwable>> { caughtErrorSignal }
     }
 
     open fun setup() {
-        startKoin(listOf(testModule))
+//        startKoin(listOf(testModule))
 
         Mockito.`when`(mockWhiteboardRepo.getBoardById(Mockito.anyLong()))
             .thenReturn(
@@ -156,7 +161,7 @@ abstract class BaseDomainTest {
     private val random = Random()
 
     protected fun rand(from: Int, to: Int): Int {
-        return random.nextInt(to - from) + from
+        return Math.min(random.nextInt(to - from) + from, from)
     }
 
     protected fun rand(from: Float): Float {

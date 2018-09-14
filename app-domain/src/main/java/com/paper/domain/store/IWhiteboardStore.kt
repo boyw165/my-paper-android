@@ -30,11 +30,11 @@ import io.reactivex.Single
 
 interface IWhiteboardStore : ILifecycleAware {
 
-    fun whiteboard(): Single<Whiteboard>
+    val whiteboard: Single<Whiteboard>
+
+    val busy: Observable<Boolean>
 
     fun offerCommandDoo(command: WhiteboardCommand)
 
     fun offerCommandUndo(command: WhiteboardCommand)
-
-    fun observeBusy(): Observable<Boolean>
 }

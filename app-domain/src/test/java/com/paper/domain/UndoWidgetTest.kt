@@ -23,6 +23,7 @@
 package com.paper.domain
 
 import com.paper.domain.ui.UndoWidget
+import com.paper.model.command.AddScrapCommand
 import com.paper.model.repository.CommandRepository
 import com.paper.model.repository.ICommandRepository
 import org.junit.After
@@ -66,14 +67,49 @@ class UndoWidgetTest : BaseDomainTest() {
     }
 
     @Test
-    fun test() {
+    fun `cannot undo initially`() {
         val candidate = UndoWidget(undoRepo = undoRepo,
                                    redoRepo = redoRepo,
                                    schedulers = mockSchedulers)
         // Start widget
-        candidate.start().test().assertSubscribed()
+        candidate.start()
+        moveScheduler()
 
-        // TODO
+        val tester = candidate.canUndo.test()
+        tester.assertValueAt(0, false)
+    }
+
+    @Test
+    fun `cannot redo initially`() {
+        val candidate = UndoWidget(undoRepo = undoRepo,
+                                   redoRepo = redoRepo,
+                                   schedulers = mockSchedulers)
+        // Start widget
+        candidate.start()
+        moveScheduler()
+
+        val tester = candidate.canRedo.test()
+        tester.assertValueAt(0, false)
+    }
+
+    @Test
+    fun `offer one command, and should see busy first and free at the end`() {
+        val candidate = UndoWidget(undoRepo = undoRepo,
+                                   redoRepo = redoRepo,
+                                   schedulers = mockSchedulers)
+        // Start widget
+        candidate.start()
+        moveScheduler()
+
+        val tester = candidate.canUndo.test()
+
+        val command = AddScrapCommand(scrap = createRandomScrap())
+        candidate.offerCommand(command)
+
+        moveScheduler()
+
+        tester.assertValueAt(0, false)
+        tester.assertValueAt(tester.valueCount() - 1, true)
     }
 
     private fun removeLogDir() {

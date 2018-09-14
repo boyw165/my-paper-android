@@ -22,7 +22,6 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.ui_event.UndoAvailabilityEvent
 import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -32,13 +31,15 @@ interface IUndoWidget : IWidget {
     /**
      * A busy state of this widget.
      */
-    fun observeBusy(): Observable<Boolean>
+    val busy: Observable<Boolean>
+
+    val canUndo: Observable<Boolean>
+
+    val canRedo: Observable<Boolean>
 
     fun offerCommand(command: WhiteboardCommand)
 
     fun undo(): Single<WhiteboardCommand>
 
     fun redo(): Single<WhiteboardCommand>
-
-    fun observeUndoCapacity(): Observable<UndoAvailabilityEvent>
 }

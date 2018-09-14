@@ -139,15 +139,17 @@ open class Whiteboard(private var id: Long = ModelConst.TEMP_ID,
 
     fun addScrap(scrap: Scrap) {
         synchronized(lock) {
-            scraps.add(scrap)
-            addScrapSignal.onNext(scrap)
+            if (scraps.add(scrap)) {
+                addScrapSignal.onNext(scrap)
+            }
         }
     }
 
     fun removeScrap(scrap: Scrap) {
         synchronized(lock) {
-            scraps.remove(scrap)
-            removeScrapSignal.onNext(scrap)
+            if (scraps.remove(scrap)) {
+                removeScrapSignal.onNext(scrap)
+            }
         }
     }
 

@@ -37,23 +37,21 @@ open class SketchScrapWidget(scrap: SketchScrap,
     private val sketchScrap: SketchScrap get() = scrap as SketchScrap
     private val sketchDisposableBag = CompositeDisposable()
 
-    override fun start(): Observable<Boolean> {
-        return autoStop {
-            // Add/remove
-            sketchScrap.observeSVG()
-                .observeOn(schedulers.main())
-                .subscribe { svg ->
-                    synchronized(lock) {
-                        svgDisplacement = null
-                    }
-
-                    // Signal out
-                    svgSignal.onNext(svg)
+    override fun start() {
+        // Add/remove
+        sketchScrap.observeSVG()
+            .observeOn(schedulers.main())
+            .subscribe { svg ->
+                synchronized(lock) {
+                    svgDisplacement = null
                 }
-                .addTo(staticDisposableBag)
 
-            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
-        }
+                // Signal out
+                svgSignal.onNext(svg)
+            }
+            .addTo(staticDisposableBag)
+
+        println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
     }
 
     override fun stop() {

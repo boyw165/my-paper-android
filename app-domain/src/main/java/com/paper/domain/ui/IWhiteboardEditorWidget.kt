@@ -23,20 +23,23 @@
 package com.paper.domain.ui
 
 import com.cardinalblue.gesture.rx.GestureObservable
-import com.paper.domain.ui_event.UndoAvailabilityEvent
 import io.reactivex.Observable
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 
 // TODO: Shouldn't depend on any Android package!
 
-interface IWhiteboardEditorWidget : IWhiteboardWidget {
+interface IWhiteboardEditorWidget : IWidget {
+
+    val busy: Observable<Boolean>
+
+    val canUndo: Observable<Boolean>
+
+    val canRedo: Observable<Boolean>
 
     fun handleTouch(gestureSequence: Observable<GestureObservable>)
 
     fun handleUndo(undoSignal: Observable<Any>)
 
     fun handleRedo(redoSignal: Observable<Any>)
-
-    fun observeUndoAvailability(): Observable<UndoAvailabilityEvent>
 }

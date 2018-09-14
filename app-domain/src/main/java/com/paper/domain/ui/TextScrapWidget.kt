@@ -23,7 +23,6 @@ package com.paper.domain.ui
 import com.paper.domain.DomainConst
 import com.paper.model.ISchedulers
 import com.paper.model.TextScrap
-import io.reactivex.Observable
 
 class TextScrapWidget(scrap: TextScrap,
                       schedulers: ISchedulers)
@@ -31,13 +30,9 @@ class TextScrapWidget(scrap: TextScrap,
                   schedulers),
       IWidget {
 
-    override fun start(): Observable<Boolean> {
-        return autoStop {
-            synchronized(lock) {
-                // DO NOTHING
-            }
-            println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
-        }
+    override fun start() {
+        super.start()
+        println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
     }
 
     override fun stop() {

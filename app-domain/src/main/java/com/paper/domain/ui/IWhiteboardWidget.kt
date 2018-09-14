@@ -22,13 +22,16 @@
 
 package com.paper.domain.ui
 
+import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui_event.UpdateScrapEvent
 import io.reactivex.Observable
 import java.util.*
 
 interface IWhiteboardWidget : IWidget {
 
-    fun observeBusy(): Observable<Boolean>
+    val whiteboardStore: IWhiteboardStore
+
+    val busy: Observable<Boolean>
 
     fun observeScraps(): Observable<UpdateScrapEvent>
 

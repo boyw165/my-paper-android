@@ -20,36 +20,15 @@
 
 package com.paper.domain.ui
 
-import io.reactivex.Observable
-
 interface ILifecycleAware {
 
     /**
-     * Start the widget and caller is responsible for completing the subscription.
-     *
-     * @return An observable that gives true if initialization is successful, and
-     * call [stop] when it gets disposed.
+     * Start the widget.
      */
-    fun start(): Observable<Boolean>
+    fun start()
 
     /**
-     * Stop the widget, where it would automatically execute if you return [autoStop]
-     * in the [start] method.
+     * Stop the widget.
      */
     fun stop()
-
-    /**
-     * An observable that gives true after labmda runs successfully and automatically
-     * calls [stop] when it gets disposed
-     */
-    fun ILifecycleAware.autoStop(lambda: () -> Unit): Observable<Boolean> {
-        return Observable.create { emitter ->
-            // Enable auto-stop
-            emitter.setCancellable { stop() }
-            // Run lambda
-            lambda()
-            // Tell downstream it completes
-            emitter.onNext(true)
-        }
-    }
 }

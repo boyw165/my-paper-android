@@ -22,7 +22,6 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.ui_event.UndoAvailabilityEvent
 import com.paper.model.ISchedulers
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.repository.ICommandRepository
@@ -33,6 +32,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Consumer
 import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.addTo
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import io.useful.dirtyflag.DirtyFlag
 
@@ -45,47 +45,43 @@ class UndoWidget(private val undoRepo: ICommandRepository,
         const val BUSY = 1
     }
 
-    private val lock = Any()
-
     private val disposables = CompositeDisposable()
 
-    override fun start(): Observable<Boolean> {
-        return autoStop {
-            val preparation = Singles
-                .zip(undoRepo.prepare(),
-                     redoRepo.prepare())
-                .cache()
+    override fun start() {
+        val preparation = Singles
+            .zip(undoRepo.prepare(),
+                 redoRepo.prepare())
+            .cache()
 
-            preparation
-                .subscribe { (undoSize, redoSize) ->
-                    notifyUndoAvailability(undoSize, redoSize)
-                }
-                .addTo(disposables)
-            preparation
-                .flatMapObservable {
-                    putOperationSignal
-                        .flatMap { op ->
-                            Singles.zip(undoRepo.push(op),
-                                        redoRepo.deleteAll().toSingleDefault(true))
-                                .doOnSuccess { (undoSize, _) ->
-                                    notifyUndoAvailability(undoSize, 0)
-                                }
-                                .toObservable()
-                        }
-                }
-                .subscribe()
-                .addTo(disposables)
-        }
+        // Initial undo and redo availability
+        preparation
+            .subscribe { (undoSize, redoSize) ->
+                notifyUndoAvailability(undoSize, redoSize)
+            }
+            .addTo(disposables)
+        preparation
+            .flatMapObservable {
+                offerCommandSignal
+                    .flatMap { command ->
+                        Singles.zip(undoRepo.push(command),
+                                    redoRepo.deleteAll().toSingleDefault(0))
+                            .doOnSubscribe(markBusy)
+                            .doOnSuccess(markFree2)
+                            .toObservable()
+                    }
+            }
+            .subscribe()
+            .addTo(disposables)
     }
 
     override fun stop() {
         disposables.clear()
     }
 
-    private fun notifyUndoAvailability(undoSize: Int, redoSize: Int) {
-        capacitySignal.onNext(
-            UndoAvailabilityEvent(canUndo = undoSize > 0,
-                                  canRedo = redoSize > 0))
+    private fun notifyUndoAvailability(undoSize: Int,
+                                       redoSize: Int) {
+        undoAvailableSignal.onNext(undoSize > 0)
+        redoAvailableSignal.onNext(redoSize > 0)
     }
 
     // Number of on-going task ////////////////////////////////////////////////
@@ -95,7 +91,7 @@ class UndoWidget(private val undoRepo: ICommandRepository,
     /**
      * A busy state of this widget.
      */
-    override fun observeBusy(): Observable<Boolean> {
+    override val busy: Observable<Boolean> get() {
         return busySignal
             .onUpdate()
             .map { event ->
@@ -105,16 +101,17 @@ class UndoWidget(private val undoRepo: ICommandRepository,
 
     // Undo & undo ////////////////////////////////////////////////////////////
 
-    private val capacitySignal = PublishSubject.create<UndoAvailabilityEvent>()
-    private val putOperationSignal = PublishSubject.create<WhiteboardCommand>().toSerialized()
+    private val undoAvailableSignal = BehaviorSubject.createDefault(false).toSerialized()
+    private val redoAvailableSignal = BehaviorSubject.createDefault(false).toSerialized()
+    private val offerCommandSignal = PublishSubject.create<WhiteboardCommand>().toSerialized()
 
     override fun offerCommand(command: WhiteboardCommand) {
-        putOperationSignal.onNext(command)
+        offerCommandSignal.onNext(command)
     }
 
     override fun undo(): Single<WhiteboardCommand> {
         return undoRepo.pop()
-            .doOnSubscribe(onStartUndoOrRedo)
+            .doOnSubscribe(markBusy)
             .observeOn(schedulers.main())
             .flatMap { (undoSize, command) ->
                 // Push command to the undo repository
@@ -122,7 +119,7 @@ class UndoWidget(private val undoRepo: ICommandRepository,
                             redoRepo.push(command), // undo size
                             Single.just(command)) // command
             }
-            .doOnSuccess(onSuccessUndoOrRedo)
+            .doOnSuccess(markFree3)
             .map { (_, _, command) ->
                 command
             }
@@ -130,7 +127,7 @@ class UndoWidget(private val undoRepo: ICommandRepository,
 
     override fun redo(): Single<WhiteboardCommand> {
         return redoRepo.pop()
-            .doOnSubscribe(onStartUndoOrRedo)
+            .doOnSubscribe(markBusy)
             .observeOn(schedulers.main())
             .flatMap { (redoSize, command) ->
                 // Push command to the doo repository
@@ -138,22 +135,29 @@ class UndoWidget(private val undoRepo: ICommandRepository,
                             undoRepo.push(command), // undo size
                             Single.just(command)) // command
             }
-            .doOnSuccess(onSuccessUndoOrRedo)
+            .doOnSuccess(markFree3)
             .map { (_, _, command) ->
                 command
             }
     }
 
-    override fun observeUndoCapacity(): Observable<UndoAvailabilityEvent> {
-        return capacitySignal
-    }
+    override val canUndo: Observable<Boolean> get() = undoAvailableSignal.hide()
 
-    private val onStartUndoOrRedo: Consumer<in Disposable> = Consumer {
+    override val canRedo: Observable<Boolean> get() = redoAvailableSignal.hide()
+
+    private val markBusy: Consumer<in Disposable> = Consumer {
         // Mark busy
         busySignal.markDirty(BUSY)
     }
 
-    private val onSuccessUndoOrRedo: Consumer<Triple<Int, Int, WhiteboardCommand>> = Consumer { (undoSize, redoSize, _) ->
+    private val markFree2: Consumer<Pair<Int, Int>> = Consumer { (undoSize, redoSize) ->
+        notifyUndoAvailability(undoSize, redoSize)
+
+        // Mark not busy
+        busySignal.markNotDirty(BUSY)
+    }
+
+    private val markFree3: Consumer<Triple<Int, Int, WhiteboardCommand>> = Consumer { (undoSize, redoSize, _) ->
         notifyUndoAvailability(undoSize, redoSize)
 
         // Mark not busy

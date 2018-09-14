@@ -30,7 +30,7 @@ import java.net.URI
 import java.util.*
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class PaperTest : BaseModelTest() {
+class WhiteboardTest : BaseModelTest() {
 
     @Test
     fun `basic copy`() {

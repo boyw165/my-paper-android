@@ -27,6 +27,7 @@ import com.cardinalblue.gesture.rx.DragDoingEvent
 import com.cardinalblue.gesture.rx.DragEndEvent
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.IWhiteboardEditorWidget
+import com.paper.domain.ui.IWhiteboardWidget
 import com.paper.domain.ui.ScrapWidgetFactory
 import com.paper.domain.ui.SketchScrapWidget
 import com.paper.model.*
@@ -35,7 +36,7 @@ import com.paper.model.command.WhiteboardCommand
 import com.paper.model.sketch.VectorGraphics
 import java.util.*
 
-class SketchManipulator(private val editor: IWhiteboardEditorWidget,
+class SketchManipulator(private val editor: IWhiteboardWidget,
                         private val highestZ: Int,
                         schedulers: ISchedulers)
     : Manipulator(schedulers = schedulers) {

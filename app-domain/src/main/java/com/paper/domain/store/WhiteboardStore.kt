@@ -23,7 +23,6 @@
 package com.paper.domain.store
 
 import com.paper.domain.DomainConst
-import com.paper.domain.ui.ILifecycleAware
 import com.paper.model.ISchedulers
 import com.paper.model.Whiteboard
 import com.paper.model.command.WhiteboardCommand
@@ -42,49 +41,44 @@ class WhiteboardStore(private val whiteboardID: Long,
                       private val schedulers: ISchedulers)
     : IWhiteboardStore {
 
+    override val whiteboard: Single<Whiteboard> get() = cacheWhiteboard.hide()
     private val cacheWhiteboard = SingleSubject.create<Whiteboard>()
 
     private val disposableBag = CompositeDisposable()
 
-    override fun start(): Observable<Boolean> {
-        return autoStop {
-            // First document initialization
-            whiteboardRepo
-                .getBoardById(whiteboardID)
-                .doOnSubscribe {
-                    dirtyFlag.markDirty(DomainConst.BUSY)
-                }
-                .observeOn(schedulers.main())
-                .subscribe { document ->
-                    dirtyFlag.markNotDirty(DomainConst.BUSY)
-                    cacheWhiteboard.onSuccess(document)
-                }
-                .addTo(disposableBag)
+    override fun start() {
+        // First document initialization
+        whiteboardRepo
+            .getBoardById(whiteboardID)
+            .doOnSubscribe {
+                dirtyFlag.markDirty(DomainConst.BUSY)
+            }
+            .observeOn(schedulers.main())
+            .subscribe { document ->
+                dirtyFlag.markNotDirty(DomainConst.BUSY)
+                cacheWhiteboard.onSuccess(document)
+            }
+            .addTo(disposableBag)
 
-            // Incoming command
-            Observables.combineLatest(cacheWhiteboard.toObservable(),
-                                      commandDooSignal)
-                .observeOn(schedulers.main())
-                .subscribe { (document, command) ->
-                    command.doo(document)
-                }
-                .addTo(disposableBag)
-            Observables.combineLatest(cacheWhiteboard.toObservable(),
-                                      commandUndoSignal)
-                .observeOn(schedulers.main())
-                .subscribe { (document, command) ->
-                    command.undo(document)
-                }
-                .addTo(disposableBag)
-        }
+        // Incoming command
+        Observables.combineLatest(cacheWhiteboard.toObservable(),
+                                  commandDooSignal)
+            .observeOn(schedulers.main())
+            .subscribe { (document, command) ->
+                command.doo(document)
+            }
+            .addTo(disposableBag)
+        Observables.combineLatest(cacheWhiteboard.toObservable(),
+                                  commandUndoSignal)
+            .observeOn(schedulers.main())
+            .subscribe { (document, command) ->
+                command.undo(document)
+            }
+            .addTo(disposableBag)
     }
 
     override fun stop() {
         disposableBag.clear()
-    }
-
-    override fun whiteboard(): Single<Whiteboard> {
-        return cacheWhiteboard
     }
 
     private val commandDooSignal = PublishSubject.create<WhiteboardCommand>().toSerialized()
@@ -100,7 +94,7 @@ class WhiteboardStore(private val whiteboardID: Long,
 
     private val dirtyFlag = DirtyFlag(DomainConst.BUSY)
 
-    override fun observeBusy(): Observable<Boolean> {
+    override val busy: Observable<Boolean> get() {
         return dirtyFlag.onUpdate()
             .map { event ->
                 event.flag != 0

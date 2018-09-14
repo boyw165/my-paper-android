@@ -44,25 +44,21 @@ open class ScrapWidget(protected val scrap: Scrap,
 
     protected val staticDisposableBag = CompositeDisposable()
 
-    override fun start(): Observable<Boolean> {
-        return autoStop {
-            scrap.observeFrame()
-                .subscribe { frame ->
-                    // Clear displacement
-                    synchronized(lock) {
-                        frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
-                    }
-                    // Signal out
-                    frameSignal.onNext(frame)
+    override fun start() {
+        scrap.observeFrame()
+            .subscribe { frame ->
+                // Clear displacement
+                synchronized(lock) {
+                    frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
                 }
-                .addTo(staticDisposableBag)
-        }
+                // Signal out
+                frameSignal.onNext(frame)
+            }
+            .addTo(staticDisposableBag)
     }
 
     override fun stop() {
-        synchronized(lock) {
-            staticDisposableBag.clear()
-        }
+        staticDisposableBag.clear()
     }
 
     open fun getID(): UUID {

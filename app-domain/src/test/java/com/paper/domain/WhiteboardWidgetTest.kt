@@ -47,16 +47,14 @@ class WhiteboardWidgetTest : BaseDomainTest() {
     @Test
     fun `see busy at the first and free at the end`() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                         caughtErrorSignal = caughtErrorSignal,
                                          schedulers = mockSchedulers)
 
         val busyTest = candidate
-            .observeBusy()
+            .busy
             .test()
 
         // Start widget
-        val lifecycleTest = candidate.start().test()
-        lifecycleTest.assertSubscribed()
+        candidate.start()
 
         // Make sure the stream moves
         moveScheduler()
@@ -68,14 +66,12 @@ class WhiteboardWidgetTest : BaseDomainTest() {
     @Test
     fun `inflation process test`() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                         caughtErrorSignal = caughtErrorSignal,
                                          schedulers = mockSchedulers)
 
         val scrapTester = candidate.observeScraps().test()
 
         // Start widget
-        val lifecycleTest = candidate.start().test()
-        lifecycleTest.assertSubscribed()
+        candidate.start()
 
         // Make sure the stream moves
         moveScheduler()
@@ -86,15 +82,14 @@ class WhiteboardWidgetTest : BaseDomainTest() {
     @Test
     fun `dispose before MODEL is inflated`() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                         caughtErrorSignal = caughtErrorSignal,
                                          schedulers = mockSchedulers)
 
         // Start widget
-        val lifecycleTester = candidate.start().test()
-        lifecycleTester.assertSubscribed()
-        lifecycleTester.dispose()
+        candidate.start()
 
         val addTester = candidate.observeScraps().test()
+
+        candidate.stop()
 
         // Make sure the stream moves
         moveScheduler()
@@ -105,7 +100,6 @@ class WhiteboardWidgetTest : BaseDomainTest() {
     @Test
     fun `add scrap, should see event and scrap start`() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                         caughtErrorSignal = caughtErrorSignal,
                                          schedulers = mockSchedulers)
         val scrapTest = candidate
             .observeScraps()
@@ -113,7 +107,7 @@ class WhiteboardWidgetTest : BaseDomainTest() {
 
         // Start widget
         val paper = mockWhiteboard
-        candidate.start().test().assertSubscribed()
+        candidate.start()
 
         // Make sure the stream moves
         moveScheduler()
@@ -128,7 +122,6 @@ class WhiteboardWidgetTest : BaseDomainTest() {
     @Test
     fun `remove scrap, should see event and scrap stop`() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                         caughtErrorSignal = caughtErrorSignal,
                                          schedulers = mockSchedulers)
 
         val scrapTest = candidate
@@ -136,14 +129,14 @@ class WhiteboardWidgetTest : BaseDomainTest() {
             .test()
 
         // Start widget
-        val paper = mockWhiteboard
-        candidate.start().test().assertSubscribed()
+        val document = mockWhiteboardStore.whiteboard.blockingGet()
+        candidate.start()
 
         // Make sure the stream moves
         moveScheduler()
 
         // Remove a scrap
-        paper.removeScrap(paper.getScraps()[0])
+        document.removeScrap(document.getScraps()[0])
 
         // Make sure the stream moves
         moveScheduler()
