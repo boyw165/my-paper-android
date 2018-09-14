@@ -24,6 +24,7 @@ package com.paper.domain.ui.manipulator
 
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.IWhiteboardEditorWidget
+import com.paper.domain.ui.IWhiteboardWidget
 import com.paper.domain.ui.ScrapWidget
 import com.paper.model.ISchedulers
 import io.reactivex.Completable
@@ -33,6 +34,8 @@ import io.reactivex.Observable
  * The manipulator which is mainly used by [ScrapWidget].
  */
 class ScrapWidgetManipulator(private val scrapWidget: ScrapWidget,
+                             private val whiteboardWidget: IWhiteboardWidget,
+                             private val editorWidget: IWhiteboardEditorWidget,
                              private val schedulers: ISchedulers)
     : IUserTouchManipulator {
 
@@ -43,6 +46,15 @@ class ScrapWidgetManipulator(private val scrapWidget: ScrapWidget,
                     DragManipulator(scrapWidget = scrapWidget,
                                     schedulers = schedulers)
                         .apply(touchSequence)
+                        .observeOn(schedulers.main())
+                        .doOnSuccess { command ->
+                            whiteboardWidget
+                                .whiteboardStore
+                                .offerCommandDoo(command)
+                            editorWidget
+                                .undoWidget
+                                .offerCommand(command)
+                        }
                         .toObservable())
             }
     }

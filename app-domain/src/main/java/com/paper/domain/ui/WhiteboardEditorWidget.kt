@@ -69,6 +69,7 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
                         val widget = event.scrapWidget
                         widget.userTouchManipulator = ScrapWidgetManipulator(
                             scrapWidget = widget,
+                            whiteboardWidget = whiteboardWidget,
                             schedulers = schedulers)
                     }
                 }
@@ -78,8 +79,8 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
         // User touch
         gestureSequenceSignal
             .switchMapCompletable { gestureSequence ->
-                EditorWidgetManipulator(whiteboardWidgetContext = whiteboardWidget,
-                                        editorWidgetContext = this@WhiteboardEditorWidget,
+                EditorWidgetManipulator(whiteboardWidget = whiteboardWidget,
+                                        editorWidget = this@WhiteboardEditorWidget,
                                         schedulers = schedulers)
                     .apply(gestureSequence)
             }

@@ -32,8 +32,8 @@ import io.reactivex.Observable
 /**
  * The manipulator which is mainly used by [IWhiteboardEditorWidget].
  */
-class EditorWidgetManipulator(private val whiteboardWidgetContext: IWhiteboardWidget,
-                              private val editorWidgetContext: IWhiteboardEditorWidget,
+class EditorWidgetManipulator(private val whiteboardWidget: IWhiteboardWidget,
+                              private val editorWidget: IWhiteboardEditorWidget,
                               private val schedulers: ISchedulers)
     : IUserTouchManipulator {
 
@@ -41,10 +41,19 @@ class EditorWidgetManipulator(private val whiteboardWidgetContext: IWhiteboardWi
         return gestureSequence
             .flatMapCompletable { touchSequence ->
                 Completable.fromObservable(
-                    SketchManipulator(whiteboardWidget = whiteboardWidgetContext,
-                                      highestZ = whiteboardWidgetContext.highestZ,
+                    SketchManipulator(whiteboardWidget = whiteboardWidget,
+                                      highestZ = whiteboardWidget.highestZ,
                                       schedulers = schedulers)
                         .apply(touchSequence)
+                        .observeOn(schedulers.main())
+                        .doOnSuccess { command ->
+                            whiteboardWidget
+                                .whiteboardStore
+                                .offerCommandDoo(command)
+                            editorWidget
+                                .undoWidget
+                                .offerCommand(command)
+                        }
                         .toObservable())
             }
     }
