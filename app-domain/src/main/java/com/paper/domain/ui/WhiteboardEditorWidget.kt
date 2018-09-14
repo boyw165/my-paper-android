@@ -23,7 +23,6 @@
 package com.paper.domain.ui
 
 import com.cardinalblue.gesture.rx.GestureObservable
-import com.paper.domain.ui_event.UndoAvailabilityEvent
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
@@ -40,7 +39,7 @@ import java.io.File
 // TODO: Shouldn't depend on any Android package!
 
 class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
-                             private val undoWidget: UndoWidget,
+                             private val undoWidget: IUndoWidget,
                              private val penPrefsRepo: ICommonPenPrefsRepo,
                              private val schedulers: ISchedulers)
     : IWhiteboardEditorWidget {
@@ -254,54 +253,54 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
         }
     }
 
-    //    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
-    //
-    //    override fun setPenColor(color: Int) {
-    //        cancelSignal.onNext(0)
-    //
-    //        staticDisposableBag.add(
-    //            penPrefsRepo
-    //                .putChosenPenColor(color)
-    //                .toObservable()
-    //                .takeUntil(cancelSignal)
-    //                .subscribe())
-    //    }
-    //
-    //    override fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent> {
-    //        return mColorTicketsSignal
-    //    }
-    //
-    //    override fun setPenSize(size: Float) {
-    //        return penSizeSrc
-    //            .flatMap { event ->
-    //                println("${DomainConst.TAG}: change pen size=${event.size}")
-    //
-    //                when (event.lifecycle) {
-    //                    EventLifecycle.START,
-    //                    EventLifecycle.STOP -> {
-    //                        Observable.never<Boolean>()
-    //                    }
-    //                    EventLifecycle.DOING -> {
-    //                        penPrefsRepo
-    //                            .putPenSize(event.size)
-    //                            .toObservable()
-    //                    }
-    //                }
-    //            }
-    //            .subscribe()
-    //            .addTo(staticDisposableBag)
-    //    }
-    //
-    //    private val mPenSizeSignal = BehaviorSubject.create<Float>()
-    //
-    //    /**
-    //     * Update of pen size ranging from 0.0 to 1.0
-    //     *
-    //     * @return An observable of pen size ranging from 0.0 to 1.0
-    //     */
-    //    override fun onUpdatePenSize(): Observable<Float> {
-    //        return mPenSizeSignal
-    //    }
+//    private val mColorTicketsSignal = BehaviorSubject.create<UpdateColorTicketsEvent>()
+//
+//    override fun setPenColor(color: Int) {
+//        cancelSignal.onNext(0)
+//
+//        staticDisposableBag.add(
+//            penPrefsRepo
+//                .putChosenPenColor(color)
+//                .toObservable()
+//                .takeUntil(cancelSignal)
+//                .subscribe())
+//    }
+//
+//    override fun onUpdatePenColorList(): Observable<UpdateColorTicketsEvent> {
+//        return mColorTicketsSignal
+//    }
+//
+//    override fun setPenSize(size: Float) {
+//        return penSizeSrc
+//            .flatMap { event ->
+//                println("${DomainConst.TAG}: change pen size=${event.size}")
+//
+//                when (event.lifecycle) {
+//                    EventLifecycle.START,
+//                    EventLifecycle.STOP -> {
+//                        Observable.never<Boolean>()
+//                    }
+//                    EventLifecycle.DOING -> {
+//                        penPrefsRepo
+//                            .putPenSize(event.size)
+//                            .toObservable()
+//                    }
+//                }
+//            }
+//            .subscribe()
+//            .addTo(staticDisposableBag)
+//    }
+//
+//    private val mPenSizeSignal = BehaviorSubject.create<Float>()
+//
+//    /**
+//     * Update of pen size ranging from 0.0 to 1.0
+//     *
+//     * @return An observable of pen size ranging from 0.0 to 1.0
+//     */
+//    override fun onUpdatePenSize(): Observable<Float> {
+//        return mPenSizeSignal
+//    }
 
     // Progress & error & Editor status ///////////////////////////////////////
 
