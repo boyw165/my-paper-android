@@ -22,10 +22,15 @@
 
 package com.paper.domain
 
+import com.nhaarman.mockitokotlin2.only
+import com.paper.domain.ui.IWidget
+import com.paper.domain.ui.WhiteboardEditorWidget
+import com.paper.domain.ui.WhiteboardWidget
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
@@ -42,16 +47,70 @@ class WhiteboardEditorWidgetTest : BaseDomainTest() {
     }
 
     @Test
+    fun `add a random picker widget, should see addition and widget start`() {
+        val whiteboardWidget = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
+                                                schedulers = mockSchedulers)
+        val candidate = WhiteboardEditorWidget(whiteboardWidget = whiteboardWidget,
+                                               undoWidget = mockUndoWidget,
+                                               penPrefsRepo = mockPenPrefsRepo,
+                                               schedulers = mockSchedulers)
+        candidate.start()
+        moveScheduler()
+
+        val additionTester = candidate
+            .observePickerWidgetAdded()
+            .test()
+
+        val pickerWidget = Mockito.mock(IWidget::class.java)
+        candidate.addPickerWidget(pickerWidget)
+
+        moveScheduler()
+
+        // Addition
+        additionTester.assertValueCount(1)
+        // Widget start
+        Mockito.verify(pickerWidget, only()).start()
+    }
+
+    @Test
+    fun `remove a pre-added picker widget, should see removal and widget stop`() {
+        val whiteboardWidget = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
+                                                schedulers = mockSchedulers)
+        val candidate = WhiteboardEditorWidget(whiteboardWidget = whiteboardWidget,
+                                               undoWidget = mockUndoWidget,
+                                               penPrefsRepo = mockPenPrefsRepo,
+                                               schedulers = mockSchedulers)
+        candidate.start()
+        moveScheduler()
+
+        val removalTester = candidate
+            .observePickerWidgetRemoved()
+            .test()
+
+        val pickerWidget = Mockito.mock(IWidget::class.java)
+        candidate.addPickerWidget(pickerWidget)
+        moveScheduler()
+
+        candidate.removePickerWidget(pickerWidget)
+        moveScheduler()
+
+        // Removal
+        removalTester.assertValueCount(1)
+        // Widget stop
+        Mockito.verify(pickerWidget).stop()
+    }
+
+    @Test
     fun `sketching, editor should be busy`() {
-//        val tester = WhiteboardWidget(schedulers = mockSchedulers)
+//        val candidate = WhiteboardWidget(schedulers = mockSchedulers)
 //
-//        val busyTest = tester
+//        val busyTest = candidate
 //            .onBusy()
 //            .test()
 //
 //        // Start widget
-//        tester.inject(mockWhiteboard)
-//        tester.start().test().assertSubscribed()
+//        candidate.inject(mockWhiteboard)
+//        candidate.start().test().assertSubscribed()
 //
 //        // Make sure the stream moves
 //        moveScheduler()
@@ -60,7 +119,7 @@ class WhiteboardEditorWidgetTest : BaseDomainTest() {
 //        val widget = SketchScrapWidget(
 //            scrap = SVGScrap(frame = createRandomFrame()),
 //            schedulers = mockSchedulers)
-//        tester.handleDomainEvent(GroupEditorEvent(
+//        candidate.handleDomainEvent(GroupEditorEvent(
 //            listOf(AddScrapEvent(widget),
 //                   FocusScrapEvent(widget.getID()),
 //                   StartSketchEvent(0f, 0f))))

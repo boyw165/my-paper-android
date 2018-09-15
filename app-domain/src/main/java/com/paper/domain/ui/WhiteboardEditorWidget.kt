@@ -43,7 +43,7 @@ import java.io.File
 
 // TODO: Shouldn't depend on any Android package!
 
-class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
+class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
                              override val undoWidget: IUndoWidget,
                              private val penPrefsRepo: ICommonPenPrefsRepo,
                              private val schedulers: ISchedulers)
@@ -171,6 +171,48 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
         }
     }
 
+    // Picker addition and removal  //////////////////////////////////////////
+
+    private val pickerWidgets = mutableSetOf<IWidget>()
+    private val pickerWidgetAdded = PublishSubject.create<IWidget>().toSerialized()
+    private val pickerWidgetRemoved = PublishSubject.create<IWidget>().toSerialized()
+
+    override fun addPickerWidget(widget: IWidget) {
+        synchronized(lock) {
+            if (pickerWidgets.add(widget)) {
+                widget.start()
+
+                pickerWidgetAdded.onNext(widget)
+            }
+        }
+    }
+
+    override fun removePickerWidget(widget: IWidget) {
+        synchronized(lock) {
+            if (pickerWidgets.remove(widget)) {
+                widget.stop()
+
+                pickerWidgetRemoved.onNext(widget)
+            }
+        }
+    }
+
+    override fun observePickerWidgetAdded(): Observable<IWidget> {
+        return pickerWidgetAdded.hide()
+    }
+
+    override fun observePickerWidgetRemoved(): Observable<IWidget> {
+        return pickerWidgetRemoved.hide()
+    }
+
+    // Touch /////////////////////////////////////////////////////////////////
+
+    override fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
+        gestureSequenceSignal.onNext(gestureSequence)
+    }
+
+    // Busy ///////////////////////////////////////////////////////////////////
+
     override val busy: Observable<Boolean> get() {
         return Observables
             .combineLatest(whiteboardWidget.busy,
@@ -178,10 +220,6 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
             .map { (selfBusy, undoBusy) ->
                 selfBusy && undoBusy
             }
-    }
-
-    override fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
-        gestureSequenceSignal.onNext(gestureSequence)
     }
 
     // Undo & undo ////////////////////////////////////////////////////////////

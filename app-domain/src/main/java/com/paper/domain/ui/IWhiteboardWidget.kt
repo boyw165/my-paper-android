@@ -35,6 +35,7 @@ interface IWhiteboardWidget : IWidget {
 
     val highestZ: Int
 
+    // TODO: To scraps.itemAdded and scraps.itemRemoved
     fun observeScraps(): Observable<UpdateScrapEvent>
 
     fun addWidget(widget: ScrapWidget)

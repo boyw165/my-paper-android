@@ -12,11 +12,12 @@ import com.paper.domain.ui.*
 import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
+import com.paper.model.repository.ICommonPenPrefsRepo
 import com.paper.model.repository.IWhiteboardRepository
 import com.paper.model.repository.json.FrameJSONTranslator
-import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
+import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -24,9 +25,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
 import org.koin.dsl.module.module
-import org.koin.standalone.StandAloneContext.startKoin
 import org.mockito.Mockito
-import java.lang.IllegalStateException
 import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -129,6 +128,21 @@ abstract class BaseDomainTest {
         field
     }
 
+    protected val mockPenPrefsRepo: ICommonPenPrefsRepo by lazy {
+        val field = Mockito.mock(ICommonPenPrefsRepo::class.java)
+
+        Mockito.`when`(field.getPenSize())
+            .thenReturn(Observable.just(100f))
+        Mockito.`when`(field.getChosenPenColor())
+            .thenReturn(Observable.just(Color.GREEN))
+        Mockito.`when`(field.getPenColors())
+            .thenReturn(Observable.just(listOf(Color.RED,
+                                               Color.GREEN,
+                                               Color.BLUE)))
+
+        field
+    }
+
     protected val jsonTranslator: Gson by lazy {
         GsonBuilder()
             .registerTypeAdapter(Whiteboard::class.java,
@@ -176,7 +190,7 @@ abstract class BaseDomainTest {
     private val random = Random()
 
     protected fun rand(from: Int, to: Int): Int {
-        return Math.min(random.nextInt(to - from) + from, from)
+        return random.nextInt(to - from) + from
     }
 
     protected fun rand(from: Float): Float {
@@ -215,7 +229,7 @@ abstract class BaseDomainTest {
             0 -> createRandomSketchScrap()
             1 -> createRandomImageScrap()
             2 -> createRandomTextScrap()
-            else -> throw IllegalStateException()
+            else -> createRandomSketchScrap()
         }
     }
 
