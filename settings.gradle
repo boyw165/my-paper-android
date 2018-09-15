@@ -1,3 +1,4 @@
-include ':app-presentation',
-        ':app-domain',
-        ':app-model'
+include ':app-whiteboard',
+        ':lib-whiteboard-kit-domain',
+        ':lib-whiteboard-editor-domain',
+        ':lib-whiteboard-model'

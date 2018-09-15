@@ -1,0 +1,65 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled project.hasProperty("testProguard")
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Google Support Library.
+    api rootProject.ext.dep.supportAppcompatV7
+
+    // DI
+    api rootProject.ext.dep.koinCore
+
+    // Kotlin.
+    api rootProject.ext.dep.kotlinStdlibJdk7
+    // RxKotlin.
+    api rootProject.ext.dep.rxKotlin
+    // Rx-Java.
+    api rootProject.ext.dep.rxJava
+
+    // JSON.
+    api rootProject.ext.dep.gson
+
+    // Gesture
+    api rootProject.ext.dep.collageGestureDetectorRx
+
+    // Model
+    api project(path: ':lib-whiteboard-model')
+    api project(path: ':lib-whiteboard-kit-domain')
+
+    // Unit tests.
+    testImplementation rootProject.ext.dep.testJunit
+    testImplementation rootProject.ext.dep.testMockito
+    testImplementation rootProject.ext.dep.testMockitoKotlin
+    testImplementation rootProject.ext.dep.koinCore
+    testImplementation rootProject.ext.dep.koinTest
+
+    // Instrumentation tests.
+    androidTestImplementation rootProject.ext.dep.testEspressoCore
+}
