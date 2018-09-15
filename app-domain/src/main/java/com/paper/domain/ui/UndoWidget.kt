@@ -22,6 +22,7 @@
 
 package com.paper.domain.ui
 
+import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.repository.ICommandRepository
@@ -76,6 +77,14 @@ class UndoWidget(private val undoRepo: ICommandRepository,
 
     override fun stop() {
         disposables.clear()
+    }
+
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
     }
 
     private fun notifyUndoAvailability(undoSize: Int,

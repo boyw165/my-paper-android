@@ -24,6 +24,7 @@ import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.DomainConst
 import com.paper.domain.ui.manipulator.IUserTouchManipulator
 import com.paper.model.Frame
+import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import com.paper.model.Scrap
 import io.reactivex.Completable
@@ -87,6 +88,14 @@ open class ScrapWidget(protected val scrap: Scrap,
 
     override fun stop() {
         staticDisposableBag.clear()
+    }
+
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
     }
 
     open fun getID(): UUID {

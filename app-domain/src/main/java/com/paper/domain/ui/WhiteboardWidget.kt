@@ -25,6 +25,7 @@ import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.domain.ui_event.RemoveScrapEvent
 import com.paper.domain.ui_event.UpdateScrapEvent
+import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -103,15 +104,9 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             .flatMapObservable { document ->
                 document.observeRemoveScrap()
             }
-            .subscribe({ scrap ->
-                           removeWidget(scrap.getID())
-                       },
-                       { err ->
-                           println(err)
-                       },
-                       {
-                           println("complete")
-                       })
+            .subscribe { scrap ->
+                removeWidget(scrap.getID())
+            }
             .addTo(staticDisposableBag)
 
         println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
@@ -125,7 +120,15 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
     }
 
-    val observeCanvasSize: Single<Pair<Float, Float>> get() {
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    val canvasSize: Single<Pair<Float, Float>> get() {
         return whiteboardStore
             .whiteboard
             .map { it.getSize() }

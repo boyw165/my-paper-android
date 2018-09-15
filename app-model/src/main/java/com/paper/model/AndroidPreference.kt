@@ -31,8 +31,8 @@ import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
 
-class PreferenceAndroidImpl(context: Context,
-                            workerScheduler: Scheduler)
+class AndroidPreference(context: Context,
+                        workerScheduler: Scheduler)
     : IPreferenceService,
       SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -46,7 +46,7 @@ class PreferenceAndroidImpl(context: Context,
                                               "on UI thread")
         }
         val field = PreferenceManager.getDefaultSharedPreferences(context)
-        field.registerOnSharedPreferenceChangeListener(this@PreferenceAndroidImpl)
+        field.registerOnSharedPreferenceChangeListener(this@AndroidPreference)
         field
     }
 

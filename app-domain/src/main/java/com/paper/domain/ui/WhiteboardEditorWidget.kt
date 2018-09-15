@@ -27,6 +27,7 @@ import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.manipulator.EditorWidgetManipulator
 import com.paper.domain.ui.manipulator.ScrapWidgetManipulator
 import com.paper.domain.ui_event.AddScrapEvent
+import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
@@ -70,6 +71,7 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
                         widget.userTouchManipulator = ScrapWidgetManipulator(
                             scrapWidget = widget,
                             whiteboardWidget = whiteboardWidget,
+                            editorWidget = this@WhiteboardEditorWidget,
                             schedulers = schedulers)
                     }
                 }
@@ -145,6 +147,14 @@ class WhiteboardEditorWidget(private val whiteboardWidget: IWhiteboardWidget,
         undoWidget.stop()
 
         staticDisposableBag.clear()
+    }
+
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
     }
 
     /**

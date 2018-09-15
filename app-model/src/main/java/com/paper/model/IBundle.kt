@@ -1,4 +1,6 @@
-// Copyright Mar 2018-present boyw165@gmail.com
+// Copyright Sep 2018-present SodaLabs
+//
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,13 +20,27 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.model
 
-import com.paper.model.IBundle
+interface IBundle {
 
-interface IWidget : ILifecycleAware {
+    fun putBoolean(key: String, value: Boolean)
 
-    fun saveStates(bundle: IBundle)
+    fun putInt(key: String, value: Int)
 
-    fun restoreStates(bundle: IBundle)
+    fun putLong(key: String, value: Long)
+
+    fun putFloat(key: String, value: Float)
+
+    fun putString(key: String, value: String)
+
+    fun getBoolean(key: String, default: Boolean): Boolean
+
+    fun getInt(key: String, default: Int): Int
+
+    fun getLong(key: String, default: Long): Long
+
+    fun getFloat(key: String, default: Float): Float
+
+    fun getString(key: String, default: String): String
 }

@@ -152,7 +152,7 @@ class WhiteboardApplication : MultiDexApplication(),
 
     private val mPrefsScheduler = SingleScheduler()
     override val preference by lazy {
-        PreferenceAndroidImpl(context = this@WhiteboardApplication,
-                              workerScheduler = mPrefsScheduler)
+        AndroidPreference(context = this@WhiteboardApplication,
+                          workerScheduler = mPrefsScheduler)
     }
 }

@@ -94,8 +94,8 @@ abstract class BaseDomainTest {
     protected val mockWhiteboardStore: IWhiteboardStore by lazy {
         val field = Mockito.mock(IWhiteboardStore::class.java)
 
-        Mockito.`when`(field.whiteboard).thenReturn(Single.just(mockWhiteboard))
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
+        Mockito.`when`(field.whiteboard).thenReturn(Single.just(mockWhiteboard))
 
         field
     }
@@ -103,7 +103,13 @@ abstract class BaseDomainTest {
         val field = Mockito.mock(IWhiteboardWidget::class.java)
 
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
-        Mockito.`when`(field.whiteboardStore).thenReturn(mockWhiteboardStore)
+        Mockito.`when`(field.whiteboardStore).then { mockWhiteboardStore }
+//        Mockito.`when`(field.addWidget(Mockito.any())).then {
+//            // DO NOTHING
+//        }
+//        Mockito.`when`(field.removeWidget(Mockito.any())).then {
+//            // DO NOTHING
+//        }
 
         field
     }
