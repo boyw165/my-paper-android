@@ -7,7 +7,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
+        minSdkVersion 16
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
@@ -28,36 +28,20 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // Google Support Library.
-    api rootProject.ext.dep.supportAppcompatV7
-
-    // DI
-    api rootProject.ext.dep.koinCore
+    api fileTree(dir: 'libs', include: ['*.jar'])
 
     // Kotlin.
     api rootProject.ext.dep.kotlinStdlibJdk7
-    // RxKotlin.
-    api rootProject.ext.dep.rxKotlin
+    api rootProject.ext.dep.kotlinReflect
+
     // Rx-Java.
     api rootProject.ext.dep.rxJava
-
-    // JSON.
-    api rootProject.ext.dep.gson
-
-    // Gesture
-    api rootProject.ext.dep.collageGestureDetectorRx
-
-    // Model
-    api project(path: ':lib-whiteboard-kit-domain')
+    api rootProject.ext.dep.rxRelay
+    api rootProject.ext.dep.rxKotlin
 
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit
     testImplementation rootProject.ext.dep.testMockito
-    testImplementation rootProject.ext.dep.testMockitoKotlin
-    testImplementation rootProject.ext.dep.koinCore
-    testImplementation rootProject.ext.dep.koinTest
 
     // Instrumentation tests.
     androidTestImplementation rootProject.ext.dep.testEspressoCore

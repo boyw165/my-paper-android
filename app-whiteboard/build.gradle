@@ -163,7 +163,6 @@ dependencies {
     // My Libraries.
     implementation rootProject.ext.dep.collageGestureDetector
     implementation rootProject.ext.dep.collageGestureDetectorRx
-    implementation project(path: ':lib-whiteboard-kit-domain')
     implementation project(path: ':lib-whiteboard-editor-domain')
 
     // Unit tests.
