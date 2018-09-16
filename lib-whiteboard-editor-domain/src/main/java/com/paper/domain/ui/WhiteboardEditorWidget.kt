@@ -22,11 +22,11 @@
 
 package com.paper.domain.ui
 
+import co.sodalabs.delegate.rx.itemAdded
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.manipulator.EditorWidgetManipulator
 import com.paper.domain.ui.manipulator.ScrapWidgetManipulator
-import com.paper.domain.ui_event.AddScrapEvent
 import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
@@ -62,19 +62,14 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
     override fun start() {
         // Watch scrap widget addition and assign the manipulator
-        whiteboardWidget
-            .observeScraps()
-            .subscribe { event ->
-                when (event) {
-                    is AddScrapEvent -> {
-                        val widget = event.scrapWidget
-                        widget.userTouchManipulator = ScrapWidgetManipulator(
-                            scrapWidget = widget,
-                            whiteboardWidget = whiteboardWidget,
-                            editorWidget = this@WhiteboardEditorWidget,
-                            schedulers = schedulers)
-                    }
-                }
+        whiteboardWidget::scrapWidgets
+            .itemAdded()
+            .subscribe { widget ->
+                widget.userTouchManipulator = ScrapWidgetManipulator(
+                    scrapWidget = widget,
+                    whiteboardWidget = whiteboardWidget,
+                    editorWidget = this@WhiteboardEditorWidget,
+                    schedulers = schedulers)
             }
             .addTo(staticDisposableBag)
 

@@ -20,20 +20,16 @@
 
 package com.paper.domain.ui
 
+import co.sodalabs.delegate.rx.RxMutableSet
 import com.paper.domain.DomainConst
 import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui_event.AddScrapEvent
-import com.paper.domain.ui_event.RemoveScrapEvent
-import com.paper.domain.ui_event.UpdateScrapEvent
 import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
-import io.reactivex.subjects.PublishSubject
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
@@ -49,7 +45,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
     protected var focusScrapWidget: ScrapWidget? = null
 
     // widgets
-    private val scrapWidgets = ConcurrentHashMap<UUID, ScrapWidget>()
+    override val scrapWidgets: MutableSet<ScrapWidget> by RxMutableSet(mutableSetOf())
     override var highestZ: Int = 0
 
     override fun start() {
@@ -181,15 +177,10 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
     // Scrap manipulation /////////////////////////////////////////////////////
 
-    private val updateScrapSignal = PublishSubject.create<UpdateScrapEvent>().toSerialized()
-
-    override fun observeScraps(): Observable<UpdateScrapEvent> {
-        return updateScrapSignal
-    }
 
     override fun addWidget(widget: ScrapWidget) {
         synchronized(lock) {
-            if (scrapWidgets[widget.getID()] != null) return
+            if (scrapWidgets.contains(widget)) return
 
             // Update z
             val z = widget.getFrame().z
@@ -198,7 +189,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             }
 
             val widgetDisposableBag = CompositeDisposable()
-            scrapWidgets[widget.getID()] = widget
+            scrapWidgets.add(widget)
 
             // Observe the widget busy state
             widget.observeBusy()
@@ -212,27 +203,23 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
                 .addTo(widgetDisposableBag)
             // Start the widget
             widget.start()
-
-            // Signal out
-            updateScrapSignal.onNext(AddScrapEvent(widget))
         }
     }
 
     override fun removeWidget(id: UUID) {
         synchronized(lock) {
-            scrapWidgets[id]?.let { widget ->
-                scrapWidgets.remove(widget.getID())
+            val widget = scrapWidgets.firstOrNull { it.getID() == id }
+
+            widget?.let {
+                scrapWidgets.remove(it)
 
                 // Stop the scrap
-                widget.stop()
+                it.stop()
 
                 // Clear focus
-                if (focusScrapWidget == widget) {
+                if (focusScrapWidget == it) {
                     focusScrapWidget = null
                 }
-
-                // Signal out
-                updateScrapSignal.onNext(RemoveScrapEvent(widget))
             }
         }
     }

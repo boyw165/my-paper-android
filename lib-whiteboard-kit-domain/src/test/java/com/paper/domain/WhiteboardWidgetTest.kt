@@ -22,9 +22,9 @@
 
 package com.paper.domain
 
+import co.sodalabs.delegate.rx.itemAdded
+import co.sodalabs.delegate.rx.itemRemoved
 import com.paper.domain.ui.WhiteboardWidget
-import com.paper.domain.ui_event.AddScrapEvent
-import com.paper.domain.ui_event.RemoveScrapEvent
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -49,7 +49,7 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
                                          schedulers = mockSchedulers)
 
-        val busyTest = candidate
+        val tester = candidate
             .busy
             .test()
 
@@ -59,8 +59,8 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         // Make sure the stream moves
         moveScheduler()
 
-        busyTest.assertValueAt(0, true)
-        busyTest.assertValueAt(busyTest.valueCount() - 1, false)
+        tester.assertValueAt(0, true)
+        tester.assertValueAt(tester.valueCount() - 1, false)
     }
 
     @Test
@@ -68,7 +68,9 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
                                          schedulers = mockSchedulers)
 
-        val scrapTester = candidate.observeScraps().test()
+        val tester = candidate::scrapWidgets
+            .itemAdded()
+            .test()
 
         // Start widget
         candidate.start()
@@ -76,7 +78,7 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         // Make sure the stream moves
         moveScheduler()
 
-        scrapTester.assertValueCount(mockWhiteboard.getScraps().size)
+        tester.assertValueCount(mockWhiteboard.getScraps().size)
     }
 
     @Test
@@ -87,36 +89,16 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         // Start widget
         candidate.start()
 
-        val addTester = candidate.observeScraps().test()
+        val tester = candidate::scrapWidgets
+            .itemAdded()
+            .test()
 
         candidate.stop()
 
         // Make sure the stream moves
         moveScheduler()
 
-        addTester.assertNoValues()
-    }
-
-    @Test
-    fun `add scrap, should see event and scrap start`() {
-        val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                         schedulers = mockSchedulers)
-        val scrapTest = candidate
-            .observeScraps()
-            .test()
-
-        // Start widget
-        val paper = mockWhiteboard
-        candidate.start()
-
-        // Make sure the stream moves
-        moveScheduler()
-
-        paper.getScraps().forEachIndexed { i, _ ->
-            scrapTest.assertValueAt(i) { event ->
-                event is AddScrapEvent
-            }
-        }
+        tester.assertNoValues()
     }
 
     @Test
@@ -124,8 +106,8 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         val candidate = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
                                          schedulers = mockSchedulers)
 
-        val scrapTest = candidate
-            .observeScraps()
+        val tester = candidate::scrapWidgets
+            .itemRemoved()
             .test()
 
         // Start widget
@@ -141,8 +123,6 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         // Make sure the stream moves
         moveScheduler()
 
-        scrapTest.assertValueAt(scrapTest.valueCount() - 1) { event ->
-            event is RemoveScrapEvent
-        }
+        tester.assertValueCount(1)
     }
 }

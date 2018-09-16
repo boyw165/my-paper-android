@@ -51,6 +51,7 @@ dependencies {
 
     // Model
     api project(path: ':lib-whiteboard-model')
+    api project(path: ':lib-rx-delegate')
 
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit

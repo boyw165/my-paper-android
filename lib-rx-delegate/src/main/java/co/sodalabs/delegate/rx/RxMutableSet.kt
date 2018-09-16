@@ -24,7 +24,6 @@ package co.sodalabs.delegate.rx
 
 import com.jakewharton.rxrelay2.BehaviorRelay
 import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -41,8 +40,8 @@ class RxMutableSet<T : Any>(actual: MutableSet<T>) : ReadOnlyProperty<Any, Mutab
 
     class RxSetWrapper<T>(private val actual: MutableSet<T>) : MutableSet<T> {
 
-        val addedSignal = BehaviorRelay.create<T>()
-        val removedSignal = BehaviorRelay.create<T>()
+        val addedSignal = BehaviorRelay.create<T>()!!
+        val removedSignal = BehaviorRelay.create<T>()!!
 
         private val lock = Any()
 

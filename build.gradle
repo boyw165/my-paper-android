@@ -28,6 +28,7 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
         maven { url 'https://dl.bintray.com/cblue/android' }
         maven { url 'https://dl.bintray.com/boyw165/android' }
     }

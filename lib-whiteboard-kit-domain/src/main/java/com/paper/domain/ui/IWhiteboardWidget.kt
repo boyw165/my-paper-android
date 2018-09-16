@@ -23,7 +23,6 @@
 package com.paper.domain.ui
 
 import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui_event.UpdateScrapEvent
 import io.reactivex.Observable
 import java.util.*
 
@@ -35,8 +34,7 @@ interface IWhiteboardWidget : IWidget {
 
     val highestZ: Int
 
-    // TODO: To scraps.itemAdded and scraps.itemRemoved
-    fun observeScraps(): Observable<UpdateScrapEvent>
+    val scrapWidgets: MutableSet<ScrapWidget>
 
     fun addWidget(widget: ScrapWidget)
 
