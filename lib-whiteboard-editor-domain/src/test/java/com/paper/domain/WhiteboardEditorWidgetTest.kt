@@ -22,6 +22,8 @@
 
 package com.paper.domain
 
+import co.sodalabs.delegate.rx.itemAdded
+import co.sodalabs.delegate.rx.itemRemoved
 import com.nhaarman.mockitokotlin2.only
 import com.paper.domain.ui.IWidget
 import com.paper.domain.ui.WhiteboardEditorWidget
@@ -57,12 +59,12 @@ class WhiteboardEditorWidgetTest : BaseEditorDomainTest() {
         candidate.start()
         moveScheduler()
 
-        val additionTester = candidate
-            .observePickerWidgetAdded()
+        val additionTester = candidate::pickerWidgets
+            .itemAdded()
             .test()
 
         val pickerWidget = Mockito.mock(IWidget::class.java)
-        candidate.addPickerWidget(pickerWidget)
+        candidate.pickerWidgets.add(pickerWidget)
 
         moveScheduler()
 
@@ -83,15 +85,19 @@ class WhiteboardEditorWidgetTest : BaseEditorDomainTest() {
         candidate.start()
         moveScheduler()
 
-        val removalTester = candidate
-            .observePickerWidgetRemoved()
+        val removalTester = candidate::pickerWidgets
+            .itemRemoved()
             .test()
 
         val pickerWidget = Mockito.mock(IWidget::class.java)
-        candidate.addPickerWidget(pickerWidget)
+        Mockito.`when`(pickerWidget.start())
+            .then {
+                println("picker widget starts")
+            }
+        candidate.pickerWidgets.add(pickerWidget)
         moveScheduler()
 
-        candidate.removePickerWidget(pickerWidget)
+        candidate.pickerWidgets.remove(pickerWidget)
         moveScheduler()
 
         // Removal

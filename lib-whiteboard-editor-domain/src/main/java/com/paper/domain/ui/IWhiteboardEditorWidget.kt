@@ -44,13 +44,7 @@ interface IWhiteboardEditorWidget : IWidget {
 
     val canRedo: Observable<Boolean>
 
-    fun addPickerWidget(widget: IWidget)
-
-    fun removePickerWidget(widget: IWidget)
-
-    fun observePickerWidgetAdded(): Observable<IWidget>
-
-    fun observePickerWidgetRemoved(): Observable<IWidget>
+    val pickerWidgets: MutableSet<IWidget>
 
     fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>)
 

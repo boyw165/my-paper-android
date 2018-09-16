@@ -22,7 +22,9 @@
 
 package com.paper.domain.ui
 
+import co.sodalabs.delegate.rx.RxMutableSet
 import co.sodalabs.delegate.rx.itemAdded
+import co.sodalabs.delegate.rx.itemRemoved
 import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.manipulator.EditorWidgetManipulator
@@ -64,6 +66,7 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
         // Watch scrap widget addition and assign the manipulator
         whiteboardWidget::scrapWidgets
             .itemAdded()
+            .observeOn(schedulers.main())
             .subscribe { widget ->
                 widget.userTouchManipulator = ScrapWidgetManipulator(
                     scrapWidget = widget,
@@ -72,6 +75,20 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
                     schedulers = schedulers)
             }
             .addTo(staticDisposableBag)
+
+        // Picker widgets
+        this::pickerWidgets
+            .itemAdded()
+            .observeOn(schedulers.main())
+            .subscribe { pickerWidget ->
+                pickerWidget.start()
+            }
+        this::pickerWidgets
+            .itemRemoved()
+            .observeOn(schedulers.main())
+            .subscribe { pickerWidget ->
+                pickerWidget.stop()
+            }
 
         // User touch
         gestureSequenceSignal
@@ -168,37 +185,7 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
     // Picker addition and removal  //////////////////////////////////////////
 
-    private val pickerWidgets = mutableSetOf<IWidget>()
-    private val pickerWidgetAdded = PublishSubject.create<IWidget>().toSerialized()
-    private val pickerWidgetRemoved = PublishSubject.create<IWidget>().toSerialized()
-
-    override fun addPickerWidget(widget: IWidget) {
-        synchronized(lock) {
-            if (pickerWidgets.add(widget)) {
-                widget.start()
-
-                pickerWidgetAdded.onNext(widget)
-            }
-        }
-    }
-
-    override fun removePickerWidget(widget: IWidget) {
-        synchronized(lock) {
-            if (pickerWidgets.remove(widget)) {
-                widget.stop()
-
-                pickerWidgetRemoved.onNext(widget)
-            }
-        }
-    }
-
-    override fun observePickerWidgetAdded(): Observable<IWidget> {
-        return pickerWidgetAdded.hide()
-    }
-
-    override fun observePickerWidgetRemoved(): Observable<IWidget> {
-        return pickerWidgetRemoved.hide()
-    }
+    override val pickerWidgets by RxMutableSet(mutableSetOf<IWidget>())
 
     // Touch /////////////////////////////////////////////////////////////////
 
