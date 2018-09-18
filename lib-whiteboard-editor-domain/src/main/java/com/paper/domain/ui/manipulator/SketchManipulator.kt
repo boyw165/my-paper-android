@@ -90,7 +90,7 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                     svgDisplacement = w.getSVG()
 
                     // Most importantly, add widget
-                    whiteboardWidget.addWidget(scrapWidget)
+                    whiteboardWidget.scrapWidgets.add(scrapWidget)
                 }
                 .addTo(disposableBag)
 
@@ -172,7 +172,7 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
         val widget = ScrapWidgetFactory.createScrapWidget(
             scrap,
             schedulers)
-        whiteboardWidget.addWidget(widget)
+        whiteboardWidget.scrapWidgets.add(widget)
 
         return Pair(scrap, widget as SketchScrapWidget)
     }

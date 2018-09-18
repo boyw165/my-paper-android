@@ -75,6 +75,13 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
                     schedulers = schedulers)
             }
             .addTo(staticDisposableBag)
+        whiteboardWidget::scrapWidgets
+            .itemRemoved()
+            .observeOn(schedulers.main())
+            .subscribe { widget ->
+                widget.userTouchManipulator = null
+            }
+            .addTo(staticDisposableBag)
 
         // Picker widgets
         this::pickerWidgets

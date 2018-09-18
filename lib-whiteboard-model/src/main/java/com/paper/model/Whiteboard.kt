@@ -156,11 +156,11 @@ open class Whiteboard(private var id: Long = ModelConst.TEMP_ID,
     private val addScrapSignal = PublishSubject.create<Scrap>().toSerialized()
     private val removeScrapSignal = PublishSubject.create<Scrap>().toSerialized()
 
-    fun observeAddScrap(): Observable<Scrap> {
+    fun scrapAdded(): Observable<Scrap> {
         return addScrapSignal
     }
 
-    fun observeRemoveScrap(): Observable<Scrap> {
+    fun scrapRemoved(): Observable<Scrap> {
         return removeScrapSignal
     }
 

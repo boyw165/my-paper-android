@@ -66,7 +66,7 @@ class WhiteboardTest : BaseModelTest() {
     fun `observe add scrap`() {
         val tester = Whiteboard()
 
-        val addTestObserver = tester.observeAddScrap().test()
+        val addTestObserver = tester.scrapAdded().test()
 
         tester.addScrap(createRandomScrap())
         tester.addScrap(createRandomScrap())
@@ -81,7 +81,7 @@ class WhiteboardTest : BaseModelTest() {
                                                        createRandomScrap(),
                                                        createRandomScrap()))
 
-        val removeTestObserver = tester.observeRemoveScrap().test()
+        val removeTestObserver = tester.scrapRemoved().test()
 
         tester.removeScrap(tester.getScraps()[0])
         tester.removeScrap(tester.getScraps()[0])

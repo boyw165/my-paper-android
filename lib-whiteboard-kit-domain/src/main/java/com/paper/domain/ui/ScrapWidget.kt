@@ -127,7 +127,7 @@ open class ScrapWidget(protected val scrap: Scrap,
 
     val frame: Observable<Frame> = frameSignal.hide()
 
-    open fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
+    fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
         gestureSequenceSignal.onNext(gestureSequence)
     }
 
@@ -143,7 +143,7 @@ open class ScrapWidget(protected val scrap: Scrap,
         dirtyFlag.markNotDirty(DomainConst.BUSY)
     }
 
-    fun observeBusy(): Observable<Boolean> {
+    val busy: Observable<Boolean> get() {
         return dirtyFlag
             .onUpdate()
             .map { event ->

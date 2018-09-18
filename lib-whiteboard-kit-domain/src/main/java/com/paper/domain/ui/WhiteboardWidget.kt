@@ -21,6 +21,8 @@
 package com.paper.domain.ui
 
 import co.sodalabs.delegate.rx.RxMutableSet
+import co.sodalabs.delegate.rx.itemAdded
+import co.sodalabs.delegate.rx.itemRemoved
 import com.paper.domain.DomainConst
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.model.IBundle
@@ -30,6 +32,7 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
@@ -39,6 +42,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
     private val lock = Any()
 
     private val staticDisposableBag = CompositeDisposable()
+    private val dynamicDisposableBag = ConcurrentHashMap<UUID, CompositeDisposable>()
 
     // Focus scrap controller
     @Volatile
@@ -49,17 +53,29 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
     override var highestZ: Int = 0
 
     override fun start() {
-        whiteboardStore.start()
+        // Watch scrap widget added and removed, then do start and stop accordingly
+        this::scrapWidgets
+            .itemAdded()
+            .subscribeOn(schedulers.main())
+            .subscribe { scrapWidget ->
+                startScrapWidget(scrapWidget)
+            }
+        this::scrapWidgets
+            .itemRemoved()
+            .subscribeOn(schedulers.main())
+            .subscribe { scrapWidget ->
+                stopScrapWidget(scrapWidget)
+            }
 
         // First widget inflation
         whiteboardStore
             .whiteboard
             .observeOn(schedulers.main())
-            .subscribe { document ->
+            .subscribe { whiteboard ->
                 // Mark initializing
                 dirtyFlag.markDirty(WhiteboardDirtyFlag.INITIALIZING)
 
-                document.getScraps()
+                whiteboard.getScraps()
                     .forEach { scrap ->
                         val widget = ScrapWidgetFactory.createScrapWidget(
                             scrap,
@@ -71,7 +87,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
                             highestZ = z
                         }
 
-                        addWidget(widget)
+                        scrapWidgets.add(widget)
                     }
 
                 // Mark initialization done
@@ -84,13 +100,16 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             .whiteboard
             .observeOn(schedulers.main())
             .flatMapObservable { document ->
-                document.observeAddScrap()
+                document.scrapAdded()
             }
             .subscribe { scrap ->
+                val found = scrapWidgets.firstOrNull { it.getID() == scrap.getID() }
+                if (found != null) return@subscribe
+
                 val widget = ScrapWidgetFactory.createScrapWidget(
                     scrap,
                     schedulers)
-                addWidget(widget)
+                scrapWidgets.add(widget)
             }
             .addTo(staticDisposableBag)
         // Observe remove scrap
@@ -98,12 +117,15 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             .whiteboard
             .observeOn(schedulers.main())
             .flatMapObservable { document ->
-                document.observeRemoveScrap()
+                document.scrapRemoved()
             }
             .subscribe { scrap ->
-                removeWidget(scrap.getID())
+                val widget = scrapWidgets.firstOrNull { it.getID() == scrap.getID() }
+                widget?.let { scrapWidgets.remove(it) }
             }
             .addTo(staticDisposableBag)
+
+        whiteboardStore.start()
 
         println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
     }
@@ -144,11 +166,13 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
                 busyArray.forEach { overallBusy = overallBusy || it as Boolean }
                 overallBusy
             }
+            .observeOn(schedulers.ui())
     }
 
     private val selfBusy: Observable<Boolean> get() {
         return dirtyFlag
             .onUpdate()
+            .observeOn(schedulers.main())
             .map { event ->
                 // Detect any busy child
                 when (event.changedType) {
@@ -159,8 +183,8 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
                         } else {
                             // Most of the child is initially NOT busy, therefore
                             // we need to constraint the count low to zero.
-                            if (childBusyCount.get() > 0) {
-                                childBusyCount.decrementAndGet()
+                            if (childBusyCount.decrementAndGet() < 0) {
+                                childBusyCount.set(0)
                             }
                         }
                     }
@@ -177,49 +201,43 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
     // Scrap manipulation /////////////////////////////////////////////////////
 
+    private fun startScrapWidget(scrapWidget: ScrapWidget) {
+        val widgetDisposableBag = CompositeDisposable()
 
-    override fun addWidget(widget: ScrapWidget) {
-        synchronized(lock) {
-            if (scrapWidgets.contains(widget)) return
-
-            // Update z
-            val z = widget.getFrame().z
-            if (z > highestZ) {
-                highestZ = z
-            }
-
-            val widgetDisposableBag = CompositeDisposable()
-            scrapWidgets.add(widget)
-
-            // Observe the widget busy state
-            widget.observeBusy()
-                .subscribe { busy ->
-                    if (busy) {
-                        dirtyFlag.markDirty(WhiteboardDirtyFlag.CHILD_IS_BUSY)
-                    } else {
-                        dirtyFlag.markNotDirty(WhiteboardDirtyFlag.CHILD_IS_BUSY)
-                    }
+        // Observe the widget busy state
+        scrapWidget.busy
+            .subscribe { busy ->
+                if (busy) {
+                    dirtyFlag.markDirty(WhiteboardDirtyFlag.CHILD_IS_BUSY)
+                } else {
+                    dirtyFlag.markNotDirty(WhiteboardDirtyFlag.CHILD_IS_BUSY)
                 }
-                .addTo(widgetDisposableBag)
-            // Start the widget
-            widget.start()
-        }
+            }
+            .addTo(widgetDisposableBag)
+
+        // Start the widget
+        scrapWidget.start()
+
+        // TODO: Hold widget disposable
+        dynamicDisposableBag[scrapWidget.getID()] = widgetDisposableBag
     }
 
-    override fun removeWidget(id: UUID) {
-        synchronized(lock) {
-            val widget = scrapWidgets.firstOrNull { it.getID() == id }
+    private fun stopScrapWidget(scrapWidget: ScrapWidget) {
+        val widget = synchronized(lock) {
+            scrapWidgets.firstOrNull { it.getID() == scrapWidget.getID() }
+        }
 
-            widget?.let {
-                scrapWidgets.remove(it)
+        widget?.let {
+            val id = it.getID()
+            dynamicDisposableBag[id]?.dispose()
+            dynamicDisposableBag.remove(id)
 
-                // Stop the scrap
-                it.stop()
+            // Stop the scrap
+            it.stop()
 
-                // Clear focus
-                if (focusScrapWidget == it) {
-                    focusScrapWidget = null
-                }
+            // Clear focus
+            if (focusScrapWidget == it) {
+                focusScrapWidget = null
             }
         }
     }

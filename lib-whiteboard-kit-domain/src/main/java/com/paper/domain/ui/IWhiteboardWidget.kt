@@ -35,8 +35,4 @@ interface IWhiteboardWidget : IWidget {
     val highestZ: Int
 
     val scrapWidgets: MutableSet<ScrapWidget>
-
-    fun addWidget(widget: ScrapWidget)
-
-    fun removeWidget(id: UUID)
 }
