@@ -75,7 +75,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
                 // Mark initializing
                 dirtyFlag.markDirty(WhiteboardDirtyFlag.INITIALIZING)
 
-                whiteboard.getScraps()
+                whiteboard.scraps
                     .forEach { scrap ->
                         val widget = ScrapWidgetFactory.createScrapWidget(scrap)
 
@@ -97,7 +97,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         whiteboardStore
             .whiteboard
             .flatMapObservable { document ->
-                document.scrapAdded()
+                document::scraps.itemAdded()
             }
             .observeOn(schedulers.main())
             .subscribe { scrap ->
@@ -112,7 +112,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         whiteboardStore
             .whiteboard
             .flatMapObservable { document ->
-                document.scrapRemoved()
+                document::scraps.itemRemoved()
             }
             .observeOn(schedulers.main())
             .subscribe { scrap ->
@@ -145,7 +145,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
     val canvasSize: Single<Pair<Float, Float>> get() {
         return whiteboardStore
             .whiteboard
-            .map { it.getSize() }
+            .map { it.size }
     }
 
     // Number of on-going task ////////////////////////////////////////////////

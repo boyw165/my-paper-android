@@ -20,79 +20,30 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import io.useful.delegate.rx.RxMutableSet
+import io.useful.delegate.rx.RxValue
 import java.net.URI
 import java.util.*
 
-open class Whiteboard(private var id: Long = ModelConst.TEMP_ID,
-                      private val uuid: UUID = UUID.randomUUID(),
-                      private val createdAt: Long = 0L,
-                      private var modifiedAt: Long = 0L,
-                      private var width: Float = 512f,
-                      private var height: Float = 512f,
-                      private val viewPort: Rect = Rect(0f, 0f, 0f, 0f),
-                      private var thumbnail: Triple<URI, Int, Int> = Triple(ModelConst.NULL_FILE, 0, 0),
-                      private var scraps: MutableList<Scrap> = mutableListOf())
+open class Whiteboard(id: Long = ModelConst.TEMP_ID,
+                      val uuid: UUID = UUID.randomUUID(),
+                      val createdAt: Long = 0L,
+                      modifiedAt: Long = 0L,
+                      width: Float = 512f,
+                      height: Float = 512f,
+                      viewPort: Rect = Rect(0f, 0f, 0f, 0f),
+                      thumbnail: Triple<URI, Int, Int> = Triple(ModelConst.NULL_FILE, 0, 0),
+                      scraps: Set<Scrap> = mutableSetOf())
     : NoObfuscation {
 
-    private val lock = Any()
+    var id: Long by RxValue(id)
+    var modifiedAt: Long by RxValue(modifiedAt)
+    var thumbnail: Triple<URI, Int, Int> by RxValue(thumbnail)
 
-    // General ////////////////////////////////////////////////////////////////
+    var size: Pair<Float, Float> by RxValue(Pair(width, height))
+    var viewPort: Rect by RxValue(viewPort)
 
-    fun getID(): Long {
-        return id
-    }
-
-    fun setID(id: Long) {
-        this.id = id
-    }
-
-    fun getUUID(): UUID {
-        return uuid
-    }
-
-    fun getCreatedAt(): Long {
-        return createdAt
-    }
-
-    fun getModifiedAt(): Long {
-        synchronized(lock) {
-            return modifiedAt
-        }
-    }
-
-    fun setModifiedAt(time: Long) {
-        synchronized(lock) {
-            modifiedAt = time
-        }
-    }
-
-    fun getSize(): Pair<Float, Float> {
-        synchronized(lock) {
-            return Pair(width, height)
-        }
-    }
-
-    fun setSize(size: Pair<Float, Float>) {
-        synchronized(lock) {
-            val (width, height) = size
-            this.width = width
-            this.height = height
-        }
-    }
-
-    fun getViewPort(): Rect {
-        synchronized(lock) {
-            return viewPort.copy()
-        }
-    }
-
-    fun setViewPort(rect: Rect) {
-        synchronized(lock) {
-            viewPort.set(rect)
-        }
-    }
+    val scraps by RxMutableSet(scraps.toMutableSet())
 
     // Caption & tags /////////////////////////////////////////////////////////
 
@@ -104,83 +55,34 @@ open class Whiteboard(private var id: Long = ModelConst.TEMP_ID,
         return emptyList()
     }
 
-    // Thumbnail //////////////////////////////////////////////////////////////
-
-    fun getThumbnail(): URI {
-        return thumbnail.first
-    }
-
-    fun setThumbnail(file: URI,
-                              width: Int,
-                              height: Int) {
-        synchronized(lock) {
-            thumbnail = Triple(file, width, height)
-        }
-    }
-
-    fun getThumbnailSize(): Pair<Int, Int> {
-        return Pair(thumbnail.second, thumbnail.third)
-    }
-
     // Scraps /////////////////////////////////////////////////////////////////
 
-    fun getScraps(): List<Scrap> {
-        synchronized(lock) {
-            // Must clone the list in case concurrent modification
-            return scraps.toList()
-        }
-    }
-
     fun getScrapByID(id: UUID): Scrap {
-        return synchronized(lock) {
-            scraps.first { it.getID() == id }
-        }
+        return scraps.first { it.getID() == id }
     }
 
     fun addScrap(scrap: Scrap) {
-        synchronized(lock) {
-            if (scraps.add(scrap)) {
-                addScrapSignal.onNext(scrap)
-            }
-        }
+        scraps.add(scrap)
     }
 
     fun removeScrap(scrap: Scrap) {
-        synchronized(lock) {
-            if (scraps.remove(scrap)) {
-                removeScrapSignal.onNext(scrap)
-            }
-        }
-    }
-
-    private val addScrapSignal = PublishSubject.create<Scrap>().toSerialized()
-    private val removeScrapSignal = PublishSubject.create<Scrap>().toSerialized()
-
-    fun scrapAdded(): Observable<Scrap> {
-        return addScrapSignal
-    }
-
-    fun scrapRemoved(): Observable<Scrap> {
-        return removeScrapSignal
+        scraps.remove(scrap)
     }
 
     // Equality & hash ////////////////////////////////////////////////////////
 
     fun copy(): Whiteboard {
-        return synchronized(lock) {
-            val copyScraps = mutableListOf<Scrap>()
-            scraps.forEach { copyScraps.add(it.copy()) }
+        val copyScraps = scraps.toSet()
 
-            Whiteboard(id = id,
-                       uuid = uuid,
-                       createdAt = createdAt,
-                       modifiedAt = modifiedAt,
-                       width = width,
-                       height = height,
-                       viewPort = viewPort.copy(),
-                       thumbnail = thumbnail.copy(),
-                       scraps = copyScraps)
-        }
+        return Whiteboard(id = id,
+                          uuid = uuid,
+                          createdAt = createdAt,
+                          modifiedAt = modifiedAt,
+                          width = size.first,
+                          height = size.second,
+                          viewPort = viewPort.copy(),
+                          thumbnail = thumbnail.copy(),
+                          scraps = copyScraps)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -189,27 +91,25 @@ open class Whiteboard(private var id: Long = ModelConst.TEMP_ID,
 
         other as Whiteboard
 
-        if (getID() != other.getID()) return false
-        if (getUUID() != other.getUUID()) return false
-        if (getCreatedAt() != other.createdAt) return false
-        if (getModifiedAt() != other.getModifiedAt()) return false
-        if (getSize() != other.getSize()) return false
-        if (getThumbnail() != other.getThumbnail()) return false
-        if (getThumbnailSize() != other.getThumbnailSize()) return false
-        if (getScraps() != other.getScraps()) return false
+        if (id != other.id) return false
+        if (uuid != other.uuid) return false
+        if (createdAt != other.createdAt) return false
+        if (modifiedAt != other.modifiedAt) return false
+        if (size != other.size) return false
+        if (thumbnail != other.thumbnail) return false
+        if (scraps != other.scraps) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = getID().hashCode()
-        result = 31 * result + getUUID().hashCode()
-        result = 31 * result + getCreatedAt().hashCode()
-        result = 31 * result + getModifiedAt().hashCode()
-        result = 31 * result + getSize().hashCode()
-        result = 31 * result + getThumbnail().hashCode()
-        result = 31 * result + getThumbnailSize().hashCode()
-        result = 31 * result + getScraps().hashCode()
+        var result = id.hashCode()
+        result = 31 * result + uuid.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + modifiedAt.hashCode()
+        result = 31 * result + size.hashCode()
+        result = 31 * result + thumbnail.hashCode()
+        result = 31 * result + scraps.hashCode()
         return result
     }
 }

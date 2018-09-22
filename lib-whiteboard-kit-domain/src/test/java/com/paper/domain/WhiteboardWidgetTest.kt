@@ -78,7 +78,7 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         // Make sure the stream moves
         moveScheduler()
 
-        tester.assertValueCount(mockWhiteboard.getScraps().size)
+        tester.assertValueCount(mockWhiteboard.scraps.size)
     }
 
     @Test
@@ -118,7 +118,7 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         moveScheduler()
 
         // Remove a scrap
-        document.removeScrap(document.getScraps()[0])
+        document.removeScrap(document.scraps.toList()[0])
 
         // Make sure the stream moves
         moveScheduler()

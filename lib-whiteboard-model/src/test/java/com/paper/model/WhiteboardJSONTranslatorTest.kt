@@ -33,8 +33,8 @@ class WhiteboardJSONTranslatorTest : BaseModelTest() {
     @Test
     fun `serialize paper without scraps`() {
         val model = Whiteboard()
-        model.setSize(Pair(360f, 480f))
-        model.setViewPort(Rect(100f, 100f, 360f, 480f))
+        model.size = Pair(360f, 480f)
+        model.viewPort = Rect(100f, 100f, 360f, 480f)
 
         val jsonString = jsonTranslator.toJson(model, Whiteboard::class.java)
 
@@ -49,11 +49,11 @@ class WhiteboardJSONTranslatorTest : BaseModelTest() {
     fun `deserialize paper without scraps`() {
         val model = jsonTranslator.fromJson<Whiteboard>("{\"width\":360.0,\"height\":480.0,\"view-port\":[100.0,100.0,260.0,380.0],\"scraps\":[]}", Whiteboard::class.java)
 
-        val (width, height) = model.getSize()
+        val (width, height) = model.size
         Assert.assertEquals(360f, width)
         Assert.assertEquals(480f, height)
 
-        val viewPort = model.getViewPort()
+        val viewPort = model.viewPort
         Assert.assertEquals(100f, viewPort.left)
         Assert.assertEquals(100f, viewPort.top)
         Assert.assertEquals(360f, viewPort.right)

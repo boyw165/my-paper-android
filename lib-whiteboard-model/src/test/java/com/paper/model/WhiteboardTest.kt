@@ -22,6 +22,8 @@
 
 package com.paper.model
 
+import io.useful.itemAdded
+import io.useful.itemRemoved
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,15 +44,15 @@ class WhiteboardTest : BaseModelTest() {
                                  height = 500f,
                                  viewPort = Rect(0f, 0f, 500f, 500f))
         val tester2 = tester1.copy()
-        tester2.setSize(Pair(300f, 300f))
-        tester2.setViewPort(Rect(125f, 125f, 250f, 250f))
-        tester2.setModifiedAt(300L)
-        tester2.setThumbnail(URI("file:///foo"), 100, 100)
+        tester2.size = Pair(300f, 300f)
+        tester2.viewPort = Rect(125f, 125f, 250f, 250f)
+        tester2.modifiedAt = 300L
+        tester2.thumbnail = Triple(URI("file:///foo"), 100, 100)
 
         Assert.assertNotEquals(tester2, tester1)
-        Assert.assertNotEquals(tester2.getSize(), tester1.getSize())
-        Assert.assertNotEquals(tester2.getViewPort(), tester1.getViewPort())
-        Assert.assertNotEquals(tester2.getModifiedAt(), tester1.getModifiedAt())
+        Assert.assertNotEquals(tester2.size, tester1.size)
+        Assert.assertNotEquals(tester2.viewPort, tester1.viewPort)
+        Assert.assertNotEquals(tester2.modifiedAt, tester1.modifiedAt)
     }
 
     @Test
@@ -59,14 +61,14 @@ class WhiteboardTest : BaseModelTest() {
         val tester2 = tester1.copy()
         tester2.addScrap(Scrap())
 
-        Assert.assertNotEquals(tester2.getScraps(), tester1.getScraps())
+        Assert.assertNotEquals(tester2.scraps, tester1.scraps)
     }
 
     @Test
     fun `observe add scrap`() {
         val tester = Whiteboard()
 
-        val addTestObserver = tester.scrapAdded().test()
+        val addTestObserver = tester::scraps.itemAdded().test()
 
         tester.addScrap(createRandomScrap())
         tester.addScrap(createRandomScrap())
@@ -77,15 +79,16 @@ class WhiteboardTest : BaseModelTest() {
 
     @Test
     fun `observe remove scrap`() {
-        val tester = Whiteboard(scraps = mutableListOf(createRandomScrap(),
-                                                       createRandomScrap(),
-                                                       createRandomScrap()))
+        val scrap1 = createRandomScrap()
+        val scrap2 = createRandomScrap()
+        val scrap3 = createRandomScrap()
+        val tester = Whiteboard(scraps = mutableSetOf(scrap1, scrap2, scrap3))
 
-        val removeTestObserver = tester.scrapRemoved().test()
+        val removeTestObserver = tester::scraps.itemRemoved().test()
 
-        tester.removeScrap(tester.getScraps()[0])
-        tester.removeScrap(tester.getScraps()[0])
-        tester.removeScrap(tester.getScraps()[0])
+        tester.removeScrap(scrap1)
+        tester.removeScrap(scrap2)
+        tester.removeScrap(scrap3)
 
         removeTestObserver.assertValueCount(3)
     }

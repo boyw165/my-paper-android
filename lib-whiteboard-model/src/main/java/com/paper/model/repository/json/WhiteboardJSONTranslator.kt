@@ -38,12 +38,12 @@ class WhiteboardJSONTranslator : JsonSerializer<Whiteboard>,
         val root = JsonObject()
 
         // Canvas size
-        val (width, height) = src.getSize()
+        val (width, height) = src.size
         root.addProperty("width", width)
         root.addProperty("height", height)
 
         // View port
-        val viewPort = src.getViewPort()
+        val viewPort = src.viewPort
         val viewPortJson = JsonArray()
         viewPortJson.add(viewPort.left)
         viewPortJson.add(viewPort.top)
@@ -53,7 +53,7 @@ class WhiteboardJSONTranslator : JsonSerializer<Whiteboard>,
 
         // Scraps
         val scrapJson = JsonArray()
-        src.getScraps().forEach { scrapJson.add(context.serialize(it, Scrap::class.java)) }
+        src.scraps.forEach { scrapJson.add(context.serialize(it, Scrap::class.java)) }
         root.add("scraps", scrapJson)
 
         return root
@@ -68,7 +68,7 @@ class WhiteboardJSONTranslator : JsonSerializer<Whiteboard>,
         // Canvas size
         val width = root["width"].asFloat
         val height = root["height"].asFloat
-        paperDetails.setSize(Pair(width, height))
+        paperDetails.size = Pair(width, height)
 
         // View port
         val viewPortJson = root["view-port"].asJsonArray
@@ -76,9 +76,9 @@ class WhiteboardJSONTranslator : JsonSerializer<Whiteboard>,
         val vy = viewPortJson[1].asFloat
         val vw = viewPortJson[2].asFloat
         val vh = viewPortJson[3].asFloat
-        paperDetails.setViewPort(Rect(vx, vy,
-                                      vx + vw,
-                                      vy + vh))
+        paperDetails.viewPort = Rect(vx, vy,
+                                     vx + vw,
+                                     vy + vh)
 
         // Scraps
         if (root.has("scraps")) {

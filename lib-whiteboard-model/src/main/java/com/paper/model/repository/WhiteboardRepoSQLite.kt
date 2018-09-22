@@ -38,7 +38,6 @@ import com.paper.model.ModelConst
 import com.paper.model.event.UpdateDatabaseEvent
 import com.paper.model.repository.sqlite.PaperTable
 import io.reactivex.Observable
-import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.SingleEmitter
 import io.reactivex.disposables.CompositeDisposable
@@ -209,7 +208,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                     val timestamp = getCurrentTime()
                     val newPaper = Whiteboard(
                         createdAt = timestamp)
-                    newPaper.setModifiedAt(timestamp)
+                    newPaper.modifiedAt = timestamp
 
                     return@fromCallable newPaper
                 }
@@ -285,8 +284,8 @@ class WhiteboardRepoSQLite(private val authority: String,
     private fun putPaperImpl(paper: Whiteboard): Single<UpdateDatabaseEvent> {
         return Single
             .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
-                val id = paper.getID()
-                paper.setModifiedAt(getCurrentTime())
+                val id = paper.id
+                paper.modifiedAt = getCurrentTime()
 
                 if (id == ModelConst.TEMP_ID) {
                     val uri = Uri.Builder()
@@ -306,7 +305,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                             val newID = newURI.lastPathSegment.toLong()
                             prefs.putLong(ModelConst.PREFS_BROWSE_WHITEBOARD_ID, newID).blockingGet()
 
-                            paper.setID(newID)
+                            paper.id = newID
 
                             if (!emitter.isDisposed) {
                                 println("${ModelConst.TAG}: put paper (commandID=$newID) successfully")
@@ -440,14 +439,14 @@ class WhiteboardRepoSQLite(private val authority: String,
     private fun convertPaperToValues(paper: Whiteboard): ContentValues {
         val values = ContentValues()
 
-        values.put(PaperTable.COL_UUID, paper.getUUID().toString())
-        values.put(PaperTable.COL_CREATED_AT, paper.getCreatedAt())
-        values.put(PaperTable.COL_MODIFIED_AT, paper.getModifiedAt())
+        values.put(PaperTable.COL_UUID, paper.id.toString())
+        values.put(PaperTable.COL_CREATED_AT, paper.createdAt)
+        values.put(PaperTable.COL_MODIFIED_AT, paper.modifiedAt)
         values.put(PaperTable.COL_CAPTION, paper.getCaption())
 
-        values.put(PaperTable.COL_THUMB_URI, paper.getThumbnail().toString())
+        values.put(PaperTable.COL_THUMB_URI, paper.thumbnail.first.toString())
 
-        val (thumbWidth, thumbHeight) = paper.getThumbnailSize()
+        val (_, thumbWidth, thumbHeight) = paper.thumbnail
         values.put(PaperTable.COL_THUMB_WIDTH, thumbWidth)
         values.put(PaperTable.COL_THUMB_HEIGHT, thumbHeight)
 
@@ -460,36 +459,36 @@ class WhiteboardRepoSQLite(private val authority: String,
 
     private fun convertCursorToPaper(cursor: Cursor,
                                      fullyRead: Boolean): Whiteboard {
-        val paper = Whiteboard(
+        val whiteboard = Whiteboard(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_ID)),
             uuid = UUID.fromString(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_UUID))),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(PaperTable.COL_CREATED_AT)))
 
         // Mutable modification time stamp
         val colOfModifiedAt = cursor.getColumnIndexOrThrow(PaperTable.COL_MODIFIED_AT)
-        paper.setModifiedAt(cursor.getLong(colOfModifiedAt))
+        whiteboard.modifiedAt = cursor.getLong(colOfModifiedAt)
 
         // Thumbnail
         val thumbWidth = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_WIDTH))
         val thumbHeight = cursor.getInt(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_HEIGHT))
-        paper.setThumbnail(URI(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_URI))), thumbWidth, thumbHeight)
+        whiteboard.thumbnail = Triple(URI(cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_THUMB_URI))), thumbWidth, thumbHeight)
 
         if (fullyRead) {
-            val paperDetail = jsonTranslator.fromJson(
+            val detail = jsonTranslator.fromJson(
                 cursor.getString(cursor.getColumnIndexOrThrow(PaperTable.COL_DATA)),
                 Whiteboard::class.java)
 
             // Canvas size
-            paper.setSize(paperDetail.getSize())
+            whiteboard.size = detail.size
 
             // View port
-            paper.setViewPort(paperDetail.getViewPort())
+            whiteboard.viewPort = detail.viewPort
 
             // Scrap
-            paperDetail.getScraps().forEach { paper.addScrap(it) }
+            whiteboard.scraps.addAll(detail.scraps)
         }
 
-        return paper
+        return whiteboard
     }
 
     ///////////////////////////////////////////////////////////////////////////
