@@ -24,7 +24,6 @@ import com.paper.domain.DomainConst
 import com.paper.domain.ui.manipulator.IUserTouchManipulator
 import com.paper.model.Frame
 import com.paper.model.IBundle
-import com.paper.model.ISchedulers
 import com.paper.model.Scrap
 import io.reactivex.Completable
 import io.reactivex.Observable
@@ -36,8 +35,7 @@ import io.useful.rx.GestureEvent
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
-open class ScrapWidget(protected val scrap: Scrap,
-                       protected val schedulers: ISchedulers)
+open class ScrapWidget(protected val scrap: Scrap)
     : IWidget {
 
     protected val lock = Any()

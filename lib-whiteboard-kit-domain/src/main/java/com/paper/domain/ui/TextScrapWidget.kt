@@ -21,13 +21,10 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
-import com.paper.model.ISchedulers
 import com.paper.model.TextScrap
 
-class TextScrapWidget(scrap: TextScrap,
-                      schedulers: ISchedulers)
-    : ScrapWidget(scrap,
-                  schedulers),
+class TextScrapWidget(scrap: TextScrap)
+    : ScrapWidget(scrap),
       IWidget {
 
     override fun start() {

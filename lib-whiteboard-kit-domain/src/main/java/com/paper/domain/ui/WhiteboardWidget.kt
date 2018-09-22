@@ -77,9 +77,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
                 whiteboard.getScraps()
                     .forEach { scrap ->
-                        val widget = ScrapWidgetFactory.createScrapWidget(
-                            scrap,
-                            schedulers)
+                        val widget = ScrapWidgetFactory.createScrapWidget(scrap)
 
                         // Update z
                         val z = widget.getFrame().z
@@ -98,27 +96,25 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         // Observe add scrap
         whiteboardStore
             .whiteboard
-            .observeOn(schedulers.main())
             .flatMapObservable { document ->
                 document.scrapAdded()
             }
+            .observeOn(schedulers.main())
             .subscribe { scrap ->
                 val found = scrapWidgets.firstOrNull { it.getID() == scrap.getID() }
                 if (found != null) return@subscribe
 
-                val widget = ScrapWidgetFactory.createScrapWidget(
-                    scrap,
-                    schedulers)
+                val widget = ScrapWidgetFactory.createScrapWidget(scrap)
                 scrapWidgets.add(widget)
             }
             .addTo(staticDisposableBag)
         // Observe remove scrap
         whiteboardStore
             .whiteboard
-            .observeOn(schedulers.main())
             .flatMapObservable { document ->
                 document.scrapRemoved()
             }
+            .observeOn(schedulers.main())
             .subscribe { scrap ->
                 val widget = scrapWidgets.firstOrNull { it.getID() == scrap.getID() }
                 widget?.let { scrapWidgets.remove(it) }
@@ -166,7 +162,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
                 busyArray.forEach { overallBusy = overallBusy || it as Boolean }
                 overallBusy
             }
-            .observeOn(schedulers.ui())
+            .observeOn(schedulers.main())
     }
 
     private val selfBusy: Observable<Boolean> get() {

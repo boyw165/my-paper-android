@@ -261,18 +261,15 @@ abstract class BaseEditorDomainTest {
     }
 
     protected fun createRandomSketchScrapWidget(): SketchScrapWidget {
-        return SketchScrapWidget(scrap = createRandomSketchScrap(),
-                                 schedulers = mockSchedulers)
+        return SketchScrapWidget(scrap = createRandomSketchScrap())
     }
 
     protected fun createRandomImageScrapWidget(): ImageScrapWidget {
-        return ImageScrapWidget(scrap = createRandomImageScrap(),
-                                schedulers = mockSchedulers)
+        return ImageScrapWidget(scrap = createRandomImageScrap())
     }
 
     protected fun createRandomTextScrapWidget(): TextScrapWidget {
-        return TextScrapWidget(scrap = createRandomTextScrap(),
-                               schedulers = mockSchedulers)
+        return TextScrapWidget(scrap = createRandomTextScrap())
     }
 
     // Touch sequence /////////////////////////////////////////////////////////

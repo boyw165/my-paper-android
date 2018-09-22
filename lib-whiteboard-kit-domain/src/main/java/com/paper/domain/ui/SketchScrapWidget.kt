@@ -21,7 +21,6 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
-import com.paper.model.ISchedulers
 import com.paper.model.SketchScrap
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Observable
@@ -29,10 +28,8 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
 
-open class SketchScrapWidget(scrap: SketchScrap,
-                             schedulers: ISchedulers)
-    : ScrapWidget(scrap,
-                  schedulers) {
+open class SketchScrapWidget(scrap: SketchScrap)
+    : ScrapWidget(scrap) {
 
     private val sketchScrap: SketchScrap get() = scrap as SketchScrap
     private val sketchDisposableBag = CompositeDisposable()
@@ -40,7 +37,6 @@ open class SketchScrapWidget(scrap: SketchScrap,
     override fun start() {
         // Add/remove
         sketchScrap.observeSVG()
-            .observeOn(schedulers.main())
             .subscribe { svg ->
                 synchronized(lock) {
                     svgDisplacement = null

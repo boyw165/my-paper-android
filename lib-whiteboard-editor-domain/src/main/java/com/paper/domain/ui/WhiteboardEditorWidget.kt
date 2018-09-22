@@ -100,10 +100,10 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
         // User touch
         userTouchInbox
+            .observeOn(schedulers.main())
             .switchMapCompletable { gestureSequence ->
                 EditorWidgetManipulator(whiteboardWidget = whiteboardWidget,
-                                        editorWidget = this@WhiteboardEditorWidget,
-                                        schedulers = schedulers)
+                                        editorWidget = this@WhiteboardEditorWidget)
                     .apply(gestureSequence)
             }
             .subscribe()

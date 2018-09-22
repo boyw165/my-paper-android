@@ -24,7 +24,6 @@ package com.paper.domain.ui.manipulator
 
 import com.paper.domain.ui.IWhiteboardEditorWidget
 import com.paper.domain.ui.IWhiteboardWidget
-import com.paper.model.ISchedulers
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.useful.rx.GestureEvent
@@ -33,8 +32,7 @@ import io.useful.rx.GestureEvent
  * The manipulator which is mainly used by [IWhiteboardEditorWidget].
  */
 class EditorWidgetManipulator(private val whiteboardWidget: IWhiteboardWidget,
-                              private val editorWidget: IWhiteboardEditorWidget,
-                              private val schedulers: ISchedulers)
+                              private val editorWidget: IWhiteboardEditorWidget)
     : IUserTouchManipulator {
 
     override fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable {
@@ -42,10 +40,8 @@ class EditorWidgetManipulator(private val whiteboardWidget: IWhiteboardWidget,
             .flatMapCompletable { touchSequence ->
                 Completable.fromObservable(
                     SketchManipulator(whiteboardWidget = whiteboardWidget,
-                                      highestZ = whiteboardWidget.highestZ,
-                                      schedulers = schedulers)
+                                      highestZ = whiteboardWidget.highestZ)
                         .apply(touchSequence)
-                        .observeOn(schedulers.main())
                         .doOnSuccess { command ->
                             whiteboardWidget
                                 .whiteboardStore

@@ -27,23 +27,16 @@ import com.paper.model.*
 object ScrapWidgetFactory {
 
     @JvmStatic
-    fun createScrapWidget(scrap: Scrap,
-                          schedulers: ISchedulers): ScrapWidget {
+    fun createScrapWidget(scrap: Scrap): ScrapWidget {
         return when (scrap) {
             is SketchScrap -> {
-                SketchScrapWidget(
-                    scrap = scrap,
-                    schedulers = schedulers)
+                SketchScrapWidget(scrap = scrap)
             }
             is ImageScrap -> {
-                ImageScrapWidget(
-                    scrap = scrap,
-                    schedulers = schedulers)
+                ImageScrapWidget(scrap = scrap)
             }
             is TextScrap -> {
-                TextScrapWidget(
-                    scrap = scrap,
-                    schedulers = schedulers)
+                TextScrapWidget(scrap = scrap)
             }
             else -> TODO()
         }

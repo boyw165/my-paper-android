@@ -46,8 +46,7 @@ class SketchManipulatorTest : BaseEditorDomainTest() {
     @Test
     fun `given a drag sequence, must see one command at the end`() {
         val candidate = SketchManipulator(whiteboardWidget = mockWhiteboardWidget,
-                                          highestZ = 0,
-                                          schedulers = mockSchedulers)
+                                          highestZ = 0)
 
         val tester = candidate
             .apply(mockDragSequence)

@@ -39,8 +39,7 @@ import io.useful.rx.GestureEvent
 import java.util.*
 
 class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
-                        private val highestZ: Int,
-                        private val schedulers: ISchedulers)
+                        private val highestZ: Int)
     : IUserTouchCommandOutManipulator {
 
     @Volatile
@@ -64,7 +63,6 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
 
             sharedTouchSequence
                 .firstElement()
-                .observeOn(schedulers.main())
                 .subscribe { event ->
                     if (event !is DragEvent) {
                         emitter.onComplete()
@@ -93,7 +91,6 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
 
             sharedTouchSequence
                 .skip(1)
-                .observeOn(schedulers.main())
                 .subscribe { event ->
                     val p = when (event) {
                         is DragEvent -> {
@@ -121,7 +118,6 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                 .addTo(disposableBag)
 
             Completable.fromObservable(sharedTouchSequence)
-                .observeOn(schedulers.main())
                 .subscribe {
                     // Prepare command with updated MODEL
                     scrap.setSVG(svgDisplacement)
@@ -159,9 +155,7 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
         val scrap = createSketchScrap(id = id,
                                       x = x,
                                       y = y)
-        val widget = ScrapWidgetFactory.createScrapWidget(
-            scrap,
-            schedulers)
+        val widget = ScrapWidgetFactory.createScrapWidget(scrap)
         whiteboardWidget.scrapWidgets.add(widget)
 
         return Pair(scrap, widget as SketchScrapWidget)

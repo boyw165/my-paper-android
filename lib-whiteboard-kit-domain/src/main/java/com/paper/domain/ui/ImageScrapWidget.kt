@@ -24,10 +24,8 @@ import com.paper.domain.DomainConst
 import com.paper.model.ISchedulers
 import com.paper.model.ImageScrap
 
-class ImageScrapWidget(scrap: ImageScrap,
-                       schedulers: ISchedulers)
-    : ScrapWidget(scrap,
-                  schedulers),
+class ImageScrapWidget(scrap: ImageScrap)
+    : ScrapWidget(scrap),
       IWidget {
 
     override fun start() {
