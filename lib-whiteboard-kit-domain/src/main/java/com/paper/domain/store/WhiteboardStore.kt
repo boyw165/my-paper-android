@@ -75,9 +75,13 @@ class WhiteboardStore(private val whiteboardID: Long,
                 command.undo(document)
             }
             .addTo(disposableBag)
+
+        println("${javaClass.simpleName} starts")
     }
 
     override fun stop() {
+        println("${javaClass.simpleName} stops")
+
         disposableBag.clear()
     }
 
@@ -92,10 +96,10 @@ class WhiteboardStore(private val whiteboardID: Long,
         commandUndoSignal.onNext(command)
     }
 
-    private val dirtyFlag = DirtyFlag(DomainConst.BUSY)
+    private val dirtyFlag = DirtyFlag(0)
 
     override val busy: Observable<Boolean> get() {
-        return dirtyFlag.onUpdate()
+        return dirtyFlag.updated()
             .map { event ->
                 event.flag != 0
             }

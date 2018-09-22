@@ -49,7 +49,6 @@
 
         <!-- Experiments -->
         <activity android:name=".ExampleOfRxCancelActivity"/>
-        <activity android:name=".ExampleOfConvexHullActivity"/>
         <activity android:name=".ExampleOfEventDrivenSimulationActivity"/>
 
         <!-- ContentProvider ///////////////////////////////////////////////-->

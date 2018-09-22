@@ -22,9 +22,9 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
+import io.useful.rx.GestureEvent
 
 interface IUserTouchManipulator {
 

@@ -42,16 +42,16 @@ dependencies {
     api rootProject.ext.dep.rxKotlin
     // Rx-Java.
     api rootProject.ext.dep.rxJava
+    api rootProject.ext.dep.rxProp
 
     // JSON.
     api rootProject.ext.dep.gson
 
     // Gesture
-    api rootProject.ext.dep.collageGestureDetectorRx
+    api rootProject.ext.dep.gestureDetectorRx
 
     // Model
     api project(path: ':lib-whiteboard-model')
-    api project(path: ':lib-rx-delegate')
 
     // Unit tests.
     testImplementation rootProject.ext.dep.testJunit

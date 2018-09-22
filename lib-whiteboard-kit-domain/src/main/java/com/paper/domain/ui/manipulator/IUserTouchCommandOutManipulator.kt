@@ -22,10 +22,10 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Maybe
 import io.reactivex.Observable
+import io.useful.rx.GestureEvent
 
 interface IUserTouchCommandOutManipulator {
 

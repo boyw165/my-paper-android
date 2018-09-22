@@ -22,9 +22,9 @@
 
 package com.paper.domain
 
-import co.sodalabs.delegate.rx.itemAdded
-import co.sodalabs.delegate.rx.itemRemoved
 import com.paper.domain.ui.WhiteboardWidget
+import io.useful.itemAdded
+import io.useful.itemRemoved
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

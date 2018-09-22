@@ -1,0 +1,23 @@
+apply plugin: 'com.novoda.bintray-release'
+
+publish {
+    bintrayUser = System.getenv('BINTRAY_USER')
+    bintrayKey = System.getenv('BINTRAY_API_KEY')
+
+    repoName = 'android'
+    uploadName = 'TBD'
+
+    userOrg = System.getenv('BINTRAY_USER')
+    groupId = 'io.useful'
+    artifactId = 'TBD'
+    publishVersion = project.artifact_version
+
+    desc = 'TBD'
+    website = 'TBD'
+    dryRun = false
+}
+
+// Avoid Kotlin docs error
+tasks.withType(Javadoc) {
+    enabled = false
+}

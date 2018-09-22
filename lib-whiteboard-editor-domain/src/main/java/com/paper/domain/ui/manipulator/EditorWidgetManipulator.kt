@@ -22,12 +22,12 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.IWhiteboardEditorWidget
 import com.paper.domain.ui.IWhiteboardWidget
 import com.paper.model.ISchedulers
 import io.reactivex.Completable
 import io.reactivex.Observable
+import io.useful.rx.GestureEvent
 
 /**
  * The manipulator which is mainly used by [IWhiteboardEditorWidget].

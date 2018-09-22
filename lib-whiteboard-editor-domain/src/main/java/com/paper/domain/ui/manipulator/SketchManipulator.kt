@@ -22,10 +22,6 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.DragBeginEvent
-import com.cardinalblue.gesture.rx.DragDoingEvent
-import com.cardinalblue.gesture.rx.DragEndEvent
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.IWhiteboardWidget
 import com.paper.domain.ui.ScrapWidgetFactory
 import com.paper.domain.ui.SketchScrapWidget
@@ -38,6 +34,8 @@ import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import io.useful.rx.DragEvent
+import io.useful.rx.GestureEvent
 import java.util.*
 
 class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
@@ -68,12 +66,11 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                 .firstElement()
                 .observeOn(schedulers.main())
                 .subscribe { event ->
-                    if (!(event is DragBeginEvent ||
-                          event is DragDoingEvent)) {
+                    if (event !is DragEvent) {
                         emitter.onComplete()
                     }
 
-                    event as DragBeginEvent
+                    event as DragEvent
 
                     startPoint = Point(event.startPointer.first,
                                        event.startPointer.second)
@@ -99,14 +96,7 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                 .observeOn(schedulers.main())
                 .subscribe { event ->
                     val p = when (event) {
-                        is DragDoingEvent -> {
-                            val (x, y) = event.stopPointer
-                            val nx = x - startPoint.x
-                            val ny = y - startPoint.y
-
-                            Point(nx, ny)
-                        }
-                        is DragEndEvent -> {
+                        is DragEvent -> {
                             val (x, y) = event.stopPointer
                             val nx = x - startPoint.x
                             val ny = y - startPoint.y

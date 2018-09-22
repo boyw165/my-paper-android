@@ -20,7 +20,6 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.DomainConst
 import com.paper.domain.ui.manipulator.IUserTouchManipulator
 import com.paper.model.Frame
@@ -33,6 +32,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import io.useful.rx.GestureEvent
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -145,7 +145,7 @@ open class ScrapWidget(protected val scrap: Scrap,
 
     val busy: Observable<Boolean> get() {
         return dirtyFlag
-            .onUpdate()
+            .updated()
             .map { event ->
                 event.flag != 0
             }

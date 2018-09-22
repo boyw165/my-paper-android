@@ -3,6 +3,9 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
+// Factory DSL
+apply from: rootProject.file('gradle_scripts/factory.gradle')
+
 // Some annotation processors (such as AutoFactory) rely on precise types in
 // declaration signatures. By default, Kapt replaces every unknown type
 // (including types for the generated classes) to NonExistentClass, but you
@@ -20,8 +23,9 @@ android {
         applicationId 'com.paperr'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger(): 999999
-        versionName project.findProperty('versionName') ?: '99.99.99-dev'
+
+        versionCode buildVersionCode(project.artifact_version)
+        versionName project.artifact_version
 
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
 
@@ -161,8 +165,8 @@ dependencies {
     implementation rootProject.ext.dep.rxPermissions
 
     // My Libraries.
-    implementation rootProject.ext.dep.collageGestureDetector
-    implementation rootProject.ext.dep.collageGestureDetectorRx
+    implementation rootProject.ext.dep.gestureDetector
+    implementation rootProject.ext.dep.gestureDetectorRx
     implementation project(path: ':lib-whiteboard-editor-domain')
 
     // Unit tests.
@@ -175,5 +179,8 @@ dependencies {
     androidTestImplementation rootProject.ext.dep.testRunner
     androidTestImplementation rootProject.ext.dep.testEspressoCore
 }
+
+//// Deployment script.
+//apply from: 'deploy.gradle'
 
 apply plugin: 'com.google.gms.google-services'

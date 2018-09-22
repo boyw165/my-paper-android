@@ -47,7 +47,7 @@ dependencies {
     api rootProject.ext.dep.gson
 
     // Gesture
-    api rootProject.ext.dep.collageGestureDetectorRx
+    api rootProject.ext.dep.gestureDetectorRx
 
     // Model
     api project(path: ':lib-whiteboard-kit-domain')

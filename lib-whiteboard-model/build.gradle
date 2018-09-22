@@ -45,6 +45,7 @@ dependencies {
     api rootProject.ext.dep.gson
     // Rx-Java.
     api rootProject.ext.dep.rxJava
+    api rootProject.ext.dep.rxProp
     api rootProject.ext.dep.rxKotlin
 
     // Dirty flag

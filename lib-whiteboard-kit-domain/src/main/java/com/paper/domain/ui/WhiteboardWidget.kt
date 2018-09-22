@@ -20,9 +20,6 @@
 
 package com.paper.domain.ui
 
-import co.sodalabs.delegate.rx.RxMutableSet
-import co.sodalabs.delegate.rx.itemAdded
-import co.sodalabs.delegate.rx.itemRemoved
 import com.paper.domain.DomainConst
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.model.IBundle
@@ -31,6 +28,9 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import io.useful.delegate.rx.RxMutableSet
+import io.useful.itemAdded
+import io.useful.itemRemoved
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -171,7 +171,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
     private val selfBusy: Observable<Boolean> get() {
         return dirtyFlag
-            .onUpdate()
+            .updated()
             .observeOn(schedulers.main())
             .map { event ->
                 // Detect any busy child

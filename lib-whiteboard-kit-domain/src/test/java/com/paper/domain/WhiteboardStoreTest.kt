@@ -55,6 +55,7 @@ class WhiteboardStoreTest : BaseWhiteboardKitDomainTest() {
     @Test
     fun `observe busy, should see busy first and not busy at the end`() {
         val tester = candidate.busy.test()
+        candidate.start()
 
         // Start
         moveScheduler()

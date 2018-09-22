@@ -22,10 +22,6 @@
 
 package com.paper.domain.ui.manipulator
 
-import com.cardinalblue.gesture.rx.DragBeginEvent
-import com.cardinalblue.gesture.rx.DragDoingEvent
-import com.cardinalblue.gesture.rx.DragEndEvent
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.ui.ScrapWidget
 import com.paper.model.Frame
 import com.paper.model.ISchedulers
@@ -36,6 +32,8 @@ import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import io.useful.rx.DragEvent
+import io.useful.rx.GestureEvent
 import java.util.concurrent.atomic.AtomicReference
 
 class DragManipulator(private val scrapWidget: ScrapWidget,
@@ -56,8 +54,7 @@ class DragManipulator(private val scrapWidget: ScrapWidget,
                 .firstElement()
                 .observeOn(schedulers.main())
                 .subscribe { event ->
-                    if (!(event is DragBeginEvent ||
-                          event is DragDoingEvent)) {
+                    if (event !is DragEvent) {
                         emitter.onComplete()
                     }
 
@@ -95,10 +92,7 @@ class DragManipulator(private val scrapWidget: ScrapWidget,
 
     private fun updateDisplacement(event: GestureEvent) {
         val nextDisplacement = when (event) {
-            is DragDoingEvent -> Frame(
-                x = event.stopPointer.first - event.startPointer.first,
-                y = event.stopPointer.second - event.startPointer.first)
-            is DragEndEvent -> Frame(
+            is DragEvent -> Frame(
                 x = event.stopPointer.first - event.startPointer.first,
                 y = event.stopPointer.second - event.startPointer.first)
             else -> displacement.get()
@@ -106,8 +100,7 @@ class DragManipulator(private val scrapWidget: ScrapWidget,
 
         displacement.set(nextDisplacement)
         scrapWidget.setFrameDisplacement(displacement.get())
-        if (event is DragDoingEvent ||
-            event is DragEndEvent) {
+        if (event is DragEvent) {
         }
     }
 }

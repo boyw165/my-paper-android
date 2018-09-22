@@ -22,10 +22,6 @@
 
 package com.paper.domain.ui
 
-import co.sodalabs.delegate.rx.RxMutableSet
-import co.sodalabs.delegate.rx.itemAdded
-import co.sodalabs.delegate.rx.itemRemoved
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.manipulator.EditorWidgetManipulator
 import com.paper.domain.ui.manipulator.ScrapWidgetManipulator
@@ -39,6 +35,10 @@ import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import io.useful.delegate.rx.RxMutableSet
+import io.useful.itemAdded
+import io.useful.itemRemoved
+import io.useful.rx.GestureEvent
 import java.io.File
 
 // TODO: Use dagger 2 to inject the dependency gracefully

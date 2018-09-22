@@ -102,7 +102,7 @@ class UndoWidget(private val undoRepo: ICommandRepository,
      */
     override val busy: Observable<Boolean> get() {
         return busySignal
-            .onUpdate()
+            .updated()
             .map { event ->
                 event.flag != 0
             }

@@ -55,7 +55,7 @@ data class WhiteboardDirtyFlag(override var flag: Int = 0)
         super.markNotDirty(*types)
     }
 
-    override fun onUpdate(@Type vararg withTypes: Int): Observable<DirtyEvent> {
-        return super.onUpdate(*withTypes)
+    override fun updated(@Type vararg withTypes: Int): Observable<DirtyEvent> {
+        return super.updated(*withTypes)
     }
 }

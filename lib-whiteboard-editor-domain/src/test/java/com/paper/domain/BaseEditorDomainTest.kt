@@ -1,10 +1,5 @@
 package com.paper.domain
 
-import com.cardinalblue.gesture.ShadowMotionEvent
-import com.cardinalblue.gesture.rx.DragBeginEvent
-import com.cardinalblue.gesture.rx.DragDoingEvent
-import com.cardinalblue.gesture.rx.DragEndEvent
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.paper.domain.store.IWhiteboardStore
@@ -24,6 +19,9 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.PublishSubject
+import io.useful.ShadowMotionEvent
+import io.useful.rx.DragEvent
+import io.useful.rx.GestureEvent
 import org.koin.dsl.module.module
 import org.mockito.Mockito
 import java.net.URL
@@ -72,13 +70,14 @@ abstract class BaseEditorDomainTest {
         mock
     }
 
-    val mockWhiteboard: Whiteboard get() {
-        val mock = Whiteboard()
-        (1..50).forEach {
-            mock.addScrap(createRandomScrap())
+    val mockWhiteboard: Whiteboard
+        get() {
+            val mock = Whiteboard()
+            (1..50).forEach {
+                mock.addScrap(createRandomScrap())
+            }
+            return mock
         }
-        return mock
-    }
 
     protected val mockWhiteboardRepo: IWhiteboardRepository by lazy {
         val field = Mockito.mock(IWhiteboardRepository::class.java)
@@ -103,12 +102,12 @@ abstract class BaseEditorDomainTest {
 
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
         Mockito.`when`(field.whiteboardStore).then { mockWhiteboardStore }
-//        Mockito.`when`(field.addWidget(Mockito.any())).then {
-//            // DO NOTHING
-//        }
-//        Mockito.`when`(field.removeWidget(Mockito.any())).then {
-//            // DO NOTHING
-//        }
+        //        Mockito.`when`(field.addWidget(Mockito.any())).then {
+        //            // DO NOTHING
+        //        }
+        //        Mockito.`when`(field.removeWidget(Mockito.any())).then {
+        //            // DO NOTHING
+        //        }
 
         field
     }
@@ -169,7 +168,7 @@ abstract class BaseEditorDomainTest {
     }
 
     open fun setup() {
-//        startKoin(listOf(testModule))
+        //        startKoin(listOf(testModule))
 
         Mockito.`when`(mockWhiteboardRepo.getBoardById(Mockito.anyLong()))
             .thenReturn(
@@ -280,35 +279,31 @@ abstract class BaseEditorDomainTest {
 
     protected val mockDragSequence: Observable<GestureEvent> by lazy {
         Observable.fromArray<GestureEvent>(
-            DragBeginEvent(rawEvent = EMPTY_SHADOW_EVENT,
-                           target = null,
-                           context = null,
-                           startPointer = Pair(0f, 0f)),
-            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
-                           target = null,
-                           context = null,
-                           startPointer = Pair(0f, 0f),
-                           stopPointer = Pair(20f, 0f)),
-            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
-                           target = null,
-                           context = null,
-                           startPointer = Pair(0f, 0f),
-                           stopPointer = Pair(40f, 0f)),
-            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
-                           target = null,
-                           context = null,
-                           startPointer = Pair(0f, 0f),
-                           stopPointer = Pair(60f, 0f)),
-            DragDoingEvent(rawEvent = EMPTY_SHADOW_EVENT,
-                           target = null,
-                           context = null,
-                           startPointer = Pair(0f, 0f),
-                           stopPointer = Pair(80f, 0f)),
-            DragEndEvent(rawEvent = EMPTY_SHADOW_EVENT,
-                         target = null,
-                         context = null,
-                         startPointer = Pair(0f, 0f),
-                         stopPointer = Pair(100f, 0f)))
+            DragEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                      target = null,
+                      context = null,
+                      startPointer = Pair(0f, 0f),
+                      stopPointer = Pair(20f, 0f)),
+            DragEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                      target = null,
+                      context = null,
+                      startPointer = Pair(0f, 0f),
+                      stopPointer = Pair(40f, 0f)),
+            DragEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                      target = null,
+                      context = null,
+                      startPointer = Pair(0f, 0f),
+                      stopPointer = Pair(60f, 0f)),
+            DragEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                      target = null,
+                      context = null,
+                      startPointer = Pair(0f, 0f),
+                      stopPointer = Pair(80f, 0f)),
+            DragEvent(rawEvent = EMPTY_SHADOW_EVENT,
+                      target = null,
+                      context = null,
+                      startPointer = Pair(0f, 0f),
+                      stopPointer = Pair(100f, 0f)))
     }
 
     protected val mockDragEndDisplacement by lazy {

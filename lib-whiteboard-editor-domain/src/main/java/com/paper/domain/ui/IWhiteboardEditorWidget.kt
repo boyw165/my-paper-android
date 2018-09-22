@@ -22,9 +22,9 @@
 
 package com.paper.domain.ui
 
-import com.cardinalblue.gesture.rx.GestureEvent
 import com.paper.domain.store.IWhiteboardStore
 import io.reactivex.Observable
+import io.useful.rx.GestureEvent
 
 // TODO: Use dagger 2 to inject the dependency gracefully
 

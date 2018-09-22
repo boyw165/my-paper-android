@@ -24,7 +24,6 @@ package com.paper.domain.ui
 
 import com.paper.domain.store.IWhiteboardStore
 import io.reactivex.Observable
-import java.util.*
 
 interface IWhiteboardWidget : IWidget {
 

@@ -1,6 +1,5 @@
 package com.paper.domain
 
-import com.cardinalblue.gesture.ShadowMotionEvent
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.paper.domain.store.IWhiteboardStore
@@ -21,6 +20,7 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.TestScheduler
+import io.useful.ShadowMotionEvent
 import org.mockito.Mockito
 import java.net.URL
 import java.util.*
