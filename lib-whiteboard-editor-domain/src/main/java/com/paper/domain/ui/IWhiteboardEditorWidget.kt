@@ -24,6 +24,8 @@ package com.paper.domain.ui
 
 import com.paper.domain.store.IWhiteboardStore
 import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import io.useful.rx.GestureEvent
 
 // TODO: Use dagger 2 to inject the dependency gracefully
@@ -46,7 +48,7 @@ interface IWhiteboardEditorWidget : IWidget {
 
     val pickerWidgets: MutableSet<IWidget>
 
-    fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>)
+    val userTouchInbox: Subject<Observable<Observable<GestureEvent>>>
 
     fun handleUndo(undoSignal: Observable<Any>)
 

@@ -35,6 +35,7 @@ import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import io.useful.delegate.rx.RxMutableSet
 import io.useful.itemAdded
 import io.useful.itemRemoved
@@ -98,7 +99,7 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
             }
 
         // User touch
-        gestureSequenceSignal
+        userTouchInbox
             .switchMapCompletable { gestureSequence ->
                 EditorWidgetManipulator(whiteboardWidget = whiteboardWidget,
                                         editorWidget = this@WhiteboardEditorWidget,
@@ -196,8 +197,10 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
     // Touch /////////////////////////////////////////////////////////////////
 
-    override fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
-        gestureSequenceSignal.onNext(gestureSequence)
+    override val userTouchInbox: Subject<Observable<Observable<GestureEvent>>> by lazy {
+        BehaviorSubject
+            .create<Observable<Observable<GestureEvent>>>()
+            .toSerialized()
     }
 
     // Busy ///////////////////////////////////////////////////////////////////
