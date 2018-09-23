@@ -58,9 +58,6 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
         return whiteboardWidget.whiteboardStore
     }
 
-    // User touch
-    private val gestureSequenceSignal = PublishSubject.create<Observable<Observable<GestureEvent>>>()
-        .toSerialized()
     private val staticDisposableBag = CompositeDisposable()
 
     override fun start() {
@@ -107,6 +104,36 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
                     .apply(gestureSequence)
             }
             .subscribe()
+            .addTo(staticDisposableBag)
+
+        // Undo & redo
+        undoInbox
+            .observeOn(schedulers.main())
+            .switchMap { undoDemand ->
+                undoDemand.flatMap {
+                    undoWidget
+                        .undo()
+                        .toObservable()
+                }
+            }
+            .observeOn(schedulers.main())
+            .subscribe { command ->
+                whiteboardStore.offerCommandUndo(command)
+            }
+            .addTo(staticDisposableBag)
+        redoInbox
+            .observeOn(schedulers.main())
+            .switchMap { redoDemand ->
+                redoDemand.flatMap {
+                    undoWidget
+                        .redo()
+                        .toObservable()
+                }
+            }
+            .observeOn(schedulers.main())
+            .subscribe { command ->
+                whiteboardStore.offerCommandDoo(command)
+            }
             .addTo(staticDisposableBag)
 
         // Following are all about the edit panel outputs to whiteboard widget:
@@ -216,28 +243,16 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
     // Undo & undo ////////////////////////////////////////////////////////////
 
-    override fun handleUndo(undoSignal: Observable<Any>) {
-        undoSignal
-            .flatMap {
-                undoWidget.undo()
-                    .toObservable()
-            }
-            .subscribe { command ->
-                whiteboardStore.offerCommandUndo(command)
-            }
-            .addTo(staticDisposableBag)
+    override val undoInbox: Subject<Observable<Any>> by lazy {
+        PublishSubject
+            .create<Observable<Any>>()
+            .toSerialized()
     }
 
-    override fun handleRedo(redoSignal: Observable<Any>) {
-        redoSignal
-            .flatMap {
-                undoWidget.redo()
-                    .toObservable()
-            }
-            .subscribe { command ->
-                whiteboardStore.offerCommandDoo(command)
-            }
-            .addTo(staticDisposableBag)
+    override val redoInbox: Subject<Observable<Any>> by lazy {
+        PublishSubject
+            .create<Observable<Any>>()
+            .toSerialized()
     }
 
     override val canUndo: Observable<Boolean>

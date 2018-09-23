@@ -39,21 +39,12 @@ import java.util.concurrent.atomic.AtomicReference
 open class ScrapWidget(protected val scrap: Scrap)
     : IWidget {
 
-    protected val lock = Any()
-
     val id: UUID get() = scrap.id
 
     // User touch
     var userTouchManipulator: IUserTouchManipulator? = null
-        get() {
-            throw IllegalAccessException()
-        }
-        set(value) {
-            synchronized(lock) {
-                field = value
-            }
-        }
-    private val gestureSequenceSignal = PublishSubject.create<Observable<Observable<GestureEvent>>>()
+    val userTouchInbox = PublishSubject
+        .create<Observable<Observable<GestureEvent>>>()
         .toSerialized()
 
     protected val staticDisposableBag = CompositeDisposable()
@@ -64,23 +55,20 @@ open class ScrapWidget(protected val scrap: Scrap)
             .changed()
             .subscribe { frame ->
                 // Clear displacement
-                synchronized(lock) {
-                    frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
-                }
+                frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
+
                 // Signal out
                 frameSignal.onNext(frame)
             }
             .addTo(staticDisposableBag)
 
         // User touch
-        gestureSequenceSignal
+        userTouchInbox
             .switchMapCompletable { gestureSequence ->
                 println("${DomainConst.TAG}: A new gesture sequence is given")
 
-                synchronized(lock) {
-                    userTouchManipulator?.apply(gestureSequence) ?:
-                    Completable.complete()
-                }
+                userTouchManipulator?.apply(gestureSequence) ?:
+                Completable.complete()
             }
             .subscribe {
                 println("${DomainConst.TAG}: The gesture sequence is finished")
@@ -106,28 +94,20 @@ open class ScrapWidget(protected val scrap: Scrap)
     private val frameSignal = BehaviorSubject.create<Frame>().toSerialized()
 
     open fun getFrame(): Frame {
-        return synchronized(lock) {
-            val actual = scrap.frame
-            val displacement = frameDisplacement.get()
-            actual.add(displacement)
-        }
+        val actual = scrap.frame
+        val displacement = frameDisplacement.get()
+        return actual.add(displacement)
     }
 
     open fun setFrameDisplacement(displacement: Frame) {
-        synchronized(lock) {
-            frameDisplacement.set(displacement)
+        frameDisplacement.set(displacement)
 
-            // Signal out
-            val actual = scrap.frame
-            frameSignal.onNext(actual.add(displacement))
-        }
+        // Signal out
+        val actual = scrap.frame
+        frameSignal.onNext(actual.add(displacement))
     }
 
     val frame: Observable<Frame> = frameSignal.hide()
-
-    fun handleUserTouch(gestureSequence: Observable<Observable<GestureEvent>>) {
-        gestureSequenceSignal.onNext(gestureSequence)
-    }
 
     // Busy ///////////////////////////////////////////////////////////////////
 

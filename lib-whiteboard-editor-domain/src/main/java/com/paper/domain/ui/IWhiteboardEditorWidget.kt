@@ -24,7 +24,6 @@ package com.paper.domain.ui
 
 import com.paper.domain.store.IWhiteboardStore
 import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import io.useful.rx.GestureEvent
 
@@ -50,7 +49,7 @@ interface IWhiteboardEditorWidget : IWidget {
 
     val userTouchInbox: Subject<Observable<Observable<GestureEvent>>>
 
-    fun handleUndo(undoSignal: Observable<Any>)
+    val undoInbox: Subject<Observable<Any>>
 
-    fun handleRedo(redoSignal: Observable<Any>)
+    val redoInbox: Subject<Observable<Any>>
 }

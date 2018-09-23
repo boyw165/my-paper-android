@@ -40,9 +40,7 @@ open class SketchScrapWidget(scrap: SketchScrap)
         sketchScrap::svg
             .changed()
             .subscribe { svg ->
-                synchronized(lock) {
-                    svgDisplacement = null
-                }
+                svgDisplacement = null
 
                 // Signal out
                 svgSignal.onNext(svg)
@@ -68,16 +66,12 @@ open class SketchScrapWidget(scrap: SketchScrap)
     }
 
     fun getSVG(): VectorGraphics {
-        return synchronized(lock) {
-            svgDisplacement ?: sketchScrap.svg
-        }
+        return svgDisplacement ?: sketchScrap.svg
     }
 
     fun setDisplacement(displacement: VectorGraphics) {
-        synchronized(lock) {
-            svgDisplacement = displacement
+        svgDisplacement = displacement
 
-            svgSignal.onNext(displacement)
-        }
+        svgSignal.onNext(displacement)
     }
 }
