@@ -81,7 +81,7 @@ class DragManipulator(private val scrapWidget: ScrapWidget,
 
                     // Offer command
                     emitter.onSuccess(UpdateScrapFrameCommand(
-                        scrapID = scrapWidget.getID(),
+                        scrapID = scrapWidget.id,
                         toFrame = startFrame.add(displacement.get())))
                 }
                 .addTo(disposableBag)

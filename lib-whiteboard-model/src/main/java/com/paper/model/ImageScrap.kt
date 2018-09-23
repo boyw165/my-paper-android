@@ -20,42 +20,24 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import io.useful.delegate.rx.RxValue
 import java.net.URL
 import java.util.*
 
 open class ImageScrap(uuid: UUID = UUID.randomUUID(),
                       frame: Frame = Frame(),
-                      private var imageURL: URL)
-    : Scrap(uuid = uuid,
+                      imageURL: URL)
+    : Scrap(id = uuid,
             frame = frame) {
 
-    private val urlSignal = PublishSubject.create<URL>().toSerialized()
-
-    fun getURL(): URL {
-        synchronized(lock) {
-            return imageURL
-        }
-    }
-
-    fun setURL(url: URL) {
-        synchronized(lock) {
-            imageURL = url
-            urlSignal.onNext(url)
-        }
-    }
-
-    fun observeURL(): Observable<URL> {
-        return urlSignal
-    }
+    var imageURL: URL by RxValue(imageURL)
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): Scrap {
         return ImageScrap(uuid = UUID.randomUUID(),
-                          frame = getFrame(),
-                          imageURL = getURL())
+                          frame = frame,
+                          imageURL = imageURL)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -70,18 +52,16 @@ open class ImageScrap(uuid: UUID = UUID.randomUUID(),
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(lock) { isHashDirty }
+        val isHashDirty = this.isHashDirty
         if (isHashDirty) {
-            var hashCode = super.hashCode()
+            val hashCode = super.hashCode()
             // FIXME: There is a very short moment in between super.hashCode()
             // FIXME: and the following code such that isHashDirty is false
 
-            synchronized(lock) {
-                this.isHashDirty = false
-                cacheHashCode = hashCode
-            }
+            this.isHashDirty = false
+            this.cacheHashCode = hashCode
         }
 
-        return cacheHashCode
+        return this.cacheHashCode
     }
 }

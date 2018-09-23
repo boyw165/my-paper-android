@@ -34,13 +34,13 @@ class TextScrapTest : BaseModelTest() {
     fun `copy, ID should be different`() {
         val tester1 = createRandomTextScrap()
         val tester2 = tester1.copy() as TextScrap
-        tester2.setFrame(Frame(100f, 100f))
-        tester2.setText("zoo")
+        tester2.frame = Frame(100f, 100f)
+        tester2.text = "zoo"
 
         Assert.assertNotEquals(tester2, tester1)
-        Assert.assertNotEquals(tester2.getID(), tester1.getID())
-        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
-        Assert.assertNotEquals(tester2.getText(), tester1.getText())
+        Assert.assertNotEquals(tester2.id, tester1.id)
+        Assert.assertNotEquals(tester2.frame, tester1.frame)
+        Assert.assertNotEquals(tester2.text, tester1.text)
     }
 }
 

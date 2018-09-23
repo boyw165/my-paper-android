@@ -21,7 +21,6 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
-import com.paper.model.ISchedulers
 import com.paper.model.ImageScrap
 
 class ImageScrapWidget(scrap: ImageScrap)

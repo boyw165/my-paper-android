@@ -120,7 +120,7 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
             Completable.fromObservable(sharedTouchSequence)
                 .subscribe {
                     // Prepare command with updated MODEL
-                    scrap.setSVG(svgDisplacement)
+                    scrap.svg = svgDisplacement
 
                     // Mark widget available
                     scrapWidget.markNotBusy()

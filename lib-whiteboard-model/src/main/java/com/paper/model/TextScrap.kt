@@ -20,41 +20,23 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import io.useful.delegate.rx.RxValue
 import java.util.*
 
 open class TextScrap(uuid: UUID = UUID.randomUUID(),
                      frame: Frame = Frame(),
-                     private var text: String)
-    : Scrap(uuid = uuid,
+                     text: String)
+    : Scrap(id = uuid,
             frame = frame) {
 
-    private val textSignal = PublishSubject.create<String>().toSerialized()
-
-    fun getText(): String {
-        synchronized(lock) {
-            return text
-        }
-    }
-
-    fun setText(text: String) {
-        synchronized(lock) {
-            this.text = text
-            textSignal.onNext(text)
-        }
-    }
-
-    fun observeText(): Observable<String> {
-        return textSignal
-    }
+    var text: String by RxValue(text)
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): Scrap {
         return TextScrap(uuid = UUID.randomUUID(),
-                         frame = getFrame(),
-                         text = getText())
+                         frame = frame,
+                         text = text)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -69,18 +51,16 @@ open class TextScrap(uuid: UUID = UUID.randomUUID(),
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(lock) { isHashDirty }
+        val isHashDirty = this.isHashDirty
         if (isHashDirty) {
-            var hashCode = super.hashCode()
+            val hashCode = super.hashCode()
             // FIXME: There is a very short moment in between super.hashCode()
             // FIXME: and the following code such that isHashDirty is false
 
-            synchronized(lock) {
-                this.isHashDirty = false
-                cacheHashCode = hashCode
-            }
+            this.isHashDirty = false
+            this.cacheHashCode = hashCode
         }
 
-        return cacheHashCode
+        return this.cacheHashCode
     }
 }

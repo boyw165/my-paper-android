@@ -22,6 +22,7 @@
 
 package com.paper.model
 
+import io.useful.changed
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,31 +35,34 @@ class ScrapTest : BaseModelTest() {
     fun `copy, ID should be different`() {
         val tester1 = Scrap()
         val tester2 = tester1.copy()
-        tester2.setFrame(Frame(x = 100f, y = 200f))
+        tester2.frame = Frame(x = 100f, y = 200f)
 
-        Assert.assertNotEquals(tester2.getID(), tester1.getID())
-        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
+        Assert.assertNotEquals(tester2.id, tester1.id)
+        Assert.assertNotEquals(tester2.frame, tester1.frame)
     }
 
     @Test
     fun `set frame`() {
         val scrap = Scrap()
 
-        scrap.setFrame(Frame(x = 100f, y = 200f))
+        scrap.frame = Frame(x = 100f, y = 200f)
 
-        Assert.assertEquals(100f, scrap.getFrame().x)
-        Assert.assertEquals(200f, scrap.getFrame().y)
+        Assert.assertEquals(100f, scrap.frame.x)
+        Assert.assertEquals(200f, scrap.frame.y)
     }
 
     @Test
     fun `observe frame`() {
-        val scrap = Scrap()
+        val scrap = Scrap(frame = Frame(x = -50f, y = -50f))
 
-        val frameTestObserver = scrap.observeFrame().test()
-        scrap.setFrame(Frame(x = 100f, y = 200f))
-        scrap.setFrame(Frame(x = 300f, y = 400f))
+        val frameTestObserver = scrap::frame
+            .changed()
+            .test()
+        scrap.frame = Frame(x = 100f, y = 200f)
+        scrap.frame = Frame(x = 300f, y = 400f)
 
-        frameTestObserver.assertValues(Frame(x = 100f, y = 200f),
+        frameTestObserver.assertValues(Frame(x = -50f, y = -50f),
+                                       Frame(x = 100f, y = 200f),
                                        Frame(x = 300f, y = 400f))
     }
 }

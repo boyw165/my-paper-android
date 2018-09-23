@@ -58,7 +58,7 @@ open class Whiteboard(id: Long = ModelConst.TEMP_ID,
     // Scraps /////////////////////////////////////////////////////////////////
 
     fun getScrapByID(id: UUID): Scrap {
-        return scraps.first { it.getID() == id }
+        return scraps.first { it.id == id }
     }
 
     fun addScrap(scrap: Scrap) {

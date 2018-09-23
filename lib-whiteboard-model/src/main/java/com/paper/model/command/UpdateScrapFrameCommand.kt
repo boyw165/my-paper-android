@@ -36,14 +36,14 @@ class UpdateScrapFrameCommand(override val commandID: UUID = UUID.randomUUID(),
     override fun doo(target: Whiteboard) {
         val scrap = target.getScrapByID(commandID)
 
-        fromFrame = scrap.getFrame()
+        fromFrame = scrap.frame
 
-        scrap.setFrame(toFrame)
+        scrap.frame = toFrame
     }
 
     override fun undo(target: Whiteboard) {
         val scrap = target.getScrapByID(commandID)
 
-        scrap.setFrame(fromFrame)
+        scrap.frame = fromFrame
     }
 }

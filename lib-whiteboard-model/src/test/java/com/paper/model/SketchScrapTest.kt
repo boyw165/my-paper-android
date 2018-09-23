@@ -23,6 +23,7 @@
 package com.paper.model
 
 import com.paper.model.sketch.VectorGraphics
+import io.useful.changed
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,25 +36,26 @@ class SketchScrapTest : BaseModelTest() {
     fun `copy, ID should be different`() {
         val tester1 = createRandomSVGScrap()
         val tester2 = tester1.copy() as SketchScrap
-        tester2.setFrame(Frame(100f, 100f))
-        tester2.setSVG(VectorGraphics())
+        tester2.frame = Frame(100f, 100f)
+        tester2.svg = VectorGraphics()
 
         Assert.assertNotEquals(tester2, tester1)
-        Assert.assertNotEquals(tester2.getID(), tester1.getID())
-        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
+        Assert.assertNotEquals(tester2.id, tester1.id)
+        Assert.assertNotEquals(tester2.frame, tester1.frame)
     }
 
     @Test
     fun `observe add svg`() {
         val tester = createRandomSVGScrap()
 
-        val addTestObserver = tester.observeSVG().test()
+        val addTestObserver = tester::svg
+            .changed()
+            .test()
 
-        tester.setSVG(createRandomSVG())
-        tester.setSVG(createRandomSVG())
-        tester.setSVG(createRandomSVG())
+        tester.svg = createRandomSVG()
+        tester.svg = createRandomSVG()
+        tester.svg = createRandomSVG()
 
-        addTestObserver.assertValueCount(3)
+        addTestObserver.assertValueCount(4)
     }
 }
-

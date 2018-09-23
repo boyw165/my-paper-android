@@ -20,46 +20,22 @@
 
 package com.paper.model
 
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import io.useful.delegate.rx.RxValue
 import java.util.*
 
-open class Scrap(private val uuid: UUID = UUID.randomUUID(),
-                 private var frame: Frame = Frame())
+open class Scrap(val id: UUID = UUID.randomUUID(),
+                 frame: Frame = Frame())
     : NoObfuscation {
 
-    protected val lock = Any()
+    var frame: Frame by RxValue(frame)
 
     protected var isHashDirty = true
     protected var cacheHashCode = 0
 
-    fun getID(): UUID {
-        return uuid
-    }
-
-    fun setFrame(frame: Frame) {
-        synchronized(lock) {
-            this.frame = frame
-            frameSignal.onNext(frame)
-        }
-    }
-
-    fun getFrame(): Frame {
-        synchronized(lock) {
-            return frame.copy()
-        }
-    }
-
-    private val frameSignal = PublishSubject.create<Frame>().toSerialized()
-
-    fun observeFrame(): Observable<Frame> {
-        return frameSignal
-    }
-
     // Equality & Hash ////////////////////////////////////////////////////////
 
     open fun copy(): Scrap {
-        return Scrap(uuid = UUID.randomUUID(),
+        return Scrap(id = UUID.randomUUID(),
                      frame = frame.copy())
     }
 
@@ -69,10 +45,10 @@ open class Scrap(private val uuid: UUID = UUID.randomUUID(),
 
         other as Scrap
 
-        val frame = synchronized(lock) { frame }
-        val otherFrame = other.getFrame()
+        val frame = frame
+        val otherFrame = other.frame
 
-        if (uuid != other.uuid) return false
+        if (id != other.id) return false
         if (frame.x != otherFrame.x) return false
         if (frame.y != otherFrame.y) return false
         if (frame.z != otherFrame.z) return false
@@ -84,10 +60,10 @@ open class Scrap(private val uuid: UUID = UUID.randomUUID(),
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(lock) { isHashDirty }
+        val isHashDirty = this.isHashDirty
         if (isHashDirty) {
-            val frame = synchronized(lock) { frame }
-            var hashCode = uuid.hashCode()
+            val frame = frame
+            var hashCode = id.hashCode()
             hashCode = 31 * hashCode + frame.x.hashCode()
             hashCode = 31 * hashCode + frame.y.hashCode()
             hashCode = 31 * hashCode + frame.z.hashCode()
@@ -95,14 +71,10 @@ open class Scrap(private val uuid: UUID = UUID.randomUUID(),
             hashCode = 31 * hashCode + frame.scaleY.hashCode()
             hashCode = 31 * hashCode + frame.rotationInDegrees.hashCode()
 
-            synchronized(lock) {
-                this.isHashDirty = false
-                cacheHashCode = hashCode
-            }
+            this.isHashDirty = false
+            cacheHashCode = hashCode
         }
 
-        synchronized(lock) {
-            return cacheHashCode
-        }
+        return cacheHashCode
     }
 }

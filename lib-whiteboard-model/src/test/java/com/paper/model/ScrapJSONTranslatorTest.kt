@@ -44,7 +44,7 @@ class ScrapJSONTranslatorTest : BaseModelTest() {
                           rotationInDegrees = 30f,
                           z = ModelConst.MOST_BOTTOM_Z),
             svg = VectorGraphics())
-        val uuid = model.getID()
+        val uuid = model.id
 
         val jsonText = jsonTranslator.toJson(model, Scrap::class.java)
         System.out.println("JSON = $jsonText")
@@ -68,16 +68,16 @@ class ScrapJSONTranslatorTest : BaseModelTest() {
     fun `deserialize svg scrap with empty tuple list`() {
         val model = jsonTranslator.fromJson<SketchScrap>("{\"uuid\":\"f80f62e5-e85d-4a77-bc0f-e128a92b749d\",\"type\":\"${ScrapType.SKETCH}\",\"x\":100.0,\"y\":200.0,\"width\":360.0,\"height\":480.0,\"z\":1,\"scaleX\":0.5,\"scaleY\":0.5,\"rotationInDegrees\":30.0,\"svg\":{\"style\":{\"stroke\":[\"#FFFF0000\",0.1,false]},\"path\":\"\"}}", Scrap::class.java)
 
-        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.getID().toString())
+        Assert.assertEquals("f80f62e5-e85d-4a77-bc0f-e128a92b749d", model.id.toString())
 
-        Assert.assertEquals(100f, model.getFrame().x)
-        Assert.assertEquals(200f, model.getFrame().y)
-        Assert.assertEquals(360f, model.getFrame().width)
-        Assert.assertEquals(480f, model.getFrame().height)
-        Assert.assertEquals(1, model.getFrame().z)
-        Assert.assertEquals(0.5f, model.getFrame().scaleX)
-        Assert.assertEquals(0.5f, model.getFrame().scaleY)
-        Assert.assertEquals(30f, model.getFrame().rotationInDegrees)
+        Assert.assertEquals(100f, model.frame.x)
+        Assert.assertEquals(200f, model.frame.y)
+        Assert.assertEquals(360f, model.frame.width)
+        Assert.assertEquals(480f, model.frame.height)
+        Assert.assertEquals(1, model.frame.z)
+        Assert.assertEquals(0.5f, model.frame.scaleX)
+        Assert.assertEquals(0.5f, model.frame.scaleY)
+        Assert.assertEquals(30f, model.frame.rotationInDegrees)
     }
 }
 

@@ -21,43 +21,23 @@
 package com.paper.model
 
 import com.paper.model.sketch.VectorGraphics
-import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
+import io.useful.delegate.rx.RxValue
 import java.util.*
 
 open class SketchScrap(uuid: UUID = UUID.randomUUID(),
                        frame: Frame = Frame(),
-                       private var svg: VectorGraphics)
-    : Scrap(uuid = uuid,
+                       svg: VectorGraphics)
+    : Scrap(id = uuid,
             frame = frame) {
 
-    private val updateSVGSignal = PublishSubject.create<VectorGraphics>().toSerialized()
-
-    fun setSVG(other: VectorGraphics) {
-        synchronized(lock) {
-            svg = other
-
-            // Signal out
-            updateSVGSignal.onNext(svg)
-        }
-    }
-
-    fun getSVG(): VectorGraphics {
-        synchronized(lock) {
-            return svg
-        }
-    }
-
-    fun observeSVG(): Observable<VectorGraphics> {
-        return updateSVGSignal
-    }
+    var svg: VectorGraphics by RxValue(svg)
 
     // Equality & Hash ////////////////////////////////////////////////////////
 
     override fun copy(): Scrap {
         return SketchScrap(uuid = UUID.randomUUID(),
-                           frame = getFrame(),
-                           svg = getSVG())
+                           frame = frame,
+                           svg = svg)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -68,8 +48,8 @@ open class SketchScrap(uuid: UUID = UUID.randomUUID(),
 
         if (!super.equals(other)) return false
 
-        val svg = getSVG()
-        val otherSVGs = other.getSVG()
+        val svg = this.svg
+        val otherSVGs = other.svg
 
         if (svg.hashCode() != otherSVGs.hashCode()) return false
 
@@ -77,19 +57,17 @@ open class SketchScrap(uuid: UUID = UUID.randomUUID(),
     }
 
     override fun hashCode(): Int {
-        val isHashDirty = synchronized(lock) { isHashDirty }
+        val isHashDirty = this.isHashDirty
         if (isHashDirty) {
             var hashCode = super.hashCode()
             // FIXME: There is a very short moment in between super.hashCode()
             // FIXME: and the following code such that isHashDirty is false
-            hashCode = 31 * hashCode + getSVG().hashCode()
+            hashCode = 31 * hashCode + svg.hashCode()
 
-            synchronized(lock) {
-                this.isHashDirty = false
-                cacheHashCode = hashCode
-            }
+            this.isHashDirty = false
+            this.cacheHashCode = hashCode
         }
 
-        return cacheHashCode
+        return this.cacheHashCode
     }
 }

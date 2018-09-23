@@ -101,7 +101,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             }
             .observeOn(schedulers.main())
             .subscribe { scrap ->
-                val found = scrapWidgets.firstOrNull { it.getID() == scrap.getID() }
+                val found = scrapWidgets.firstOrNull { it.id == scrap.id }
                 if (found != null) return@subscribe
 
                 val widget = ScrapWidgetFactory.createScrapWidget(scrap)
@@ -116,7 +116,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             }
             .observeOn(schedulers.main())
             .subscribe { scrap ->
-                val widget = scrapWidgets.firstOrNull { it.getID() == scrap.getID() }
+                val widget = scrapWidgets.firstOrNull { it.id == scrap.id }
                 widget?.let { scrapWidgets.remove(it) }
             }
             .addTo(staticDisposableBag)
@@ -215,16 +215,16 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         scrapWidget.start()
 
         // TODO: Hold widget disposable
-        dynamicDisposableBag[scrapWidget.getID()] = widgetDisposableBag
+        dynamicDisposableBag[scrapWidget.id] = widgetDisposableBag
     }
 
     private fun stopScrapWidget(scrapWidget: ScrapWidget) {
         val widget = synchronized(lock) {
-            scrapWidgets.firstOrNull { it.getID() == scrapWidget.getID() }
+            scrapWidgets.firstOrNull { it.id == scrapWidget.id }
         }
 
         widget?.let {
-            val id = it.getID()
+            val id = it.id
             dynamicDisposableBag[id]?.dispose()
             dynamicDisposableBag.remove(id)
 

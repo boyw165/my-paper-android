@@ -31,6 +31,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import io.useful.changed
 import io.useful.rx.GestureEvent
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
@@ -39,6 +40,8 @@ open class ScrapWidget(protected val scrap: Scrap)
     : IWidget {
 
     protected val lock = Any()
+
+    val id: UUID get() = scrap.id
 
     // User touch
     var userTouchManipulator: IUserTouchManipulator? = null
@@ -57,7 +60,8 @@ open class ScrapWidget(protected val scrap: Scrap)
 
     override fun start() {
         // Frame
-        scrap.observeFrame()
+        scrap::frame
+            .changed()
             .subscribe { frame ->
                 // Clear displacement
                 synchronized(lock) {
@@ -96,10 +100,6 @@ open class ScrapWidget(protected val scrap: Scrap)
         // DO NOTHING
     }
 
-    open fun getID(): UUID {
-        return scrap.getID()
-    }
-
     // Frame //////////////////////////////////////////////////////////////////
 
     private val frameDisplacement = AtomicReference(DomainConst.EMPTY_FRAME_DISPLACEMENT)
@@ -107,7 +107,7 @@ open class ScrapWidget(protected val scrap: Scrap)
 
     open fun getFrame(): Frame {
         return synchronized(lock) {
-            val actual = scrap.getFrame()
+            val actual = scrap.frame
             val displacement = frameDisplacement.get()
             actual.add(displacement)
         }
@@ -118,7 +118,7 @@ open class ScrapWidget(protected val scrap: Scrap)
             frameDisplacement.set(displacement)
 
             // Signal out
-            val actual = scrap.getFrame()
+            val actual = scrap.frame
             frameSignal.onNext(actual.add(displacement))
         }
     }

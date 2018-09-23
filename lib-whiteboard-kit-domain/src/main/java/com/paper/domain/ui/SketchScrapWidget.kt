@@ -27,6 +27,7 @@ import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.PublishSubject
+import io.useful.changed
 
 open class SketchScrapWidget(scrap: SketchScrap)
     : ScrapWidget(scrap) {
@@ -36,7 +37,8 @@ open class SketchScrapWidget(scrap: SketchScrap)
 
     override fun start() {
         // Add/remove
-        sketchScrap.observeSVG()
+        sketchScrap::svg
+            .changed()
             .subscribe { svg ->
                 synchronized(lock) {
                     svgDisplacement = null
@@ -67,7 +69,7 @@ open class SketchScrapWidget(scrap: SketchScrap)
 
     fun getSVG(): VectorGraphics {
         return synchronized(lock) {
-            svgDisplacement ?: sketchScrap.getSVG()
+            svgDisplacement ?: sketchScrap.svg
         }
     }
 

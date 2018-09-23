@@ -34,9 +34,9 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
                            typeOfSrc: Type,
                            context: JsonSerializationContext): JsonElement {
         val root = JsonObject()
-        val frame = src.getFrame()
+        val frame = src.frame
 
-        root.addProperty("uuid", src.getID().toString())
+        root.addProperty("uuid", src.id.toString())
 
         root.addProperty("x", frame.x)
         root.addProperty("y", frame.y)
@@ -54,7 +54,7 @@ class ScrapJSONTranslator : JsonSerializer<Scrap>,
                 // If it is a VectorGraphics scrap ...
                 root.addProperty("type", ScrapType.SKETCH)
 
-                val svg = src.getSVG()
+                val svg = src.svg
                 root.add("svg", context.serialize(svg, VectorGraphics::class.java))
             }
             is ImageScrap -> {

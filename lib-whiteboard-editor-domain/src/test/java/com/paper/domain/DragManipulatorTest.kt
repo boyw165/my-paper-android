@@ -61,7 +61,7 @@ class DragManipulatorTest : BaseEditorDomainTest() {
         tester.assertValueCount(1)
         tester.assertValue { command ->
             command is UpdateScrapFrameCommand &&
-            command.scrapID == widget.getID() &&
+            command.scrapID == widget.id &&
             command.toFrame == widgetStartFrame.add(mockDragEndDisplacement)
         }
     }

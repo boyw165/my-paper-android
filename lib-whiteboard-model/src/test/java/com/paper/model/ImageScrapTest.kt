@@ -35,13 +35,13 @@ class ImageScrapTest : BaseModelTest() {
     fun `copy, ID should be different`() {
         val tester1 = createRandomImageScrap()
         val tester2 = tester1.copy() as ImageScrap
-        tester2.setFrame(Frame(100f, 100f))
-        tester2.setURL(URL("http://zoo.com/zoo.png"))
+        tester2.frame = Frame(100f, 100f)
+        tester2.imageURL = URL("http://zoo.com/zoo.png")
 
         Assert.assertNotEquals(tester2, tester1)
-        Assert.assertNotEquals(tester2.getID(), tester1.getID())
-        Assert.assertNotEquals(tester2.getFrame(), tester1.getFrame())
-        Assert.assertNotEquals(tester2.getURL(), tester1.getURL())
+        Assert.assertNotEquals(tester2.id, tester1.id)
+        Assert.assertNotEquals(tester2.frame, tester1.frame)
+        Assert.assertNotEquals(tester2.imageURL, tester1.imageURL)
     }
 }
 
