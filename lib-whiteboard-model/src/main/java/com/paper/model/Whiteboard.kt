@@ -43,7 +43,7 @@ open class Whiteboard(id: Long = ModelConst.TEMP_ID,
     var size: Pair<Float, Float> by RxValue(Pair(width, height))
     var viewPort: Rect by RxValue(viewPort)
 
-    val scraps by RxMutableSet(scraps.toMutableSet())
+    val scraps: MutableSet<Scrap> by RxMutableSet(scraps.toMutableSet())
 
     // Caption & tags /////////////////////////////////////////////////////////
 

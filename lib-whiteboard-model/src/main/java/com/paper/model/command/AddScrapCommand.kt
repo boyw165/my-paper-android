@@ -31,10 +31,10 @@ data class AddScrapCommand(override val commandID: UUID = UUID.randomUUID(),
     : WhiteboardCommand(commandID = commandID) {
 
     override fun doo(target: Whiteboard) {
-        // TODO
+        target.scraps.add(scrap)
     }
 
     override fun undo(target: Whiteboard) {
-        // TODO
+        target.scraps.remove(scrap)
     }
 }
