@@ -111,13 +111,13 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
             .test()
 
         // Start widget
-        val document = mockWhiteboardStore.whiteboard.blockingGet()
         candidate.start()
 
         // Make sure the stream moves
         moveScheduler()
 
         // Remove a scrap
+        val document = mockWhiteboardStore.whiteboard!!
         document.removeScrap(document.scraps.toList()[0])
 
         // Make sure the stream moves

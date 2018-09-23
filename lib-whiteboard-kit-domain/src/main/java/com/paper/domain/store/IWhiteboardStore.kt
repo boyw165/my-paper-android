@@ -30,7 +30,9 @@ import io.reactivex.Single
 
 interface IWhiteboardStore : ILifecycleAware {
 
-    val whiteboard: Single<Whiteboard>
+    val whiteboard: Whiteboard?
+
+    val whiteboardLoaded: Single<Whiteboard>
 
     val busy: Observable<Boolean>
 

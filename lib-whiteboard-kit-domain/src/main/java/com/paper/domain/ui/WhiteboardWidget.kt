@@ -69,7 +69,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
         // First widget inflation
         whiteboardStore
-            .whiteboard
+            .whiteboardLoaded
             .observeOn(schedulers.main())
             .subscribe { whiteboard ->
                 // Mark initializing
@@ -95,7 +95,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
         // Observe add scrap
         whiteboardStore
-            .whiteboard
+            .whiteboardLoaded
             .flatMapObservable { document ->
                 document::scraps.itemAdded()
             }
@@ -110,7 +110,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             .addTo(staticDisposableBag)
         // Observe remove scrap
         whiteboardStore
-            .whiteboard
+            .whiteboardLoaded
             .flatMapObservable { document ->
                 document::scraps.itemRemoved()
             }
@@ -142,10 +142,10 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         // DO NOTHING
     }
 
-    val canvasSize: Single<Pair<Float, Float>> get() {
+    val canvasSize: Pair<Float, Float> get() {
         return whiteboardStore
-            .whiteboard
-            .map { it.size }
+            .whiteboard!!
+            .size
     }
 
     // Number of on-going task ////////////////////////////////////////////////

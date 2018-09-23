@@ -23,11 +23,7 @@ package com.paper.domain.ui
 import com.paper.domain.DomainConst
 import com.paper.model.SketchScrap
 import com.paper.model.sketch.VectorGraphics
-import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.addTo
-import io.reactivex.subjects.PublishSubject
-import io.useful.changed
 
 open class SketchScrapWidget(scrap: SketchScrap)
     : ScrapWidget(scrap) {
@@ -36,17 +32,6 @@ open class SketchScrapWidget(scrap: SketchScrap)
     private val sketchDisposableBag = CompositeDisposable()
 
     override fun start() {
-        // Add/remove
-        sketchScrap::svg
-            .changed()
-            .subscribe { svg ->
-                svgDisplacement = null
-
-                // Signal out
-                svgSignal.onNext(svg)
-            }
-            .addTo(staticDisposableBag)
-
         println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
     }
 
@@ -58,20 +43,5 @@ open class SketchScrapWidget(scrap: SketchScrap)
 
     // Drawing ////////////////////////////////////////////////////////////////
 
-    private var svgDisplacement: VectorGraphics? = null
-    private val svgSignal = PublishSubject.create<VectorGraphics>().toSerialized()
-
-    fun observeSVG(): Observable<VectorGraphics> {
-        return svgSignal
-    }
-
-    fun getSVG(): VectorGraphics {
-        return svgDisplacement ?: sketchScrap.svg
-    }
-
-    fun setDisplacement(displacement: VectorGraphics) {
-        svgDisplacement = displacement
-
-        svgSignal.onNext(displacement)
-    }
+    val svg: VectorGraphics get() = sketchScrap.svg
 }

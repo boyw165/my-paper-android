@@ -41,7 +41,10 @@ class WhiteboardStore(private val whiteboardID: Long,
                       private val schedulers: ISchedulers)
     : IWhiteboardStore {
 
-    override val whiteboard: Single<Whiteboard> get() = cacheWhiteboard.hide()
+    override val whiteboard: Whiteboard?
+        get() = cacheWhiteboard.value
+
+    override val whiteboardLoaded: Single<Whiteboard> get() = cacheWhiteboard.hide()
     private val cacheWhiteboard = SingleSubject.create<Whiteboard>()
 
     private val disposableBag = CompositeDisposable()

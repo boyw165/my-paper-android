@@ -23,13 +23,10 @@
 package com.paper.domain.ui.manipulator
 
 import com.paper.domain.ui.IWhiteboardWidget
-import com.paper.domain.ui.ScrapWidgetFactory
-import com.paper.domain.ui.SketchScrapWidget
 import com.paper.model.*
 import com.paper.model.command.AddScrapCommand
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.sketch.VectorGraphics
-import io.reactivex.Completable
 import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
@@ -44,11 +41,9 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
 
     @Volatile
     private lateinit var scrap: SketchScrap
-    @Volatile
-    private lateinit var scrapWidget: SketchScrapWidget
 
-    @Volatile
-    private lateinit var svgDisplacement: VectorGraphics
+//    @Volatile
+//    private lateinit var svgDisplacement: VectorGraphics
     @Volatile
     private lateinit var startPoint: Point
     @Volatile
@@ -66,64 +61,40 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                 .subscribe { event ->
                     if (event !is DragEvent) {
                         emitter.onComplete()
+                        return@subscribe
                     }
 
-                    event as DragEvent
+                    val (x, y) = event.startPointer
 
-                    startPoint = Point(event.startPointer.first,
-                                       event.startPointer.second)
+                    startPoint = Point(x, y)
                     lastPoint = startPoint
 
-                    val (s, w) = createSketchScrapWidget(event.startPointer.first,
-                                                         event.startPointer.second)
-                    scrap = s
-                    scrapWidget = w
-                    // Mark widget busy
-                    scrapWidget.markBusy()
+                    scrap = createSketchScrap(UUID.randomUUID(), x, y)
 
-                    // Sketch displacement
-                    svgDisplacement = w.getSVG()
+                    // TODO: Mark editor busy
 
                     // Most importantly, add widget
-                    whiteboardWidget.scrapWidgets.add(scrapWidget)
+                    whiteboardWidget
+                        .whiteboardStore
+                        .whiteboard
+                        ?.scraps
+                        ?.add(scrap)
                 }
                 .addTo(disposableBag)
 
             sharedTouchSequence
                 .skip(1)
                 .subscribe { event ->
-                    val p = when (event) {
-                        is DragEvent -> {
-                            val (x, y) = event.stopPointer
-                            val nx = x - startPoint.x
-                            val ny = y - startPoint.y
-
-                            Point(nx, ny)
-                        }
-                        else -> TODO()
-                    }
-                    val tupleCopy = svgDisplacement.getTupleList()
-                        .toMutableList()
-                    tupleCopy.add(CubicPointTuple(prevControlX = p.x,
-                                                  prevControlY = p.y,
-                                                  currentControlX = lastPoint.x,
-                                                  currentControlY = lastPoint.y,
-                                                  currentEndX = p.x,
-                                                  currentEndY = p.y))
-                    val newDisplacement = svgDisplacement.copy(tupleList = tupleCopy)
-                    svgDisplacement = newDisplacement
-
-                    scrapWidget.setDisplacement(newDisplacement)
+                    scrap.svg = calculateNewSVG(event as DragEvent)
                 }
                 .addTo(disposableBag)
 
-            Completable.fromObservable(sharedTouchSequence)
-                .subscribe {
-                    // Prepare command with updated MODEL
-                    scrap.svg = svgDisplacement
+            sharedTouchSequence
+                .lastElement()
+                .subscribe { event ->
+                    scrap.svg = calculateNewSVG(event as DragEvent)
 
-                    // Mark widget available
-                    scrapWidget.markNotBusy()
+                    // TODO: Mark not busy
 
                     // Offer command
                     emitter.onSuccess(AddScrapCommand(scrap = scrap))
@@ -132,6 +103,26 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
 
             sharedTouchSequence.connect()
         }
+    }
+
+    private fun calculateNewSVG(event: DragEvent): VectorGraphics {
+        val (x, y) = event.stopPointer
+        val nx = x - startPoint.x
+        val ny = y - startPoint.y
+        val p = Point(nx, ny)
+        val tupleCopy = scrap.svg
+            .getTupleList()
+            .toMutableList()
+        tupleCopy.add(CubicPointTuple(prevControlX = p.x,
+                                      prevControlY = p.y,
+                                      currentControlX = lastPoint.x,
+                                      currentControlY = lastPoint.y,
+                                      currentEndX = p.x,
+                                      currentEndY = p.y))
+
+        lastPoint = p
+
+        return scrap.svg.copy(tupleList = tupleCopy)
     }
 
     private fun createSketchScrap(id: UUID,
@@ -147,17 +138,5 @@ class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
                                          z = highestZ + 1),
                            svg = VectorGraphics(style = VectorGraphics.DEFAULT_STYLE,
                                                 tupleList = mutableListOf(LinearPointTuple(0f, 0f))))
-    }
-
-    private fun createSketchScrapWidget(x: Float,
-                                        y: Float): Pair<SketchScrap, SketchScrapWidget> {
-        val id = UUID.randomUUID()
-        val scrap = createSketchScrap(id = id,
-                                      x = x,
-                                      y = y)
-        val widget = ScrapWidgetFactory.createScrapWidget(scrap)
-        whiteboardWidget.scrapWidgets.add(widget)
-
-        return Pair(scrap, widget as SketchScrapWidget)
     }
 }

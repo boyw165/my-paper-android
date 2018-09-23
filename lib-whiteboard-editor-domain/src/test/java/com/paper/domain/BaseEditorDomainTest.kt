@@ -91,9 +91,11 @@ abstract class BaseEditorDomainTest {
     }
     protected val mockWhiteboardStore: IWhiteboardStore by lazy {
         val field = Mockito.mock(IWhiteboardStore::class.java)
+        val whiteboard = mockWhiteboard
 
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
-        Mockito.`when`(field.whiteboard).thenReturn(Single.just(mockWhiteboard))
+        Mockito.`when`(field.whiteboard).thenReturn(whiteboard)
+        Mockito.`when`(field.whiteboardLoaded).thenReturn(Single.just(whiteboard))
 
         field
     }
