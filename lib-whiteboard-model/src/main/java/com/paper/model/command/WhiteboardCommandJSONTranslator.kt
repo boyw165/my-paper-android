@@ -37,7 +37,8 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
         const val KEY_COMMAND_ID = "command_id"
         const val KEY_SCRAP_ID = "scrap_id"
         const val KEY_SCRAP = "scrap"
-        const val KEY_SCRAP_FRAME_DELTA = "scrap_frame_delta"
+        const val KEY_FROM_FRAME = "from_frame"
+        const val KEY_TO_FRAME = "to_frame"
     }
 
     override fun serialize(command: WhiteboardCommand,
@@ -61,8 +62,11 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
                 json.addProperty(KEY_COMMAND_ID, command.commandID.toString())
                 json.addProperty(KEY_SCRAP_ID, command.scrapID.toString())
 
-                val frameJson = context.serialize(command.toFrame, Frame::class.java)
-                json.add(KEY_SCRAP_FRAME_DELTA, frameJson)
+                val fromFrameJson = context.serialize(command.fromFrame, Frame::class.java)
+                json.add(KEY_FROM_FRAME, fromFrameJson)
+
+                val toFrameJson = context.serialize(command.toFrame, Frame::class.java)
+                json.add(KEY_TO_FRAME, toFrameJson)
             }
         }
 
@@ -90,10 +94,12 @@ class WhiteboardCommandJSONTranslator : JsonSerializer<WhiteboardCommand>,
             "UpdateScrapFrameCommand" -> {
                 val commandID = UUID.fromString(json.asJsonObject[KEY_COMMAND_ID].asString)
                 val scrapID = UUID.fromString(json.asJsonObject[KEY_SCRAP_ID].asString)
-                val frameJson = json.asJsonObject[KEY_SCRAP_FRAME_DELTA]
+                val fromFrameJson = json.asJsonObject[KEY_FROM_FRAME]
+                val toFrameJson = json.asJsonObject[KEY_TO_FRAME]
                 UpdateScrapFrameCommand(commandID = commandID,
                                         scrapID = scrapID,
-                                        toFrame = context.deserialize(frameJson, Frame::class.java))
+                                        fromFrame = context.deserialize(fromFrameJson, Frame::class.java),
+                                        toFrame = context.deserialize(toFrameJson, Frame::class.java))
             }
             else -> TODO()
         }

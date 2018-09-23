@@ -21,9 +21,13 @@
 package com.paper.model
 
 import com.paper.model.command.AddScrapCommand
+import com.paper.model.command.UpdateScrapFrameCommand
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator.Companion.KEY_COMMAND_ID
+import com.paper.model.command.WhiteboardCommandJSONTranslator.Companion.KEY_FROM_FRAME
+import com.paper.model.command.WhiteboardCommandJSONTranslator.Companion.KEY_SCRAP
 import com.paper.model.command.WhiteboardCommandJSONTranslator.Companion.KEY_SIGNATURE
+import com.paper.model.command.WhiteboardCommandJSONTranslator.Companion.KEY_TO_FRAME
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,6 +50,7 @@ class WhiteboardCommandJSONTranslatorTest : BaseModelTest() {
 
         Assert.assertTrue(jsonText.contains("\"$KEY_SIGNATURE\":\"AddScrapCommand\""))
         Assert.assertTrue(jsonText.contains("\"$KEY_COMMAND_ID\":\"${command.commandID}\""))
+        Assert.assertTrue(jsonText.contains("\"$KEY_SCRAP\":{"))
     }
 
     @Test
@@ -57,5 +62,25 @@ class WhiteboardCommandJSONTranslatorTest : BaseModelTest() {
 
         Assert.assertTrue(command is AddScrapCommand)
         Assert.assertEquals(UUID.fromString("5320dc29-7ceb-4b45-8b47-51bcf25caf2b"), command.commandID)
+    }
+
+    @Test
+    fun `serialize "UpdateScrapFrameCommand"`() {
+        val candidate = jsonTranslator
+
+        val scrap = createRandomScrap()
+        val command = UpdateScrapFrameCommand(scrapID = scrap.id,
+                                              fromFrame = scrap.frame,
+                                              toFrame = Frame(x = -100f,
+                                                              y = 50f))
+
+        val jsonText = candidate.toJson(command, WhiteboardCommand::class.java)
+
+        System.out.println(jsonText)
+
+        Assert.assertTrue(jsonText.contains("\"$KEY_SIGNATURE\":\"UpdateScrapFrameCommand\""))
+        Assert.assertTrue(jsonText.contains("\"$KEY_COMMAND_ID\":\"${command.commandID}\""))
+        Assert.assertTrue(jsonText.contains("\"$KEY_FROM_FRAME\":{"))
+        Assert.assertTrue(jsonText.contains("\"$KEY_TO_FRAME\":{"))
     }
 }

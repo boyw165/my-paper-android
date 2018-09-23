@@ -55,13 +55,13 @@ class FrameJSONTranslator : JsonSerializer<Frame>,
         val root = json.asJsonObject
 
         // Positioning, scale, and rotation
-        return Frame(root.get("x").asFloat,
-                     root.get("y").asFloat,
-                     root.get("width").asFloat,
-                     root.get("height").asFloat,
-                     root.get("scaleX").asFloat,
-                     root.get("scaleY").asFloat,
-                     root.get("rotationInDegrees").asFloat,
-                     if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z)
+        return Frame(x = if (root.has("x")) root.get("x").asFloat else 0f,
+                     y = if (root.has("y")) root.get("y").asFloat else 0f,
+                     width = if (root.has("width")) root.get("width").asFloat else 0f,
+                     height = if (root.has("height")) root.get("height").asFloat else 0f,
+                     scaleX = if (root.has("scaleX")) root.get("scaleX").asFloat else 1f,
+                     scaleY = if (root.has("scaleY")) root.get("scaleY").asFloat else 1f,
+                     rotationInDegrees = if (root.has("rotationInDegrees")) root.get("rotationInDegrees").asFloat else 0f,
+                     z = if (root.has("z")) root["z"].asInt else ModelConst.MOST_BOTTOM_Z)
     }
 }
