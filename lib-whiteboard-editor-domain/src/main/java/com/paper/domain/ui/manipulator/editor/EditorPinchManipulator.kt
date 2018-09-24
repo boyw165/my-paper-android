@@ -1,6 +1,6 @@
-// Copyright Sep 2018-present TAI-CHU, WANG
+// Copyright Aug 2018-present SodaLabs
 //
-// Author: boyw165@gmail.com
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -20,11 +20,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.manipulator
+package com.paper.domain.ui.manipulator.editor
 
-import io.reactivex.CompletableSource
+import com.paper.domain.ui.IWhiteboardEditorWidget
+import com.paper.domain.ui.manipulator.ICommandOutManipulator
+import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Maybe
 import io.reactivex.Observable
-import io.reactivex.functions.Function
+import io.reactivex.disposables.CompositeDisposable
 import io.useful.rx.GestureEvent
 
-interface IUserTouchManipulator : Function<Observable<Observable<GestureEvent>>, CompletableSource>
+class EditorPinchManipulator(private val editorWidget: IWhiteboardEditorWidget)
+    : ICommandOutManipulator {
+
+    override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
+        return Maybe.create { emitter ->
+            val disposableBag = CompositeDisposable()
+            emitter.setCancellable { disposableBag.dispose() }
+
+            emitter.onComplete()
+        }
+    }
+}

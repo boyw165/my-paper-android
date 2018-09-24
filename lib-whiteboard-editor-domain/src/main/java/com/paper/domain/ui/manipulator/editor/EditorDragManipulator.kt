@@ -20,9 +20,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.manipulator
+package com.paper.domain.ui.manipulator.editor
 
 import com.paper.domain.ui.IWhiteboardWidget
+import com.paper.domain.ui.manipulator.ICommandOutManipulator
 import com.paper.model.*
 import com.paper.model.command.AddScrapCommand
 import com.paper.model.command.WhiteboardCommand
@@ -35,9 +36,9 @@ import io.useful.rx.DragEvent
 import io.useful.rx.GestureEvent
 import java.util.*
 
-class SketchManipulator(private val whiteboardWidget: IWhiteboardWidget,
-                        private val highestZ: Int)
-    : IUserTouchCommandOutManipulator {
+class EditorDragManipulator(private val whiteboardWidget: IWhiteboardWidget,
+                            private val highestZ: Int)
+    : ICommandOutManipulator {
 
     @Volatile
     private lateinit var scrap: SketchScrap

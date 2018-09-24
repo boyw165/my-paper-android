@@ -26,8 +26,10 @@ import com.paper.model.Frame
 import com.paper.model.IBundle
 import com.paper.model.Scrap
 import io.reactivex.Completable
+import io.reactivex.CompletableSource
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.functions.Function
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -64,16 +66,16 @@ open class ScrapWidget(protected val scrap: Scrap)
 
         // User touch
         userTouchInbox
-            .switchMapCompletable { gestureSequence ->
-                println("${DomainConst.TAG}: A new gesture sequence is given")
-
-                userTouchManipulator?.apply(gestureSequence) ?:
+            .switchMapCompletable { touchSSequence ->
+                userTouchManipulator?.apply(touchSSequence) ?:
                 Completable.complete()
             }
-            .subscribe {
-                println("${DomainConst.TAG}: The gesture sequence is finished")
-            }
+            .subscribe()
             .addTo(staticDisposableBag)
+    }
+
+    fun foo() : Function<Observable<Observable<GestureEvent>>, CompletableSource> {
+        return Function { Completable.complete() }
     }
 
     override fun stop() {

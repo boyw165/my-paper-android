@@ -23,8 +23,8 @@
 package com.paper.domain.ui
 
 import com.paper.domain.store.IWhiteboardStore
-import com.paper.domain.ui.manipulator.EditorWidgetManipulator
-import com.paper.domain.ui.manipulator.ScrapWidgetManipulator
+import com.paper.domain.ui.manipulator.EditorManipulator
+import com.paper.domain.ui.manipulator.ScrapManipulator
 import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
@@ -66,11 +66,9 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
             .itemAdded()
             .observeOn(schedulers.main())
             .subscribe { widget ->
-                widget.userTouchManipulator = ScrapWidgetManipulator(
+                widget.userTouchManipulator = ScrapManipulator(
                     scrapWidget = widget,
-                    whiteboardWidget = whiteboardWidget,
-                    editorWidget = this@WhiteboardEditorWidget,
-                    schedulers = schedulers)
+                    editorWidget = this@WhiteboardEditorWidget)
             }
             .addTo(staticDisposableBag)
         whiteboardWidget::scrapWidgets
@@ -99,8 +97,7 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
         userTouchInbox
             .observeOn(schedulers.main())
             .switchMapCompletable { gestureSequence ->
-                EditorWidgetManipulator(whiteboardWidget = whiteboardWidget,
-                                        editorWidget = this@WhiteboardEditorWidget)
+                EditorManipulator(editorWidget = this@WhiteboardEditorWidget)
                     .apply(gestureSequence)
             }
             .subscribe()

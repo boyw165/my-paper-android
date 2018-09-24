@@ -22,9 +22,10 @@
 
 package com.paper.domain.ui.manipulator
 
-import io.reactivex.CompletableSource
+import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.functions.Function
 import io.useful.rx.GestureEvent
 
-interface IUserTouchManipulator : Function<Observable<Observable<GestureEvent>>, CompletableSource>
+interface ICommandOutManipulator : Function<Observable<GestureEvent>, Maybe<WhiteboardCommand>>

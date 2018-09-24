@@ -23,7 +23,9 @@
 package com.paper.domain.ui.manipulator
 
 import com.paper.domain.ui.IWhiteboardEditorWidget
-import com.paper.domain.ui.IWhiteboardWidget
+import com.paper.domain.ui.manipulator.editor.EditorDragManipulator
+import com.paper.domain.ui.manipulator.editor.EditorPinchManipulator
+import com.paper.domain.ui.manipulator.editor.EditorTapManipulator
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.useful.rx.GestureEvent
@@ -31,26 +33,31 @@ import io.useful.rx.GestureEvent
 /**
  * The manipulator which is mainly used by [IWhiteboardEditorWidget].
  */
-class EditorWidgetManipulator(private val whiteboardWidget: IWhiteboardWidget,
-                              private val editorWidget: IWhiteboardEditorWidget)
+class EditorManipulator(private val editorWidget: IWhiteboardEditorWidget)
     : IUserTouchManipulator {
 
     override fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable {
         return gestureSequence
             .flatMapCompletable { touchSequence ->
+                val whiteboardWidget = editorWidget.whiteboardWidget
+
                 Completable.fromObservable(
-                    SketchManipulator(whiteboardWidget = whiteboardWidget,
-                                      highestZ = whiteboardWidget.highestZ)
-                        .apply(touchSequence)
-                        .doOnSuccess { command ->
-                            whiteboardWidget
-                                .whiteboardStore
-                                .offerCommandDoo(command)
-                            editorWidget
-                                .undoWidget
-                                .offerCommand(command)
-                        }
-                        .toObservable())
+                    // Dispatch manipulators
+                    Observable
+                        .concat(listOf(
+                            EditorTapManipulator(editorWidget).apply(touchSequence).toObservable(),
+                            EditorDragManipulator(whiteboardWidget = whiteboardWidget,
+                                                  highestZ = whiteboardWidget.highestZ)
+                                .apply(touchSequence)
+                                .toObservable(),
+                            EditorPinchManipulator(editorWidget).apply(touchSequence).toObservable()))
+                        .doOnNext { command ->
+                            val store = editorWidget.whiteboardStore
+                            store.offerCommandDoo(command)
+
+                            val undoWidget = editorWidget.undoWidget
+                            undoWidget.offerCommand(command)
+                        })
             }
     }
 }

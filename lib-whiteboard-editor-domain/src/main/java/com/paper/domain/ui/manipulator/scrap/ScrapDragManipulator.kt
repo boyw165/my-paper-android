@@ -20,11 +20,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.manipulator
+package com.paper.domain.ui.manipulator.scrap
 
 import com.paper.domain.ui.ScrapWidget
+import com.paper.domain.ui.manipulator.ICommandOutManipulator
 import com.paper.model.Frame
-import com.paper.model.ISchedulers
 import com.paper.model.command.UpdateScrapFrameCommand
 import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Completable
@@ -36,9 +36,8 @@ import io.useful.rx.DragEvent
 import io.useful.rx.GestureEvent
 import java.util.concurrent.atomic.AtomicReference
 
-class DragManipulator(private val scrapWidget: ScrapWidget,
-                      private val schedulers: ISchedulers)
-    : IUserTouchCommandOutManipulator {
+class ScrapDragManipulator(private val scrapWidget: ScrapWidget)
+    : ICommandOutManipulator {
 
     private val startFrame = AtomicReference<Frame>()
     private val displacement = AtomicReference<Frame>()
@@ -52,7 +51,6 @@ class DragManipulator(private val scrapWidget: ScrapWidget,
 
             sharedTouchSequence
                 .firstElement()
-                .observeOn(schedulers.main())
                 .subscribe { event ->
                     if (event !is DragEvent) {
                         emitter.onComplete()
@@ -66,14 +64,12 @@ class DragManipulator(private val scrapWidget: ScrapWidget,
 
             sharedTouchSequence
                 .skip(1)
-                .observeOn(schedulers.main())
                 .subscribe { event ->
                     updateDisplacement(event)
                 }
                 .addTo(disposableBag)
 
             Completable.fromObservable(sharedTouchSequence)
-                .observeOn(schedulers.main())
                 .subscribe {
                     scrapWidget.markNotBusy()
 

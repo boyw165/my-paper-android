@@ -1,4 +1,6 @@
-// Copyright Apr 2018-present boyw165@gmail.com
+// Copyright Aug 2018-present SodaLabs
+//
+// Author: tc@sodalabs.co
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -18,10 +20,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui_event
+package com.paper.domain.ui.manipulator.editor
 
-import com.paper.model.Rect
+import com.paper.domain.ui.IWhiteboardEditorWidget
+import com.paper.domain.ui.manipulator.ICommandOutManipulator
+import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Maybe
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.useful.rx.GestureEvent
 
-data class DrawViewPortEvent(
-    val canvas: Rect,
-    val viewPort: Rect)
+class EditorTapManipulator(private val editorWidget: IWhiteboardEditorWidget)
+    : ICommandOutManipulator {
+
+    override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
+        return Maybe.create { emitter ->
+            val disposableBag = CompositeDisposable()
+            emitter.setCancellable { disposableBag.dispose() }
+
+            emitter.onComplete()
+        }
+    }
+}

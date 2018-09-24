@@ -22,8 +22,8 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.manipulator.SketchManipulator
-import com.paper.model.command.AddScrapCommand
+import com.paper.domain.ui.manipulator.scrap.ScrapDragManipulator
+import com.paper.model.command.UpdateScrapFrameCommand
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class SketchManipulatorTest : BaseEditorDomainTest() {
+class ScrapDragManipulatorTest : BaseEditorDomainTest() {
 
     @Before
     override fun setup() {
@@ -45,8 +45,10 @@ class SketchManipulatorTest : BaseEditorDomainTest() {
 
     @Test
     fun `given a drag sequence, must see one command at the end`() {
-        val candidate = SketchManipulator(whiteboardWidget = mockWhiteboardWidget,
-                                          highestZ = 0)
+        val widget = createRandomScrapWidget()
+        val widgetStartFrame = widget.getFrame()
+        println(widgetStartFrame)
+        val candidate = ScrapDragManipulator(scrapWidget = widget)
 
         val tester = candidate
             .apply(mockDragSequence)
@@ -56,8 +58,10 @@ class SketchManipulatorTest : BaseEditorDomainTest() {
 
         tester.assertComplete()
         tester.assertValueCount(1)
-        tester.assertValueAt(0) { command ->
-            command is AddScrapCommand
+        tester.assertValue { command ->
+            command is UpdateScrapFrameCommand &&
+            command.scrapID == widget.id &&
+            command.toFrame == widgetStartFrame.add(mockDragEndDisplacement)
         }
     }
 }

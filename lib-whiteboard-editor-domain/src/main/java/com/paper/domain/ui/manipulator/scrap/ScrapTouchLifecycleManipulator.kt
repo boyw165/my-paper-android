@@ -1,4 +1,4 @@
-// Copyright Sep 2018-present SodaLabs
+// Copyright Aug 2018-present SodaLabs
 //
 // Author: tc@sodalabs.co
 //
@@ -20,14 +20,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui.manipulator
+package com.paper.domain.ui.manipulator.scrap
 
+import com.paper.domain.ui.manipulator.ICommandOutManipulator
 import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Maybe
 import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
 import io.useful.rx.GestureEvent
 
-interface IUserTouchCommandOutManipulator {
+class ScrapTouchLifecycleManipulator
+    : ICommandOutManipulator {
 
-    fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand>
+    override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
+        return Maybe.create { emitter ->
+            val disposableBag = CompositeDisposable()
+
+            emitter.setCancellable { disposableBag.dispose() }
+
+            emitter.onComplete()
+        }
+    }
 }
