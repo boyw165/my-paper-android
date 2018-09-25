@@ -1,0 +1,63 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled project.hasProperty("testProguard")
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Google Support Library.
+    api rootProject.ext.dep.supportAppcompatV7
+    // Arch component
+    api rootProject.ext.dep.androidArcLiveData
+    api rootProject.ext.dep.androidArchWork
+    // Firebase JobDispatcher support
+    api rootProject.ext.dep.androidArchWorkFirebaseJob
+
+    // Kotlin.
+    api rootProject.ext.dep.kotlinStdlibJdk7
+
+    // JSON.
+    api rootProject.ext.dep.gson
+    // Rx-Java.
+    api rootProject.ext.dep.rxJava
+    api rootProject.ext.dep.rxProp
+    api rootProject.ext.dep.rxKotlin
+
+    // Dirty flag
+    api rootProject.ext.dep.dirtyflag
+
+    // My Libraries.
+    api project(path: ':lib-whiteboard-editor-domain')
+
+    // Unit tests.
+    testImplementation rootProject.ext.dep.testJunit
+    testImplementation rootProject.ext.dep.testMockito
+
+    // Instrumentation tests.
+    androidTestImplementation rootProject.ext.dep.testEspressoCore
+}

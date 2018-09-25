@@ -1,4 +1,5 @@
 include ':app-whiteboard',
+        ':app-whiteboard-domain',
         ':lib-whiteboard-kit-domain',
         ':lib-whiteboard-editor-domain',
         ':lib-whiteboard-model'
