@@ -25,8 +25,10 @@ package com.paper.domain
 import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.paper.domain.ui.manipulator.EditorManipulator
+import com.paper.domain.ui.manipulator.ScrapManipulator
 import com.paper.model.SketchScrap
 import com.paper.model.command.AddScrapCommand
+import com.paper.model.command.GroupCommand
 import io.reactivex.Observable
 import org.junit.After
 import org.junit.Before

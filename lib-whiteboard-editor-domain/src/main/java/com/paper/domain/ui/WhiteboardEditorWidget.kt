@@ -193,13 +193,13 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
         staticDisposableBag.clear()
     }
 
-//    override fun saveStates(bundle: IBundle) {
-//        // DO NOTHING
-//    }
-//
-//    override fun restoreStates(bundle: IBundle) {
-//        // DO NOTHING
-//    }
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
+    }
 
     /**
      * Request to stop; It is granted to stop when receiving a true; vice versa.

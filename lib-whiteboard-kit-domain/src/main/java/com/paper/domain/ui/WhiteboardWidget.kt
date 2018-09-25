@@ -134,13 +134,13 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         println("${DomainConst.TAG}: Stop \"${javaClass.simpleName}\"")
     }
 
-//    override fun saveStates(bundle: IBundle) {
-//        // DO NOTHING
-//    }
-//
-//    override fun restoreStates(bundle: IBundle) {
-//        // DO NOTHING
-//    }
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
+    }
 
     val canvasSize: Pair<Float, Float> get() {
         return whiteboardStore

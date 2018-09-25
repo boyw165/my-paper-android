@@ -82,13 +82,13 @@ open class ScrapWidget(protected val scrap: Scrap)
         staticDisposableBag.clear()
     }
 
-//    override fun saveStates(bundle: IBundle) {
-//        // DO NOTHING
-//    }
-//
-//    override fun restoreStates(bundle: IBundle) {
-//        // DO NOTHING
-//    }
+    override fun saveStates(bundle: IBundle) {
+        // DO NOTHING
+    }
+
+    override fun restoreStates(bundle: IBundle) {
+        // DO NOTHING
+    }
 
     // Frame //////////////////////////////////////////////////////////////////
 
