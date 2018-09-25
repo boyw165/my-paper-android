@@ -44,16 +44,17 @@ class ScrapDragManipulator(private val scrapWidget: ScrapWidget)
 
     override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
         return Maybe.create { emitter ->
-            val sharedTouchSequence = touchSequence.publish()
             val disposableBag = CompositeDisposable()
 
             emitter.setCancellable { disposableBag.dispose() }
 
-            sharedTouchSequence
+            touchSequence
+                // TODO: Use matchFirstOrStop operator
                 .firstElement()
                 .subscribe { event ->
                     if (event !is DragEvent) {
                         emitter.onComplete()
+                        return@subscribe
                     }
 
                     scrapWidget.markBusy()
@@ -62,14 +63,18 @@ class ScrapDragManipulator(private val scrapWidget: ScrapWidget)
                 }
                 .addTo(disposableBag)
 
-            sharedTouchSequence
+            touchSequence
+                // TODO: Use matchFirstOrStop operator
+                .ofType(DragEvent::class.java)
                 .skip(1)
                 .subscribe { event ->
                     updateDisplacement(event)
                 }
                 .addTo(disposableBag)
 
-            Completable.fromObservable(sharedTouchSequence)
+            touchSequence
+                .ofType(DragEvent::class.java)
+                .lastElement()
                 .subscribe {
                     scrapWidget.markNotBusy()
 
@@ -82,8 +87,6 @@ class ScrapDragManipulator(private val scrapWidget: ScrapWidget)
                         toFrame = startFrame.add(displacement.get())))
                 }
                 .addTo(disposableBag)
-
-            sharedTouchSequence.connect()
         }
     }
 

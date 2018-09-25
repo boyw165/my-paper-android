@@ -24,9 +24,11 @@ package com.paper.domain
 
 import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.atLeastOnce
+import com.paper.domain.ui.manipulator.EditorManipulator
 import com.paper.domain.ui.manipulator.ScrapManipulator
+import com.paper.model.SketchScrap
+import com.paper.model.command.AddScrapCommand
 import com.paper.model.command.GroupCommand
-import com.paper.model.command.UpdateScrapFrameCommand
 import io.reactivex.Observable
 import org.junit.After
 import org.junit.Before
@@ -36,7 +38,7 @@ import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class ScrapManipulatorTest : BaseEditorDomainTest() {
+class EditorManipulatorTest : BaseEditorDomainTest() {
 
     @Before
     override fun setup() {
@@ -49,27 +51,22 @@ class ScrapManipulatorTest : BaseEditorDomainTest() {
     }
 
     @Test
-    fun `given a sequence of touch sequence, must see offering command at the end`() {
-        val widget = createRandomScrapWidget()
-        val candidate = ScrapManipulator(scrapWidget = widget,
-                                         editorWidget = mockWhiteboardEditorWidget)
+    fun `given a drag sequence, must see add-sketch-scrap command at the end`() {
+        val candidate = EditorManipulator(editorWidget = mockWhiteboardEditorWidget)
 
-        val commandTester = mockWhiteboardEditorWidget.undoWidget
+        val commandTester = mockWhiteboardEditorWidget.whiteboardStore
         val completionTester = candidate
             .apply(Observable.just(mockTouchBegin,
                                    mockDragSequence,
-                                   mockPinchSequence,
                                    mockTouchEnd))
             .test()
 
         moveScheduler()
 
         completionTester.assertComplete()
-        Mockito.verify(commandTester, atLeastOnce()).offerCommand(argWhere { command ->
-            command is GroupCommand &&
-            command.commands.any { subCommand ->
-                subCommand is UpdateScrapFrameCommand
-            }
+        Mockito.verify(commandTester, atLeastOnce()).offerCommandDoo(argWhere { command ->
+            command is AddScrapCommand &&
+            command.scrap is SketchScrap
         })
     }
 }

@@ -36,7 +36,7 @@ import io.useful.rx.DragEvent
 import io.useful.rx.GestureEvent
 import java.util.*
 
-class EditorDragManipulator(private val whiteboardWidget: IWhiteboardWidget,
+class EditorDragManipulator(private val whiteboard: Whiteboard,
                             private val highestZ: Int)
     : ICommandOutManipulator {
 
@@ -52,12 +52,11 @@ class EditorDragManipulator(private val whiteboardWidget: IWhiteboardWidget,
 
     override fun apply(touchSequence: Observable<GestureEvent>): Maybe<WhiteboardCommand> {
         return Maybe.create { emitter ->
-            val sharedTouchSequence = touchSequence.publish()
             val disposableBag = CompositeDisposable()
 
             emitter.setCancellable { disposableBag.dispose() }
 
-            sharedTouchSequence
+            touchSequence
                 .firstElement()
                 .subscribe { event ->
                     if (event !is DragEvent) {
@@ -75,34 +74,30 @@ class EditorDragManipulator(private val whiteboardWidget: IWhiteboardWidget,
                     // TODO: Mark editor busy
 
                     // Most importantly, add widget
-                    whiteboardWidget
-                        .whiteboardStore
-                        .whiteboard
-                        ?.scraps
-                        ?.add(scrap)
+                    whiteboard
+                        .scraps
+                        .add(scrap)
                 }
                 .addTo(disposableBag)
 
-            sharedTouchSequence
+            touchSequence
+                .ofType(DragEvent::class.java)
                 .skip(1)
                 .subscribe { event ->
                     scrap.svg = calculateNewSVG(event as DragEvent)
                 }
                 .addTo(disposableBag)
 
-            sharedTouchSequence
+            touchSequence
+                .ofType(DragEvent::class.java)
                 .lastElement()
                 .subscribe { event ->
-                    scrap.svg = calculateNewSVG(event as DragEvent)
-
                     // TODO: Mark not busy
 
                     // Offer command
                     emitter.onSuccess(AddScrapCommand(scrap = scrap))
                 }
                 .addTo(disposableBag)
-
-            sharedTouchSequence.connect()
         }
     }
 

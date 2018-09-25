@@ -106,22 +106,27 @@ abstract class BaseEditorDomainTest {
 
         field
     }
-    protected val mockWhiteboardEditorWidget: IWhiteboardEditorWidget by lazy {
-        val field = Mockito.mock(IWhiteboardEditorWidget::class.java)
-
-        val mockStore = Mockito.mock(IWhiteboardStore::class.java)
-        val mockUndoWidget = Mockito.mock(IUndoWidget::class.java)
-
-        Mockito.`when`(field.busy).thenReturn(Observable.just(false))
-        Mockito.`when`(field.whiteboardStore).thenReturn(mockStore)
-        Mockito.`when`(field.undoWidget).thenReturn(mockUndoWidget)
-
-        field
-    }
     protected val mockUndoWidget: IUndoWidget by lazy {
         val field = Mockito.mock(IUndoWidget::class.java)
 
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
+
+        field
+    }
+    protected val mockWhiteboardEditorWidget: IWhiteboardEditorWidget by lazy {
+        val field = Mockito.mock(IWhiteboardEditorWidget::class.java)
+
+//        val mockStore = Mockito.mock(IWhiteboardStore::class.java)
+//
+//        val mockWhiteboardWidget = Mockito.mock(IWhiteboardWidget::class.java)
+//        Mockito.`when`(mockWhiteboardWidget.highestZ).thenReturn(0)
+//
+//        val mockUndoWidget = Mockito.mock(IUndoWidget::class.java)
+
+        Mockito.`when`(field.busy).thenReturn(Observable.just(false))
+        Mockito.`when`(field.whiteboardStore).thenReturn(mockWhiteboardStore)
+        Mockito.`when`(field.whiteboardWidget).thenReturn(mockWhiteboardWidget)
+        Mockito.`when`(field.undoWidget).thenReturn(mockUndoWidget)
 
         field
     }
@@ -168,13 +173,11 @@ abstract class BaseEditorDomainTest {
 
     open fun setup() {
 //        startKoin(listOf(testModule))
-
-        Mockito.`when`(mockWhiteboardRepo.getBoardById(Mockito.anyLong()))
-            .thenReturn(
-                Single.just(mockWhiteboard)
-                    .delay(SHORT_TIMEOUT, TimeUnit.MILLISECONDS, testScheduler))
-
-
+        println("init ${mockWhiteboardRepo.javaClass.simpleName}")
+        println("init ${mockWhiteboardStore.javaClass.simpleName}")
+        println("init ${mockWhiteboardWidget.javaClass.simpleName}")
+        println("init ${mockUndoWidget.javaClass.simpleName}")
+        println("init ${mockWhiteboardEditorWidget.javaClass.simpleName}")
     }
 
     open fun clean() {

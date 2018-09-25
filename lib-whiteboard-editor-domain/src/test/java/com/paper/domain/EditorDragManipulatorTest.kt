@@ -45,7 +45,7 @@ class EditorDragManipulatorTest : BaseEditorDomainTest() {
 
     @Test
     fun `given a drag sequence, must see one command at the end`() {
-        val candidate = EditorDragManipulator(whiteboardWidget = mockWhiteboardWidget,
+        val candidate = EditorDragManipulator(whiteboard = mockWhiteboard,
                                               highestZ = 0)
 
         val tester = candidate

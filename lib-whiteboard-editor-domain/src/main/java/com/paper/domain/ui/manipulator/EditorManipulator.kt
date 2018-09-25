@@ -38,7 +38,8 @@ class EditorManipulator(private val editorWidget: IWhiteboardEditorWidget)
 
     override fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable {
         return gestureSequence
-            .flatMapCompletable { touchSequence ->
+            .switchMapCompletable { touchSequence ->
+                val whiteboard = editorWidget.whiteboardStore.whiteboard!!
                 val whiteboardWidget = editorWidget.whiteboardWidget
 
                 Completable.fromObservable(
@@ -46,7 +47,7 @@ class EditorManipulator(private val editorWidget: IWhiteboardEditorWidget)
                     Observable
                         .concat(listOf(
                             EditorTapManipulator(editorWidget).apply(touchSequence).toObservable(),
-                            EditorDragManipulator(whiteboardWidget = whiteboardWidget,
+                            EditorDragManipulator(whiteboard = whiteboard,
                                                   highestZ = whiteboardWidget.highestZ)
                                 .apply(touchSequence)
                                 .toObservable(),
