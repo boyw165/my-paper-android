@@ -42,6 +42,7 @@ dependencies {
     api rootProject.ext.dep.rxKotlin
     // Rx-Java.
     api rootProject.ext.dep.rxJava
+    api rootProject.ext.dep.rxJavaExtension
     api rootProject.ext.dep.rxProp
 
     // JSON.

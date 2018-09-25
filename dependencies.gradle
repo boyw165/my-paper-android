@@ -91,6 +91,7 @@ ext {
             rxBinding                 : "com.jakewharton.rxbinding2:rxbinding:${RX_BINDING_VER}",
             rxBindingCompat           : "com.jakewharton.rxbinding2:rxbinding-appcompat-v7:${RX_BINDING_VER}",
             rxBindingRecyclerViewV7   : "com.jakewharton.rxbinding2:rxbinding-recyclerview-v7:${RX_BINDING_VER}",
+            rxJavaExtension           : 'com.github.akarnokd:rxjava2-extensions:0.20.3',
             rxPermissions             : 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.4@aar',
             rxProp                    : 'io.useful:kotlin-delegate-rx-properties:1.0.0',
             // Dirty Flag
