@@ -24,7 +24,7 @@ import com.paper.model.IBundle
 
 interface IWidget : ILifecycleAware {
 
-    fun saveStates(bundle: IBundle)
-
-    fun restoreStates(bundle: IBundle)
+//    fun saveStates(bundle: IBundle)
+//
+//    fun restoreStates(bundle: IBundle)
 }

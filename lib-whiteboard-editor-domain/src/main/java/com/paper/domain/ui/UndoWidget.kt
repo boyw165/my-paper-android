@@ -79,13 +79,13 @@ class UndoWidget(private val undoRepo: ICommandRepository,
         disposables.clear()
     }
 
-    override fun saveStates(bundle: IBundle) {
-        // DO NOTHING
-    }
-
-    override fun restoreStates(bundle: IBundle) {
-        // DO NOTHING
-    }
+//    override fun saveStates(bundle: IBundle) {
+//        // DO NOTHING
+//    }
+//
+//    override fun restoreStates(bundle: IBundle) {
+//        // DO NOTHING
+//    }
 
     private fun notifyUndoAvailability(undoSize: Int,
                                        redoSize: Int) {
