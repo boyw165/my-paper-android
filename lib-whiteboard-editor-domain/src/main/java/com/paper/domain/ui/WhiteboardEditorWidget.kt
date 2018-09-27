@@ -62,64 +62,9 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
     private val staticDisposableBag = CompositeDisposable()
 
     override fun start() {
-        // Watch scrap widget addition and assign the manipulator
-
-        whiteboardWidget::scrapWidgets
-            .itemAdded()
-            .observeOn(schedulers.main())
-            .subscribe { widget ->
-                widget.userTouchManipulator = ScrapManipulator(
-                    scrapWidget = widget,
-                    editorWidget = this@WhiteboardEditorWidget)
-            }
-            .addTo(staticDisposableBag)
-        whiteboardWidget::scrapWidgets
-            .itemRemoved()
-            .observeOn(schedulers.main())
-            .subscribe { widget ->
-                widget.userTouchManipulator = null
-            }
-            .addTo(staticDisposableBag)
-
-        // User touch
-        userTouchInbox
-            .observeOn(schedulers.main())
-            .switchMapCompletable { gestureSequence ->
-                EditorManipulator(editorWidget = this@WhiteboardEditorWidget)
-                    .apply(gestureSequence)
-            }
-            .subscribe()
-            .addTo(staticDisposableBag)
-
-        // Undo & redo
-        undoInbox
-            .observeOn(schedulers.main())
-            .switchMap { undoDemand ->
-                undoDemand.flatMap {
-                    undoWidget
-                        .undo()
-                        .toObservable()
-                }
-            }
-            .observeOn(schedulers.main())
-            .subscribe { command ->
-                whiteboardStore.offerCommandUndo(command)
-            }
-            .addTo(staticDisposableBag)
-        redoInbox
-            .observeOn(schedulers.main())
-            .switchMap { redoDemand ->
-                redoDemand.flatMap {
-                    undoWidget
-                        .redo()
-                        .toObservable()
-                }
-            }
-            .observeOn(schedulers.main())
-            .subscribe { command ->
-                whiteboardStore.offerCommandDoo(command)
-            }
-            .addTo(staticDisposableBag)
+        setupScrapManipulatorInjection()
+        setupUserTouch()
+        setupUndoRedo()
 
         // Following are all about the edit panel outputs to whiteboard widget:
 
@@ -201,6 +146,67 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
         } catch (err: Throwable) {
             Observable.just(false)
         }
+    }
+
+    private fun setupScrapManipulatorInjection() {
+        whiteboardWidget::scrapWidgets
+            .itemAdded()
+            .observeOn(schedulers.main())
+            .subscribe { widget ->
+                widget.userTouchManipulator = ScrapManipulator(
+                    scrapWidget = widget,
+                    editorWidget = this@WhiteboardEditorWidget)
+            }
+            .addTo(staticDisposableBag)
+        whiteboardWidget::scrapWidgets
+            .itemRemoved()
+            .observeOn(schedulers.main())
+            .subscribe { widget ->
+                widget.userTouchManipulator = null
+            }
+            .addTo(staticDisposableBag)
+    }
+
+    private fun setupUserTouch() {
+        userTouchInbox
+            .observeOn(schedulers.main())
+            .switchMapCompletable { gestureSequence ->
+                EditorManipulator(editorWidget = this@WhiteboardEditorWidget)
+                    .apply(gestureSequence)
+            }
+            .subscribe()
+            .addTo(staticDisposableBag)
+    }
+
+    private fun setupUndoRedo() {
+        undoInbox
+            .observeOn(schedulers.main())
+            .switchMap { undoDemand ->
+                undoDemand.flatMap {
+                    undoWidget
+                        .undo()
+                        .toObservable()
+                }
+            }
+            .observeOn(schedulers.main())
+            .subscribe { command ->
+                whiteboardStore.offerCommandUndo(command)
+            }
+            .addTo(staticDisposableBag)
+        redoInbox
+            .observeOn(schedulers.main())
+            .switchMap { redoDemand ->
+                redoDemand.flatMap {
+                    undoWidget
+                        .redo()
+                        .toObservable()
+                }
+            }
+            .observeOn(schedulers.main())
+            .subscribe { command ->
+                whiteboardStore.offerCommandDoo(command)
+            }
+            .addTo(staticDisposableBag)
     }
 
     // Picker, magic-dot widgets /////////////////////////////////////////////
