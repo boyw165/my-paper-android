@@ -79,19 +79,23 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
             }
             .addTo(staticDisposableBag)
 
-        // Picker widgets
-        this::pickerWidgets
-            .itemAdded()
-            .observeOn(schedulers.main())
-            .subscribe { pickerWidget ->
-                pickerWidget.start()
-            }
-        this::pickerWidgets
-            .itemRemoved()
-            .observeOn(schedulers.main())
-            .subscribe { pickerWidget ->
-                pickerWidget.stop()
-            }
+        // FIXME: Not necessary here, because whoever creates the picker widgets
+        // FIXME: is in charge of the widget creation and destroy.
+//        // Picker widgets
+//        this::pickerWidgets
+//            .itemAdded()
+//            .observeOn(schedulers.main())
+//            .subscribe { pickerWidget ->
+//                pickerWidget.start()
+//            }
+//            .addTo(staticDisposableBag)
+//        this::pickerWidgets
+//            .itemRemoved()
+//            .observeOn(schedulers.main())
+//            .subscribe { pickerWidget ->
+//                pickerWidget.stop()
+//            }
+//            .addTo(staticDisposableBag)
 
         // User touch
         userTouchInbox
