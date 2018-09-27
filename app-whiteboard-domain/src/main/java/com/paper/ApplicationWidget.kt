@@ -23,6 +23,7 @@
 package com.paper
 
 import com.paper.domain.ui.IWidget
+import com.paper.model.IBundle
 import java.util.*
 
 class ApplicationWidget : IApplicationWidget {
@@ -34,6 +35,14 @@ class ApplicationWidget : IApplicationWidget {
     }
 
     override fun stop() {
+        // TODO
+    }
+
+    override fun saveStates(bundle: IBundle) {
+        // TODO
+    }
+
+    override fun restoreStates(bundle: IBundle) {
         // TODO
     }
 
