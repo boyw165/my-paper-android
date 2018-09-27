@@ -1,4 +1,4 @@
-// Copyright Apr 2018-present Paper
+// Copyright Sep 2018-present TAI-CHUN, WANG
 //
 // Author: boyw165@gmail.com
 //
@@ -22,36 +22,28 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.store.IWhiteboardStore
-import io.reactivex.Observable
-import io.reactivex.subjects.Subject
-import io.useful.rx.GestureEvent
+import com.paper.model.IBundle
 
-// TODO: Use dagger 2 to inject the dependency gracefully
+object Empty {
 
-// TODO: Shouldn't depend on any Android package!
+    @JvmStatic
+    val MAGIC_DOT_WIDGET = object : IWidget {
 
-interface IWhiteboardEditorWidget : IWidget {
+        override fun start() {
+            // TODO
+        }
 
-    val busy: Observable<Boolean>
+        override fun stop() {
+            // TODO
+        }
 
-    val whiteboardStore: IWhiteboardStore
+        override fun saveStates(bundle: IBundle) {
+            // TODO
+        }
 
-    val whiteboardWidget: IWhiteboardWidget
-
-    val undoWidget: IUndoWidget
-
-    val canUndo: Observable<Boolean>
-
-    val canRedo: Observable<Boolean>
-
-    val pickerWidgets: MutableSet<IWidget>
-
-    var transformWidget: IWidget
-
-    val userTouchInbox: Subject<Observable<Observable<GestureEvent>>>
-
-    val undoInbox: Subject<Observable<Any>>
-
-    val redoInbox: Subject<Observable<Any>>
+        override fun restoreStates(bundle: IBundle) {
+            // TODO
+        }
+    }
 }
+

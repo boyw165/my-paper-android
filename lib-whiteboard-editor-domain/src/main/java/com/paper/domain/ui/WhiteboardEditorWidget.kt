@@ -37,6 +37,7 @@ import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import io.useful.delegate.rx.RxMutableSet
+import io.useful.delegate.rx.RxValue
 import io.useful.itemAdded
 import io.useful.itemRemoved
 import io.useful.rx.GestureEvent
@@ -62,6 +63,7 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
     override fun start() {
         // Watch scrap widget addition and assign the manipulator
+
         whiteboardWidget::scrapWidgets
             .itemAdded()
             .observeOn(schedulers.main())
@@ -78,24 +80,6 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
                 widget.userTouchManipulator = null
             }
             .addTo(staticDisposableBag)
-
-        // FIXME: Not necessary here, because whoever creates the picker widgets
-        // FIXME: is in charge of the widget creation and destroy.
-//        // Picker widgets
-//        this::pickerWidgets
-//            .itemAdded()
-//            .observeOn(schedulers.main())
-//            .subscribe { pickerWidget ->
-//                pickerWidget.start()
-//            }
-//            .addTo(staticDisposableBag)
-//        this::pickerWidgets
-//            .itemRemoved()
-//            .observeOn(schedulers.main())
-//            .subscribe { pickerWidget ->
-//                pickerWidget.stop()
-//            }
-//            .addTo(staticDisposableBag)
 
         // User touch
         userTouchInbox
@@ -219,9 +203,11 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
         }
     }
 
-    // Picker addition and removal  //////////////////////////////////////////
+    // Picker, magic-dot widgets /////////////////////////////////////////////
 
     override val pickerWidgets by RxMutableSet(mutableSetOf<IWidget>())
+
+    override var transformWidget: IWidget by RxValue(Empty.MAGIC_DOT_WIDGET)
 
     // Touch /////////////////////////////////////////////////////////////////
 
