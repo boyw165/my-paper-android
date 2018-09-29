@@ -22,17 +22,10 @@
 
 package com.paper.domain
 
-import com.nhaarman.mockitokotlin2.only
-import com.paper.domain.ui.IWidget
-import com.paper.domain.ui.WhiteboardEditorWidget
-import com.paper.domain.ui.WhiteboardWidget
-import io.useful.itemAdded
-import io.useful.itemRemoved
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 @RunWith(MockitoJUnitRunner.Silent::class)
@@ -46,64 +39,6 @@ class WhiteboardEditorWidgetTest : BaseEditorDomainTest() {
     @After
     override fun clean() {
         super.clean()
-    }
-
-    @Test
-    fun `add a random picker widget, should see addition and widget start`() {
-        val whiteboardWidget = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                                schedulers = mockSchedulers)
-        val candidate = WhiteboardEditorWidget(whiteboardWidget = whiteboardWidget,
-                                               undoWidget = mockUndoWidget,
-                                               penPrefsRepo = mockPenPrefsRepo,
-                                               schedulers = mockSchedulers)
-        candidate.start()
-        moveScheduler()
-
-        val additionTester = candidate::pickerWidgets
-            .itemAdded()
-            .test()
-
-        val pickerWidget = Mockito.mock(IWidget::class.java)
-        candidate.pickerWidgets.add(pickerWidget)
-
-        moveScheduler()
-
-        // Addition
-        additionTester.assertValueCount(1)
-        // Widget start
-        Mockito.verify(pickerWidget, only()).start()
-    }
-
-    @Test
-    fun `remove a pre-added picker widget, should see removal and widget stop`() {
-        val whiteboardWidget = WhiteboardWidget(whiteboardStore = mockWhiteboardStore,
-                                                schedulers = mockSchedulers)
-        val candidate = WhiteboardEditorWidget(whiteboardWidget = whiteboardWidget,
-                                               undoWidget = mockUndoWidget,
-                                               penPrefsRepo = mockPenPrefsRepo,
-                                               schedulers = mockSchedulers)
-        candidate.start()
-        moveScheduler()
-
-        val removalTester = candidate::pickerWidgets
-            .itemRemoved()
-            .test()
-
-        val pickerWidget = Mockito.mock(IWidget::class.java)
-        Mockito.`when`(pickerWidget.start())
-            .then {
-                println("picker widget starts")
-            }
-        candidate.pickerWidgets.add(pickerWidget)
-        moveScheduler()
-
-        candidate.pickerWidgets.remove(pickerWidget)
-        moveScheduler()
-
-        // Removal
-        removalTester.assertValueCount(1)
-        // Widget stop
-        Mockito.verify(pickerWidget).stop()
     }
 
     @Test
