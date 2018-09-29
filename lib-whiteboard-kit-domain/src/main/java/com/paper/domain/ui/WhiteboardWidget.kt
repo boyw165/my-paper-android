@@ -25,7 +25,6 @@ import com.paper.domain.store.IWhiteboardStore
 import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.useful.delegate.rx.RxMutableSet
@@ -53,73 +52,8 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
     override var highestZ: Int = 0
 
     override fun start() {
-        // Watch scrap widget added and removed, then do start and stop accordingly
-        this::scrapWidgets
-            .itemAdded()
-            .subscribeOn(schedulers.main())
-            .subscribe { scrapWidget ->
-                startScrapWidget(scrapWidget)
-            }
-        this::scrapWidgets
-            .itemRemoved()
-            .subscribeOn(schedulers.main())
-            .subscribe { scrapWidget ->
-                stopScrapWidget(scrapWidget)
-            }
-
-        // First widget inflation
-        whiteboardStore
-            .whiteboardLoaded
-            .observeOn(schedulers.main())
-            .subscribe { whiteboard ->
-                // Mark initializing
-                dirtyFlag.markDirty(WhiteboardDirtyFlag.INITIALIZING)
-
-                whiteboard.scraps
-                    .forEach { scrap ->
-                        val widget = ScrapWidgetFactory.createScrapWidget(scrap)
-
-                        // Update z
-                        val z = widget.getFrame().z
-                        if (z > highestZ) {
-                            highestZ = z
-                        }
-
-                        scrapWidgets.add(widget)
-                    }
-
-                // Mark initialization done
-                dirtyFlag.markNotDirty(WhiteboardDirtyFlag.INITIALIZING)
-            }
-            .addTo(staticDisposableBag)
-
-        // Observe add scrap
-        whiteboardStore
-            .whiteboardLoaded
-            .flatMapObservable { document ->
-                document::scraps.itemAdded()
-            }
-            .observeOn(schedulers.main())
-            .subscribe { scrap ->
-                val found = scrapWidgets.firstOrNull { it.id == scrap.id }
-                if (found != null) return@subscribe
-
-                val widget = ScrapWidgetFactory.createScrapWidget(scrap)
-                scrapWidgets.add(widget)
-            }
-            .addTo(staticDisposableBag)
-        // Observe remove scrap
-        whiteboardStore
-            .whiteboardLoaded
-            .flatMapObservable { document ->
-                document::scraps.itemRemoved()
-            }
-            .observeOn(schedulers.main())
-            .subscribe { scrap ->
-                val widget = scrapWidgets.firstOrNull { it.id == scrap.id }
-                widget?.let { scrapWidgets.remove(it) }
-            }
-            .addTo(staticDisposableBag)
+        setupBusyStates()
+        setupScrapWidgets()
 
         whiteboardStore.start()
 
@@ -142,58 +76,114 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         // DO NOTHING
     }
 
-    val canvasSize: Pair<Float, Float> get() {
-        return whiteboardStore
-            .whiteboard!!
-            .size
+    private fun setupBusyStates() {
+        whiteboardStore
+            .whiteboardLoaded
+            .toObservable()
+            .map { true }
+            .startWith(false)
+            .subscribe { done ->
+                if (done) {
+                    dirtyFlag.markNotDirty(WhiteboardDirtyFlag.INITIALIZING)
+                } else {
+                    dirtyFlag.markDirty(WhiteboardDirtyFlag.INITIALIZING)
+                }
+            }
+            .addTo(staticDisposableBag)
     }
+
+    private fun setupScrapWidgets() {
+        // Observe add scrap
+        whiteboardStore
+            .whiteboardLoaded
+            .flatMapObservable { document ->
+                Observable.merge(
+                    Observable.fromIterable(document.scraps),
+                    document::scraps.itemAdded())
+            }
+            .observeOn(schedulers.main())
+            .subscribe { scrap ->
+                val found = scrapWidgets.firstOrNull { it.id == scrap.id }
+                if (found != null) return@subscribe
+
+                val widget = ScrapWidgetFactory.createScrapWidget(scrap)
+                startScrapWidget(widget)
+
+                scrapWidgets.add(widget)
+            }
+            .addTo(staticDisposableBag)
+        // Observe remove scrap
+        whiteboardStore
+            .whiteboardLoaded
+            .flatMapObservable { document ->
+                document::scraps.itemRemoved()
+            }
+            .observeOn(schedulers.main())
+            .subscribe { scrap ->
+                val widget = scrapWidgets.firstOrNull { it.id == scrap.id }
+                widget?.let {
+                    stopScrapWidget(it)
+                    scrapWidgets.remove(it)
+                }
+            }
+            .addTo(staticDisposableBag)
+    }
+
+    val canvasSize: Pair<Float, Float>
+        get() {
+            return whiteboardStore
+                .whiteboard!!
+                .size
+        }
 
     // Number of on-going task ////////////////////////////////////////////////
 
     private val childBusyCount = AtomicInteger(0)
     private val dirtyFlag = WhiteboardDirtyFlag(WhiteboardDirtyFlag.INITIALIZING)
 
-    override val busy: Observable<Boolean> get() {
-        return Observable
-            .combineLatest(listOf(selfBusy,
-                                  whiteboardStore.busy)
-                          ) { busyArray: Array<in Boolean> ->
-                var overallBusy = false
-                busyArray.forEach { overallBusy = overallBusy || it as Boolean }
-                overallBusy
-            }
-            .observeOn(schedulers.main())
-    }
+    override val busy: Observable<Boolean>
+        get() {
+            return Observable
+                .combineLatest(listOf(selfBusy,
+                                      whiteboardStore.busy)
+                              ) { busyArray: Array<in Boolean> ->
+                    var overallBusy = false
+                    busyArray.forEach { overallBusy = overallBusy || it as Boolean }
+                    overallBusy
+                }
+                .observeOn(schedulers.main())
+        }
 
-    private val selfBusy: Observable<Boolean> get() {
-        return dirtyFlag
-            .updated()
-            .observeOn(schedulers.main())
-            .map { event ->
-                // Detect any busy child
-                when (event.changedType) {
-                    WhiteboardDirtyFlag.CHILD_IS_BUSY -> {
-                        val childBusy = event.flag.and(WhiteboardDirtyFlag.CHILD_IS_BUSY) == 1
-                        if (childBusy) {
-                            childBusyCount.incrementAndGet()
-                        } else {
-                            // Most of the child is initially NOT busy, therefore
-                            // we need to constraint the count low to zero.
-                            if (childBusyCount.decrementAndGet() < 0) {
-                                childBusyCount.set(0)
+    private val selfBusy: Observable<Boolean>
+        get() {
+            return dirtyFlag
+                .updated()
+                .observeOn(schedulers.main())
+                .map { event ->
+                    // Detect any busy child
+                    when (event.changedType) {
+                        WhiteboardDirtyFlag.CHILD_IS_BUSY -> {
+                            val childBusy = event.flag.and(WhiteboardDirtyFlag.CHILD_IS_BUSY) == 1
+                            if (childBusy) {
+                                childBusyCount.incrementAndGet()
+                            } else {
+                                // Most of the child is initially NOT busy, therefore
+                                // we need to constraint the count low to zero.
+                                if (childBusyCount.decrementAndGet() < 0) {
+                                    childBusyCount.set(0)
+                                }
                             }
                         }
                     }
+
+                    // Ready iff flag is not zero
+                    val busy = event.flag != 0 && childBusyCount.get() == 0
+
+                    println("${DomainConst.TAG}: whiteboard busy=$busy")
+
+                    busy
                 }
-
-                // Ready iff flag is not zero
-                val busy = event.flag != 0 && childBusyCount.get() == 0
-
-                println("${DomainConst.TAG}: editor busy=$busy")
-
-                busy
-            }
-    }
+        }
 
     // Scrap manipulation /////////////////////////////////////////////////////
 

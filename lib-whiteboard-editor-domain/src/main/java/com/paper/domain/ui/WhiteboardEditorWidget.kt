@@ -115,6 +115,7 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 //            }
 //            .addTo(staticDisposableBag)
 
+        // Start widgets
         whiteboardWidget.start()
         undoWidget.start()
     }

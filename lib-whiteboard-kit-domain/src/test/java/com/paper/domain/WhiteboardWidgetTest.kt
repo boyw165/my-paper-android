@@ -93,6 +93,7 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
             .itemAdded()
             .test()
 
+        // Stop widget immediately
         candidate.stop()
 
         // Make sure the stream moves
