@@ -26,10 +26,8 @@ import com.paper.model.Frame
 import com.paper.model.IBundle
 import com.paper.model.Scrap
 import io.reactivex.Completable
-import io.reactivex.CompletableSource
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.functions.Function
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -52,30 +50,8 @@ open class ScrapWidget(protected val scrap: Scrap)
     protected val staticDisposableBag = CompositeDisposable()
 
     override fun start() {
-        // Frame
-        scrap::frame
-            .changed()
-            .subscribe { frame ->
-                // Clear displacement
-                frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
-
-                // Signal out
-                frameSignal.onNext(frame)
-            }
-            .addTo(staticDisposableBag)
-
-        // User touch
-        userTouchInbox
-            .switchMapCompletable { touchSSequence ->
-                userTouchManipulator?.apply(touchSSequence) ?:
-                Completable.complete()
-            }
-            .subscribe()
-            .addTo(staticDisposableBag)
-    }
-
-    fun foo() : Function<Observable<Observable<GestureEvent>>, CompletableSource> {
-        return Function { Completable.complete() }
+        setupFrame()
+        setupUserTouch()
     }
 
     override fun stop() {
@@ -88,6 +64,29 @@ open class ScrapWidget(protected val scrap: Scrap)
 
     override fun restoreStates(bundle: IBundle) {
         // DO NOTHING
+    }
+
+    private fun setupFrame() {
+        scrap::frame
+            .changed()
+            .subscribe { frame ->
+                // Clear displacement
+                frameDisplacement.set(DomainConst.EMPTY_FRAME_DISPLACEMENT)
+
+                // Signal out
+                frameSignal.onNext(frame)
+            }
+            .addTo(staticDisposableBag)
+    }
+
+    private fun setupUserTouch() {
+        userTouchInbox
+            .switchMapCompletable { touchSSequence ->
+                userTouchManipulator?.apply(touchSSequence) ?:
+                Completable.complete()
+            }
+            .subscribe()
+            .addTo(staticDisposableBag)
     }
 
     // Frame //////////////////////////////////////////////////////////////////
