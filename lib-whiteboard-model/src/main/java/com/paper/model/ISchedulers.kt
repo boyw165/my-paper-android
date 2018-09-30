@@ -28,8 +28,6 @@ interface ISchedulers {
 
     fun main(): Scheduler
 
-    fun ui(): Scheduler
-
     fun computation(): Scheduler
 
     fun io(): Scheduler

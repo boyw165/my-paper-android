@@ -31,11 +31,11 @@ import io.reactivex.Single
 import java.io.File
 import java.util.*
 
-class CommandRepository(private val logDir: File,
-                        logJournalFileName: String,
-                        private val jsonTranslator: Gson,
-                        private val capacity: Int,
-                        private val schedulers: ISchedulers)
+class FileCommandRepository(private val logDir: File,
+                            logJournalFileName: String,
+                            private val jsonTranslator: Gson,
+                            private val capacity: Int,
+                            private val schedulers: ISchedulers)
     : ICommandRepository {
 
     companion object {

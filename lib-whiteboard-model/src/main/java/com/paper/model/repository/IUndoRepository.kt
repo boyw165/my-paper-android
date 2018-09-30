@@ -1,4 +1,4 @@
-// Copyright Sep 2018-present Paper
+// Copyright Sep 2018-present TAI-CHUN, WANG
 //
 // Author: boyw165@gmail.com
 //
@@ -20,24 +20,22 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.ui
+package com.paper.model.repository
 
 import com.paper.model.command.WhiteboardCommand
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 
-interface IUndoWidget : IWidget {
+interface IUndoRepository {
 
-    /**
-     * A busy state of this widget.
-     */
-    val busy: Observable<Boolean>
+    fun prepare(): Completable
 
     val canUndo: Observable<Boolean>
 
     val canRedo: Observable<Boolean>
 
-    fun offerCommand(command: WhiteboardCommand)
+    fun offerCommand(command: WhiteboardCommand): Completable
 
     fun undo(): Single<WhiteboardCommand>
 

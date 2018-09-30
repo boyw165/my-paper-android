@@ -2,7 +2,7 @@ package com.paper.domain
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.paper.domain.store.IWhiteboardStore
+import com.paper.model.repository.IWhiteboardStore
 import com.paper.domain.ui.ImageScrapWidget
 import com.paper.domain.ui.ScrapWidget
 import com.paper.domain.ui.SketchScrapWidget
@@ -10,12 +10,14 @@ import com.paper.domain.ui.TextScrapWidget
 import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
+import com.paper.model.repository.IUndoRepository
 import com.paper.model.repository.IWhiteboardRepository
 import com.paper.model.repository.json.FrameJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -59,7 +61,6 @@ abstract class BaseWhiteboardKitDomainTest {
     protected val mockSchedulers: ISchedulers by lazy {
         val mock = Mockito.mock(ISchedulers::class.java)
         Mockito.`when`(mock.main()).thenReturn(testScheduler)
-        Mockito.`when`(mock.ui()).thenReturn(testScheduler)
         Mockito.`when`(mock.computation()).thenReturn(testScheduler)
         Mockito.`when`(mock.io()).thenReturn(testScheduler)
         Mockito.`when`(mock.db()).thenReturn(testScheduler)
@@ -74,6 +75,15 @@ abstract class BaseWhiteboardKitDomainTest {
         return mock
     }
 
+    protected val mockUndoRepo: IUndoRepository by lazy {
+        val field = Mockito.mock(IUndoRepository::class.java)
+
+        Mockito.`when`(field.prepare()).thenReturn(Completable.complete())
+        Mockito.`when`(field.canUndo).thenReturn(Observable.just(false))
+        Mockito.`when`(field.canRedo).thenReturn(Observable.just(false))
+
+        field
+    }
     protected val mockWhiteboardRepo: IWhiteboardRepository by lazy {
         val field = Mockito.mock(IWhiteboardRepository::class.java)
 
@@ -89,8 +99,7 @@ abstract class BaseWhiteboardKitDomainTest {
         val whiteboard = mockWhiteboard
 
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
-        Mockito.`when`(field.whiteboard).thenReturn(whiteboard)
-        Mockito.`when`(field.whiteboardLoaded).thenReturn(Single.just(whiteboard))
+        Mockito.`when`(field.whiteboard).thenReturn(Single.just(whiteboard))
 
         field
     }

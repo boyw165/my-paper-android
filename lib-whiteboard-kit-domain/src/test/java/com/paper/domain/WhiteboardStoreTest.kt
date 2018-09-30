@@ -22,7 +22,7 @@
 
 package com.paper.domain
 
-import com.paper.domain.store.WhiteboardStore
+import com.paper.model.repository.WhiteboardStore
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -32,30 +32,25 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner.Silent::class)
 class WhiteboardStoreTest : BaseWhiteboardKitDomainTest() {
 
-    private val candidate by lazy {
-        WhiteboardStore(whiteboardID = RANDOM_WHITEBOARD_ID,
-                        whiteboardRepo = mockWhiteboardRepo,
-                        schedulers = mockSchedulers)
-    }
-
     @Before
     override fun setup() {
         super.setup()
-
-        candidate.start()
     }
 
     @After
     override fun clean() {
         super.clean()
-
-        candidate.stop()
     }
 
     @Test
     fun `observe busy, should see busy first and not busy at the end`() {
+        val candidate = WhiteboardStore(boardID = RANDOM_WHITEBOARD_ID,
+                                        boardLocalRepo = mockWhiteboardRepo,
+                                        undoRepository = mockUndoRepo,
+                                        schedulers = mockSchedulers)
         val tester = candidate.busy.test()
-        candidate.start()
+
+        candidate.loadBoard()
 
         // Start
         moveScheduler()

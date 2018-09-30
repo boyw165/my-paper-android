@@ -22,7 +22,7 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.store.IWhiteboardStore
+import com.paper.model.repository.IWhiteboardStore
 import io.reactivex.Observable
 
 interface IWhiteboardWidget : IWidget {

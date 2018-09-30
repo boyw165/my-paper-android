@@ -54,7 +54,7 @@ class ScrapManipulatorTest : BaseEditorDomainTest() {
         val candidate = ScrapManipulator(scrapWidget = widget,
                                          editorWidget = mockWhiteboardEditorWidget)
 
-        val commandTester = mockWhiteboardEditorWidget.undoWidget
+        val commandTester = mockWhiteboardEditorWidget.whiteboardWidget.whiteboardStore
         val completionTester = candidate
             .apply(Observable.just(mockTouchBegin,
                                    mockDragSequence,
@@ -65,7 +65,7 @@ class ScrapManipulatorTest : BaseEditorDomainTest() {
         moveScheduler()
 
         completionTester.assertComplete()
-        Mockito.verify(commandTester, atLeastOnce()).offerCommand(argWhere { command ->
+        Mockito.verify(commandTester, atLeastOnce()).offerCommandDoo(argWhere { command ->
             command is GroupCommand &&
             command.commands.any { subCommand ->
                 subCommand is UpdateScrapFrameCommand

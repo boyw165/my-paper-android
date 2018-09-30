@@ -2,18 +2,20 @@ package com.paper.domain
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.paper.domain.store.IWhiteboardStore
 import com.paper.domain.ui.*
 import com.paper.model.*
 import com.paper.model.command.WhiteboardCommand
 import com.paper.model.command.WhiteboardCommandJSONTranslator
 import com.paper.model.repository.ICommonPenPrefsRepo
+import com.paper.model.repository.IUndoRepository
 import com.paper.model.repository.IWhiteboardRepository
+import com.paper.model.repository.IWhiteboardStore
 import com.paper.model.repository.json.FrameJSONTranslator
 import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.repository.json.WhiteboardJSONTranslator
 import com.paper.model.sketch.VectorGraphics
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -62,7 +64,6 @@ abstract class BaseEditorDomainTest {
     protected val mockSchedulers: ISchedulers by lazy {
         val mock = Mockito.mock(ISchedulers::class.java)
         Mockito.`when`(mock.main()).thenReturn(testScheduler)
-        Mockito.`when`(mock.ui()).thenReturn(testScheduler)
         Mockito.`when`(mock.computation()).thenReturn(testScheduler)
         Mockito.`when`(mock.io()).thenReturn(testScheduler)
         Mockito.`when`(mock.db()).thenReturn(testScheduler)
@@ -93,8 +94,7 @@ abstract class BaseEditorDomainTest {
         val whiteboard = mockWhiteboard
 
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
-        Mockito.`when`(field.whiteboard).thenReturn(whiteboard)
-        Mockito.`when`(field.whiteboardLoaded).thenReturn(Single.just(whiteboard))
+        Mockito.`when`(field.whiteboard).thenReturn(Single.just(whiteboard))
 
         field
     }
@@ -106,27 +106,21 @@ abstract class BaseEditorDomainTest {
 
         field
     }
-    protected val mockUndoWidget: IUndoWidget by lazy {
-        val field = Mockito.mock(IUndoWidget::class.java)
+    protected val mockUndoRepo: IUndoRepository by lazy {
+        val field = Mockito.mock(IUndoRepository::class.java)
 
-        Mockito.`when`(field.busy).thenReturn(Observable.just(false))
+        Mockito.`when`(field.prepare()).thenReturn(Completable.complete())
+        Mockito.`when`(field.canUndo).thenReturn(Observable.just(false))
+        Mockito.`when`(field.canRedo).thenReturn(Observable.just(false))
 
         field
     }
     protected val mockWhiteboardEditorWidget: IWhiteboardEditorWidget by lazy {
         val field = Mockito.mock(IWhiteboardEditorWidget::class.java)
 
-//        val mockStore = Mockito.mock(IWhiteboardStore::class.java)
-//
-//        val mockWhiteboardWidget = Mockito.mock(IWhiteboardWidget::class.java)
-//        Mockito.`when`(mockWhiteboardWidget.highestZ).thenReturn(0)
-//
-//        val mockUndoWidget = Mockito.mock(IUndoWidget::class.java)
-
         Mockito.`when`(field.busy).thenReturn(Observable.just(false))
-        Mockito.`when`(field.whiteboardStore).thenReturn(mockWhiteboardStore)
-        Mockito.`when`(field.whiteboardWidget).thenReturn(mockWhiteboardWidget)
-        Mockito.`when`(field.undoWidget).thenReturn(mockUndoWidget)
+        Mockito.`when`(field.whiteboardWidget).then { mockWhiteboardWidget }
+        Mockito.`when`(field.undoRepo).then { mockUndoRepo }
 
         field
     }
@@ -173,10 +167,10 @@ abstract class BaseEditorDomainTest {
 
     open fun setup() {
 //        startKoin(listOf(testModule))
+        println("init ${mockUndoRepo.javaClass.simpleName}")
         println("init ${mockWhiteboardRepo.javaClass.simpleName}")
         println("init ${mockWhiteboardStore.javaClass.simpleName}")
         println("init ${mockWhiteboardWidget.javaClass.simpleName}")
-        println("init ${mockUndoWidget.javaClass.simpleName}")
         println("init ${mockWhiteboardEditorWidget.javaClass.simpleName}")
     }
 

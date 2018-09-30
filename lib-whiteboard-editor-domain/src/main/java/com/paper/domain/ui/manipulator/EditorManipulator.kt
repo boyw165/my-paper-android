@@ -28,6 +28,7 @@ import com.paper.domain.ui.manipulator.editor.EditorPinchManipulator
 import com.paper.domain.ui.manipulator.editor.EditorTapManipulator
 import io.reactivex.Completable
 import io.reactivex.Observable
+import io.reactivex.rxkotlin.withLatestFrom
 import io.useful.rx.GestureEvent
 
 /**
@@ -37,9 +38,12 @@ class EditorManipulator(private val editorWidget: IWhiteboardEditorWidget)
     : IUserTouchManipulator {
 
     override fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable {
+        val whiteboardSrc = editorWidget.whiteboardWidget.whiteboardStore.whiteboard.toObservable()
+
         return gestureSequence
-            .switchMapCompletable { touchSequence ->
-                val whiteboard = editorWidget.whiteboardStore.whiteboard!!
+            .withLatestFrom(whiteboardSrc)
+            .switchMapCompletable { (touchSequence, whiteboard) ->
+                val whiteboardStore = editorWidget.whiteboardWidget.whiteboardStore
                 val whiteboardWidget = editorWidget.whiteboardWidget
 
                 Completable.fromObservable(
@@ -52,12 +56,11 @@ class EditorManipulator(private val editorWidget: IWhiteboardEditorWidget)
                                 .apply(touchSequence)
                                 .toObservable(),
                             EditorPinchManipulator(editorWidget).apply(touchSequence).toObservable()))
+                        .doOnError { err ->
+                            println(err)
+                        }
                         .doOnNext { command ->
-                            val store = editorWidget.whiteboardStore
-                            store.offerCommandDoo(command)
-
-                            val undoWidget = editorWidget.undoWidget
-                            undoWidget.offerCommand(command)
+                            whiteboardStore.offerCommandDoo(command)
                         })
             }
     }

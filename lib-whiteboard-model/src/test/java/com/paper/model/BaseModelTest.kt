@@ -43,7 +43,6 @@ abstract class BaseModelTest {
     protected val mockSchedulers: ISchedulers by lazy {
         val mock = Mockito.mock(ISchedulers::class.java)
         Mockito.`when`(mock.main()).thenReturn(testScheduler)
-        Mockito.`when`(mock.ui()).thenReturn(testScheduler)
         Mockito.`when`(mock.computation()).thenReturn(testScheduler)
         Mockito.`when`(mock.io()).thenReturn(testScheduler)
         Mockito.`when`(mock.db()).thenReturn(testScheduler)

@@ -25,10 +25,8 @@ package com.paper.domain
 import com.nhaarman.mockitokotlin2.argWhere
 import com.nhaarman.mockitokotlin2.atLeastOnce
 import com.paper.domain.ui.manipulator.EditorManipulator
-import com.paper.domain.ui.manipulator.ScrapManipulator
 import com.paper.model.SketchScrap
 import com.paper.model.command.AddScrapCommand
-import com.paper.model.command.GroupCommand
 import io.reactivex.Observable
 import org.junit.After
 import org.junit.Before
@@ -52,9 +50,10 @@ class EditorManipulatorTest : BaseEditorDomainTest() {
 
     @Test
     fun `given a drag sequence, must see add-sketch-scrap command at the end`() {
-        val candidate = EditorManipulator(editorWidget = mockWhiteboardEditorWidget)
+        val editorWidget = mockWhiteboardEditorWidget
+        val candidate = EditorManipulator(editorWidget = editorWidget)
 
-        val commandTester = mockWhiteboardEditorWidget.whiteboardStore
+        val commandTester = editorWidget.whiteboardWidget.whiteboardStore
         val completionTester = candidate
             .apply(Observable.just(mockTouchBegin,
                                    mockDragSequence,

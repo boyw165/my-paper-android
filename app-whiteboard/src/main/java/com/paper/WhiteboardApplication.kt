@@ -38,6 +38,7 @@ import com.paper.model.repository.json.ScrapJSONTranslator
 import com.paper.model.repository.json.VectorGraphicsJSONTranslator
 import com.paper.model.sketch.VectorGraphics
 import io.reactivex.Scheduler
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.internal.schedulers.SingleScheduler
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
@@ -99,14 +100,8 @@ class WhiteboardApplication : MultiDexApplication(),
             .create()
     }
 
-    private val mainScheduler = SingleScheduler()
-
     override fun main(): Scheduler {
-        return mainScheduler
-    }
-
-    override fun ui(): Scheduler {
-        TODO("not implemented")
+        return AndroidSchedulers.mainThread()
     }
 
     override fun computation(): Scheduler {

@@ -22,7 +22,7 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.store.IWhiteboardStore
+import com.paper.model.repository.IUndoRepository
 import io.reactivex.Observable
 import io.reactivex.subjects.Subject
 import io.useful.rx.GestureEvent
@@ -35,11 +35,9 @@ interface IWhiteboardEditorWidget : IWidget {
 
     val busy: Observable<Boolean>
 
-    val whiteboardStore: IWhiteboardStore
-
     val whiteboardWidget: IWhiteboardWidget
 
-    val undoWidget: IUndoWidget
+    val undoRepo: IUndoRepository
 
     val canUndo: Observable<Boolean>
 

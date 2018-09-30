@@ -24,41 +24,34 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.ContentObserver
 import android.database.Cursor
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
-import com.paper.model.Whiteboard
 import com.paper.model.IPreferenceService
 import com.paper.model.ISchedulers
 import com.paper.model.ModelConst
-import com.paper.model.event.UpdateDatabaseEvent
+import com.paper.model.Whiteboard
+import com.paper.model.command.WhiteboardCommand
 import com.paper.model.repository.sqlite.PaperTable
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.SingleEmitter
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
-import io.reactivex.subjects.SingleSubject
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.net.URI
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.collections.HashMap
 
 class WhiteboardRepoSQLite(private val authority: String,
                            private val resolver: ContentResolver,
                            private val jsonTranslator: Gson,
-                           private val bmpCacheDir: File,
                            private val prefs: IPreferenceService,
                            private val schedulers: ISchedulers)
-    : IWhiteboardRepository,
-      IBitmapRepository {
+    : IWhiteboardRepository {
+
+    private val paperListRefreshSignal = PublishSubject.create<List<Whiteboard>>().toSerialized()
 
     /**
      * Observer observing the database change.
@@ -88,12 +81,6 @@ class WhiteboardRepoSQLite(private val authority: String,
         }
     }
 
-    /**
-     * A signal to put paper in the database.
-     */
-    private val putSignal = PublishSubject.create<Pair<Whiteboard, SingleSubject<UpdateDatabaseEvent>>>()
-    private val disposableBag = CompositeDisposable()
-
     init {
         val uri: Uri = Uri.Builder()
             .scheme("content")
@@ -101,25 +88,7 @@ class WhiteboardRepoSQLite(private val authority: String,
             .path("paper")
             .build()
         this.resolver.registerContentObserver(uri, true, contentObserver)
-
-        // Database writes
-        disposableBag.add(
-            putSignal
-                .debounce(150, TimeUnit.MILLISECONDS, schedulers.db())
-                // Writes operation should be atomic and not stoppable, thus
-                // guarantees the database integrity.
-                .flatMap { (paper, doneSignal) ->
-                    putPaperImpl(paper)
-                        .doOnSuccess { event ->
-                            doneSignal.onSuccess(event)
-                        }
-                        .toObservable()
-                }
-                .observeOn(schedulers.db())
-                .subscribe())
     }
-
-    private val paperListRefreshSignal = PublishSubject.create<List<Whiteboard>>().toSerialized()
 
     /**
      * Get paper list.
@@ -213,6 +182,7 @@ class WhiteboardRepoSQLite(private val authority: String,
                     return@fromCallable newPaper
                 }
                 .subscribeOn(schedulers.db())
+                .observeOn(schedulers.main())
         } else {
             Single
                 .create { observer: SingleEmitter<Whiteboard> ->
@@ -258,10 +228,11 @@ class WhiteboardRepoSQLite(private val authority: String,
                     }
                 }
                 .subscribeOn(schedulers.db())
+                .observeOn(schedulers.main())
         }
     }
 
-    override fun putBoard(board: Whiteboard): Single<UpdateDatabaseEvent> {
+    override fun putBoard(board: Whiteboard): Single<Long> {
 //        val requestConstraint = Constraints.Builder()
 //            .setRequiresStorageNotLow(true)
 //            .build()
@@ -274,18 +245,10 @@ class WhiteboardRepoSQLite(private val authority: String,
 //        WorkManager.getInstance()
 //            .beginUniqueWork(WORK_TAG_PUT_PAPER, ExistingWorkPolicy.REPLACE, request)
 
-        val doneSignal = SingleSubject.create<UpdateDatabaseEvent>()
-
-        putSignal.onNext(Pair(board, doneSignal))
-
-        return doneSignal
-    }
-
-    private fun putPaperImpl(paper: Whiteboard): Single<UpdateDatabaseEvent> {
         return Single
-            .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
-                val id = paper.id
-                paper.modifiedAt = getCurrentTime()
+            .create { emitter: SingleEmitter<Long> ->
+                val id = board.id
+                board.modifiedAt = getCurrentTime()
 
                 if (id == ModelConst.TEMP_ID) {
                     val uri = Uri.Builder()
@@ -297,7 +260,7 @@ class WhiteboardRepoSQLite(private val authority: String,
 
                     try {
                         // Lock paper and convert to database format
-                        val values = convertPaperToValues(paper)
+                        val values = convertPaperToValues(board)
 
                         val newURI = resolver.insert(uri, values)
                         if (newURI != null) {
@@ -305,14 +268,12 @@ class WhiteboardRepoSQLite(private val authority: String,
                             val newID = newURI.lastPathSegment.toLong()
                             prefs.putLong(ModelConst.PREFS_BROWSE_WHITEBOARD_ID, newID).blockingGet()
 
-                            paper.id = newID
+                            board.id = newID
 
                             if (!emitter.isDisposed) {
                                 println("${ModelConst.TAG}: put paper (commandID=$newID) successfully")
 
-                                emitter.onSuccess(UpdateDatabaseEvent(
-                                    successful = true,
-                                    id = newURI.lastPathSegment.toLong()))
+                                emitter.onSuccess(newURI.lastPathSegment.toLong())
                             }
 
                             // Notify a addition just happens
@@ -333,15 +294,13 @@ class WhiteboardRepoSQLite(private val authority: String,
 
                     try {
                         // Lock paper and convert to database format
-                        val values = convertPaperToValues(paper)
+                        val values = convertPaperToValues(board)
 
                         if (0 < resolver.update(uri, values, null, null)) {
                             if (!emitter.isDisposed) {
                                 println("${ModelConst.TAG}: put paper (commandID=$id) successfully")
 
-                                emitter.onSuccess(UpdateDatabaseEvent(
-                                    successful = true,
-                                    id = id))
+                                emitter.onSuccess(id)
                             }
 
                             // Notify an update just happens
@@ -355,84 +314,32 @@ class WhiteboardRepoSQLite(private val authority: String,
                 }
             }
             .subscribeOn(schedulers.db())
+            .observeOn(schedulers.main())
     }
 
-    override fun duplicateBoardById(id: Long): Single<Whiteboard> {
-        TODO("not implemented")
+    override fun duplicateBoardById(id: Long): Single<Long> {
+        TODO()
     }
 
-    override fun deleteBoardById(id: Long): Single<UpdateDatabaseEvent> {
-        return Single
-            .create { emitter: SingleEmitter<UpdateDatabaseEvent> ->
+    override fun deleteBoardById(id: Long): Completable {
+        return Completable
+            .fromCallable {
                 val uri = Uri.Builder()
                     .scheme("content")
                     .authority(authority)
                     .path("paper/$id")
                     .build()
-                if (emitter.isDisposed) return@create
 
-                try {
-                    if (0 < resolver.delete(uri, null, null)) {
-                        if (!emitter.isDisposed) {
-                            emitter.onSuccess(UpdateDatabaseEvent(
-                                successful = true,
-                                id = id))
-                        }
-
-                        // Notify a deletion just happens
-                        resolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
-                    } else {
-                        emitter.onError(NoSuchElementException("Cannot delete paper with commandID=$id"))
-                    }
-                } catch (err: Throwable) {
-                    emitter.onError(err)
+                if (0 < resolver.delete(uri, null, null)) {
+                    // Notify a deletion just happens
+                    resolver.notifyChange(Uri.parse("$uri/$CHANGE_REMOVE"), null)
+                } else {
+                    throw NoSuchElementException("Cannot delete paper with commandID=$id")
                 }
             }
             .subscribeOn(schedulers.db())
+            .observeOn(schedulers.main())
     }
-
-    private val bitmapJournal = HashMap<Int, File>()
-
-    override fun putBitmap(key: Int, bmp: Bitmap): Single<File> {
-        return Single
-            .fromCallable {
-                if (!bmpCacheDir.exists()) {
-                    bmpCacheDir.mkdir()
-                }
-
-                // TODO: Use LruCache?
-                val bmpFile = File(bmpCacheDir, "$key.png")
-
-                FileOutputStream(bmpFile).use { out ->
-                    bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
-                }
-
-                // TODO: Save the journal file somewhere
-                bitmapJournal[key] = bmpFile
-
-                println("${ModelConst.TAG}: put Bitmap to cache (key=$key, file=$bmpFile")
-
-                return@fromCallable bmpFile
-            }
-            .subscribeOn(schedulers.db())
-    }
-
-    override fun getBitmap(key: Int): Single<Bitmap> {
-        val file = bitmapJournal[key] ?: File(bmpCacheDir, "$key.png")
-
-        return Single
-                .fromCallable {
-                    if (file.exists()) {
-                        BitmapFactory.decodeFile(file.absolutePath)
-                    } else {
-                        throw FileNotFoundException("cannot find the Bitmap")
-                    }
-                }
-                .subscribeOn(schedulers.db())
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Protected / Private Methods ////////////////////////////////////////////
 
     private fun getCurrentTime(): Long = System.currentTimeMillis() / 1000
 
@@ -491,7 +398,6 @@ class WhiteboardRepoSQLite(private val authority: String,
         return whiteboard
     }
 
-    ///////////////////////////////////////////////////////////////////////////
     // Clazz //////////////////////////////////////////////////////////////////
 
     companion object {

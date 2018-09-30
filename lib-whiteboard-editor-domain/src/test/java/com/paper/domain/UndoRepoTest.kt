@@ -22,11 +22,12 @@
 
 package com.paper.domain
 
-import com.paper.domain.ui.UndoWidget
+import com.paper.model.repository.FileUndoRepository
 import com.paper.model.command.AddScrapCommand
-import com.paper.model.repository.CommandRepository
+import com.paper.model.repository.FileCommandRepository
 import com.paper.model.repository.ICommandRepository
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,25 +35,25 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class UndoWidgetTest : BaseEditorDomainTest() {
+class UndoRepoTest : BaseEditorDomainTest() {
 
     companion object {
         const val LOG_DIR = "/tmp/command_test"
     }
 
     private val undoRepo: ICommandRepository by lazy {
-        CommandRepository(logDir = File(LOG_DIR),
-                          logJournalFileName = "_undoJournal",
-                          jsonTranslator = jsonTranslator,
-                          capacity = 3,
-                          schedulers = mockSchedulers)
+        FileCommandRepository(logDir = File(LOG_DIR),
+                              logJournalFileName = "_undoJournal",
+                              jsonTranslator = jsonTranslator,
+                              capacity = 3,
+                              schedulers = mockSchedulers)
     }
     private val redoRepo: ICommandRepository by lazy {
-        CommandRepository(logDir = File(LOG_DIR),
-                          logJournalFileName = "_redoJournal",
-                          jsonTranslator = jsonTranslator,
-                          capacity = 3,
-                          schedulers = mockSchedulers)
+        FileCommandRepository(logDir = File(LOG_DIR),
+                              logJournalFileName = "_redoJournal",
+                              jsonTranslator = jsonTranslator,
+                              capacity = 3,
+                              schedulers = mockSchedulers)
     }
 
     @Before
@@ -68,11 +69,12 @@ class UndoWidgetTest : BaseEditorDomainTest() {
 
     @Test
     fun `cannot undo initially`() {
-        val candidate = UndoWidget(undoRepo = undoRepo,
-                                   redoRepo = redoRepo,
-                                   schedulers = mockSchedulers)
-        // Start widget
-        candidate.start()
+        val candidate = FileUndoRepository(undoRepo = undoRepo,
+                                           redoRepo = redoRepo,
+                                           schedulers = mockSchedulers)
+        // Start repo
+        candidate.prepare().test().assertSubscribed()
+
         moveScheduler()
 
         val tester = candidate.canUndo.test()
@@ -81,11 +83,12 @@ class UndoWidgetTest : BaseEditorDomainTest() {
 
     @Test
     fun `cannot redo initially`() {
-        val candidate = UndoWidget(undoRepo = undoRepo,
-                                   redoRepo = redoRepo,
-                                   schedulers = mockSchedulers)
-        // Start widget
-        candidate.start()
+        val candidate = FileUndoRepository(undoRepo = undoRepo,
+                                           redoRepo = redoRepo,
+                                           schedulers = mockSchedulers)
+        // Start repo
+        candidate.prepare().test().assertSubscribed()
+
         moveScheduler()
 
         val tester = candidate.canRedo.test()
@@ -94,21 +97,27 @@ class UndoWidgetTest : BaseEditorDomainTest() {
 
     @Test
     fun `offer one command, and should see busy first and free at the end`() {
-        val candidate = UndoWidget(undoRepo = undoRepo,
-                                   redoRepo = redoRepo,
-                                   schedulers = mockSchedulers)
-        // Start widget
-        candidate.start()
+        val candidate = FileUndoRepository(undoRepo = undoRepo,
+                                           redoRepo = redoRepo,
+                                           schedulers = mockSchedulers)
+        // Start repo
+        candidate.prepare()
+            .test()
+            .assertSubscribed()
+
         moveScheduler()
 
         val tester = candidate.canUndo.test()
 
         val command = AddScrapCommand(scrap = createRandomScrap())
         candidate.offerCommand(command)
+            .test()
+            .assertSubscribed()
 
         moveScheduler()
 
-        tester.assertValueAt(0, false)
+        Assert.assertTrue(tester.valueCount() >= 2)
+        tester.assertValueAt(tester.valueCount() - 2, false)
         tester.assertValueAt(tester.valueCount() - 1, true)
     }
 

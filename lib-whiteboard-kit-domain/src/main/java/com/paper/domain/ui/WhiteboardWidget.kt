@@ -21,10 +21,11 @@
 package com.paper.domain.ui
 
 import com.paper.domain.DomainConst
-import com.paper.domain.store.IWhiteboardStore
 import com.paper.model.IBundle
 import com.paper.model.ISchedulers
+import com.paper.model.repository.IWhiteboardStore
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.useful.delegate.rx.RxMutableSet
@@ -55,13 +56,13 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         setupBusyStates()
         setupScrapWidgets()
 
-        whiteboardStore.start()
+        whiteboardStore.loadBoard()
 
         println("${DomainConst.TAG}: Start \"${javaClass.simpleName}\"")
     }
 
     override fun stop() {
-        whiteboardStore.stop()
+        whiteboardStore.unloadBoard()
 
         staticDisposableBag.clear()
 
@@ -78,7 +79,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
 
     private fun setupBusyStates() {
         whiteboardStore
-            .whiteboardLoaded
+            .whiteboard
             .toObservable()
             .map { true }
             .startWith(false)
@@ -95,7 +96,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
     private fun setupScrapWidgets() {
         // Observe add scrap
         whiteboardStore
-            .whiteboardLoaded
+            .whiteboard
             .flatMapObservable { document ->
                 Observable.merge(
                     Observable.fromIterable(document.scraps),
@@ -114,7 +115,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             .addTo(staticDisposableBag)
         // Observe remove scrap
         whiteboardStore
-            .whiteboardLoaded
+            .whiteboard
             .flatMapObservable { document ->
                 document::scraps.itemRemoved()
             }
@@ -129,11 +130,13 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
             .addTo(staticDisposableBag)
     }
 
-    val canvasSize: Pair<Float, Float>
+    val canvasSize: Single<Pair<Float, Float>>
         get() {
             return whiteboardStore
-                .whiteboard!!
-                .size
+                .whiteboard
+                .map { doc ->
+                    doc.size
+                }
         }
 
     // Number of on-going task ////////////////////////////////////////////////
@@ -145,8 +148,7 @@ open class WhiteboardWidget(override val whiteboardStore: IWhiteboardStore,
         get() {
             return Observable
                 .combineLatest(listOf(selfBusy,
-                                      whiteboardStore.busy)
-                              ) { busyArray: Array<in Boolean> ->
+                                      whiteboardStore.busy)) { busyArray: Array<in Boolean> ->
                     var overallBusy = false
                     busyArray.forEach { overallBusy = overallBusy || it as Boolean }
                     overallBusy

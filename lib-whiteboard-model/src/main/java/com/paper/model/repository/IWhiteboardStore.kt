@@ -20,23 +20,24 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-package com.paper.domain.store
+package com.paper.model.repository
 
-import com.paper.domain.ui.ILifecycleAware
 import com.paper.model.Whiteboard
 import com.paper.model.command.WhiteboardCommand
 import io.reactivex.Observable
 import io.reactivex.Single
 
-interface IWhiteboardStore : ILifecycleAware {
+interface IWhiteboardStore {
 
-    val whiteboard: Whiteboard?
+    fun loadBoard()
 
-    val whiteboardLoaded: Single<Whiteboard>
+    fun unloadBoard()
 
-    val busy: Observable<Boolean>
+    val whiteboard: Single<Whiteboard>
 
     fun offerCommandDoo(command: WhiteboardCommand)
 
     fun offerCommandUndo(command: WhiteboardCommand)
+
+    val busy: Observable<Boolean>
 }

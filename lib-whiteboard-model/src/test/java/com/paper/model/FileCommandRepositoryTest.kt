@@ -23,7 +23,7 @@
 package com.paper.model
 
 import com.paper.model.command.AddScrapCommand
-import com.paper.model.repository.CommandRepository
+import com.paper.model.repository.FileCommandRepository
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +31,7 @@ import org.mockito.junit.MockitoJUnitRunner
 import java.io.File
 
 @RunWith(MockitoJUnitRunner.Silent::class)
-class CommandRepositoryTest : BaseModelTest() {
+class FileCommandRepositoryTest : BaseModelTest() {
 
     companion object {
         const val LOG_DIR = "/tmp/command_test"
@@ -95,11 +95,11 @@ class CommandRepositoryTest : BaseModelTest() {
         }
     }
 
-    private fun initCandidate(): CommandRepository {
-        return CommandRepository(logDir = File(LOG_DIR),
-                                 logJournalFileName = LOG_JOURNAL_FILE,
-                                 jsonTranslator = jsonTranslator,
-                                 capacity = 3,
-                                 schedulers = mockSchedulers)
+    private fun initCandidate(): FileCommandRepository {
+        return FileCommandRepository(logDir = File(LOG_DIR),
+                                     logJournalFileName = LOG_JOURNAL_FILE,
+                                     jsonTranslator = jsonTranslator,
+                                     capacity = 3,
+                                     schedulers = mockSchedulers)
     }
 }

@@ -22,13 +22,14 @@
 
 package com.paper.domain.ui
 
-import com.paper.domain.store.IWhiteboardStore
+import com.paper.model.repository.IWhiteboardStore
 import com.paper.domain.ui.manipulator.EditorManipulator
 import com.paper.domain.ui.manipulator.ScrapManipulator
 import com.paper.model.IBundle
 import com.paper.model.ISchedulers
 import com.paper.model.event.IntProgressEvent
 import com.paper.model.repository.ICommonPenPrefsRepo
+import com.paper.model.repository.IUndoRepository
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
@@ -48,16 +49,12 @@ import java.io.File
 // TODO: Shouldn't depend on any Android package!
 
 class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
-                             override val undoWidget: IUndoWidget,
+                             override val undoRepo: IUndoRepository,
                              private val penPrefsRepo: ICommonPenPrefsRepo,
                              private val schedulers: ISchedulers)
     : IWhiteboardEditorWidget {
 
     private val lock = Any()
-
-    override val whiteboardStore: IWhiteboardStore get() {
-        return whiteboardWidget.whiteboardStore
-    }
 
     private val staticDisposableBag = CompositeDisposable()
 
@@ -117,12 +114,10 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
         // Start widgets
         whiteboardWidget.start()
-        undoWidget.start()
     }
 
     override fun stop() {
         whiteboardWidget.stop()
-        undoWidget.stop()
 
         staticDisposableBag.clear()
     }
@@ -184,28 +179,26 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
             .observeOn(schedulers.main())
             .switchMap { undoDemand ->
                 undoDemand.flatMap {
-                    undoWidget
-                        .undo()
+                    undoRepo.undo()
                         .toObservable()
                 }
             }
             .observeOn(schedulers.main())
             .subscribe { command ->
-                whiteboardStore.offerCommandUndo(command)
+                whiteboardWidget.whiteboardStore.offerCommandUndo(command)
             }
             .addTo(staticDisposableBag)
         redoInbox
             .observeOn(schedulers.main())
             .switchMap { redoDemand ->
                 redoDemand.flatMap {
-                    undoWidget
-                        .redo()
+                    undoRepo.redo()
                         .toObservable()
                 }
             }
             .observeOn(schedulers.main())
             .subscribe { command ->
-                whiteboardStore.offerCommandDoo(command)
+                whiteboardWidget.whiteboardStore.offerCommandDoo(command)
             }
             .addTo(staticDisposableBag)
     }
@@ -226,14 +219,16 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
 
     // Busy ///////////////////////////////////////////////////////////////////
 
-    override val busy: Observable<Boolean> get() {
-        return Observables
-            .combineLatest(whiteboardWidget.busy,
-                           undoWidget.busy)
-            .map { (selfBusy, undoBusy) ->
-                selfBusy && undoBusy
-            }
-    }
+    override val busy: Observable<Boolean>
+        get() {
+            return Observable
+                .combineLatest(listOf(whiteboardWidget.busy)) { busyArray: Array<in Boolean> ->
+                    var overallBusy = false
+                    busyArray.forEach { overallBusy = overallBusy || it as Boolean }
+                    overallBusy
+                }
+                .observeOn(schedulers.main())
+        }
 
     // Undo & undo ////////////////////////////////////////////////////////////
 
@@ -252,13 +247,13 @@ class WhiteboardEditorWidget(override val whiteboardWidget: IWhiteboardWidget,
     override val canUndo: Observable<Boolean>
         get() = Observables.combineLatest(
             busy,
-            undoWidget.canUndo)
+            undoRepo.canUndo)
             .map { (busy, canUndo) -> if (busy) false else canUndo }
 
     override val canRedo: Observable<Boolean>
         get() = Observables.combineLatest(
             busy,
-            undoWidget.canRedo)
+            undoRepo.canRedo)
             .map { (busy, canUndo) -> if (busy) false else canUndo }
 
     // Editor mode ////////////////////////////////////////////////////////////

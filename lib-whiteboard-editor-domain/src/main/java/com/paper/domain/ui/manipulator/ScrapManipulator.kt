@@ -46,9 +46,11 @@ class ScrapManipulator(private val scrapWidget: ScrapWidget,
                        private val editorWidget: IWhiteboardEditorWidget)
     : IUserTouchManipulator {
 
-    private val commandsForUndoWidget = mutableListOf<WhiteboardCommand>()
+    private val commandCollection = mutableListOf<WhiteboardCommand>()
 
     override fun apply(gestureSequence: Observable<Observable<GestureEvent>>): Completable {
+        val whiteboardStore = editorWidget.whiteboardWidget.whiteboardStore
+
         return gestureSequence
             .flatMapCompletable { touchSequence ->
                 Completable.fromObservable(
@@ -60,10 +62,9 @@ class ScrapManipulator(private val scrapWidget: ScrapWidget,
                             ScrapDragManipulator(scrapWidget).apply(touchSequence).toObservable(),
                             ScrapPinchManipulator(scrapWidget).apply(touchSequence).toObservable()))
                         .doOnNext { command ->
-                            val store = editorWidget.whiteboardStore
-                            store.offerCommandDoo(command)
+                            whiteboardStore.offerCommandDoo(command)
 
-                            commandsForUndoWidget.add(command)
+                            commandCollection.add(command)
                         })
             }
     }
@@ -81,17 +82,17 @@ class ScrapManipulator(private val scrapWidget: ScrapWidget,
                         when (event) {
                             is TouchBeginEvent -> {
                                 // New collection for a new touch session
-                                commandsForUndoWidget.clear()
+                                commandCollection.clear()
 
                                 // Terminate stream
                                 emitter.onComplete()
                             }
                             is TouchEndEvent -> {
                                 // Group the collection of commands over the touch session
-                                val undoWidget = editorWidget.undoWidget
-                                val groupCommand = GroupCommand(commands = commandsForUndoWidget.toList())
+                                val whiteboardStore = editorWidget.whiteboardWidget.whiteboardStore
+                                val groupCommand = GroupCommand(commands = commandCollection.toList())
 
-                                undoWidget.offerCommand(groupCommand)
+                                whiteboardStore.offerCommandDoo(groupCommand)
 
                                 // Terminate stream
                                 emitter.onComplete()

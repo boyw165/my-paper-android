@@ -118,7 +118,7 @@ class WhiteboardWidgetTest : BaseWhiteboardKitDomainTest() {
         moveScheduler()
 
         // Remove a scrap
-        val document = mockWhiteboardStore.whiteboard!!
+        val document = mockWhiteboardStore.whiteboard.blockingGet()
         document.removeScrap(document.scraps.toList()[0])
 
         // Make sure the stream moves

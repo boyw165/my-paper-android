@@ -15,7 +15,7 @@
 package com.paper.model.repository
 
 import com.paper.model.Whiteboard
-import com.paper.model.event.UpdateDatabaseEvent
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 
@@ -39,9 +39,9 @@ interface IWhiteboardRepository {
      * means event you destroy the reactive graph, the writes operation is
      * eventually executed, and you're just not interested to the result.
      */
-    fun putBoard(board: Whiteboard): Single<UpdateDatabaseEvent>
+    fun putBoard(board: Whiteboard): Single<Long>
 
-    fun duplicateBoardById(id: Long): Single<Whiteboard>
+    fun duplicateBoardById(id: Long): Single<Long>
 
-    fun deleteBoardById(id: Long): Single<UpdateDatabaseEvent>
+    fun deleteBoardById(id: Long): Completable
 }
